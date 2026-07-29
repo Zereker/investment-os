@@ -17,13 +17,19 @@
 | Cash / Settled Cash | IBKR Balances | 无 | 每次巡检 | Green | 同上 |
 | Positions / Average Cost | IBKR Positions | 无 | 每次巡检 | Green | Positions 高于订单和历史成交记录 |
 | Open Orders | IBKR Orders | 无 | 每次巡检 | Green | 读取失败则所有交易路径关闭 |
-| USD Cash Interest | IBKR Activity / Statements | 无 | 年度 | Green | 缺失时 Policy Benchmark 现金收益按 0%并披露 |
+| External Contribution \(F\) | IBKR Activity / Cash Transactions | 无 | 每月 | Green | 只使用已到账外部净入金；提款与内部卖出所得排除 |
+| Routine Core Gap / Purchase \(G_0,D\) | 实时 IBKR 数据 + Monthly Workflow | 无 | 每月 | Green（Derived） | \(D=\min(F,G_0)\)；\(F-D\) 留在现金 |
+| USD Cash Interest \(I\) / Eligible Cash TWA \(\bar C^{eligible}\) | IBKR Activity / Statements | 无 | 每月 | Green | 任一输入缺失或分母不大于 0 时 \(r_{cash}=0\%\) 并披露 |
 | SPYM Price | IBKR | State Street SPYM 官方页 | 每次巡检 | Green | 标记价格时间戳 |
 | QQQM Price | IBKR | Invesco QQQM 官方页 | 每次巡检 | Green | 标记价格时间戳 |
+| SPYM Total Return | State Street SPYM 官方绩效 / 分红数据 | IBKR 市场数据与分红记录 | 每月 | Green | Policy Benchmark 必须使用含分红同期总收益 |
+| QQQM Total Return | Invesco QQQM 官方绩效 / 分红数据 | IBKR 市场数据与分红记录 | 每月 | Green | 同上 |
 | SOXX Price | IBKR | iShares SOXX 官方页 | 每次巡检 | Green | 只用于持仓计量，不授权追加 |
 | SPYM Holdings / Sector | State Street SPYM 官方页 | 无 | 每季度及新增 Alpha 前 | Green | 缺失时冻结依赖穿透数据的新 Alpha |
 | QQQM Holdings / Sector | Invesco QQQM 官方页 | 无 | 每季度及新增 Alpha 前 | Green | 同上 |
 | SOXX Holdings / Sector | iShares SOXX 官方页 | 无 | 每季度及追加前 | Green | 缺失时 SOXX 保持 ADD FROZEN |
+| Issuer Group / Sector / Industry Map | 管理人官方持仓标识与分类 | 已审计的版本化映射 | 每季度及新增 Alpha 前 | Green（Derived） | 保留原标签、统一标签、映射依据与日期；冲突不得猜测 |
+| Look-through Concentration | IBKR 组合权重 + 官方 ETF 持仓 + Data Dictionary 公式 | 无 | 每季度及新增 Alpha 前 | Green（Derived） | 输出发行人、科技、半导体、覆盖率与未分类权重；可能越线则 WAIT / DATA INCOMPLETE |
 | S&P 500 Price/Earnings | State Street SPYM 官方页 | State Street SPY 官方页 | 每周 | Green | 保存官方 `source_as_of` 和计算标签 |
 | S&P 500 FY1 P/E | State Street SPYM 官方页 | State Street SPY 官方页 | 每周 | Green | 保存官方 `source_as_of` 和计算定义 |
 | Nasdaq-100 Price/Earnings | Invesco QQQM 官方页 | 同日 Invesco QQQ 官方页，标记 Proxy | 每周 | Red（未稳定采集） | 不进入 Tactical Opportunity Score |
