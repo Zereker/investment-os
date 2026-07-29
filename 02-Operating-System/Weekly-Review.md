@@ -7,6 +7,7 @@
 - 本周 Daily Review 记录
 - 复盘时重新读取的 IBKR Account Summary、Balances、Positions、Open Orders
 - 最新有效的 `08-Data/SNAPSHOTS/` 数据
+- `04-Alpha/Position-Registry.md`
 - 本周成交、未完成订单和异常记录
 - 当前 Transition Dashboard
 
@@ -23,32 +24,36 @@
 ## C. 配置与转型
 
 - Cash / SPYM / QQQM / Alpha / Legacy 的当前权重
-- 与 Constitution 允许区间及 Transition Plan 的差异
-- 本月累计新增资金与尚未执行的月度流程输入
+- Alpha 内列示 Approved / Observation / Frozen / Exit Review；Observation 全额计入 \(A\)
+- 与 Constitution 的 Cash、QQQM、`SPYM + Alpha` 袖套和硬上限差异
+- 本月累计固定投入、战略基线 \(B\) 与战术加速 \(T\)
 - 是否出现只能靠季度/年度治理处理的结构性偏差
 
-周度复盘只标记偏差，不因一周波动临时再平衡。
+周度复盘只标记偏差，不因一周波动临时再平衡。SOXX 处于 Observation 本身不产生 `IC REVIEW`；只有存在真实追加、升级或退出候选时才进入 IC。
 
 ## D. 数据质量
 
 - IBKR 账户数据是否保持 Green
 - SPYM、QQQM 价格和估值数据的来源、`source_as_of` 与刷新状态
-- Yellow / Red 字段及其对 Deployment Score 的影响
+- 穿透持仓与行业数据是否足够支持新增 Alpha 审查
+- Yellow / Red 字段及其影响范围
 - 是否需要新增数据快照、修复解析或更新 Data Registry
 
-Red 数据不得进入 Deployment Score；缺失值不得用旧值或估算值填补。
+Red 估值不得进入 Tactical Opportunity Score；它将 \(T\) 降为 0，但不阻塞符合公式的固定投入与战略基线 \(B\)。缺失值不得用旧值或估算值填补。
 
 ## E. 行为与执行
 
-- 本周是否有未经过 Trade Gate 的账户操作
+- 本周是否有未经过相应交易路径的账户操作
 - 是否出现追涨、接飞刀、盘中临时起意或规则漂移
-- 非例行决定是否在下单前完成 Investment Committee Packet
+- 固定投入与 \(B\) 是否完全符合月度公式和简化 Gate
+- \(T\)、Alpha、卖出及例外是否在下单前完成完整 Investment Committee Packet
+- Observation 是否出现未批准追加
 - 实际执行是否与批准的方向、数量、限价和有效期一致
 - 多数日子的 `HOLD` 是否被当作有效结果
 
 ## F. Research 边界
 
-- 本周新增研究是否全部留在 `Research/`
+- 本周新增研究是否全部留在 `Research/` 或 `04-Alpha/Research/`
 - 是否有研究指标被误写入 Production 输出
 - 需要升级为正式 Proposal 的问题，仅记录标题、证据缺口和负责人；不得在周报中直接生效
 
