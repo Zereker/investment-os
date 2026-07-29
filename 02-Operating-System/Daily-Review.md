@@ -40,10 +40,12 @@
 
 - Cash
 - Core ETF：SPYM、QQQM
-- Alpha
+- Alpha：同时列示 `Approved / Observation / Frozen / Exit Review`
 - Restricted / Legacy
 
-同时列出各持仓数量、市值、组合占比、成本和未实现盈亏。
+同时列出各持仓数量、市值、组合占比、成本和未实现盈亏。Alpha 权重 \(A\) 包含全部实盘 Observation。
+
+SOXX 按 `Alpha / Observation` 列示，标准状态为 `HOLD — ADD FROZEN`。仅持有 Observation 不是异常，也不自动产生 `REVIEW`；只有超限、订单异常、数据冲突或其他规则触发时才升级。
 
 ### 3. Open Orders
 
@@ -70,20 +72,24 @@
 至少检查：
 
 - 融资借款
-- 仓位上限和 Alpha 上限
+- Cash、QQQM、`SPYM + Alpha` 袖套
+- Alpha 合计 15%、单只 6%和最多 5 只硬上限
+- Observation 是否出现未经批准的追加
 - 未完成或重复订单
 - 碎股与零数量残留
-- 未经审核的新标的
+- 真正未经登记的新标的
 - 数据冲突
+
+穿透集中度在季度及任何新增 Alpha 前完整计算；日报只在已有合格快照时标记已知越线，不用旧数据制造交易信号。
 
 ### 6. Production Decision
 
 只允许以下结论：
 
-- `HOLD`：无生产规则触发，或信息不足
+- `HOLD`：无生产规则触发，或 Observation 仅按既定状态持有
 - `REVIEW`：存在异常，需要人工确认，但不直接交易
-- `BUY CANDIDATE`：现行规则触发，仍需完整 Trade Gate
-- `SELL CANDIDATE`：现行规则触发，仍需完整 Trade Gate
+- `BUY CANDIDATE`：现行规则触发，仍需相应月度路径或完整 Trade Gate
+- `SELL CANDIDATE`：现行卖出规则触发，仍需完整 Trade Gate
 
 每日复盘本身不等于下单授权。
 
