@@ -12,15 +12,15 @@
 
 ## 三条资金通道
 
-1. `Routine DCA`：每月持续新增投入 2,000 美元，优先补 SPYM / QQQM 正缺口。
-2. `Strategic Baseline`：在固定月度执行日，按 Deployment Framework 的 \(B=S/R\) 公式迁移历史超额现金。
+1. `Routine DCA`：每月计划外部净入金 2,000 美元；只使用已到账的 \(F\)，Core 买入额 \(D=\min(F,G_0)\)，\(F-D\) 留在现金。
+2. `Strategic Baseline`：在固定月度执行日，按 Deployment Framework 的 \(B=\min(S/R,G)\) 公式迁移历史超额现金。
 3. `Tactical Acceleration`：只有价格与估值数据合格并通过完整 IC 时，才允许在 \(B\) 之上加速。
 
 Red / N/A 估值将战术加速降为 0，但不阻塞符合公式和 Data Gate 的 Routine DCA 与 Strategic Baseline。
 
 ## 原则
 
-1. 固定投入和战略基线只进入 SPYM / QQQM 正缺口。
+1. Routine DCA \(D\) 和战略基线 \(B\) 只进入 SPYM / QQQM 正缺口。
 2. 每月根据实时净值、现金、\(A\)、目标缺口和到 2028-12 的剩余执行次数重算。
 3. 交易后现金不得低于 12%，不得使用融资。
 4. Observation 全额计入 Alpha，但月度新增分配恒为 0。
@@ -32,7 +32,7 @@ Red / N/A 估值将战术加速降为 0，但不阻塞符合公式和 Data Gate 
 
 ### 阶段 A：建立 Core
 
-- Routine DCA 与 Strategic Baseline 进入 SPYM / QQQM。
+- Routine DCA \(D\) 与 Strategic Baseline \(B\) 进入 SPYM / QQQM。
 - 按正缺口分配；为减少交易，可只买缺口更大的一个。
 - 战术加速不得替代或追认例行基线。
 
