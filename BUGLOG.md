@@ -42,6 +42,16 @@
 - 防复发：任何未通过项均默认 `HOLD / STOP`。
 - 状态：Closed
 
+## BUG-005：Core 标的命名与运行入口不一致
+
+- 日期：2026-07-30
+- 事件：Constitution 已使用 SPYM / QQQM，但 Decision Checklist 和 Alpha Framework 仍残留 SPY / QQQ；周度流程与 Investment Committee 入口也未从 Production 明确链接。
+- 影响：可能在真实资金审查时选错交易载体，或跳过已经确认的运行控制。
+- 根因：v3.2 迁移完成了策略文件，但没有做跨文件一致性验收。
+- 修复：统一现行 Core 名称为 SPYM / QQQM；将 Decision Checklist 升级为 Investment Committee Packet；增加 Weekly Review 并从 Production 与 README 链接。
+- 防复发：每次版本发布检查 Core 名称、目标权重、数据源、运行入口和 Release Note 的跨文件一致性。
+- 状态：Closed
+
 ## 新缺陷模板
 
 ```markdown
