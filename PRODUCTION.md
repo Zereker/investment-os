@@ -99,7 +99,7 @@ SOXX 的 `Observation` 状态只改变分类：现有仓位可继续持有、追
 - 现金和净值：IBKR Account Summary 与 Balances 交叉核对
 - 成交记录：用于解释变化，不用于替代当前持仓
 - Alpha 状态：`04-Alpha/Position-Registry.md`
-- 市场、估值和 ETF 穿透数据：必须符合 `08-Data/DATA_REGISTRY.md` 与 `08-Data/DATA_QUALITY.md`
+- 市场、估值和 ETF 穿透数据：必须符合 `08-Data/DATA_REGISTRY.md`、`08-Data/DATA_DICTIONARY.md` 与 `08-Data/DATA_QUALITY.md`
 
 ## 7. 输出标准
 
