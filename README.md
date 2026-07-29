@@ -20,8 +20,8 @@ v3.2 LTS 不增加新的交易策略，重点是提高生产可靠性：
 
 - 真实账户数据必须从 IBKR 实时读取，不得用历史快照冒充今日状态。
 - IBKR Positions 是当前持仓数量的权威来源。
-- 每日巡检采用固定流程，任何数据缺失都必须显式停止交易建议。
-- 所有真实资金建议必须通过 Trade Gate。
+- 每日巡检和周度复盘采用固定流程，任何关键数据缺失都必须显式停止交易建议。
+- 所有真实资金建议必须通过 Trade Gate 与 Investment Committee Packet。
 - Production 与 Research 严格隔离；研究内容未经正式版本发布不得影响交易。
 - 已知错误记录在 `BUGLOG.md`，并包含根因、修复和防复发控制。
 
@@ -39,25 +39,28 @@ v3.2 LTS 不增加新的交易策略，重点是提高生产可靠性：
 1. 先读 [生产契约](PRODUCTION.md)。
 2. 再读 [投资政策声明](00-IPS/Investment-Policy-Statement.md) 和 [目标配置](01-Constitution/Target-Allocation.md)。
 3. 每日按 [Daily Review Workflow](02-Operating-System/Daily-Review.md) 读取 IBKR 并检查账户。
-4. 每月按 [月度流程](02-Operating-System/Monthly-Workflow.md) 更新配置并投入 2,000 美元。
-5. 部署超额现金前，执行 [估值感知部署框架](02-Operating-System/Deployment-Framework.md)。
-6. 转型期维护 [Transition Dashboard](03-Transition/Transition-Dashboard.md)。
-7. 所有新假设进入 [Research Sandbox](Research/README.md)，不得直接影响生产交易。
-8. 每季度审核 Alpha；每年才允许审议系统规则。
+4. 每周按 [Weekly Review Workflow](02-Operating-System/Weekly-Review.md) 汇总运行质量与待处理项。
+5. 每月按 [月度流程](02-Operating-System/Monthly-Workflow.md) 更新配置并投入 2,000 美元。
+6. 部署超额现金前，执行 [估值感知部署框架](02-Operating-System/Deployment-Framework.md)。
+7. 任何非例行真实资金候选先完成 [Investment Committee Packet](02-Operating-System/Decision-Checklist.md)。
+8. 转型期维护 [Transition Dashboard](03-Transition/Transition-Dashboard.md)。
+9. 所有新假设进入 [Research Sandbox](Research/README.md)，不得直接影响生产交易。
+10. 每季度审核 Alpha；每年才允许审议系统规则。
 
 ## 目录
 
-- `PRODUCTION.md`：生产系统入口、规则冻结、每日巡检和交易闸门
+- `PRODUCTION.md`：生产系统入口、规则冻结、运行流程和交易闸门
 - `BUGLOG.md`：可靠性缺陷、根因和防复发措施
 - `Research/`：未生效的研究、假设和版本提案
 - `00-IPS/`：使命、期限、风险与治理
 - `01-Constitution/`：不可随意改变的目标配置和边界
-- `02-Operating-System/`：月度、季度、年度流程、交易闸门及部署框架
+- `02-Operating-System/`：每日、周度、月度、季度、年度流程及交易闸门
 - `03-Transition/`：2026–2028 转型计划与仪表盘
 - `04-Alpha/`：高确信 Alpha 规则和研究档案
 - `05-Journal/`：重大投资决策记录
 - `06-Lessons/`：长期有效的经验
 - `07-Releases/`：版本说明
+- `08-Data/`：Production 数据注册表、字段定义、质量闸门和快照
 - `Archive/`：旧规则与历史运行记录，仅供追溯
 
 ## 优先级

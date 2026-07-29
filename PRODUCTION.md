@@ -36,11 +36,15 @@ v3.2 LTS 期间：
 7. 检查融资、越界、未完成订单、重复订单和异常持仓。
 8. 仅依据当前生产规则输出事实、风险和动作。
 
-若第 1–5 步任一失败，巡检必须标记为 `DATA INCOMPLETE`，不得使用历史数据冒充实时数据，也不得给出新的 BUY 或 SELL 建议。
+若第 1–5 步任一失败，巡检必须标记为 `DATA INCOMPLETE`，不得使用历史数据冒充实时数据，也不得给出新的 BUY 或 SELL 建议。完整格式见 `02-Operating-System/Daily-Review.md`。
 
-## 4. 交易闸门
+## 4. 周度复盘契约
 
-任何真实资金交易建议必须全部通过：
+周度复盘按 `02-Operating-System/Weekly-Review.md` 汇总本周运行质量、配置偏差、订单、数据质量和行为纪律。它只生成 `NO ACTION`、`MONTHLY INPUT`、`IC REVIEW` 或 `DATA FIX`，不得因为一周行情临时创造交易信号或修改阈值。
+
+## 5. 交易闸门
+
+任何真实资金交易建议必须先完成 `02-Operating-System/Decision-Checklist.md`，并由 CIO、Risk、Data、Execution 四个视角形成 Investment Committee Verdict。
 
 ### 数据
 
@@ -65,18 +69,19 @@ v3.2 LTS 期间：
 - [ ] 未引入未经审核的新标的
 - [ ] 已陈述不交易的最强理由
 - [ ] 已检查订单类型、价格、有效期和碎股影响
+- [ ] 已记录明确的 `APPROVE / WAIT / REJECT / DATA INCOMPLETE` Verdict
 
-任何一项未通过，默认结论为 `HOLD / STOP`，并明确列出失败项。
+任何一项未通过，默认结论为 `HOLD / STOP`，并明确列出失败项。Investment Committee 的批准只允许进入人工下单；账户所有者仍需在 IBKR 中亲手确认。
 
-## 5. 数据权威顺序
+## 6. 数据权威顺序
 
 - 仓位数量：IBKR Positions
 - 活跃订单：IBKR Open Orders
 - 现金和净值：IBKR Account Summary 与 Balances 交叉核对
 - 成交记录：用于解释变化，不用于替代当前持仓
-- 市场与估值数据：必须符合对应生产文件的数据质量要求
+- 市场与估值数据：必须符合 `08-Data/DATA_REGISTRY.md` 与 `08-Data/DATA_QUALITY.md`
 
-## 6. 输出标准
+## 7. 输出标准
 
 每日复盘只包含：
 
