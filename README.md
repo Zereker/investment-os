@@ -1,4 +1,4 @@
-# Investment OS v3.2 LTS
+# Investment OS v3.3
 
 一套以资产配置为中心、以低决策复杂度长期运行的个人投资系统。
 
@@ -6,33 +6,38 @@
 
 ## 当前架构
 
-- 现金：15%
-- SPYM：42%
-- QQQM：28%
-- Alpha：15%（最多 3–5 只，单只不超过 6%）
+- 现金：15%（允许区间 12%–18%）
+- QQQM：28% 战略成长引擎（允许区间 25%–31%）
+- SPYM + Alpha：57% 组合袖套（允许区间 54%–60%）
+- Alpha：0%–15% 机会预算，包含有真实资金的 Observation
+- SPYM：剩余市场底仓，目标为 `57% − A`
 - 每月新增投入：2,000 美元
 
-核心收益由市场提供，Alpha 只负责有限度地争取超额收益。目标配置决定长期资金流向；价格回撤与估值共同决定超额现金的部署力度。
+其中 \(A\) 是当前或拟议交易后全部 Alpha 持仓的组合权重。Alpha 不必填满；没有合格机会时，未使用额度自动留在 SPYM。QQQM 28% 是有意保留的长期成长倾斜，不因与 SPYM 重叠而机械削减。
 
-## v3.2 LTS 目标
+## v3.3 目标
 
-v3.2 LTS 不增加新的交易策略，重点是提高生产可靠性：
+v3.3 修复 v3.2 LTS 审计发现的规则冲突，并保持投资方向不变：
+
+- 用 `SPYM = 57% − A` 消除 Alpha“不必填满”与固定配置区间的数学冲突。
+- 将 Observation 定义为 Alpha 的生命周期状态，而不是第五个资产层。
+- 将 SOXX 归入 `Alpha / Observation`；计入全部 Alpha 上限，但本次归类不授权买卖。
+- 将历史超额现金的战略迁移与估值驱动的战术加速分开。
+- Liquidity 只限制可执行金额，不再与价格、估值相加制造买入信号。
+- 增加科技、半导体和单一发行人的穿透集中度护栏。
+- 统一现行 Core 名称为 SPYM / QQQM。
+- 区分例行月度执行与需要完整 Investment Committee Packet 的非例行交易。
+
+## 生产可靠性
 
 - 真实账户数据必须从 IBKR 实时读取，不得用历史快照冒充今日状态。
 - IBKR Positions 是当前持仓数量的权威来源。
 - 每日巡检和周度复盘采用固定流程，任何关键数据缺失都必须显式停止交易建议。
-- 所有真实资金建议必须通过 Trade Gate 与 Investment Committee Packet。
-- Production 与 Research 严格隔离；研究内容未经正式版本发布不得影响交易。
+- 非例行真实资金建议必须通过 Trade Gate 与 Investment Committee Packet。
+- Production 与 Research 严格隔离；研究内容未经正式批准不得影响交易。
 - 已知错误记录在 `BUGLOG.md`，并包含根因、修复和防复发控制。
 
 当前生产入口：[PRODUCTION.md](PRODUCTION.md)
-
-## v3.2 策略框架
-
-- Core 标的为 SPYM / QQQM。
-- 使用 Valuation-Aware Deployment Framework。
-- 回撤决定部署时机，估值决定部署力度，现金决定可执行规模。
-- PE 数据必须注明口径、数据源和历史窗口；无法验证的数据不得单独触发交易。
 
 ## 如何使用
 
@@ -40,23 +45,25 @@ v3.2 LTS 不增加新的交易策略，重点是提高生产可靠性：
 2. 再读 [投资政策声明](00-IPS/Investment-Policy-Statement.md) 和 [目标配置](01-Constitution/Target-Allocation.md)。
 3. 每日按 [Daily Review Workflow](02-Operating-System/Daily-Review.md) 读取 IBKR 并检查账户。
 4. 每周按 [Weekly Review Workflow](02-Operating-System/Weekly-Review.md) 汇总运行质量与待处理项。
-5. 每月按 [月度流程](02-Operating-System/Monthly-Workflow.md) 更新配置并投入 2,000 美元。
-6. 部署超额现金前，执行 [估值感知部署框架](02-Operating-System/Deployment-Framework.md)。
+5. 每月按 [月度流程](02-Operating-System/Monthly-Workflow.md) 执行固定投入和战略现金迁移。
+6. 只有超出月度基线的战术加速才使用 [部署框架](02-Operating-System/Deployment-Framework.md)。
 7. 任何非例行真实资金候选先完成 [Investment Committee Packet](02-Operating-System/Decision-Checklist.md)。
-8. 转型期维护 [Transition Dashboard](03-Transition/Transition-Dashboard.md)。
-9. 所有新假设进入 [Research Sandbox](Research/README.md)，不得直接影响生产交易。
-10. 每季度审核 Alpha；每年才允许审议系统规则。
+8. 每季度按 [Quarterly Workflow](02-Operating-System/Quarterly-Workflow.md) 审核 Alpha、Observation 与穿透集中度。
+9. 转型期维护 [Transition Dashboard](03-Transition/Transition-Dashboard.md)。
+10. 所有新假设进入 [Research Sandbox](Research/README.md)，不得直接影响生产交易。
+11. 每年审核系统规则与 Policy Benchmark。
 
 ## 目录
 
 - `PRODUCTION.md`：生产系统入口、规则冻结、运行流程和交易闸门
 - `BUGLOG.md`：可靠性缺陷、根因和防复发措施
+- `Decision-Log.md`：改变系统方向或产生长期影响的决定
 - `Research/`：未生效的研究、假设和版本提案
 - `00-IPS/`：使命、期限、风险与治理
 - `01-Constitution/`：不可随意改变的目标配置和边界
 - `02-Operating-System/`：每日、周度、月度、季度、年度流程及交易闸门
 - `03-Transition/`：2026–2028 转型计划与仪表盘
-- `04-Alpha/`：高确信 Alpha 规则和研究档案
+- `04-Alpha/`：Alpha 规则、生命周期和当前分类
 - `05-Journal/`：重大投资决策记录
 - `06-Lessons/`：长期有效的经验
 - `07-Releases/`：版本说明
