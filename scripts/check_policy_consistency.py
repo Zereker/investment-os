@@ -235,7 +235,7 @@ def main() -> None:
         '"holding ticker"',
         '"security identifier"',
         '"date"',
-        '"CUSIP:"',
+        "CUSIP:",
         "derivative has zero economic exposure",
     )
     require(
