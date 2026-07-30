@@ -55,7 +55,7 @@ SOXX 的增量价值相对等额、同期 SPYM 衡量，并扣除税费、交易
 
 ## 治理节奏
 
-- 每月：更新 `A_actual`、`A_stage`、`U`、现金、Core 缺口和执行结果。
+- 每月：更新`A_actual`、`A_stage`、`A_execution_cap`、`U`、现金、Core缺口和执行结果；执行上限只能逐档推进且不得高于阶段。
 - 每季度：审核 SOXX Thesis、阶段推进资格、穿透集中度与相对 SPYM 的必要性。
 - 每年：审核 IPS、Constitution、15%长期上限和 Policy Benchmark。
 
