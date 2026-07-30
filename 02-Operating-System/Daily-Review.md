@@ -72,7 +72,7 @@ SOXX按`Alpha / Approved / Frozen — DATA GATE`列示。每日同时报告`A_ac
 至少检查：
 
 - 融资借款
-- Cash、QQQM、`SPYM + Alpha` 袖套
+- Cash、QQQM、`SPYM + SOXX + Stage Reserve`袖套
 - Alpha合计15%硬上限；SOXX检查当前阶段6%与长期15%，其他单一Alpha仍执行6%一般上限
 - Observation 是否出现未经批准的追加
 - 未完成或重复订单
