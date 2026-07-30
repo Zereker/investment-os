@@ -1,6 +1,6 @@
 # Alpha Framework
 
-Alpha 是 0%–15% 的有限主动风险机会预算，不是必须花完的仓位。个股和主题 ETF 均可属于 Alpha；`Observation` 是 Alpha 的生命周期状态，不是第五个资产层。
+v3.4将Alpha总硬上限保持在15%，但Production只授权SOXX作为唯一战略Alpha载体；15%是长期上限与最终治理阶段，不是立即买入目标。`Observation`仍保留为一般生命周期状态。
 
 ## 边界
 
