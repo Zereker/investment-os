@@ -39,7 +39,7 @@ v3.4 期间：
 4. 从 IBKR 读取 Open Orders。
 5. 检查数据时间、币种、合计差异和异常值。
 6. 计算 Cash、Core、Alpha（含有真实资金的 Observation）和 Legacy 的市值与权重。
-7. 为 Alpha 列示生命周期状态；SOXX 当前为 `Alpha / Observation`。
+7. 为Alpha列示生命周期状态；SOXX当前为`Alpha / Approved / Frozen — DATA GATE`。
 8. 检查融资、越界、未完成订单、重复订单和真正无法分类的异常持仓。
 9. 仅依据当前生产规则输出事实、风险和动作。
 
