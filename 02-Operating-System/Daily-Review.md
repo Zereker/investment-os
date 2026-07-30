@@ -40,12 +40,12 @@
 
 - Cash
 - Core ETF：SPYM、QQQM
-- Alpha：同时列示 `Approved / Observation / Frozen / Exit Review`
+- Alpha：同时列示`Research / Observation / Approved / Hold / Approved / Add Candidate / Frozen / Exit Review`
 - Restricted / Legacy
 
 同时列出各持仓数量、市值、组合占比、成本和未实现盈亏。Alpha 权重 \(A\) 包含全部实盘 Observation。
 
-SOXX按`Alpha / Approved / Frozen — DATA GATE`列示。每日同时报告`A_actual`、`A_stage`、`A_basis=max(A_actual,A_stage)`与`U=max(A_stage-A_actual,0)`；阶段储备属于现金用途标签，不得重复计入。
+SOXX按`Alpha / Frozen — DATA GATE`列示。每日同时报告`A_actual`、`A_stage`、`A_basis=max(A_actual,A_stage)`与`U=max(A_stage-A_actual,0)`；阶段储备属于现金用途标签，不得重复计入。
 
 ### 3. Open Orders
 
@@ -86,7 +86,7 @@ SOXX按`Alpha / Approved / Frozen — DATA GATE`列示。每日同时报告`A_ac
 
 只允许以下结论：
 
-- `HOLD`：无生产规则触发，或 Observation 仅按既定状态持有
+- `HOLD`：无生产规则触发，或`Observation / Frozen`仅按既定状态持有
 - `REVIEW`：存在异常，需要人工确认，但不直接交易
 - `BUY CANDIDATE`：现行规则触发，仍需相应月度路径或完整 Trade Gate
 - `SELL CANDIDATE`：现行卖出规则触发，仍需完整 Trade Gate
