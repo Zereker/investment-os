@@ -16,7 +16,7 @@
 
 1. 通过 Data Gate，更新 Cash、SPYM、QQQM、各 Alpha / Observation 和 Legacy 的市值。
 2. 计算`A_actual`、`A_stage`、`A_basis=max(A_actual,A_stage)`、`U=max(A_stage-A_actual,0)`及SPYM动态目标`57%-A_basis`。
-3. 检查 Cash、QQQM、`SPYM + Alpha` 袖套及 Alpha 硬上限。
+3. 检查Cash、QQQM、`SPYM + SOXX + Stage Reserve`袖套及SOXX阶段/硬上限。
 4. 确认实际外部净入金 \(F\)，计算入金后 Core 正缺口 \(G_0\) 与 Routine DCA \(D=\min(F,G_0)\)；\(F-D\) 留在现金。
 5. 以 Routine DCA 后的预计现金和剩余 Core 正缺口，按 Deployment Framework 计算并执行战略现金迁移基线 \(B\)。
 6. 只有估值数据合格且完整 IC 批准时，才允许执行基线之外的战术加速 \(T\)。
@@ -75,4 +75,4 @@ Routine DCA \(D\) 与 \(B\) 无需完整四视角 Packet，但必须全部满足
 
 ## Maintenance Mode
 
-当 Cash、QQQM、`SPYM + Alpha` 袖套连续三个自然月落在允许区间，且 Legacy 已按计划处理后，退出 Transition Mode。维护期 \(B=0\)，仅用每月新增资金修复偏差；任何非例行部署继续使用完整 IC。
+当Cash、QQQM、`SPYM + SOXX + Stage Reserve`袖套连续三个自然月落在允许区间，且 Legacy 已按计划处理后，退出 Transition Mode。维护期 \(B=0\)，仅用每月新增资金修复偏差；任何非例行部署继续使用完整 IC。
