@@ -1,51 +1,75 @@
 # Transition Dashboard
 
-> 每次执行前重新读取 IBKR；本模板不缓存当前账户数值。
+> 本文件是月度执行模板，不保存伪装成“当前”的历史账户快照。每次执行前必须重新读取 IBKR；旧数值可从 Git 历史追溯。
 
 ## 政策参数
 
-- 结构性现金：15%（12%–18%）
-- QQQM：28%（25%–31%）
-- SOXX长期上限：15%
-- SOXX当前阶段上限 `A_stage`：6%
+- Cash 目标：15%（12%–18%）
+- QQQM 目标：28%（25%–31%）
+- SOXX长期上限15%，当前`A_stage=6%`
+- `A_basis=max(A_actual,A_stage)`；`U=max(A_stage-A_actual,0)`
 - SPYM目标：`57%-A_basis`
-- 每月计划外部净入金：2,000美元
+- 物理现金目标：`15%+U`
+- 其他Alpha新增授权0%
+- 每月新增投入：2,000 美元
+- 战略基线计划完成月：2028-12
 
 ## 本月实时状态
 
-- 数据日期：待更新
-- 净值 `V`：待更新
-- 例行订单前物理现金 `C0`：待更新
-- 已到账外部净入金 `F`：待更新
-- Routine DCA前Core正缺口 `G0`：待更新
-- 实际Routine Core买入 `D=min(F,G0)`：待更新
-- SOXX实际权重 `A_actual`：待更新
-- 当前阶段 `A_stage`：6%
-- `A_basis=max(A_actual,A_stage)`：待更新
-- 阶段储备 `U=max(A_stage-A_actual,0)`：待更新
-- Routine DCA后现金 `C=C0-D`：待更新
-- Core剩余正缺口 `G`：待更新
-- 剩余执行次数 `R`：待更新
-- `S=max(C-(15%+U)×V,0)`：待更新
-- `B=min(S/R,G)`：待更新
-- 战术加速 `T`：0 / 待IC
+- 数据日期与市场状态：待更新
+- 最新账户净值 \(V\)：待更新
+- 全部例行订单前现金 \(C_0\)：待更新
+- 本月已到账外部净入金 \(F\)：待更新
+- Routine DCA前Core正缺口 \(G_0\)：待更新
+- 本月实际Core买入 \(D=\min(F,G_0)\)：待更新
+- Routine DCA 后预计现金 \(C=C_0-D\)：待更新
+- Alpha 权重 \(A\)：待更新
+- 到 2028-12 剩余执行次数 \(R\)：待更新
+- 战略剩余 \(S=\max(C-15\%\times V,0)\)：待更新
+- Core 正缺口合计 \(G\)：待更新
+- 战略基线 \(B=\min(S/R,G)\)：待更新
+- 战术加速 \(T\)：0 / 待 IC 批准
 
-| 分类 | 实时权重 | 动态目标 | 状态 |
-|---|---:|---:|---|
-| Physical Cash | 待更新 | `15%+U` | 待更新 |
-| 其中：SOXX Stage Reserve | 待更新 | `U` | 不重复计入 |
-| SPYM | 待更新 | `57%-A_basis` | 待更新 |
-| QQQM | 待更新 | 28% | 待更新 |
-| SOXX | `A_actual` | 当前阶段≤6% | `Approved / Frozen — DATA GATE` |
+| 分类 | 实时市值 | 实时权重 | 动态目标 | 状态 |
+|---|---:|---:|---:|---|
+| Cash | 待更新 | 待更新 | 15% | 待更新 |
+| SPYM | 待更新 | 待更新 | `57%−A` | 待更新 |
+| QQQM | 待更新 | 待更新 | 28% | 待更新 |
+| Alpha（含 Observation） | 待更新 | \(A\) | 机会预算 0%–15% | 待更新 |
+| Legacy / Restricted | 待更新 | 待更新 | 按独立计划 | 待更新 |
 
-## 资金通道
+## Alpha 状态
 
-| 通道 | 金额 | 目标 | 闸门 |
+| 标的 | 生命周期 | 实时数量 / 市值 | 月度新增分配 | 状态 |
+|---|---|---:|---:|---|
+| SOXX | Approved / Frozen — DATA GATE | 从IBKR读取 | 独立完整IC | `HOLD — ADD FROZEN` |
+
+本表不缓存数量；新增、升级或退出以 `04-Alpha/Position-Registry.md` 和相应治理流程为准。
+
+## 三条资金通道
+
+| 通道 | 当月金额 | 目标 | 所需闸门 |
 |---|---:|---|---|
-| 外部净入金 | `F`，非默认值 | 资金来源 | 实际到账 |
-| Routine DCA | `D=min(F,G0)` | SPYM/QQQM正缺口 | 月度Gate |
-| Strategic Baseline | `B` | SPYM/QQQM正缺口 | 月度Gate |
-| Tactical Acceleration | `T` | Core正缺口 | 完整IC |
-| SOXX追加 | 独立提案 | 不超过当前阶段 | 完整IC+同日穿透 |
+| Routine DCA | \(D=\min(F,G_0)\)；计划入金为$2,000但D无默认值 | SPYM / QQQM 正缺口 | 月度 Data / Execution Gate |
+| Strategic Baseline | \(B\) | SPYM / QQQM 正缺口 | 月度 Data / Execution Gate |
+| Tactical Acceleration | \(T\) | 通过数据质量的 Core 缺口 | 完整 IC |
 
-本Dashboard不得把 `D`写成默认2,000美元，也不得把阶段储备当成额外资产。
+## Tactical Dashboard
+
+| 指标 | SPYM | QQQM |
+|---|---:|---:|
+| 当前权重 / 动态目标 | 待更新 | 待更新 |
+| 正缺口 | 待更新 | 待更新 |
+| 高点回撤 / Price Score | 待更新 | 待更新 |
+| PE、口径与历史百分位 | 待更新 | 待更新 |
+| Valuation Score | 待更新 | 待更新 |
+| Opportunity Score | 待更新 | 待更新 |
+| 战术档位 | 0 / 1 / 2 / 3 | 0 / 1 / 2 / 3 |
+
+## 完成判断
+
+- 交易后现金不低于 12%，且无融资。
+- Routine DCA 与 \(B\) 完全符合公式。
+- Red / N/A 估值使 \(T=0\)，不修改 \(B\)。
+- Observation 没有通过月度流程获得追加。
+- 预计进入 Maintenance Mode：待更新。
