@@ -1,9 +1,11 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "packet_id": "lookthrough-YYYY-MM-DD-id",
   "review_date": "YYYY-MM-DD",
   "observed_at": "YYYY-MM-DDThh:mm:ss+09:00",
   "candidate_packet_id": "candidate-YYYY-MM-DD-id",
+  "candidate_path": "candidate.json",
+  "candidate_sha256": "",
   "weight_basis": "post_trade",
   "account_scenario_path": "account.json",
   "account_snapshot_sha256": "",
@@ -19,7 +21,8 @@
     {
       "ticker": "SPYM",
       "source_name": "State Street official holdings",
-      "source_url": "https://www.ssga.com/",
+      "source_url": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-sp-500-etf-spym",
+      "source_format": "ssga-xlsx-v1",
       "source_as_of": "YYYY-MM-DD",
       "retrieved_at": "YYYY-MM-DDThh:mm:ss+09:00",
       "source_file": "raw/SPYM.xlsx",
@@ -27,6 +30,7 @@
       "holdings": [
         {
           "security_id": "",
+          "raw_name": "",
           "instrument_type": "equity",
           "market_weight": 0,
           "exposure_weight": 0,
@@ -38,7 +42,8 @@
     {
       "ticker": "QQQM",
       "source_name": "Invesco official holdings",
-      "source_url": "https://www.invesco.com/",
+      "source_url": "https://www.invesco.com/us/en/financial-products/etfs/invesco-nasdaq-100-etf.html",
+      "source_format": "invesco-csv-v1",
       "source_as_of": "YYYY-MM-DD",
       "retrieved_at": "YYYY-MM-DDThh:mm:ss+09:00",
       "source_file": "raw/QQQM.csv",
@@ -46,6 +51,7 @@
       "holdings": [
         {
           "security_id": "",
+          "raw_name": "",
           "instrument_type": "equity",
           "market_weight": 0,
           "exposure_weight": 0,
@@ -57,7 +63,8 @@
     {
       "ticker": "SOXX",
       "source_name": "iShares official holdings",
-      "source_url": "https://www.ishares.com/",
+      "source_url": "https://www.ishares.com/us/products/239705/ishares-phlx-semiconductor-etf",
+      "source_format": "ishares-csv-v1",
       "source_as_of": "YYYY-MM-DD",
       "retrieved_at": "YYYY-MM-DDThh:mm:ss+09:00",
       "source_file": "raw/SOXX.csv",
@@ -65,6 +72,7 @@
       "holdings": [
         {
           "security_id": "",
+          "raw_name": "",
           "instrument_type": "derivative",
           "market_weight": 0,
           "exposure_weight": 0,

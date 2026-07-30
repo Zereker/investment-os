@@ -5,7 +5,7 @@
   "records": [
     {
       "security_id": "",
-      "issuer_group_id": "",
+      "issuer_group_id": "issuer:canonical-lowercase-id",
       "normalized_sector": "Information Technology",
       "normalized_industry": "Semiconductors & Semiconductor Equipment",
       "derivative_components": null,

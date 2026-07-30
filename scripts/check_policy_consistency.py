@@ -174,13 +174,24 @@ def main() -> None:
     require("README.md", "# Investment OS v3.4.2")
     require("PRODUCTION.md", "# Investment OS v3.4.2 — Production Contract")
     require("07-Releases/v3.4.2.md", "本发布不授权任何订单")
+    for path in (
+        "08-Data/DATA_QUALITY.md",
+        "08-Data/DATA_REGISTRY.md",
+        "08-Data/README.md",
+        "BUGLOG.md",
+        "Decision-Log.md",
+        "README.md",
+    ):
+        require(path, "Bundle v1.2")
     require(
         "08-Data/LOOKTHROUGH_PACKET.md",
         "验证通过不改变 Position Registry",
         "source_sha256",
-        "schema_version`：当前固定为 `1.1",
+        "schema_version`：当前固定为 `1.2",
         "account_snapshot_sha256",
+        "candidate_sha256",
         "mapping_sha256",
+        "逐行等于验证器从归档字节解析的结果",
         "exposure_weight",
         "科技严格低于 50%",
         "Packet通过只是SOXX解冻的必要条件之一",
@@ -188,17 +199,32 @@ def main() -> None:
     require(
         ".github/workflows/policy-consistency.yml",
         "python3 scripts/validate_lookthrough_packet.py --self-test",
+        "python3 scripts/test_lookthrough_adversarial.py",
         "--scan-root 08-Data/SNAPSHOTS/lookthrough",
         "python3 scripts/check_lookthrough_history.py",
         "fetch-depth: 0",
     )
     require(
         "scripts/validate_lookthrough_packet.py",
-        'SCHEMA_VERSION = "1.1"',
+        'SCHEMA_VERSION = "1.2"',
         "duplicate JSON key",
         "source_sha256 does not match archived source bytes",
+        "does not match parsed archived source",
         "derivative requires audited look-through components",
         "post-trade account scenario",
+    )
+    require(
+        "scripts/parse_lookthrough_sources.py",
+        '"SPYM": "ssga-xlsx-v1"',
+        '"QQQM": "invesco-csv-v1"',
+        '"SOXX": "ishares-csv-v1"',
+        "derivative has zero economic exposure",
+    )
+    require(
+        "scripts/test_lookthrough_adversarial.py",
+        "packet holdings unrelated to archived bytes",
+        "SOXX erased as zero-exposure other instruments",
+        "future-dated 2099 bundle",
     )
     require(
         "scripts/check_lookthrough_history.py",

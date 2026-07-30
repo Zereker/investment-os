@@ -27,6 +27,7 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
           timeout 90s python3 scripts/validate_lookthrough_packet.py --self-test
+          timeout 90s python3 scripts/test_lookthrough_adversarial.py
           timeout 90s python3 scripts/validate_lookthrough_packet.py \
             --scan-root 08-Data/SNAPSHOTS/lookthrough
           python3 scripts/check_lookthrough_history.py "$BASE_SHA"

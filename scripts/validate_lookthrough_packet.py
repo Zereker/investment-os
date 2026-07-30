@@ -5,15 +5,21 @@ from __future__ import annotations
 
 import argparse
 import copy
+import csv
 import hashlib
+import io
 import json
 import math
 import re
 import sys
 import tempfile
-from datetime import date, datetime
+import zipfile
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlparse
+from xml.sax.saxutils import escape
+
+from parse_lookthrough_sources import SOURCE_FORMATS, SourceParseError, parse_source
 
 FUNDS = ("SPYM", "QQQM", "SOXX")
 OFFICIAL_HOSTS = {
@@ -40,9 +46,13 @@ GICS_SECTORS = {
 INSTRUMENT_TYPES = {"equity", "fund", "derivative", "cash", "other"}
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 PACKET_ID = re.compile(r"^lookthrough-\d{4}-\d{2}-\d{2}-[a-z0-9][a-z0-9-]{0,63}$")
-SCHEMA_VERSION = "1.1"
+CANONICAL_ISSUER = re.compile(
+    r"^(?:issuer:[a-z0-9][a-z0-9.-]{0,63}|lei:[0-9A-Z]{20})$"
+)
+SCHEMA_VERSION = "1.2"
 MAPPING_VERSION = "1.0"
 ACCOUNT_VERSION = "1.0"
+CANDIDATE_VERSION = "1.0"
 EPS = 1e-9
 ROUNDING_TOLERANCE = 5e-4  # 5 bps; accepts an official 100.01% rounded total.
 MAX_SOURCE_AGE_DAYS = 7
@@ -52,6 +62,9 @@ MAX_ACCOUNT_BYTES = 1024 * 1024
 MAX_SOURCE_BYTES = 100 * 1024 * 1024
 MAX_HOLDINGS_PER_FUND = 20_000
 CURRENT_EXECUTION_CAP = 0.03
+MIN_FUND_ECONOMIC_EXPOSURE = 0.95
+MAX_CLOCK_SKEW = timedelta(minutes=5)
+MAX_CANDIDATE_TTL = timedelta(days=1)
 
 
 class PacketError(ValueError):
@@ -183,6 +196,14 @@ def official_url(ticker: str, value: object, field: str, *, allow_test: bool) ->
         return
     if not any(host == suffix or host.endswith("." + suffix) for suffix in allowed):
         fail(f"{field} host is not approved for {ticker}: {host}")
+    path = parsed.path.lower()
+    required_path_tokens = {
+        "SPYM": ("spym",),
+        "QQQM": ("qqqm", "nasdaq-100-etf"),
+        "SOXX": ("soxx", "239705", "semiconductor-etf"),
+    }[ticker]
+    if not any(token in path for token in required_path_tokens):
+        fail(f"{field} does not identify the {ticker} product")
 
 
 def canonical_sha256(packet: dict) -> str:
@@ -262,8 +283,7 @@ def load_mapping(bundle: Path, path_value: object, digest_value: object) -> dict
             issuer = record["issuer_group_id"]
             sector = record["normalized_sector"]
             industry = record["normalized_industry"]
-            if not isinstance(issuer, str) or not issuer.strip():
-                fail(f"{label}.issuer_group_id is required")
+            require_issuer(issuer, f"{label}.issuer_group_id")
             validate_taxonomy(sector, industry, label)
         else:
             if any(
@@ -299,14 +319,21 @@ def validate_components(value: object, label: str) -> None:
             prefix,
         )
         issuer = component["issuer_group_id"]
-        if not isinstance(issuer, str) or not issuer.strip():
-            fail(f"{prefix}.issuer_group_id is required")
+        require_issuer(issuer, f"{prefix}.issuer_group_id")
         validate_taxonomy(
             component["normalized_sector"], component["normalized_industry"], prefix
         )
         total += bounded(component["weight"], f"{prefix}.weight", 0, 1)
     if abs(total - 1) > ROUNDING_TOLERANCE:
         fail(f"{label}.derivative_components weights must sum to 1 within 5 bps")
+
+
+def require_issuer(value: object, field: str) -> str:
+    if not isinstance(value, str) or not CANONICAL_ISSUER.fullmatch(value):
+        fail(
+            f"{field} must be a canonical issuer:<lowercase-id> or lei:<20-character-LEI>"
+        )
+    return value
 
 
 def load_account(
@@ -324,16 +351,7 @@ def load_account(
     )
     require_keys(
         account,
-        {
-            "schema_version",
-            "account_snapshot_id",
-            "observed_at",
-            "candidate_packet_id",
-            "candidate_ticker",
-            "candidate_notional",
-            "nav",
-            "current_market_values",
-        },
+        {"schema_version", "account_snapshot_id", "observed_at", "nav", "current_market_values"},
         "account_scenario",
     )
     if account["schema_version"] != ACCOUNT_VERSION:
@@ -345,14 +363,9 @@ def load_account(
     observed = iso_datetime(account["observed_at"], "account_scenario.observed_at")
     if observed.date() != review_date:
         fail("account_scenario must be observed on review_date")
-    if account["candidate_packet_id"] != packet.get("candidate_packet_id"):
-        fail("candidate_packet_id does not match account scenario")
-    if account["candidate_ticker"] != "SOXX":
-        fail("candidate_ticker must be SOXX")
     nav = number(account["nav"], "account_scenario.nav")
-    candidate = number(account["candidate_notional"], "account_scenario.candidate_notional")
-    if nav <= 0 or candidate <= 0:
-        fail("account_scenario nav and candidate_notional must be positive")
+    if nav <= 0:
+        fail("account_scenario nav must be positive")
     current = account["current_market_values"]
     if not isinstance(current, dict):
         fail("account_scenario.current_market_values must be an object")
@@ -363,11 +376,103 @@ def load_account(
     }
     if abs(sum(values.values()) - nav) > max(0.01, nav * EPS):
         fail("account_scenario current market values must reconcile to nav")
-    if candidate > values["cash"] + EPS:
-        fail("candidate_notional exceeds cash")
-    values["cash"] -= candidate
-    values["SOXX"] += candidate
-    return {key: value / nav for key, value in values.items()}
+    return {
+        "account_snapshot_id": account["account_snapshot_id"],
+        "observed_at": observed,
+        "nav": nav,
+        "values": values,
+    }
+
+
+def load_candidate(
+    bundle: Path,
+    path_value: object,
+    digest_value: object,
+    packet: dict,
+    account: dict,
+    observed_at: datetime,
+) -> float:
+    _, candidate = validate_reference(
+        bundle,
+        {"path": path_value, "sha256": digest_value},
+        label="candidate",
+        max_bytes=MAX_ACCOUNT_BYTES,
+    )
+    require_keys(
+        candidate,
+        {
+            "schema_version",
+            "candidate_packet_id",
+            "created_at",
+            "expires_at",
+            "ticker",
+            "side",
+            "proposed_notional",
+            "max_notional",
+            "account_snapshot_id",
+            "account_snapshot_sha256",
+        },
+        "candidate",
+    )
+    if candidate["schema_version"] != CANDIDATE_VERSION:
+        fail(f"candidate.schema_version must be {CANDIDATE_VERSION}")
+    if candidate["candidate_packet_id"] != packet.get("candidate_packet_id"):
+        fail("candidate_packet_id does not match candidate file")
+    if candidate["ticker"] != "SOXX" or candidate["side"] != "ADD":
+        fail("candidate must be an ADD scenario for SOXX")
+    if candidate["account_snapshot_id"] != account["account_snapshot_id"]:
+        fail("candidate account_snapshot_id does not match account file")
+    if candidate["account_snapshot_sha256"] != packet["account_snapshot_sha256"]:
+        fail("candidate account_snapshot_sha256 does not match packet")
+    created = iso_datetime(candidate["created_at"], "candidate.created_at")
+    expires = iso_datetime(candidate["expires_at"], "candidate.expires_at")
+    if not account["observed_at"] <= created <= observed_at:
+        fail("candidate must be created after the account snapshot and by observed_at")
+    if expires <= created or expires - created > MAX_CANDIDATE_TTL or observed_at >= expires:
+        fail("candidate must be unexpired at observed_at")
+    proposed = number(candidate["proposed_notional"], "candidate.proposed_notional")
+    maximum = number(candidate["max_notional"], "candidate.max_notional")
+    if proposed <= 0 or maximum <= 0 or proposed > maximum + EPS:
+        fail("candidate proposed_notional must be positive and not exceed max_notional")
+    if proposed > account["values"]["cash"] + EPS:
+        fail("candidate proposed_notional exceeds cash")
+    return proposed
+
+
+def raw_source_path(bundle: Path, ticker: str, value: object) -> Path:
+    path = bundle_file(bundle, value, f"{ticker}.source_file")
+    relative = path.relative_to(bundle)
+    if len(relative.parts) != 2 or relative.parts[0] != "raw":
+        fail(f"{ticker}.source_file must be a direct child of raw/")
+    if Path(relative.name).stem.upper() != ticker:
+        fail(f"{ticker}.source_file must be named raw/{ticker}.<official extension>")
+    return path
+
+
+def reconcile_parsed_holdings(ticker: str, reported: object, parsed: list[dict]) -> None:
+    if not isinstance(reported, list) or len(reported) != len(parsed):
+        fail(f"{ticker}.holdings must contain every parser-derived source row")
+    keys = {
+        "security_id",
+        "raw_name",
+        "instrument_type",
+        "market_weight",
+        "exposure_weight",
+        "raw_sector",
+        "raw_industry",
+    }
+    for index, (actual, expected) in enumerate(zip(reported, parsed)):
+        label = f"{ticker}.holdings[{index}]"
+        if not isinstance(actual, dict):
+            fail(f"{label} must be an object")
+        require_keys(actual, keys, label)
+        for field in keys - {"market_weight", "exposure_weight"}:
+            if actual[field] != expected[field]:
+                fail(f"{label}.{field} does not match parsed archived source")
+        for field in ("market_weight", "exposure_weight"):
+            value = number(actual[field], f"{label}.{field}")
+            if abs(value - expected[field]) > EPS:
+                fail(f"{label}.{field} does not match parsed archived source")
 
 
 def expand_mapping(record: dict) -> list[tuple[str, str, str, float]]:
@@ -425,6 +530,12 @@ def check_raw_mapping(record: dict, holding: dict, label: str) -> None:
     if "semiconductor" in (raw_industry or "").lower():
         if record["normalized_industry"] != SEMI:
             fail(f"{label} normalized industry contradicts raw semiconductor label")
+    if (
+        label.startswith("SOXX.")
+        and holding["instrument_type"] == "equity"
+        and record["normalized_industry"] != SEMI
+    ):
+        fail(f"{label} SOXX equity must remain semiconductor-classified")
 
 
 def evaluate(
@@ -441,6 +552,8 @@ def evaluate(
         "review_date",
         "observed_at",
         "candidate_packet_id",
+        "candidate_path",
+        "candidate_sha256",
         "weight_basis",
         "account_scenario_path",
         "account_snapshot_sha256",
@@ -469,6 +582,9 @@ def evaluate(
     observed_at = iso_datetime(packet["observed_at"], "observed_at")
     if observed_at.date() != review_date:
         fail("observed_at calendar date must equal review_date")
+    now = datetime.now(timezone.utc)
+    if observed_at.astimezone(timezone.utc) > now + MAX_CLOCK_SKEW:
+        fail("review_date and observed_at must not be in the future")
     packet_id = packet["packet_id"]
     if not isinstance(packet_id, str) or not PACKET_ID.fullmatch(packet_id):
         fail("packet_id format is invalid")
@@ -483,15 +599,37 @@ def evaluate(
         fail("packet must be stored at <review_date>/<packet_id>/packet.json")
     if packet_path.name != "packet.json":
         fail("Production packet filename must be packet.json")
+    if packet["account_scenario_path"] != "account.json":
+        fail("account_scenario_path must be account.json")
+    if packet["mapping_path"] != "mapping.json":
+        fail("mapping_path must be mapping.json")
+    if packet["candidate_path"] != "candidate.json":
+        fail("candidate_path must be candidate.json")
 
     mapping = load_mapping(bundle, packet["mapping_path"], packet["mapping_sha256"])
-    account_weights = load_account(
+    account = load_account(
         bundle,
         packet["account_scenario_path"],
         packet["account_snapshot_sha256"],
         packet,
         review_date,
     )
+    if account["observed_at"] > observed_at:
+        fail("account snapshot must not be later than packet observed_at")
+    candidate_notional = load_candidate(
+        bundle,
+        packet["candidate_path"],
+        packet["candidate_sha256"],
+        packet,
+        account,
+        observed_at,
+    )
+    account_values = dict(account["values"])
+    account_values["cash"] -= candidate_notional
+    account_values["SOXX"] += candidate_notional
+    account_weights = {
+        key: value / account["nav"] for key, value in account_values.items()
+    }
     portfolio = packet["portfolio_weights"]
     if not isinstance(portfolio, dict):
         fail("portfolio_weights must be an object")
@@ -525,6 +663,7 @@ def evaluate(
                 "ticker",
                 "source_name",
                 "source_url",
+                "source_format",
                 "source_as_of",
                 "retrieved_at",
                 "source_file",
@@ -550,6 +689,8 @@ def evaluate(
         if not isinstance(fund["source_name"], str) or not fund["source_name"].strip():
             fail(f"{ticker}.source_name is required")
         official_url(ticker, fund["source_url"], f"{ticker}.source_url", allow_test=allow_test)
+        if fund["source_format"] != SOURCE_FORMATS[ticker]:
+            fail(f"{ticker}.source_format must be {SOURCE_FORMATS[ticker]}")
         source_date = iso_date(fund["source_as_of"], f"{ticker}.source_as_of")
         if source_date > review_date:
             fail(f"{ticker}.source_as_of cannot be in the future")
@@ -559,7 +700,7 @@ def evaluate(
         retrieved = iso_datetime(fund["retrieved_at"], f"{ticker}.retrieved_at")
         if retrieved.date() != review_date or retrieved > observed_at:
             fail(f"{ticker}.retrieved_at must be on review_date and not after observed_at")
-        source_path = bundle_file(bundle, fund["source_file"], f"{ticker}.source_file")
+        source_path = raw_source_path(bundle, ticker, fund["source_file"])
         if source_path in seen_source_files:
             fail("each fund must archive a distinct source file")
         seen_source_files.add(source_path)
@@ -567,10 +708,18 @@ def evaluate(
         if digest_file(source_path, MAX_SOURCE_BYTES, f"{ticker}.source_file") != expected_digest:
             fail(f"{ticker}.source_sha256 does not match archived source bytes")
 
-        holdings = fund["holdings"]
+        try:
+            parsed_source = parse_source(ticker, source_path, fund["source_format"])
+        except SourceParseError as exc:
+            raise PacketError(f"{ticker} archived source cannot be parsed: {exc}") from exc
+        if parsed_source["source_as_of"] != fund["source_as_of"]:
+            fail(f"{ticker}.source_as_of does not match parsed archived source")
+        reconcile_parsed_holdings(ticker, fund["holdings"], parsed_source["holdings"])
+        holdings = parsed_source["holdings"]
         if not isinstance(holdings, list) or not 0 < len(holdings) <= MAX_HOLDINGS_PER_FUND:
             fail(f"{ticker}.holdings count must be within [1, {MAX_HOLDINGS_PER_FUND}]")
         market_sum = 0.0
+        exposure_sum = 0.0
         seen_ids = set()
         for index, holding in enumerate(holdings):
             prefix = f"{ticker}.holdings[{index}]"
@@ -580,6 +729,7 @@ def evaluate(
                 holding,
                 {
                     "security_id",
+                    "raw_name",
                     "instrument_type",
                     "market_weight",
                     "exposure_weight",
@@ -608,12 +758,17 @@ def evaluate(
                 holding["exposure_weight"], f"{prefix}.exposure_weight", 0, 2
             )
             market_sum += market_weight
+            exposure_sum += exposure_weight
+            if instrument in {"equity", "fund", "other"} and market_weight < -EPS:
+                fail(f"{prefix} non-derivative market_weight must not be negative")
             if instrument == "cash" and exposure_weight > EPS:
                 fail(f"{prefix} cash exposure_weight must be zero")
-            if instrument in {"equity", "fund"} and abs(
+            if instrument in {"equity", "fund", "other"} and abs(
                 exposure_weight - max(market_weight, 0)
             ) > ROUNDING_TOLERANCE:
                 fail(f"{prefix} exposure_weight must match positive market_weight")
+            if instrument == "other" and exposure_weight <= EPS:
+                fail(f"{prefix} unexplained other instrument cannot have zero exposure")
             if instrument != "derivative" and exposure_weight > EPS and security_id not in mapping:
                 issuer_unknown += portfolio_weights[ticker] * exposure_weight
                 class_unknown += portfolio_weights[ticker] * exposure_weight
@@ -643,6 +798,8 @@ def evaluate(
                     semi_known += part
         if abs(market_sum - 1) > ROUNDING_TOLERANCE:
             fail(f"{ticker}.market_weight total must equal 1 within 5 bps")
+        if exposure_sum < MIN_FUND_ECONOMIC_EXPOSURE - ROUNDING_TOLERANCE:
+            fail(f"{ticker} parsed economic exposure is below 95% of fund NAV")
 
     if len(source_dates) != 1:
         fail("Green packet requires identical source_as_of for SPYM, QQQM and SOXX")
@@ -681,7 +838,7 @@ def validate(packet: dict, packet_path: Path, *, allow_test: bool = False) -> di
     metrics, gates, verdict = evaluate(packet, packet_path, allow_test=allow_test)
     reported = packet["metrics"]
     if not isinstance(reported, dict) or set(reported) != set(metrics):
-        fail("metrics keys do not match schema 1.1")
+        fail(f"metrics keys do not match schema {SCHEMA_VERSION}")
     for key, calculated in metrics.items():
         value = bounded(reported[key], f"metrics.{key}", 0, 2)
         if abs(value - calculated) > EPS:
@@ -708,6 +865,71 @@ def write_fixture(path: Path, value: object) -> str:
     return digest_file(path, MAX_SOURCE_BYTES, str(path))
 
 
+def write_xlsx_fixture(path: Path, rows: list[list[object]]) -> str:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    row_xml = []
+    for row_index, row in enumerate(rows, start=1):
+        cells = []
+        for column_index, value in enumerate(row, start=1):
+            number_value = isinstance(value, (int, float)) and not isinstance(value, bool)
+            column = ""
+            current = column_index
+            while current:
+                current, remainder = divmod(current - 1, 26)
+                column = chr(65 + remainder) + column
+            reference = f"{column}{row_index}"
+            if number_value:
+                cells.append(f'<c r="{reference}"><v>{value}</v></c>')
+            else:
+                cells.append(
+                    f'<c r="{reference}" t="inlineStr"><is><t>{escape(str(value))}</t></is></c>'
+                )
+        row_xml.append(f'<row r="{row_index}">{"".join(cells)}</row>')
+    worksheet = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        f'<sheetData>{"".join(row_xml)}</sheetData></worksheet>'
+    )
+    workbook = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+        '<sheets><sheet name="Holdings" sheetId="1" r:id="rId1"/></sheets></workbook>'
+    )
+    rels = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        '<Relationship Id="rId1" '
+        'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" '
+        'Target="worksheets/sheet1.xml"/></Relationships>'
+    )
+    root_rels = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        '<Relationship Id="rId1" '
+        'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" '
+        'Target="xl/workbook.xml"/></Relationships>'
+    )
+    content_types = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+        '<Default Extension="xml" ContentType="application/xml"/>'
+        '<Override PartName="/xl/workbook.xml" '
+        'ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+        '<Override PartName="/xl/worksheets/sheet1.xml" '
+        'ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+        '</Types>'
+    )
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("[Content_Types].xml", content_types)
+        archive.writestr("_rels/.rels", root_rels)
+        archive.writestr("xl/workbook.xml", workbook)
+        archive.writestr("xl/_rels/workbook.xml.rels", rels)
+        archive.writestr("xl/worksheets/sheet1.xml", worksheet)
+    return digest_file(path, MAX_SOURCE_BYTES, str(path))
+
+
 def sample(root: Path) -> tuple[dict, Path]:
     review = "2026-07-30"
     packet_id = f"lookthrough-{review}-selftest"
@@ -716,27 +938,29 @@ def sample(root: Path) -> tuple[dict, Path]:
     mapping_records = []
     funds = []
     for ticker in FUNDS:
-        rows = []
+        source_rows = []
         for index in range(10):
             security_id = "AAA" if index == 0 else f"{ticker}-{index}"
             is_semi = index == 0 or ticker == "SOXX"
-            rows.append(
-                {
-                    "security_id": security_id,
-                    "instrument_type": "equity",
-                    "market_weight": 0.10,
-                    "exposure_weight": 0.10,
-                    "raw_sector": "Technology" if is_semi else "Other",
-                    "raw_industry": "Semiconductors" if is_semi else "Other",
-                }
+            source_rows.append(
+                [
+                    security_id,
+                    f"{ticker} Security {index}",
+                    "Technology" if is_semi else "Industrials",
+                    "Semiconductors" if is_semi else "Other",
+                    "Equity",
+                    10.0,
+                    10_000_000,
+                    10_000_000,
+                ]
             )
             if not any(item["security_id"] == security_id for item in mapping_records):
                 mapping_records.append(
                     {
                         "security_id": security_id,
-                        "issuer_group_id": "issuer-a"
+                        "issuer_group_id": "issuer:issuer-a"
                         if security_id == "AAA"
-                        else f"issuer-{security_id.lower()}",
+                        else f"issuer:{security_id.lower()}",
                         "normalized_sector": TECH if is_semi else "Industrials",
                         "normalized_industry": SEMI if is_semi else OTHER_INDUSTRY,
                         "derivative_components": None,
@@ -744,16 +968,19 @@ def sample(root: Path) -> tuple[dict, Path]:
                     }
                 )
         if ticker == "SOXX":
-            rows[-1] = {
-                "security_id": "SOXX-FUT",
-                "instrument_type": "derivative",
-                "market_weight": 0.0001,
-                "exposure_weight": 0.005,
-                "raw_sector": "Cash and/or Derivatives",
-                "raw_industry": "Futures",
-            }
-            rows[1]["market_weight"] = 0.1999
-            rows[1]["exposure_weight"] = 0.1999
+            source_rows[-1] = [
+                "SOXX-FUT",
+                "SOXX Index Future",
+                "Cash and/or Derivatives",
+                "Futures",
+                "Futures",
+                0.01,
+                10_000,
+                500_000,
+            ]
+            source_rows[1][5] = 19.99
+            source_rows[1][6] = 19_990_000
+            source_rows[1][7] = 19_990_000
             mapping_records.append(
                 {
                     "security_id": "SOXX-FUT",
@@ -762,7 +989,7 @@ def sample(root: Path) -> tuple[dict, Path]:
                     "normalized_industry": None,
                     "derivative_components": [
                         {
-                            "issuer_group_id": f"future-issuer-{index}",
+                            "issuer_group_id": f"issuer:future-{index}",
                             "normalized_sector": TECH,
                             "normalized_industry": SEMI,
                             "weight": 0.1,
@@ -772,19 +999,45 @@ def sample(root: Path) -> tuple[dict, Path]:
                     "evidence": "self-test derivative decomposition",
                 }
             )
-        raw = f"official fixture for {ticker}\n".encode()
-        source_file = f"raw/{ticker}.bin"
-        source_sha = write_fixture(bundle / source_file, raw)
+        headers = [
+            "Ticker",
+            "Name",
+            "Sector",
+            "Industry",
+            "Asset Class",
+            "Weight (%)",
+            "Market Value",
+            "Notional Value",
+        ]
+        if ticker == "SPYM":
+            source_file = "raw/SPYM.xlsx"
+            source_sha = write_xlsx_fixture(
+                bundle / source_file,
+                [["Fund Holdings as of", "Jul 29, 2026"], headers, *source_rows],
+            )
+        else:
+            source_file = f"raw/{ticker}.csv"
+            prefix = (
+                [["Portfolio Holdings as of", "07/29/2026"]]
+                if ticker == "QQQM"
+                else [["Fund Holdings as of", "Jul 29, 2026"]]
+            )
+            csv_text = io.StringIO()
+            writer = csv.writer(csv_text, lineterminator="\n")
+            writer.writerows([*prefix, headers, *source_rows])
+            source_sha = write_fixture(bundle / source_file, csv_text.getvalue().encode())
+        parsed = parse_source(ticker, bundle / source_file, SOURCE_FORMATS[ticker])
         funds.append(
             {
                 "ticker": ticker,
                 "source_name": "Official test fixture",
-                "source_url": f"https://example.invalid/{ticker}",
+                "source_url": f"https://example.invalid/{ticker.lower()}",
+                "source_format": SOURCE_FORMATS[ticker],
                 "source_as_of": "2026-07-29",
                 "retrieved_at": "2026-07-30T11:00:00+09:00",
                 "source_file": source_file,
                 "source_sha256": source_sha,
-                "holdings": rows,
+                "holdings": parsed["holdings"],
             }
         )
     mapping = {
@@ -798,9 +1051,6 @@ def sample(root: Path) -> tuple[dict, Path]:
         "schema_version": ACCOUNT_VERSION,
         "account_snapshot_id": "selftest-account-1",
         "observed_at": "2026-07-30T10:55:00+09:00",
-        "candidate_packet_id": "candidate-selftest-1",
-        "candidate_ticker": "SOXX",
-        "candidate_notional": 1000,
         "nav": 100000,
         "current_market_values": {
             "cash": 16000,
@@ -810,12 +1060,27 @@ def sample(root: Path) -> tuple[dict, Path]:
         },
     }
     account_sha = write_fixture(bundle / "account.json", account)
+    candidate = {
+        "schema_version": CANDIDATE_VERSION,
+        "candidate_packet_id": "candidate-selftest-1",
+        "created_at": "2026-07-30T11:00:00+09:00",
+        "expires_at": "2026-07-30T13:00:00+09:00",
+        "ticker": "SOXX",
+        "side": "ADD",
+        "proposed_notional": 1000,
+        "max_notional": 1000,
+        "account_snapshot_id": account["account_snapshot_id"],
+        "account_snapshot_sha256": account_sha,
+    }
+    candidate_sha = write_fixture(bundle / "candidate.json", candidate)
     packet = {
         "schema_version": SCHEMA_VERSION,
         "packet_id": packet_id,
         "review_date": review,
         "observed_at": "2026-07-30T12:00:00+09:00",
         "candidate_packet_id": "candidate-selftest-1",
+        "candidate_path": "candidate.json",
+        "candidate_sha256": candidate_sha,
         "weight_basis": "post_trade",
         "account_scenario_path": "account.json",
         "account_snapshot_sha256": account_sha,
@@ -924,7 +1189,7 @@ def self_test() -> None:
         account_path = packet_path.parent / good["account_scenario_path"]
         original_account = account_path.read_bytes()
         bad_account = read_json(account_path, MAX_ACCOUNT_BYTES, "account fixture")
-        bad_account["candidate_notional"] = 0
+        bad_account["observed_at"] = "2026-07-30T12:30:00+09:00"
         account_path.write_text(
             json.dumps(bad_account, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
             encoding="utf-8",
@@ -942,16 +1207,30 @@ def self_test() -> None:
             fail("self-test accepted a re-hashed invalid account scenario")
         account_path.write_bytes(original_account)
 
-        # Real manager rounding of 100.01% remains representable.
+        # Real manager rounding of 100.01% remains representable and parser-bound.
         rounded = copy.deepcopy(good)
-        rounded["funds"][2]["holdings"][0]["market_weight"] += 0.0001
-        rounded["funds"][2]["holdings"][0]["exposure_weight"] += 0.0001
+        soxx_path = packet_path.parent / rounded["funds"][2]["source_file"]
+        soxx_rows = list(csv.reader(io.StringIO(soxx_path.read_text(encoding="utf-8"))))
+        header_index = next(
+            index for index, row in enumerate(soxx_rows) if "Weight (%)" in row
+        )
+        weight_index = soxx_rows[header_index].index("Weight (%)")
+        soxx_rows[header_index + 1][weight_index] = "10.01"
+        buffer = io.StringIO()
+        csv.writer(buffer, lineterminator="\n").writerows(soxx_rows)
+        soxx_path.write_text(buffer.getvalue(), encoding="utf-8")
+        rounded["funds"][2]["source_sha256"] = digest_file(
+            soxx_path, MAX_SOURCE_BYTES, "rounded SOXX fixture"
+        )
+        rounded["funds"][2]["holdings"] = parse_source(
+            "SOXX", soxx_path, SOURCE_FORMATS["SOXX"]
+        )["holdings"]
         metrics, gates, verdict = evaluate(rounded, packet_path, allow_test=True)
         rounded["metrics"], rounded["gates"], rounded["verdict"] = metrics, gates, verdict
         rounded["packet_sha256"] = canonical_sha256(rounded)
         validate(rounded, packet_path, allow_test=True)
 
-        duplicate = '{"schema_version":"1.1","schema_version":"0.0"}'
+        duplicate = '{"schema_version":"1.2","schema_version":"0.0"}'
         duplicate_path = packet_path.parent / "duplicate.json"
         duplicate_path.write_text(duplicate, encoding="utf-8")
         try:
@@ -961,7 +1240,7 @@ def self_test() -> None:
         else:
             fail("self-test accepted duplicate JSON keys")
 
-    print("Look-through packet schema 1.1 self-tests passed.")
+    print(f"Look-through packet schema {SCHEMA_VERSION} self-tests passed.")
 
 
 def scan_root(root: Path) -> None:

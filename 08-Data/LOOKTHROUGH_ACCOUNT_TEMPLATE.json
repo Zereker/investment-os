@@ -2,9 +2,6 @@
   "schema_version": "1.0",
   "account_snapshot_id": "",
   "observed_at": "YYYY-MM-DDThh:mm:ss+09:00",
-  "candidate_packet_id": "",
-  "candidate_ticker": "SOXX",
-  "candidate_notional": 0,
   "nav": 0,
   "current_market_values": {
     "cash": 0,
