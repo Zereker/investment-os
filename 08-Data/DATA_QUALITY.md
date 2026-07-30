@@ -39,7 +39,8 @@ Red 数据不得进入依赖该字段的计算。影响按字段局部化：
 
 - IBKR 账户、持仓或订单为 Red：全部交易路径关闭，结论 `DATA INCOMPLETE`。
 - 估值或历史百分位为 Red：战术加速 \(T=0\)，但合格的固定投入与战略基线 \(B\) 不受阻塞。
-- ETF 穿透数据为 Red：冻结新的重叠 Alpha / Observation 追加；已有仓位不自动卖出。
+- ETF穿透数据为Red：SOXX与新的重叠Alpha保持`ADD FROZEN`；已有仓位不自动卖出。
+- Policy Benchmark现金模型任一日Red：当期Benchmark为`N/A / DATA INCOMPLETE`，不得静默使用0%。
 
 ## 每次快照必须包含
 

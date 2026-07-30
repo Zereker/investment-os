@@ -18,8 +18,11 @@
 | Positions / Average Cost | IBKR Positions | 无 | 每次巡检 | Green | Positions 高于订单和历史成交记录 |
 | Open Orders | IBKR Orders | 无 | 每次巡检 | Green | 读取失败则所有交易路径关闭 |
 | External Contribution \(F\) | IBKR Activity / Cash Transactions | 无 | 每月 | Green | 只使用已到账外部净入金；提款与内部卖出所得排除 |
+| `A_actual` | IBKR SOXX市值 / Net Liquidation | 无 | 每次巡检 | Green（Derived） | 失败则SOXX与动态目标关闭 |
+| `A_stage` | Position Registry | 无 | 每次巡检 | Green | 当前6%；不得从聊天或价格推导 |
+| `A_basis` / `U` | Data Dictionary公式 | 无 | 每次巡检 | Green（Derived） | 失败则配置计算关闭 |
 | Routine Core Gap / Purchase \(G_0,D\) | 实时 IBKR 数据 + Monthly Workflow | 无 | 每月 | Green（Derived） | \(D=\min(F,G_0)\)；\(F-D\) 留在现金 |
-| USD Cash Interest \(I\) / Eligible Cash TWA \(\bar C^{eligible}\) | IBKR Activity / Statements | 无 | 每月 | Green | 任一输入缺失或分母不大于 0 时 \(r_{cash}=0\%\) 并披露 |
+| Benchmark hypothetical 15% USD Cash / modeled interest | 基准净值 + IBKR官方利率与计息规则 | 无 | 每日/月度 | Green（Derived） | 任一输入缺失则当期Policy Benchmark为N/A；不得使用实际账户收益率或0%代理 |
 | SPYM Price | IBKR | State Street SPYM 官方页 | 每次巡检 | Green | 标记价格时间戳 |
 | QQQM Price | IBKR | Invesco QQQM 官方页 | 每次巡检 | Green | 标记价格时间戳 |
 | SPYM Total Return | State Street SPYM 官方绩效 / 分红数据 | IBKR 市场数据与分红记录 | 每月 | Green | Policy Benchmark 必须使用含分红同期总收益 |

@@ -45,7 +45,7 @@
 
 同时列出各持仓数量、市值、组合占比、成本和未实现盈亏。Alpha 权重 \(A\) 包含全部实盘 Observation。
 
-SOXX 按 `Alpha / Observation` 列示，标准状态为 `HOLD — ADD FROZEN`。仅持有 Observation 不是异常，也不自动产生 `REVIEW`；只有超限、订单异常、数据冲突或其他规则触发时才升级。
+SOXX按`Alpha / Approved / Frozen — DATA GATE`列示。每日同时报告`A_actual`、`A_stage`、`A_basis=max(A_actual,A_stage)`与`U=max(A_stage-A_actual,0)`；阶段储备属于现金用途标签，不得重复计入。
 
 ### 3. Open Orders
 
@@ -72,8 +72,8 @@ SOXX 按 `Alpha / Observation` 列示，标准状态为 `HOLD — ADD FROZEN`。
 至少检查：
 
 - 融资借款
-- Cash、QQQM、`SPYM + Alpha` 袖套
-- Alpha 合计 15%、单只 6%和最多 5 只硬上限
+- Cash、QQQM、`SPYM + SOXX + Stage Reserve`袖套
+- Alpha合计15%硬上限；SOXX检查当前阶段6%与长期15%，其他单一Alpha仍执行6%一般上限
 - Observation 是否出现未经批准的追加
 - 未完成或重复订单
 - 碎股与零数量残留

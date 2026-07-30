@@ -5,10 +5,10 @@
 从旧的高现金、个股为主组合，渐进迁移至：
 
 \[
-\text{Cash }15\% + \text{QQQM }28\% + \text{SPYM }(57\%-A) + \text{Alpha }A
+\text{Cash }(15\%+U) + \text{QQQM }28\% + \text{SPYM }(57\%-A_{basis}) + \text{SOXX }A_{actual}
 \]
 
-其中 \(0\%\le A\le15\%\)，包含全部实盘 Observation。QQQM 28% 是长期战略成长引擎；Alpha 未使用额度自动留在 SPYM。迁移以纪律、税务效率和可执行性为先，计划基线使用 2028-12 作为完成月，并在每月重算。
+其中`A_stage=6%`为当前SOXX治理上限，`A_basis=max(A_actual,A_stage)`，`U=max(A_stage-A_actual,0)`。QQQM 28%保持不变；U作为现金中的阶段储备，不先投入SPYM。迁移以纪律、税务效率和可执行性为先，计划基线使用 2028-12 作为完成月，并在每月重算。
 
 ## 三条资金通道
 
@@ -22,7 +22,7 @@ Red / N/A 估值将战术加速降为 0，但不阻塞符合公式和 Data Gate 
 
 1. Routine DCA \(D\) 和战略基线 \(B\) 只进入 SPYM / QQQM 正缺口。
 2. 每月根据实时净值、现金、\(A\)、目标缺口和到 2028-12 的剩余执行次数重算。
-3. 交易后现金不得低于 12%，不得使用融资。
+3. 交易后物理现金不得低于`12%+U`，不得使用融资。
 4. Observation 全额计入 Alpha，但月度新增分配恒为 0。
 5. 所有 Alpha 新建、追加、升级和卖出均走完整 Investment Committee。
 6. 非目标旧持仓和超上限 Alpha 采用税务感知的渐进退出；不因“高位/低位”单独卖出。
@@ -38,14 +38,14 @@ Red / N/A 估值将战术加速降为 0，但不阻塞符合公式和 Data Gate 
 
 ### 阶段 B：处理 Alpha 与 Legacy
 
-- SOXX 按 `Alpha / Observation` 持有并计入 \(A\)，追加冻结。
+- SOXX按`Alpha / Approved / Frozen — DATA GATE`持有；长期上限15%、当前阶段6%，任何追加须完整IC。
 - 对其他非 Core 持仓区分 Alpha、Legacy、税务成本、投资逻辑和组合重叠。
 - 对确定退出的旧持仓制定分批或一次性方案，不用价格预测替代决策。
 - 若硬上限无法靠稀释修复，再依据 Constitution 进入卖出评审。
 
 ### 阶段 C：进入 Maintenance Mode
 
-当 Cash、QQQM、`SPYM + Alpha` 袖套连续三个月都位于允许区间，且 Legacy 已按计划处理，转型完成。此后 \(B=0\)，仅用新增资金维护配置；除非触发卖出规则，不主动换仓。
+当Cash、QQQM、`SPYM + SOXX + Stage Reserve`袖套连续三个月都位于允许区间，且 Legacy 已按计划处理，转型完成。此后 \(B=0\)，仅用新增资金维护配置；除非触发卖出规则，不主动换仓。
 
 ## 时间判断
 

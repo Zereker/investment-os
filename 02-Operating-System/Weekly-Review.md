@@ -23,13 +23,13 @@
 
 ## C. 配置与转型
 
-- Cash / SPYM / QQQM / Alpha / Legacy 的当前权重
+- Cash / SPYM / QQQM / Alpha / Legacy的当前权重，以及`A_actual`、`A_stage`、`A_basis`、`U`
 - Alpha 内列示 Approved / Observation / Frozen / Exit Review；Observation 全额计入 \(A\)
-- 与 Constitution 的 Cash、QQQM、`SPYM + Alpha` 袖套和硬上限差异
+- 与Constitution的Cash、QQQM、`SPYM + SOXX + Stage Reserve`袖套和硬上限差异
 - 本月累计固定投入、战略基线 \(B\) 与战术加速 \(T\)
 - 是否出现只能靠季度/年度治理处理的结构性偏差
 
-周度复盘只标记偏差，不因一周波动临时再平衡。SOXX 处于 Observation 本身不产生 `IC REVIEW`；只有存在真实追加、升级或退出候选时才进入 IC。
+周度复盘只标记偏差，不因一周波动临时再平衡。SOXX为`Approved / Frozen — DATA GATE`本身不产生`IC REVIEW`；只有实时数据、同日穿透和完整IC均满足的真实候选才进入下一步。
 
 ## D. 数据质量
 

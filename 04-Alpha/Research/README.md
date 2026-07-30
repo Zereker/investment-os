@@ -1,5 +1,7 @@
 # Alpha Research
 
+> v3.4：SOXX是唯一Production Alpha，其政策级Thesis已完成；其他候选仅可留在Research，半导体个股必须与SOXX共用15%预算。
+
 每个候选建立一个独立文件，文件名使用代码，例如 `SOXX.md`。只有完成研究、通过准入和 IC 的标的才能升级为 `Approved Alpha` 或获得新增资金。
 
 已有小额真实仓位但研究未完成时，可登记为 `Observation`：全额计入 Alpha 风险预算、允许持有、冻结追加。Observation 不是对既有交易的追认，也不能绕过准入流程。
