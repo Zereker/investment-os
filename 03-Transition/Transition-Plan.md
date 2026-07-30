@@ -45,7 +45,7 @@ Red / N/A 估值将战术加速降为 0，但不阻塞符合公式和 Data Gate 
 
 ### 阶段 C：进入 Maintenance Mode
 
-当 Cash、QQQM、`SPYM + Alpha` 袖套连续三个月都位于允许区间，且 Legacy 已按计划处理，转型完成。此后 \(B=0\)，仅用新增资金维护配置；除非触发卖出规则，不主动换仓。
+当Cash、QQQM、`SPYM + SOXX + Stage Reserve`袖套连续三个月都位于允许区间，且 Legacy 已按计划处理，转型完成。此后 \(B=0\)，仅用新增资金维护配置；除非触发卖出规则，不主动换仓。
 
 ## 时间判断
 
