@@ -8,7 +8,7 @@ Production Packet 保存为：
 
 `08-Data/SNAPSHOTS/lookthrough/YYYY-MM-DD/lookthrough-YYYY-MM-DD-<id>.json`
 
-每次审核新增文件，不覆盖历史文件。原始官方持仓文件应与 Packet 一并归档或保存在持久证据库；Packet 对每个原始文件记录小写十六进制 SHA-256。若原始文件、映射或组合权重变化，必须创建新 Packet。
+每次审核新增文件，不覆盖历史文件。原始官方持仓文件应与 Packet 一并归档或保存在持久证据库；Packet 对每个原始文件在`source_sha256`记录小写十六进制 SHA-256。若原始文件、映射或组合权重变化，必须创建新 Packet。
 
 ## 必填结构
 
