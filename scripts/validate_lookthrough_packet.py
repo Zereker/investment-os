@@ -230,19 +230,21 @@ def validate(packet: dict, *, allow_test: bool = False) -> dict[str, float]:
 
 
 def sample() -> dict:
-    holdings = {
-        "SPYM": [
-            {"security_id": "AAA", "raw_sector": "Technology", "raw_industry": "Semiconductors", "weight": 0.10, "issuer_group_id": "issuer-a", "normalized_sector": TECH, "normalized_industry": SEMI},
-            {"security_id": "BBB", "raw_sector": "Other", "raw_industry": "Other", "weight": 0.90, "issuer_group_id": "issuer-b", "normalized_sector": "Other", "normalized_industry": "Other"},
-        ],
-        "QQQM": [
-            {"security_id": "AAA", "raw_sector": "Technology", "raw_industry": "Semiconductors", "weight": 0.10, "issuer_group_id": "issuer-a", "normalized_sector": TECH, "normalized_industry": SEMI},
-            {"security_id": "CCC", "raw_sector": "Other", "raw_industry": "Other", "weight": 0.90, "issuer_group_id": "issuer-c", "normalized_sector": "Other", "normalized_industry": "Other"},
-        ],
-        "SOXX": [
-            {"security_id": "DDD", "raw_sector": "Technology", "raw_industry": "Semiconductors", "weight": 1.00, "issuer_group_id": "issuer-d", "normalized_sector": TECH, "normalized_industry": SEMI},
-        ],
-    }
+    holdings = {}
+    for ticker in FUNDS:
+        rows = []
+        for index in range(10):
+            is_semi = index == 0 or ticker == "SOXX"
+            rows.append({
+                "security_id": "AAA" if index == 0 else f"{ticker}-{index}",
+                "raw_sector": "Technology" if is_semi else "Other",
+                "raw_industry": "Semiconductors" if is_semi else "Other",
+                "weight": 0.10,
+                "issuer_group_id": "issuer-a" if index == 0 else f"issuer-{ticker.lower()}-{index}",
+                "normalized_sector": TECH if is_semi else "Other",
+                "normalized_industry": SEMI if is_semi else "Other",
+            })
+        holdings[ticker] = rows
     packet = {
         "schema_version": SCHEMA_VERSION,
         "packet_id": "lookthrough-2026-07-30-selftest",
