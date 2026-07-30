@@ -66,17 +66,39 @@ Invesco QQQM 官方页的 `Forward Price/Earnings Ratio`。使用 QQQ 作为代�
 
 ## Policy Benchmark 字段
 
-### benchmark_cash_balance_usd / benchmark_eligible_cash_usd
+### benchmark_month_start_nav_usd / benchmark_cash_balance_usd / benchmark_eligible_cash_usd
 
-每日假设基准现金\(C_{B,d}=15\%\times V_{B,d}\)。按IBKR公开规则，USD前10,000美元不计息，\(E_{B,d}=\max(C_{B,d}-10000,0)\)。
+每个自然月首个估值时点重置一次政策权重：
+
+\[
+C_{B,m,0}=15\%\times V_{B,m,0}
+\]
+
+月内现金袖套按状态递推，只随利息计提变化，不因 SPYM / QQQM 的每日涨跌重新设为基准净值的15%，也不进行每日再平衡。第 \(d\) 日计息前现金为 \(C^-_{B,m,d}\)，按当日IBKR公开规则，USD前10,000美元不计息：
+
+\[
+E_{B,m,d}=\max(C^-_{B,m,d}-10000,0)
+\]
 
 ### ibkr_usd_full_rate / ibkr_nav_scale
 
-\(r_{full,d}\)为当日适用账户计划的官方USD信用利率；\(k_d=\min(V_{B,d}/100000,1)\)。账户计划、币种、Segment、门槛和日计息基数必须按当日官方规则记录。
+\(r_{full,d}\)为当日适用账户计划的官方USD信用利率；\(k_d=\min(V_{B,m,d}/100000,1)\)。账户计划、币种、Segment、门槛和日计息基数必须按当日官方规则记录。
 
 ### benchmark_cash_interest_usd / benchmark_cash_period_return
 
-USD通常按360天：\(I_{B,t}=\sum_d E_{B,d}\times r_{full,d}\times k_d/360\)；\(r^{model}_{cash,t}=I_{B,t}/\bar C_{B,t}\)。任一输入缺失则为N/A，不得使用实际账户利息、单位收益率或0%替代。
+USD通常按360天：
+
+\[
+i_{B,m,d}=E_{B,m,d}\times r_{full,d}\times k_d/360,\qquad
+C_{B,m,d}=C^-_{B,m,d}+i_{B,m,d}
+\]
+
+\[
+I_{B,m}=\sum_d i_{B,m,d},\qquad
+r^{model}_{cash,m}=I_{B,m}/C_{B,m,0}
+\]
+
+任一日输入缺失则当月为N/A，不得使用实际账户利息、单位收益率或0%替代。外部现金流不进入基准收益分子；组合比较使用时间加权收益，基准只在下一个月初重新设为15% / 57% / 28%。
 
 ### spym_total_return / qqqm_total_return
 同一计量期间、含分红的基金总收益 \(r_{SPYM,t}\) 与 \(r_{QQQM,t}\)。价格收益不得冒充总收益。
