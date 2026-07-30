@@ -29,12 +29,14 @@
 
 ## 1.1 SOXX v3.4.1必填
 
-- 交易前后`A_actual`、当前`A_stage`、`A_basis`与`U`：
+- 交易前后`A_actual`、当前`A_stage`、当前`A_execution_cap`、`A_basis`与`U`：
+- 确认执行上限只推进一档，且不是在本次IC中临时修改：
 - 交易后SPYM动态目标和物理现金目标：
 - 现行NYSE Semiconductor Index方法证据与核验日期：
-- Registry是否已为`Approved / Add Candidate`：
-- SPYM、QQQM、SOXX同日穿透与覆盖率：
-- 阶段与科技50%、半导体15%、发行人10%边界：
+- Registry是否仍为`Approved / Hold`：
+- Add Candidate Packet的`approved_as_of`、账户/价格`data_as_of`、`expires_at`、`max_notional`、`max_post_trade_weight`：
+- SPYM、QQQM、SOXX的`lookthrough_observed_at`、各自`source_as_of`与覆盖率；是否满足Green：
+- 阶段、执行上限与科技50%、半导体15%、发行人10%边界：
 
 ## 2. Investment Committee 四视角审查
 
@@ -75,8 +77,11 @@
 
 - 理由只有价格、新闻、害怕错过、回本愿望或“想做点什么”。
 - 使用了尚未发布的 Research 指标或规则。
-- 新Alpha会使一般单只超过6%、持仓超过5只或Alpha合计超过15%；SOXX交易后超过Registry当前阶段或长期15%。
-- Observation没有完成Thesis与升级批准却申请追加；或`Frozen`标的未先更新为`Approved / Add Candidate`就申请追加。
+- 新Alpha会使一般单只超过6%、持仓超过5只或Alpha合计超过15%；SOXX交易后超过Registry当前执行上限、当前阶段或长期15%。
+- Observation没有完成Thesis与升级批准却申请追加；Registry不是`Approved / Hold`，或缺少仍有效的独立`Add Candidate` Packet就申请追加。
+- `A_execution_cap`跳档、在本次IC中临时提高，或高于`A_stage`。
+- Candidate已到`expires_at`/当日收盘，或Positions、Open Orders、Settled Cash、NAV、价格、持仓源版本/质量已变化。
+- 三只ETF并非同一审核日读取最新官方持仓，或`source_as_of`不一致而未达到Green。
 - 新科技 Alpha 会让科技穿透达到或超过 50%，且没有年度规则批准。
 - 需要借款，或在没有 Transition Plan 依据时突破现金约束。
 - 标的不在现行 Core / Alpha / Legacy 分类中，且未完成准入研究。
