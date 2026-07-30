@@ -32,6 +32,7 @@
       "holdings": [
         {
           "security_id": "",
+          "source_identifiers": [],
           "raw_name": "",
           "instrument_type": "equity",
           "market_weight": 0,
@@ -53,6 +54,7 @@
       "holdings": [
         {
           "security_id": "",
+          "source_identifiers": [],
           "raw_name": "",
           "instrument_type": "equity",
           "market_weight": 0,
@@ -74,6 +76,7 @@
       "holdings": [
         {
           "security_id": "",
+          "source_identifiers": [],
           "raw_name": "",
           "instrument_type": "derivative",
           "market_weight": 0,

@@ -184,6 +184,20 @@ def main() -> None:
     ):
         require(path, "Bundle v1.3")
     require(
+        "08-Data/README.md",
+        "REGISTRIES/LOOKTHROUGH_ISSUER_AUTHORITY.json",
+        "REGISTRIES/LOOKTHROUGH_CLASSIFICATION_AUTHORITY.json",
+    )
+    require(
+        "08-Data/DATA_REGISTRY.md",
+        "中央Issuer Authority",
+        "中央Classification Authority",
+    )
+    require(
+        "08-Data/DATA_QUALITY.md",
+        "只增不改中央authority",
+    )
+    require(
         "08-Data/LOOKTHROUGH_PACKET.md",
         "验证通过不改变 Position Registry",
         "source_sha256",
@@ -202,13 +216,33 @@ def main() -> None:
         '"schema_version": "1.3"',
         '"issuer_registry_path": "issuer-registry.json"',
         '"issuer_registry_sha256": ""',
+        '"source_identifiers": []',
     )
     require(
         "08-Data/LOOKTHROUGH_ISSUER_REGISTRY_TEMPLATE.json",
-        '"schema_version": "1.0"',
+        '"schema_version": "1.1"',
         '"issuer_group_id": "cik:0001652044"',
         '"security_id": "CUSIP:02079K305"',
         '"security_id": "CUSIP:02079K107"',
+        '"canonical_security_id": "CUSIP:02079K305"',
+        '"security_id": "SEDOL:BYVY8G0"',
+    )
+    require(
+        "08-Data/REGISTRIES/LOOKTHROUGH_ISSUER_AUTHORITY.json",
+        '"authority_id": "lookthrough-issuer-authority"',
+        '"schema_version": "1.1"',
+    )
+    require(
+        "08-Data/REGISTRIES/LOOKTHROUGH_CLASSIFICATION_AUTHORITY.json",
+        '"authority_id": "lookthrough-classification-authority"',
+        '"schema_version": "1.2"',
+        '"taxonomy": "GICS"',
+    )
+    require(
+        "08-Data/LOOKTHROUGH_MAPPING_TEMPLATE.json",
+        '"schema_version": "1.2"',
+        '"source_url": ""',
+        '"as_of": "YYYY-MM-DD"',
     )
     require(
         ".github/workflows/policy-consistency.yml",
@@ -221,11 +255,18 @@ def main() -> None:
     require(
         "scripts/validate_lookthrough_packet.py",
         'SCHEMA_VERSION = "1.3"',
+        'MAPPING_VERSION = "1.2"',
+        'ISSUER_REGISTRY_VERSION = "1.1"',
         "duplicate JSON key",
         "source_sha256 does not match archived source bytes",
         "does not match parsed archived source",
         "derivative requires audited look-through components",
         "post-trade account scenario",
+        "canonical_security_id",
+        "source_identifiers",
+        "reviewed issuer authority",
+        "reviewed classification authority",
+        "validate_authority_catalogs",
     )
     require(
         "scripts/parse_lookthrough_sources.py",
@@ -236,6 +277,7 @@ def main() -> None:
         '"security identifier"',
         '"date"',
         "CUSIP:",
+        "%d-%b-%Y",
         "derivative has zero economic exposure",
     )
     require(
@@ -243,12 +285,19 @@ def main() -> None:
         "packet holdings unrelated to archived bytes",
         "SOXX erased as zero-exposure other instruments",
         "Alphabet A and C split across issuer identities",
+        "SEDOL and canonical CUSIP split across issuer identities",
         "derivative component uses a free issuer id",
         "future-dated 2099 bundle",
+        "SPYM 3 Holdings: As of 29-Jul-2026",
+        "missing raw labels cannot authorize a bundle-local false classification",
+        "max_issuer_known_weight",
     )
     require(
         "scripts/check_lookthrough_history.py",
         "Historical look-through evidence is append-only",
+        "LOOKTHROUGH_ISSUER_AUTHORITY.json",
+        "LOOKTHROUGH_CLASSIFICATION_AUTHORITY.json",
+        "is not append-only",
     )
     forbid("02-Operating-System/Monthly-Workflow.md", "SOXX 等 Observation")
     forbid("03-Transition/Transition-Plan.md", r"现金、\(A\)、目标缺口")

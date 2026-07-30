@@ -21,7 +21,15 @@
 
 模板保存在快照目录之外的 `08-Data/LOOKTHROUGH_PACKET_TEMPLATE.json`。Production 快照目录没有按文件名排除的模板通道；每个审核目录都必须含 `packet.json`。
 
-所有 Bundle 文件只增不改。CI 以 PR base 或 push 前一提交为基点，拒绝对既有快照的修改、重命名或删除。来源、映射、账户或候选情景变化时必须创建新 Bundle。
+仓库级受控 authority 保存在：
+
+```text
+08-Data/REGISTRIES/
+├── LOOKTHROUGH_ISSUER_AUTHORITY.json
+└── LOOKTHROUGH_CLASSIFICATION_AUTHORITY.json
+```
+
+所有 Bundle 文件只增不改。两份 authority 也只允许在数组尾部追加经独立审查的记录，不允许改写、重排或删除既有身份与分类。CI 以 PR base 或 push 前一提交为基点执行两类历史检查。来源、映射、账户或候选情景变化时必须创建新 Bundle。
 
 ## Packet 必填结构
 
@@ -31,11 +39,11 @@
 - `candidate_packet_id / candidate_path / candidate_sha256`：绑定同一 Bundle 内真实、未失效的 SOXX Add Candidate 文件；验证器检查其账户快照哈希、拟议金额、金额上限和失效时间。Candidate 存在不代表已批准。
 - `weight_basis`：固定为 `post_trade`。
 - `account_scenario_path / account_snapshot_sha256`：固定指向同一 Bundle 内的 `account.json`；账户文件只保存当前 NAV 与市值，且时间不得晚于 Packet。
-- `issuer_registry_path / issuer_registry_sha256`：固定绑定 `issuer-registry.json`。注册表以 CIK 或 LEI 作为发行人身份，并将每个稳定证券 ID 映射到唯一发行人；不同股权类别必须共用同一法律实体身份。
-- `mapping_path / mapping_sha256`：指向同一 Bundle 内的统一行业映射表。发行人身份不再由该文件自由填写。
+- `issuer_registry_path / issuer_registry_sha256`：固定绑定 `issuer-registry.json`。该文件只能包含中央 issuer authority 中逐对象完全相同的记录；每个来源 ID 先解析为 `canonical_security_id`，再绑定唯一 CIK 或 LEI。不同 ID 与股权类别必须通过中央 crosswalk 共用同一法律实体身份。
+- `mapping_path / mapping_sha256`：指向同一 Bundle 内的统一行业映射快照。每条记录必须逐对象存在于中央 classification authority，Bundle 不能自行创建或重写分类。
 - `portfolio_weights`：仅含 `cash / SPYM / QQQM / SOXX`，必须与账户情景重算值一致；SOXX 必须为正且不高于当前 3% 执行上限。
 - `funds`：恰好为 SPYM / QQQM / SOXX；每项保存具体产品官方 URL、版本化 `source_format`、`source_as_of`、`retrieved_at`、`raw/` 下固定名称的原始文件和真实字节 `source_sha256`。
-- `holdings`：保留带类型的稳定证券标识、原始名称、Sector/Industry、`instrument_type`、`market_weight` 和 `exposure_weight`；必须逐行等于验证器从归档字节解析的结果。
+- `holdings`：保留主 `security_id`、原始行中全部有效 `source_identifiers`、原始名称、Sector/Industry、`instrument_type`、`market_weight` 和 `exposure_weight`；必须逐行等于验证器从归档字节解析的结果。
 - `metrics / gates / verdict`：必须等于验证器从交易后权重、持仓和映射重算的结果。
 - `packet_sha256`：将该字段暂置空字符串后，对键排序、无多余空格的 UTF-8 JSON 求 SHA-256。
 
@@ -53,9 +61,9 @@
 
 URL 白名单不是单独的真实性证明。URL 路径还必须识别具体产品；原始文件必须分别为 `raw/SPYM.xlsx`、`raw/QQQM.csv`、`raw/SOXX.csv`。验证器使用 `ssga-xlsx-v1`、`invesco-csv-v1`、`ishares-csv-v1` 三个确定性解析器，从归档字节重建日期与完整 holdings，再逐行核对 Packet；Invesco 解析器明确支持官方导出的 `Security Identifier / Holding Ticker / Holding Name / Date` 列。仅保存哈希但不解析不能通过。
 
-证券 ID 按 `CUSIP → ISIN → SEDOL → 管理人标识 → 非占位 ticker` 的顺序选择，并保存为 `CUSIP:`、`ISIN:`、`SEDOL:`、`MANAGER:` 或 `TICKER:` 带类型形式。`-`、`--`、`-CASH-` 等占位 ticker 不能覆盖稳定标识；没有稳定标识的非现金行不得进入 Green。
+证券 ID 按实际识别出的类型执行 `CUSIP → ISIN → SEDOL → 管理人标识 → 非占位 ticker` 优先级，而不是按原始列出现顺序选择；因此 State Street 同时提供通用 `Identifier` 与 `SEDOL` 时，通用列中的有效 CUSIP 仍优先。所有有效 ID 都以 `source_identifiers` 原顺序无关、类型优先的数组保存；验证器要求它们在中央 crosswalk 中解析到同一 `canonical_security_id` 与发行人。ID 使用 `CUSIP:`、`ISIN:`、`SEDOL:`、`MANAGER:` 或 `TICKER:` 带类型形式。`-`、`--`、`-CASH-` 等占位 ticker 不能覆盖稳定标识；没有稳定标识的非现金行不得进入 Green。
 
-`review_date` 与 `observed_at` 不得处于未来。`retrieved_at` 必须处于审核日且不晚于 `observed_at`；解析出的 `source_as_of` 必须等于 Packet 声明、不得晚于审核日、不得老于 7 个自然日，三只基金必须完全一致。是否确为管理人当时“最新可得版本”仍须人工核对页面发布日期。
+State Street `ssga-xlsx-v1` 明确识别 Daily XLSX 中的 `Holdings: As of DD-Mon-YYYY`；Invesco 识别逐行 `Date`。`review_date` 与 `observed_at` 不得处于未来。`retrieved_at` 必须处于审核日且不晚于 `observed_at`；解析出的 `source_as_of` 必须等于 Packet 声明、不得晚于审核日、不得老于 7 个自然日，三只基金必须完全一致。是否确为管理人当时“最新可得版本”仍须人工核对页面发布日期。
 
 ## 权重、舍入与衍生品
 
@@ -75,7 +83,7 @@ iShares 对 `Notional Value` 的说明可作为 SOXX 衍生品 `exposure_weight`
 - `Semiconductors & Semiconductor Equipment`
 - `Other / non-semiconductor`
 
-发行人注册表与行业映射中的每条记录都必须保存非空证据。发行人身份只允许 `cik:<10-digits>` 或 `lei:<20-character-LEI>`；CIK 必须绑定同一编号的 SEC URL，LEI 必须绑定同一编号的 GLEIF URL。注册表拒绝重复发行人 ID、重复规范公司名和重复证券 ID，并强制共享 CUSIP issuer number（也包括美国 ISIN 内嵌的 CUSIP）的证券使用同一发行人，因此 Alphabet A/C 等多股权类别不能拆分。可识别的管理人原始 Sector/Industry 必须与统一映射一致；例如原始 `Technology` 不能映射成 Industrials，包含 `Semiconductor` 的原始 Industry 不能映射成非半导体。
+发行人注册表与行业映射中的每条记录都必须保存结构化 `source_url / as_of` 证据，并逐对象匹配仓库中央 authority；自由文本不再满足证据契约。发行人身份只允许 `cik:<10-digits>` 或 `lei:<20-character-LEI>`；CIK 必须绑定同一编号的 SEC URL，LEI 必须绑定同一编号的 GLEIF URL。注册表拒绝重复发行人 ID、重复规范公司名和重复来源 ID；每个 SEDOL、CUSIP、ISIN 或 ticker alias 必须指向 authority 中已存在、且自指的 `canonical_security_id`，alias 与 canonical 必须共用发行人。因此跨基金的 SEDOL↔CUSIP 以及 Alphabet A/C 都按同一实体累计。可识别的管理人原始 Sector/Industry 必须与统一映射一致；原始分类缺失时也只能引用中央 classification authority，不能由 Bundle 自述降低风险。
 
 ## 独立缺口与最坏情形
 
@@ -92,7 +100,7 @@ iShares 对 `Notional Value` 的说明可作为 SOXX 衍生品 `exposure_weight`
 验证器只在以下条件全部成立时输出 `DATA GATE PASS`：
 
 1. 三只基金在同一审核日采集、`source_as_of` 完全一致且满足时效上限；
-2. 官方产品 URL、原始文件实哈希、确定性解析结果、发行人注册表、行业映射、账户、Candidate 与 Packet 哈希全部通过；
+2. 官方产品 URL、原始文件实哈希、确定性解析结果、中央 authority、Bundle 身份/分类快照、账户、Candidate 与 Packet 哈希全部通过；
 3. 账户快照不晚于 Packet，Candidate 已创建且未失效，拟议金额不超过上限；交易后权重可独立重算，SOXX 为正且不高于 3%；
 4. 管理人市值权重仅有允许的舍入差，衍生品名义敞口已分解；
 5. 发行人和统一分类覆盖率均为 100%；

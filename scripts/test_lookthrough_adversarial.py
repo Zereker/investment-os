@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Independent adversarial regression tests for Look-through Bundle v1.3."""
+"""Adversarial regression tests for Look-through Bundle v1.3."""
 
 from __future__ import annotations
 
@@ -70,8 +70,143 @@ def main() -> None:
         else:
             raise AssertionError("parser accepted a placeholder ticker without a stable ID")
 
+        spym_path = tmp_path / "SPYM-real-format.xlsx"
+        validator.write_xlsx_fixture(
+            spym_path,
+            [
+                ["SPYM 3 Holdings: As of 29-Jul-2026"],
+                [
+                    "Identifier",
+                    "SEDOL",
+                    "Ticker",
+                    "Name",
+                    "Sector",
+                    "Industry",
+                    "Asset Class",
+                    "Weight (%)",
+                    "Market Value",
+                    "Notional Value",
+                ],
+                [
+                    "02079K305",
+                    "BYVY8G0",
+                    "GOOGL",
+                    "Alphabet Inc Class A",
+                    "Communication Services",
+                    "Interactive Media",
+                    "Equity",
+                    60,
+                    600,
+                    600,
+                ],
+                [
+                    "594918104",
+                    "",
+                    "MSFT",
+                    "Microsoft Corp",
+                    "Technology",
+                    "Software",
+                    "Equity",
+                    40,
+                    400,
+                    400,
+                ],
+            ],
+        )
+        parsed_spym = parser.parse_source("SPYM", spym_path, "ssga-xlsx-v1")
+        assert parsed_spym["source_as_of"] == "2026-07-29"
+        assert parsed_spym["holdings"][0]["security_id"] == "CUSIP:02079K305"
+        assert parsed_spym["holdings"][0]["source_identifiers"] == [
+            "CUSIP:02079K305",
+            "SEDOL:BYVY8G0",
+        ]
+
         good, packet_path = validator.sample(Path(tmp))
         validator.validate(good, packet_path, allow_test=True)
+
+        registry_path = packet_path.parent / good["issuer_registry_path"]
+        identities = validator.load_issuer_registry(
+            packet_path.parent,
+            good["issuer_registry_path"],
+            good["issuer_registry_sha256"],
+            allow_test=True,
+        )
+        assert identities["SEDOL:BYVY8G0"] == {
+            "canonical_security_id": "CUSIP:02079K305",
+            "issuer_group_id": "cik:0001652044",
+        }
+
+        cross_identifier = copy.deepcopy(good)
+        original_spym_source = (
+            packet_path.parent / good["funds"][0]["source_file"]
+        ).read_bytes()
+        spym_fund = cross_identifier["funds"][0]
+        cross_rows = [
+            ["SPYM 3 Holdings: As of 29-Jul-2026"],
+            [
+                "Identifier",
+                "SEDOL",
+                "Ticker",
+                "Name",
+                "Sector",
+                "Industry",
+                "Asset Class",
+                "Weight (%)",
+                "Market Value",
+                "Notional Value",
+            ],
+        ]
+        for index, holding in enumerate(spym_fund["holdings"]):
+            security_id = holding["security_id"]
+            identifier = security_id.removeprefix("CUSIP:")
+            sedol = ""
+            name = holding["raw_name"]
+            sector = holding["raw_sector"]
+            industry = holding["raw_industry"]
+            ticker = f"SPYM{index}"
+            if index == 0:
+                identifier = ""
+                sedol = "BYVY8G0"
+                ticker = "GOOGL"
+                name = "Alphabet Inc Class A"
+                sector = "Communication Services"
+                industry = "Interactive Media"
+            weight = holding["market_weight"] * 100
+            cross_rows.append(
+                [
+                    identifier,
+                    sedol,
+                    ticker,
+                    name,
+                    sector,
+                    industry,
+                    "Equity",
+                    weight,
+                    weight * 1_000_000,
+                    weight * 1_000_000,
+                ]
+            )
+        spym_source = packet_path.parent / spym_fund["source_file"]
+        spym_fund["source_sha256"] = validator.write_xlsx_fixture(
+            spym_source, cross_rows
+        )
+        spym_fund["holdings"] = parser.parse_source(
+            "SPYM", spym_source, "ssga-xlsx-v1"
+        )["holdings"]
+        metrics, gates, verdict = validator.evaluate(
+            cross_identifier, packet_path, allow_test=True
+        )
+        cross_identifier["metrics"] = metrics
+        cross_identifier["gates"] = gates
+        cross_identifier["verdict"] = verdict
+        cross_identifier["packet_sha256"] = validator.canonical_sha256(
+            cross_identifier
+        )
+        validator.validate(cross_identifier, packet_path, allow_test=True)
+        assert metrics["max_issuer_known_weight"] > 0.10
+        assert gates["issuer_at_or_below_10"] is False
+        assert verdict == "DATA INCOMPLETE"
+        spym_source.write_bytes(original_spym_source)
 
         unrelated_holdings = copy.deepcopy(good)
         unrelated_holdings["funds"][0]["holdings"][0]["raw_name"] = "UNRELATED MANUAL ROW"
@@ -99,7 +234,6 @@ def main() -> None:
         reject("mapping bypasses issuer registry", alias_packet, packet_path)
         mapping_path.write_bytes(original_mapping)
 
-        registry_path = packet_path.parent / good["issuer_registry_path"]
         original_registry = registry_path.read_bytes()
         registry = validator.read_json(
             registry_path, validator.MAX_MAPPING_BYTES, "adversarial issuer registry"
@@ -126,6 +260,72 @@ def main() -> None:
         split_packet["issuer_registry_sha256"] = rewrite_json(registry_path, registry)
         reject("Alphabet A and C split across issuer identities", split_packet, packet_path)
         registry_path.write_bytes(original_registry)
+
+        registry = validator.read_json(
+            registry_path, validator.MAX_MAPPING_BYTES, "adversarial issuer registry"
+        )
+        registry["issuers"].append(
+            {
+                "issuer_group_id": "cik:9999999999",
+                "canonical_name": "False SEDOL Alias Issuer",
+                "evidence_url": "https://example.invalid/cik/9999999999",
+            }
+        )
+        sedol_alias = next(
+            item
+            for item in registry["securities"]
+            if item["security_id"] == "SEDOL:BYVY8G0"
+        )
+        sedol_alias["issuer_group_id"] = "cik:9999999999"
+        cross_id_split = copy.deepcopy(good)
+        cross_id_split["issuer_registry_sha256"] = rewrite_json(
+            registry_path, registry
+        )
+        reject(
+            "SEDOL and canonical CUSIP split across issuer identities",
+            cross_id_split,
+            packet_path,
+        )
+        registry_path.write_bytes(original_registry)
+
+        qqqm_source = packet_path.parent / good["funds"][1]["source_file"]
+        original_qqqm_source = qqqm_source.read_bytes()
+        qqqm_rows = list(csv.reader(io.StringIO(qqqm_source.read_text(encoding="utf-8"))))
+        qqqm_header = qqqm_rows[0]
+        remove_columns = sorted(
+            [qqqm_header.index("Sector"), qqqm_header.index("Industry")], reverse=True
+        )
+        for row in qqqm_rows:
+            for column in remove_columns:
+                row.pop(column)
+        buffer = io.StringIO()
+        csv.writer(buffer, lineterminator="\n").writerows(qqqm_rows)
+        qqqm_source.write_text(buffer.getvalue(), encoding="utf-8")
+        false_classification = copy.deepcopy(good)
+        false_classification["funds"][1]["source_sha256"] = validator.digest_file(
+            qqqm_source, validator.MAX_SOURCE_BYTES, "QQQM missing-classification fixture"
+        )
+        false_classification["funds"][1]["holdings"] = parser.parse_source(
+            "QQQM", qqqm_source, "invesco-csv-v1"
+        )["holdings"]
+        mapping = validator.read_json(
+            mapping_path, validator.MAX_MAPPING_BYTES, "adversarial mapping"
+        )
+        semiconductor = next(
+            item
+            for item in mapping["records"]
+            if item["normalized_industry"] == validator.SEMI
+        )
+        semiconductor["normalized_sector"] = "Industrials"
+        semiconductor["normalized_industry"] = validator.OTHER_INDUSTRY
+        false_classification["mapping_sha256"] = rewrite_json(mapping_path, mapping)
+        reject(
+            "missing raw labels cannot authorize a bundle-local false classification",
+            false_classification,
+            packet_path,
+        )
+        mapping_path.write_bytes(original_mapping)
+        qqqm_source.write_bytes(original_qqqm_source)
 
         mapping = validator.read_json(
             mapping_path, validator.MAX_MAPPING_BYTES, "adversarial mapping"
@@ -167,7 +367,7 @@ def main() -> None:
         future_path.parent.mkdir(parents=True)
         reject("future-dated 2099 bundle", future, future_path)
 
-    print("Independent Look-through Bundle v1.3 adversarial tests passed.")
+    print("Look-through Bundle v1.3 adversarial tests passed.")
 
 
 if __name__ == "__main__":

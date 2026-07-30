@@ -23,11 +23,23 @@ SOURCE_FORMATS = {
     "SOXX": "ishares-csv-v1",
 }
 DATE_PATTERNS = (
+    re.compile(
+        r"(?:holdings|portfolio)\s*:?\s*as\s+of[,:]?\s*[\"']?"
+        r"(\d{1,2}-[A-Za-z]{3,9}-\d{4})",
+        re.I,
+    ),
     re.compile(r"(?:holdings|portfolio)\s+as\s+of[,:]?\s*[\"']?([A-Za-z]{3,9}\s+\d{1,2},\s+\d{4})", re.I),
     re.compile(r"(?:holdings|portfolio)\s+as\s+of[,:]?\s*[\"']?(\d{1,2}/\d{1,2}/\d{4})", re.I),
     re.compile(r"(?:as\s+of|asofdate)[,:]?\s*[\"']?(\d{4}-\d{2}-\d{2})", re.I),
 )
-DATE_FORMATS = ("%b %d, %Y", "%B %d, %Y", "%m/%d/%Y", "%Y-%m-%d")
+DATE_FORMATS = (
+    "%d-%b-%Y",
+    "%d-%B-%Y",
+    "%b %d, %Y",
+    "%B %d, %Y",
+    "%m/%d/%Y",
+    "%Y-%m-%d",
+)
 IDENTIFIER_COLUMNS = ("cusip", "isin", "sedol", "identifier")
 PLACEHOLDER_TICKERS = {
     "",
@@ -201,11 +213,17 @@ def _typed_identifier(kind: str, value: str) -> str | None:
     canonical = re.sub(r"[\s-]+", "", value).upper()
     if not canonical:
         return None
-    if kind == "isin" or (kind == "identifier" and re.fullmatch(r"[A-Z]{2}[A-Z0-9]{9}\d", canonical)):
+    if (kind == "isin" and re.fullmatch(r"[A-Z]{2}[A-Z0-9]{9}\d", canonical)) or (
+        kind == "identifier" and re.fullmatch(r"[A-Z]{2}[A-Z0-9]{9}\d", canonical)
+    ):
         return f"ISIN:{canonical}"
-    if kind == "cusip" or (kind == "identifier" and re.fullmatch(r"[A-Z0-9*@#]{9}", canonical)):
+    if (kind == "cusip" and re.fullmatch(r"[A-Z0-9*@#]{9}", canonical)) or (
+        kind == "identifier" and re.fullmatch(r"[A-Z0-9*@#]{9}", canonical)
+    ):
         return f"CUSIP:{canonical}"
-    if kind == "sedol" or (kind == "identifier" and re.fullmatch(r"[A-Z0-9]{7}", canonical)):
+    if (kind == "sedol" and re.fullmatch(r"[A-Z0-9]{7}", canonical)) or (
+        kind == "identifier" and re.fullmatch(r"[A-Z0-9]{7}", canonical)
+    ):
         return f"SEDOL:{canonical}"
     if kind == "identifier":
         manager_id = re.sub(r"[^A-Z0-9./-]+", "-", value.upper()).strip("-")
@@ -214,29 +232,45 @@ def _typed_identifier(kind: str, value: str) -> str | None:
     return None
 
 
-def _security_id(
+def _security_ids(
     row: list[object],
     columns: dict[str, int],
     row_number: int,
     instrument: str,
     name: str,
-) -> str:
+) -> tuple[str, list[str]]:
+    candidates: dict[str, str] = {}
     for kind in IDENTIFIER_COLUMNS:
         value = _cell(row, columns, kind)
         if value and (typed := _typed_identifier(kind, value)) is not None:
-            return typed
+            identifier_type = typed.split(":", 1)[0]
+            previous = candidates.setdefault(identifier_type, typed)
+            if previous != typed:
+                _fail(
+                    f"source row {row_number} has conflicting {identifier_type} identifiers"
+                )
+    ordered = [
+        candidates[identifier_type]
+        for identifier_type in ("CUSIP", "ISIN", "SEDOL", "MANAGER")
+        if identifier_type in candidates
+    ]
+    for identifier_type in ("CUSIP", "ISIN", "SEDOL", "MANAGER"):
+        if identifier_type in candidates:
+            return candidates[identifier_type], ordered
 
     ticker = re.sub(r"\s+", "", _cell(row, columns, "ticker")).upper()
     if ticker not in PLACEHOLDER_TICKERS:
         if not re.fullmatch(r"[A-Z0-9][A-Z0-9./-]{0,31}", ticker):
             _fail(f"source row {row_number} ticker is not a stable identifier")
-        return f"TICKER:{ticker}"
+        security_id = f"TICKER:{ticker}"
+        return security_id, [security_id]
     if instrument == "cash":
         currency = next(
             (item for item in re.findall(r"\b[A-Z]{3}\b", name.upper()) if item in {"USD"}),
             "USD",
         )
-        return f"CASH:{currency}"
+        security_id = f"CASH:{currency}"
+        return security_id, [security_id]
     _fail(f"source row {row_number} has no stable non-placeholder security identifier")
 
 
@@ -279,10 +313,13 @@ def _rows_to_holdings(
         ticker = _cell(row, columns, "ticker")
         asset_class = _cell(row, columns, "asset_class")
         instrument = _instrument(asset_class, ticker, name)
-        security_id = _security_id(row, columns, offset, instrument, name)
-        if security_id in seen:
-            _fail(f"archived source has duplicate security identifier: {security_id}")
-        seen.add(security_id)
+        security_id, source_identifiers = _security_ids(
+            row, columns, offset, instrument, name
+        )
+        duplicate = next((item for item in source_identifiers if item in seen), None)
+        if duplicate is not None:
+            _fail(f"archived source has duplicate security identifier: {duplicate}")
+        seen.update(source_identifiers)
         market_weight = _number(raw_weight, f"source row {offset} weight") / 100
         if instrument == "cash":
             exposure_weight = 0.0
@@ -305,6 +342,7 @@ def _rows_to_holdings(
         holdings.append(
             {
                 "security_id": security_id,
+                "source_identifiers": source_identifiers,
                 "raw_name": name,
                 "instrument_type": instrument,
                 "market_weight": market_weight,

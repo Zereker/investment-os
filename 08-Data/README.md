@@ -9,6 +9,8 @@ Investment OS 的可审计数据层。
 - `DATA_QUALITY.md`：Green / Yellow / Red 数据质量闸门。
 - `LOOKTHROUGH_PACKET.md`：SPYM / QQQM / SOXX 穿透证据Bundle v1.3及Green关闭标准。
 - `LOOKTHROUGH_ISSUER_REGISTRY_TEMPLATE.json`：以 CIK / LEI 统一多股权类别发行人身份的注册表模板。
+- `REGISTRIES/LOOKTHROUGH_ISSUER_AUTHORITY.json`：只增不改的证券alias、canonical security与发行人中央authority。
+- `REGISTRIES/LOOKTHROUGH_CLASSIFICATION_AUTHORITY.json`：只增不改的GICS分类中央authority。
 - `SNAPSHOTS/`：按观察日期保存不可变的官方估值与穿透快照。
 
 ## 每周估值快照流程
