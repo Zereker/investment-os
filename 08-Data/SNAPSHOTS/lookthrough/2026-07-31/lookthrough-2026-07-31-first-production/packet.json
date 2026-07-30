@@ -1318,8 +1318,8 @@
           ]
         },
         {
-          "exposure_weight": 0.0014619573769178002,
-          "instrument_type": "derivative",
+          "exposure_weight": 0.0,
+          "instrument_type": "cash",
           "market_weight": -0.00146196,
           "raw_industry": null,
           "raw_name": "CONTRA FUTURE NASDAQ 100 E-MINI SEP26NQU6",
@@ -1791,20 +1791,20 @@
   "mapping_sha256": "d99433fcfdfd98276ffc65dffba614cd790575e649ecbd6fe5030aa6cf2c24be",
   "metrics": {
     "classification_coverage_ratio": 0.0,
-    "classification_unknown_weight": 0.4637483259947826,
-    "gross_lookthrough_exposure": 0.4637483259947826,
+    "classification_unknown_weight": 0.46926587110548684,
+    "gross_lookthrough_exposure": 0.46926587110548684,
     "issuer_coverage_ratio": 0.0,
-    "issuer_unknown_weight": 0.4637483259947826,
+    "issuer_unknown_weight": 0.46926587110548684,
     "max_issuer_known_weight": 0.0,
-    "max_issuer_upper_bound": 0.4637483259947826,
+    "max_issuer_upper_bound": 0.46926587110548684,
     "semiconductor_known_weight": 0.0,
-    "semiconductor_upper_bound": 0.4637483259947826,
+    "semiconductor_upper_bound": 0.46926587110548684,
     "technology_known_weight": 0.0,
-    "technology_upper_bound": 0.4637483259947826
+    "technology_upper_bound": 0.46926587110548684
   },
   "observed_at": "2026-07-31T02:35:38+09:00",
   "packet_id": "lookthrough-2026-07-31-first-production",
-  "packet_sha256": "f7579e30d6b4283db0b4f178ef45cb6da7834ffdeafefc231a90a6f1b9ebe406",
+  "packet_sha256": "83433d186e7cce632c6ee6b4822403b8d604c3c41c25b994216c056a6d506eda",
   "portfolio_weights": {
     "QQQM": 0.19529684636531014,
     "SOXX": 0.07615462693154149,

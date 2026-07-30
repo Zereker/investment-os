@@ -31,6 +31,8 @@
 
 所有 Bundle 文件只增不改。两份 authority 也只允许在数组尾部追加经独立审查的记录，不允许改写、重排或删除既有身份与分类。CI 以 PR base 或 push 前一提交为基点执行两类历史检查。来源、映射、账户或候选情景变化时必须创建新 Bundle。
 
+Bundle 顶层和 `raw/` 必须与契约引用精确一致；未被 Packet 绑定的影子 Packet、额外来源、子目录或其他文件都会失败。历史检查必须能够读取并验证完整 base commit 及两份 base authority；base 不可用或 authority 不可读时失败关闭，不能静默跳过。
+
 ## Packet 必填结构
 
 - `schema_version`：当前固定为 `1.4`。
@@ -44,7 +46,7 @@
 - `portfolio_weights`：仅含 `cash / other / SPYM / QQQM / SOXX`，必须与账户情景重算值一致。SOXX 超过当前 3% 执行上限时必须被真实记录并使对应 gate 为假，不能让整个 Bundle 因此无法落盘。
 - `funds`：恰好为 SPYM / QQQM / SOXX。`complete` 保存官方 URL、版本化 `source_format`、`source_as_of`、`retrieved_at`、`raw/` 原始文件和真实字节 `source_sha256`；`unavailable` 保存非空 `failure_reason`，不得声称不存在的日期、文件、哈希或 holdings。
 - `holdings`：保留主 `security_id`、原始行中全部有效 `source_identifiers`、原始名称、Sector/Industry、`instrument_type`、`market_weight` 和 `exposure_weight`；必须逐行等于验证器从归档字节解析的结果。
-- `metrics / gates / verdict`：必须等于验证器从交易后权重、持仓和映射重算的结果。
+- `metrics / gates / verdict`：必须等于验证器从当前或交易后账户情景、持仓和映射重算的结果。
 - `packet_sha256`：将该字段暂置空字符串后，对键排序、无多余空格的 UTF-8 JSON 求 SHA-256。
 
 验证器使用严格 JSON：重复键、NaN、Infinity、超大文件、路径逃逸、符号链接和超量持仓均被拒绝。
@@ -59,7 +61,7 @@
 | QQQM | `invesco.com` |
 | SOXX | `ishares.com` / `blackrock.com` |
 
-URL 白名单不是单独的真实性证明。URL 路径还必须识别具体产品；完整来源文件分别为 `raw/SPYM.xlsx`、`raw/QQQM.json`、`raw/SOXX.csv`。验证器使用 `ssga-xlsx-v1`、`invesco-json-v1`、`ishares-csv-v1` 三个确定性解析器，从归档字节重建日期与完整 holdings，再逐行核对 Packet；Invesco 解析器直接绑定产品页当前使用的官方 holdings API、CUSIP `46138G649`、`effectiveDate` 与完整 `holdings` 数组。仅保存哈希但不解析不能通过。
+URL 白名单不是单独的真实性证明。URL 路径还必须识别具体产品；完整来源文件分别为 `raw/SPYM.xlsx`、`raw/QQQM.json`、`raw/SOXX.csv`。验证器使用 `ssga-xlsx-v1`、`invesco-json-v1`、`ishares-csv-v1` 三个确定性解析器，从归档字节重建日期与完整 holdings，再逐行核对 Packet。归档字节自身也必须绑定产品：State Street工作簿元数据必须识别SPYM，Invesco响应必须包含QQQM CUSIP `46138G649`、一致的`effectiveDate / effectiveBusinessDate`以及与数组长度相等的`totalNumberOfHoldings`，iShares CSV元数据必须识别`iShares Semiconductor ETF`。Invesco重复JSON键被拒绝。仅保存哈希或只在Packet中自述产品URL不能通过。
 
 证券 ID 按实际识别出的类型执行 `CUSIP → ISIN → SEDOL → 管理人标识 → 非占位 ticker` 优先级，而不是按原始列出现顺序选择；因此 State Street 同时提供通用 `Identifier` 与 `SEDOL` 时，通用列中的有效 CUSIP 仍优先。所有有效 ID 都以 `source_identifiers` 原顺序无关、类型优先的数组保存；验证器要求它们在中央 crosswalk 中解析到同一 `canonical_security_id` 与发行人。ID 使用 `CUSIP:`、`ISIN:`、`SEDOL:`、`MANAGER:` 或 `TICKER:` 带类型形式。`-`、`--`、`-CASH-` 等占位 ticker 不能覆盖稳定标识；没有稳定标识的非现金行不得进入 Green。
 
@@ -71,7 +73,9 @@ State Street `ssga-xlsx-v1` 明确识别 Daily XLSX 中的 `Holdings: As of DD-M
 - 管理人持仓 `market_weight` 允许最多 5 bps 的披露舍入差；因此 100.01% 可表达，但更大缺口不能被重新归一化隐藏。
 - 普通股票/基金的 `exposure_weight` 必须与正的 `market_weight` 一致；现金敞口为 0。
 - 无法解释的 `other` 不能以零敞口进入 Green。
+- 账户级 `other` 残差不能从风险计算中消失；其全部权重同时进入发行人未知与分类未知最坏情形。
 - 衍生品必须记录单独的 `exposure_weight`。该字段表示相对基金 NAV 的经济名义敞口，不能因市场权重显示为 0 而省略。
+- Invesco期货的`Synthetic Cash / CONTRA FUTURE`配对行是市场价值抵销项，保留其负`market_weight`但`exposure_weight`为0；实际期货行按名义值计一次，不能把同一风险双计。
 - 每个正衍生品敞口只有在哈希化映射表中提供 `derivative_components` 后才能获得覆盖；底层分解权重在 5 bps 内合计 100%。缺少映射时其敞口进入发行人和分类未知上界，而不是伪造身份或阻止观察 Bundle 落盘。
 
 iShares 对 `Notional Value` 的说明可作为 SOXX 衍生品 `exposure_weight` 的原始口径；Packet 必须保留管理人原始字段，不能用手填汇总替代。
@@ -83,7 +87,7 @@ iShares 对 `Notional Value` 的说明可作为 SOXX 衍生品 `exposure_weight`
 - `Semiconductors & Semiconductor Equipment`
 - `Other / non-semiconductor`
 
-发行人注册表与行业映射中的每条记录都必须保存结构化 `source_url / as_of` 证据，并逐对象匹配仓库中央 authority；自由文本不再满足证据契约。发行人身份只允许 `cik:<10-digits>` 或 `lei:<20-character-LEI>`；CIK 必须绑定同一编号的 SEC URL，LEI 必须绑定同一编号的 GLEIF URL。注册表拒绝重复发行人 ID、重复规范公司名和重复来源 ID；每个 SEDOL、CUSIP、ISIN 或 ticker alias 必须指向 authority 中已存在、且自指的 `canonical_security_id`，alias 与 canonical 必须共用发行人。因此跨基金的 SEDOL↔CUSIP 以及 Alphabet A/C 都按同一实体累计。可识别的管理人原始 Sector/Industry 必须与统一映射一致；原始分类缺失时也只能引用中央 classification authority，不能由 Bundle 自述降低风险。
+发行人注册表与行业映射中的每条记录都必须保存结构化 `source_url / as_of` 证据，并逐对象匹配仓库中央 authority；自由文本不再满足证据契约。发行人身份只允许 `cik:<10-digits>` 或 `lei:<20-character-LEI>`；CIK 必须绑定同一编号的 SEC URL，LEI 必须绑定同一编号的 GLEIF URL。注册表拒绝重复发行人 ID、重复规范公司名和重复来源 ID；每个 SEDOL、CUSIP、ISIN 或 ticker alias 必须指向 authority 中已存在、且自指的 `canonical_security_id`，alias 与 canonical 必须共用发行人。因此跨基金的 SEDOL↔CUSIP 以及 Alphabet A/C 都按同一实体累计。衍生品映射中的每个组件必须同时存在于同一映射快照并直接解析为普通证券；中央classification authority中的组件还必须是中央issuer authority内的canonical证券，缺失、嵌套或循环组件即使尚未被当前持仓引用也不能进入只增不改authority。Bundle发行人子集若暂未包含某个已批准组件，分类仍可独立计算，但该组件权重必须进入发行人未知。可识别的管理人原始Sector/Industry必须与统一映射一致；原始分类缺失时也只能引用中央classification authority，不能由Bundle自述降低风险。
 
 ## 独立缺口与最坏情形
 

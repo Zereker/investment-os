@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import copy
 import json
+import shutil
+import subprocess
 import tempfile
 from pathlib import Path
 
@@ -27,6 +29,57 @@ def rewrite_json(path: Path, value: dict) -> str:
         encoding="utf-8",
     )
     return validator.digest_file(path, validator.MAX_MAPPING_BYTES, str(path))
+
+
+def reject_source(name: str, ticker: str, path: Path, source_format: str) -> None:
+    try:
+        parser.parse_source(ticker, path, source_format)
+    except parser.SourceParseError:
+        return
+    raise AssertionError(f"parser accepted adversarial source: {name}")
+
+
+def test_history_checker(root: Path) -> None:
+    repository = root / "history-repository"
+    (repository / "scripts").mkdir(parents=True)
+    registry_dir = repository / "08-Data" / "REGISTRIES"
+    registry_dir.mkdir(parents=True)
+    shutil.copy2(
+        validator.ROOT / "scripts" / "check_lookthrough_history.py",
+        repository / "scripts" / "check_lookthrough_history.py",
+    )
+    for name in (
+        "LOOKTHROUGH_ISSUER_AUTHORITY.json",
+        "LOOKTHROUGH_CLASSIFICATION_AUTHORITY.json",
+    ):
+        shutil.copy2(validator.ROOT / "08-Data" / "REGISTRIES" / name, registry_dir / name)
+    commands = [
+        ["git", "init", "-q"],
+        ["git", "config", "user.email", "audit@example.invalid"],
+        ["git", "config", "user.name", "Audit"],
+        ["git", "add", "."],
+        ["git", "commit", "-qm", "base"],
+    ]
+    for command in commands:
+        subprocess.run(command, cwd=repository, check=True)
+    base_sha = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=repository,
+        check=True,
+        text=True,
+        capture_output=True,
+    ).stdout.strip()
+    checker = ["python3", "scripts/check_lookthrough_history.py"]
+    assert subprocess.run(
+        [*checker, base_sha], cwd=repository, check=False, capture_output=True
+    ).returncode == 0
+    assert subprocess.run(
+        [*checker, "f" * 40], cwd=repository, check=False, capture_output=True
+    ).returncode != 0
+    (registry_dir / "LOOKTHROUGH_ISSUER_AUTHORITY.json").unlink()
+    assert subprocess.run(
+        [*checker, base_sha], cwd=repository, check=False, capture_output=True
+    ).returncode != 0
 
 
 def main() -> None:
@@ -66,6 +119,86 @@ def main() -> None:
             "CUSIP:02079K305",
             "CUSIP:02079K107",
         ]
+        wrong_product_path = tmp_path / "QQQM-wrong-product.json"
+        wrong_product = copy.deepcopy(qqqm_payload)
+        wrong_product["cusip"] = "000000000"
+        wrong_product_path.write_text(json.dumps(wrong_product), encoding="utf-8")
+        reject_source(
+            "QQQM response for another product",
+            "QQQM",
+            wrong_product_path,
+            "invesco-json-v1",
+        )
+        wrong_count_path = tmp_path / "QQQM-wrong-count.json"
+        wrong_count = copy.deepcopy(qqqm_payload)
+        wrong_count["totalNumberOfHoldings"] = 999
+        wrong_count_path.write_text(json.dumps(wrong_count), encoding="utf-8")
+        reject_source(
+            "QQQM declared holdings count mismatch",
+            "QQQM",
+            wrong_count_path,
+            "invesco-json-v1",
+        )
+        wrong_date_path = tmp_path / "QQQM-wrong-business-date.json"
+        wrong_date = copy.deepcopy(qqqm_payload)
+        wrong_date["effectiveBusinessDate"] = "2026-07-28"
+        wrong_date_path.write_text(json.dumps(wrong_date), encoding="utf-8")
+        reject_source(
+            "QQQM effective date mismatch",
+            "QQQM",
+            wrong_date_path,
+            "invesco-json-v1",
+        )
+        duplicate_path = tmp_path / "QQQM-duplicate-key.json"
+        duplicate_path.write_text(
+            json.dumps(qqqm_payload).replace(
+                '"cusip": "46138G649",',
+                '"cusip": "000000000", "cusip": "46138G649",',
+                1,
+            ),
+            encoding="utf-8",
+        )
+        reject_source(
+            "QQQM duplicate product identity",
+            "QQQM",
+            duplicate_path,
+            "invesco-json-v1",
+        )
+        synthetic_path = tmp_path / "QQQM-synthetic-cash.json"
+        synthetic = copy.deepcopy(qqqm_payload)
+        synthetic["holdings"].extend(
+            [
+                {
+                    "cusip": "NQU6",
+                    "ticker": "NQU6",
+                    "issuerName": "CME E-Mini NASDAQ 100 Index Future",
+                    "securityTypeName": "Index Future",
+                    "securityTypeCode": "IFUT",
+                    "percentageOfTotalNetAssets": 0.1,
+                    "marketValueBase": 100,
+                },
+                {
+                    "cusip": "NQU6",
+                    "ticker": "NQU6_",
+                    "issuerName": "CONTRA FUTURE NASDAQ 100 E-MINI",
+                    "securityTypeName": "Synthetic Cash",
+                    "securityTypeCode": "SYN",
+                    "percentageOfTotalNetAssets": -0.1,
+                    "marketValueBase": -100,
+                },
+            ]
+        )
+        synthetic["totalNumberOfHoldings"] = len(synthetic["holdings"])
+        synthetic_path.write_text(json.dumps(synthetic), encoding="utf-8")
+        parsed_synthetic = parser.parse_source(
+            "QQQM", synthetic_path, "invesco-json-v1"
+        )["holdings"]
+        future = next(item for item in parsed_synthetic if item["security_id"].endswith(".IFUT"))
+        contra = next(item for item in parsed_synthetic if item["security_id"].endswith(".SYN"))
+        assert future["instrument_type"] == "derivative"
+        assert future["exposure_weight"] > 0
+        assert contra["instrument_type"] == "cash"
+        assert contra["exposure_weight"] == 0
         missing_id_path = tmp_path / "QQQM-placeholder-only.json"
         missing_id = copy.deepcopy(qqqm_payload)
         missing_id["holdings"][0]["cusip"] = None
@@ -128,9 +261,50 @@ def main() -> None:
             "CUSIP:02079K305",
             "SEDOL:BYVY8G0",
         ]
+        wrong_spym_path = tmp_path / "SPYM-wrong-product.xlsx"
+        validator.write_xlsx_fixture(
+            wrong_spym_path,
+            [
+                ["NOT SPYM DATA: As of 29-Jul-2026"],
+                [
+                    "CUSIP",
+                    "Ticker",
+                    "Name",
+                    "Asset Class",
+                    "Weight (%)",
+                    "Market Value",
+                    "Notional Value",
+                ],
+                ["02079K305", "GOOGL", "Alphabet Inc", "Equity", 100, 1000, 1000],
+            ],
+        )
+        reject_source(
+            "State Street workbook for another product",
+            "SPYM",
+            wrong_spym_path,
+            "ssga-xlsx-v1",
+        )
+        wrong_soxx_path = tmp_path / "SOXX-wrong-product.csv"
+        wrong_soxx_path.write_text(
+            "iShares Another ETF\n"
+            'Fund Holdings as of,\"Jul 29, 2026\"\n'
+            "Ticker,Name,Sector,Asset Class,Market Value,Weight (%),Notional Value\n"
+            "NVDA,NVIDIA CORP,Information Technology,Equity,1000,100,1000\n",
+            encoding="utf-8",
+        )
+        reject_source(
+            "iShares CSV for another product",
+            "SOXX",
+            wrong_soxx_path,
+            "ishares-csv-v1",
+        )
 
         good, packet_path = validator.sample(Path(tmp))
         validator.validate(good, packet_path, allow_test=True)
+        shadow = packet_path.parent / "shadow-packet.json"
+        shadow.write_text("{}\n", encoding="utf-8")
+        reject("extra unbound bundle file", copy.deepcopy(good), packet_path)
+        shadow.unlink()
 
         account_path = packet_path.parent / good["account_scenario_path"]
         candidate_path = packet_path.parent / good["candidate_path"]
@@ -168,6 +342,9 @@ def main() -> None:
         spym["source_file"] = None
         spym["source_sha256"] = None
         spym["holdings"] = []
+        unavailable_spym_source = packet_path.parent / good["funds"][0]["source_file"]
+        unavailable_spym_bytes = unavailable_spym_source.read_bytes()
+        unavailable_spym_source.unlink()
         metrics, gates, verdict = validator.evaluate(
             observed_hold, packet_path, allow_test=True
         )
@@ -180,6 +357,29 @@ def main() -> None:
         assert gates["sources_complete_same_date"] is False
         assert gates["soxx_at_or_below_3"] is False
         assert metrics["issuer_unknown_weight"] >= 0.55
+        unavailable_spym_source.write_bytes(unavailable_spym_bytes)
+        account_path.write_bytes(original_account)
+        candidate_path.write_bytes(original_candidate)
+
+        residual = copy.deepcopy(good)
+        account = validator.read_json(
+            account_path, validator.MAX_ACCOUNT_BYTES, "residual account"
+        )
+        account["current_market_values"]["cash"] -= 5000
+        account["current_market_values"]["other"] = 5000
+        account_sha = rewrite_json(account_path, account)
+        candidate = validator.read_json(
+            candidate_path, validator.MAX_ACCOUNT_BYTES, "residual candidate"
+        )
+        candidate["account_snapshot_sha256"] = account_sha
+        candidate_sha = rewrite_json(candidate_path, candidate)
+        residual["account_snapshot_sha256"] = account_sha
+        residual["candidate_sha256"] = candidate_sha
+        residual["portfolio_weights"]["cash"] -= 0.05
+        residual["portfolio_weights"]["other"] = 0.05
+        metrics, _, _ = validator.evaluate(residual, packet_path, allow_test=True)
+        assert abs(metrics["issuer_unknown_weight"] - 0.05) < validator.EPS
+        assert abs(metrics["classification_unknown_weight"] - 0.05) < validator.EPS
         account_path.write_bytes(original_account)
         candidate_path.write_bytes(original_candidate)
 
@@ -194,6 +394,44 @@ def main() -> None:
             "canonical_security_id": "CUSIP:02079K305",
             "issuer_group_id": "cik:0001652044",
         }
+
+        original_registry = registry_path.read_bytes()
+        registry = validator.read_json(
+            registry_path, validator.MAX_MAPPING_BYTES, "partial issuer registry"
+        )
+        mapping_snapshot = validator.read_json(
+            packet_path.parent / good["mapping_path"],
+            validator.MAX_MAPPING_BYTES,
+            "derivative mapping snapshot",
+        )
+        derivative = next(
+            item
+            for item in mapping_snapshot["records"]
+            if item["derivative_components"] is not None
+        )
+        missing_component_id = derivative["derivative_components"][0]["security_id"]
+        registry["securities"] = [
+            item
+            for item in registry["securities"]
+            if item["security_id"] != missing_component_id
+        ]
+        partial_identity = copy.deepcopy(good)
+        partial_identity["issuer_registry_sha256"] = rewrite_json(
+            registry_path, registry
+        )
+        metrics, gates, verdict = validator.evaluate(
+            partial_identity, packet_path, allow_test=True
+        )
+        partial_identity["metrics"] = metrics
+        partial_identity["gates"] = gates
+        partial_identity["verdict"] = verdict
+        partial_identity["packet_sha256"] = validator.canonical_sha256(
+            partial_identity
+        )
+        validator.validate(partial_identity, packet_path, allow_test=True)
+        assert metrics["issuer_unknown_weight"] > 0
+        assert metrics["classification_unknown_weight"] == 0
+        registry_path.write_bytes(original_registry)
 
         cross_identifier = copy.deepcopy(good)
         original_spym_source = (
@@ -418,6 +656,8 @@ def main() -> None:
         )
         future_path.parent.mkdir(parents=True)
         reject("future-dated 2099 bundle", future, future_path)
+
+        test_history_checker(tmp_path)
 
     print("Look-through Bundle v1.4 adversarial tests passed.")
 
