@@ -271,7 +271,7 @@ def sample() -> dict:
     }
 
     noncash = 0.85
-    issuer_a = 0.55 * 0.10 + 0.28 * 0.10
+    issuer_a = 0.55 * 0.10 + 0.28 * 0.10 + 0.02 * 0.10
     tech = issuer_a + 0.02
     packet["metrics"] = {
         "issuer_coverage_ratio": 1.0,
