@@ -15,10 +15,10 @@ Production Packet 保存为：
 - `schema_version`：当前固定为 `1.0`。
 - `packet_id`：以 `lookthrough-<review_date>-` 开头。
 - `review_date`、带时区的 `observed_at`；两者日历日期必须一致。
-- `portfolio_weights`：仅含 `cash / SPYM / QQQM / SOXX`，合计 1。
+- `mapping_version`：本次发行人、Sector与Industry统一映射的不可变版本标识。\n- `portfolio_weights`：仅含 `cash / SPYM / QQQM / SOXX`，合计 1。
 - `funds`：恰好三项且 ticker 唯一；每项保存官方来源、`source_as_of`、原始文件 SHA-256 和完整 holdings。
 - `holdings`：基金内权重必须合计 1；现金、衍生品、嵌套基金和未分类残余也必须作为行保留，不得把已知持仓重新归一。
-- `issuer_group_id / normalized_sector / normalized_industry`：未知时使用 JSON `null`，不得猜测或空字符串。
+- 每个holding必须保存稳定`security_id`和管理人原始`raw_sector / raw_industry`字段；原始值未知时使用JSON `null`。\n- `issuer_group_id / normalized_sector / normalized_industry`：未知时使用 JSON `null`，不得猜测或空字符串。
 - `metrics / gates / verdict`：必须等于验证器从 holdings 与组合权重重新计算的结果。
 - `packet_sha256`：将该字段暂置空字符串后，对键排序、无多余空格的 UTF-8 JSON 求 SHA-256。
 
