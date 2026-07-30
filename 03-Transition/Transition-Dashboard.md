@@ -36,16 +36,16 @@
 | 其中：SOXX Stage Reserve | 不重复计入 | `U` | `U` | 现金用途标签 |
 | SPYM | 待更新 | 待更新 | `57%-A_basis` | 待更新 |
 | QQQM | 待更新 | 待更新 | 28% | 待更新 |
-| SOXX / Alpha | 待更新 | `A_actual` | 当前阶段≤6%，长期≤15% | `Approved / Frozen — DATA GATE` |
+| SOXX / Alpha | 待更新 | `A_actual` | 当前阶段≤6%，长期≤15% | `Frozen — DATA GATE` |
 | Legacy / Restricted | 待更新 | 待更新 | 按独立计划 | 待更新 |
 
 ## Alpha 状态
 
 | 标的 | 生命周期 | 实时数量 / 市值 | 月度新增分配 | 状态 |
 |---|---|---:|---:|---|
-| SOXX | Approved / Frozen — DATA GATE | 从IBKR读取 | 独立完整IC | `HOLD — ADD FROZEN` |
+| SOXX | Frozen — DATA GATE | 从IBKR读取 | 0 | `HOLD — ADD FROZEN` |
 
-本表不缓存数量；新增、升级或退出以 `04-Alpha/Position-Registry.md` 和相应治理流程为准。
+本表不缓存数量；新增、升级或退出以`04-Alpha/Position-Registry.md`和相应治理流程为准。当前顺序为`Frozen → Approved / Add Candidate → IC APPROVE → 人工下单`。
 
 ## 三条资金通道
 
