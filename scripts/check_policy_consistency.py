@@ -178,13 +178,31 @@ def main() -> None:
         "08-Data/LOOKTHROUGH_PACKET.md",
         "验证通过不改变 Position Registry",
         "source_sha256",
+        "schema_version`：当前固定为 `1.1",
+        "account_snapshot_sha256",
+        "mapping_sha256",
+        "exposure_weight",
         "科技严格低于 50%",
         "Packet通过只是SOXX解冻的必要条件之一",
     )
     require(
         ".github/workflows/policy-consistency.yml",
         "python3 scripts/validate_lookthrough_packet.py --self-test",
-        "! -name 'TEMPLATE.json'",
+        "--scan-root 08-Data/SNAPSHOTS/lookthrough",
+        "python3 scripts/check_lookthrough_history.py",
+        "fetch-depth: 0",
+    )
+    require(
+        "scripts/validate_lookthrough_packet.py",
+        'SCHEMA_VERSION = "1.1"',
+        "duplicate JSON key",
+        "source_sha256 does not match archived source bytes",
+        "derivative requires audited look-through components",
+        "post-trade account scenario",
+    )
+    require(
+        "scripts/check_lookthrough_history.py",
+        "Historical look-through evidence is append-only",
     )
     forbid("02-Operating-System/Monthly-Workflow.md", "SOXX 等 Observation")
     forbid("03-Transition/Transition-Plan.md", r"现金、\(A\)、目标缺口")

@@ -7,7 +7,7 @@ Investment OS 的可审计数据层。
 - `DATA_REGISTRY.md`：允许进入 Production 的来源和失败处理。
 - `DATA_DICTIONARY.md`：字段定义、口径与缺失值规则。
 - `DATA_QUALITY.md`：Green / Yellow / Red 数据质量闸门。
-- `LOOKTHROUGH_PACKET.md`：SPYM / QQQM / SOXX 穿透证据Packet v1.0及Green关闭标准。
+- `LOOKTHROUGH_PACKET.md`：SPYM / QQQM / SOXX 穿透证据Bundle v1.1及Green关闭标准。
 - `SNAPSHOTS/`：按观察日期保存不可变的官方估值与穿透快照。
 
 ## 每周估值快照流程
