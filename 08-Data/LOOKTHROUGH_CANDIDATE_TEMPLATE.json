@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "candidate_packet_id": "candidate-YYYY-MM-DD-id",
+  "created_at": "YYYY-MM-DDThh:mm:ss+09:00",
+  "expires_at": "YYYY-MM-DDThh:mm:ss+09:00",
+  "ticker": "SOXX",
+  "side": "ADD",
+  "proposed_notional": 0,
+  "max_notional": 0,
+  "account_snapshot_id": "",
+  "account_snapshot_sha256": ""
+}
