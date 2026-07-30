@@ -108,6 +108,13 @@ def validate(packet: dict, *, allow_test: bool = False) -> dict[str, float]:
     portfolio_weights = {key: weight(value, f"portfolio_weights.{key}") for key, value in portfolio.items()}
     if abs(sum(portfolio_weights.values()) - 1) > EPS:
         fail("portfolio_weights must sum to 1")
+    if portfolio_weights["SPYM"] <= EPS or portfolio_weights["QQQM"] <= EPS:
+        fail("SPYM and QQQM portfolio weights must be positive")
+    if 1 - portfolio_weights["cash"] <= EPS:
+        fail("non-cash portfolio weight must be positive")
+    mapping_version = packet.get("mapping_version")
+    if not isinstance(mapping_version, str) or not mapping_version.strip():
+        fail("mapping_version is required")
 
     funds = packet.get("funds")
     if not isinstance(funds, list) or len(funds) != 3:
@@ -145,6 +152,11 @@ def validate(packet: dict, *, allow_test: bool = False) -> dict[str, float]:
             prefix = f"{ticker}.holdings[{index}]"
             if not isinstance(holding, dict):
                 fail(f"{prefix} must be an object")
+            security_id = holding.get("security_id")
+            if not isinstance(security_id, str) or not security_id.strip():
+                fail(f"{prefix}.security_id is required")
+            if "raw_sector" not in holding or "raw_industry" not in holding:
+                fail(f"{prefix} must preserve raw_sector and raw_industry")
             holding_weight = weight(holding.get("weight"), f"{prefix}.weight")
             holding_sum += holding_weight
             contribution = portfolio_weights[ticker] * holding_weight
@@ -220,15 +232,15 @@ def validate(packet: dict, *, allow_test: bool = False) -> dict[str, float]:
 def sample() -> dict:
     holdings = {
         "SPYM": [
-            {"security_id": "AAA", "weight": 0.10, "issuer_group_id": "issuer-a", "normalized_sector": TECH, "normalized_industry": SEMI},
-            {"security_id": "BBB", "weight": 0.90, "issuer_group_id": "issuer-b", "normalized_sector": "Other", "normalized_industry": "Other"},
+            {"security_id": "AAA", "raw_sector": "Technology", "raw_industry": "Semiconductors", "weight": 0.10, "issuer_group_id": "issuer-a", "normalized_sector": TECH, "normalized_industry": SEMI},
+            {"security_id": "BBB", "raw_sector": "Other", "raw_industry": "Other", "weight": 0.90, "issuer_group_id": "issuer-b", "normalized_sector": "Other", "normalized_industry": "Other"},
         ],
         "QQQM": [
             {"security_id": "AAA", "weight": 0.10, "issuer_group_id": "issuer-a", "normalized_sector": TECH, "normalized_industry": SEMI},
-            {"security_id": "CCC", "weight": 0.90, "issuer_group_id": "issuer-c", "normalized_sector": "Other", "normalized_industry": "Other"},
+            {"security_id": "CCC", "raw_sector": "Other", "raw_industry": "Other", "weight": 0.90, "issuer_group_id": "issuer-c", "normalized_sector": "Other", "normalized_industry": "Other"},
         ],
         "SOXX": [
-            {"security_id": "DDD", "weight": 1.00, "issuer_group_id": "issuer-d", "normalized_sector": TECH, "normalized_industry": SEMI},
+            {"security_id": "DDD", "raw_sector": "Technology", "raw_industry": "Semiconductors", "weight": 1.00, "issuer_group_id": "issuer-d", "normalized_sector": TECH, "normalized_industry": SEMI},
         ],
     }
     packet = {
@@ -237,6 +249,7 @@ def sample() -> dict:
         "review_date": "2026-07-30",
         "observed_at": "2026-07-30T12:00:00+09:00",
         "test_only": True,
+        "mapping_version": "selftest-1",
         "portfolio_weights": {"cash": 0.15, "SPYM": 0.55, "QQQM": 0.28, "SOXX": 0.02},
         "funds": [
             {
