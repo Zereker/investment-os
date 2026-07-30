@@ -22,7 +22,7 @@
 - 数量 / 金额：
 - 订单类型、限价、有效期：
 - 交易后 Cash / QQQM / SPYM / Alpha / Legacy 权重：
-- 交易后 \(A\) 与 `SPYM + Alpha` 袖套权重：
+- 交易后`A_actual`与`SPYM + SOXX + Stage Reserve`袖套权重：
 - 本次操作解决的组合问题：
 - 为什么现在必须行动，而不是继续持有或等待：
 - 为什么直接持有/买入 SPYM 或 QQQM 不是更好的选择：
