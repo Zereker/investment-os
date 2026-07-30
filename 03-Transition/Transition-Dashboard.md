@@ -33,9 +33,9 @@
 | 分类 | 实时市值 | 实时权重 | 动态目标 | 状态 |
 |---|---:|---:|---:|---|
 | Cash | 待更新 | 待更新 | 15% | 待更新 |
-| SPYM | 待更新 | 待更新 | `57%−A` | 待更新 |
+| SPYM | 待更新 | 待更新 | `57%-A_basis` | 待更新 |
 | QQQM | 待更新 | 待更新 | 28% | 待更新 |
-| Alpha（含 Observation） | 待更新 | \(A\) | 机会预算 0%–15% | 待更新 |
+| SOXX / Alpha | 待更新 | `A_actual` | 当前阶段≤6%，长期≤15% | `Approved / Frozen — DATA GATE` |
 | Legacy / Restricted | 待更新 | 待更新 | 按独立计划 | 待更新 |
 
 ## Alpha 状态
