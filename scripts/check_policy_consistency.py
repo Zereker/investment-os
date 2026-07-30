@@ -171,9 +171,21 @@ def main() -> None:
         "indexes.nasdaq.com",
         "前三大权重上限分别为12%、10%、8%",
     )
-    require("README.md", "# Investment OS v3.4.1")
-    require("PRODUCTION.md", "# Investment OS v3.4.1 — Production Contract")
-    require("07-Releases/v3.4.1.md", "本发布不授权任何订单")
+    require("README.md", "# Investment OS v3.4.2")
+    require("PRODUCTION.md", "# Investment OS v3.4.2 — Production Contract")
+    require("07-Releases/v3.4.2.md", "本发布不授权任何订单")
+    require(
+        "08-Data/LOOKTHROUGH_PACKET.md",
+        "验证通过不改变 Position Registry",
+        "source_sha256",
+        "科技严格低于 50%",
+        "Packet通过只是SOXX解冻的必要条件之一",
+    )
+    require(
+        ".github/workflows/policy-consistency.yml",
+        "python3 scripts/validate_lookthrough_packet.py --self-test",
+        "! -name 'TEMPLATE.json'",
+    )
     forbid("02-Operating-System/Monthly-Workflow.md", "SOXX 等 Observation")
     forbid("03-Transition/Transition-Plan.md", r"现金、\(A\)、目标缺口")
 
