@@ -171,9 +171,134 @@ def main() -> None:
         "indexes.nasdaq.com",
         "前三大权重上限分别为12%、10%、8%",
     )
-    require("README.md", "# Investment OS v3.4.1")
-    require("PRODUCTION.md", "# Investment OS v3.4.1 — Production Contract")
-    require("07-Releases/v3.4.1.md", "本发布不授权任何订单")
+    require("README.md", "# Investment OS v3.4.2")
+    require("PRODUCTION.md", "# Investment OS v3.4.2 — Production Contract")
+    require("07-Releases/v3.4.2.md", "本发布不授权任何订单")
+    for path in (
+        "08-Data/DATA_QUALITY.md",
+        "08-Data/DATA_REGISTRY.md",
+        "08-Data/README.md",
+        "BUGLOG.md",
+        "Decision-Log.md",
+        "README.md",
+    ):
+        require(path, "Bundle v1.3")
+    require(
+        "08-Data/README.md",
+        "REGISTRIES/LOOKTHROUGH_ISSUER_AUTHORITY.json",
+        "REGISTRIES/LOOKTHROUGH_CLASSIFICATION_AUTHORITY.json",
+    )
+    require(
+        "08-Data/DATA_REGISTRY.md",
+        "中央Issuer Authority",
+        "中央Classification Authority",
+    )
+    require(
+        "08-Data/DATA_QUALITY.md",
+        "只增不改中央authority",
+    )
+    require(
+        "08-Data/LOOKTHROUGH_PACKET.md",
+        "验证通过不改变 Position Registry",
+        "source_sha256",
+        "schema_version`：当前固定为 `1.3",
+        "account_snapshot_sha256",
+        "candidate_sha256",
+        "issuer_registry_sha256",
+        "mapping_sha256",
+        "逐行等于验证器从归档字节解析的结果",
+        "exposure_weight",
+        "科技严格低于 50%",
+        "Packet通过只是SOXX解冻的必要条件之一",
+    )
+    require(
+        "08-Data/LOOKTHROUGH_PACKET_TEMPLATE.json",
+        '"schema_version": "1.3"',
+        '"issuer_registry_path": "issuer-registry.json"',
+        '"issuer_registry_sha256": ""',
+        '"source_identifiers": []',
+    )
+    require(
+        "08-Data/LOOKTHROUGH_ISSUER_REGISTRY_TEMPLATE.json",
+        '"schema_version": "1.1"',
+        '"issuer_group_id": "cik:0001652044"',
+        '"security_id": "CUSIP:02079K305"',
+        '"security_id": "CUSIP:02079K107"',
+        '"canonical_security_id": "CUSIP:02079K305"',
+        '"security_id": "SEDOL:BYVY8G0"',
+    )
+    require(
+        "08-Data/REGISTRIES/LOOKTHROUGH_ISSUER_AUTHORITY.json",
+        '"authority_id": "lookthrough-issuer-authority"',
+        '"schema_version": "1.1"',
+    )
+    require(
+        "08-Data/REGISTRIES/LOOKTHROUGH_CLASSIFICATION_AUTHORITY.json",
+        '"authority_id": "lookthrough-classification-authority"',
+        '"schema_version": "1.2"',
+        '"taxonomy": "GICS"',
+    )
+    require(
+        "08-Data/LOOKTHROUGH_MAPPING_TEMPLATE.json",
+        '"schema_version": "1.2"',
+        '"source_url": ""',
+        '"as_of": "YYYY-MM-DD"',
+    )
+    require(
+        ".github/workflows/policy-consistency.yml",
+        "python3 scripts/validate_lookthrough_packet.py --self-test",
+        "python3 scripts/test_lookthrough_adversarial.py",
+        "--scan-root 08-Data/SNAPSHOTS/lookthrough",
+        "python3 scripts/check_lookthrough_history.py",
+        "fetch-depth: 0",
+    )
+    require(
+        "scripts/validate_lookthrough_packet.py",
+        'SCHEMA_VERSION = "1.3"',
+        'MAPPING_VERSION = "1.2"',
+        'ISSUER_REGISTRY_VERSION = "1.1"',
+        "duplicate JSON key",
+        "source_sha256 does not match archived source bytes",
+        "does not match parsed archived source",
+        "derivative requires audited look-through components",
+        "post-trade account scenario",
+        "canonical_security_id",
+        "source_identifiers",
+        "reviewed issuer authority",
+        "reviewed classification authority",
+        "validate_authority_catalogs",
+    )
+    require(
+        "scripts/parse_lookthrough_sources.py",
+        '"SPYM": "ssga-xlsx-v1"',
+        '"QQQM": "invesco-csv-v1"',
+        '"SOXX": "ishares-csv-v1"',
+        '"holding ticker"',
+        '"security identifier"',
+        '"date"',
+        "CUSIP:",
+        "%d-%b-%Y",
+        "derivative has zero economic exposure",
+    )
+    require(
+        "scripts/test_lookthrough_adversarial.py",
+        "packet holdings unrelated to archived bytes",
+        "SOXX erased as zero-exposure other instruments",
+        "Alphabet A and C split across issuer identities",
+        "SEDOL and canonical CUSIP split across issuer identities",
+        "derivative component uses a free issuer id",
+        "future-dated 2099 bundle",
+        "SPYM 3 Holdings: As of 29-Jul-2026",
+        "missing raw labels cannot authorize a bundle-local false classification",
+        "max_issuer_known_weight",
+    )
+    require(
+        "scripts/check_lookthrough_history.py",
+        "Historical look-through evidence is append-only",
+        "LOOKTHROUGH_ISSUER_AUTHORITY.json",
+        "LOOKTHROUGH_CLASSIFICATION_AUTHORITY.json",
+        "is not append-only",
+    )
     forbid("02-Operating-System/Monthly-Workflow.md", "SOXX 等 Observation")
     forbid("03-Transition/Transition-Plan.md", r"现金、\(A\)、目标缺口")
 

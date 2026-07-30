@@ -15,7 +15,19 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
       - name: Validate Production policy
         env:
           PYTHONDONTWRITEBYTECODE: "1"
         run: python3 scripts/check_policy_consistency.py
+      - name: Validate look-through evidence packets
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          timeout 90s python3 scripts/validate_lookthrough_packet.py --self-test
+          timeout 90s python3 scripts/test_lookthrough_adversarial.py
+          timeout 90s python3 scripts/validate_lookthrough_packet.py \
+            --scan-root 08-Data/SNAPSHOTS/lookthrough
+          python3 scripts/check_lookthrough_history.py "$BASE_SHA"
