@@ -1,4 +1,4 @@
-# Investment OS v3.4.1 — Production Contract
+# Investment OS v3.4.2 — Production Contract
 
 本文件是当前生产系统的入口与执行契约。它不创造新的投资策略，只规定如何可靠地读取、验证和执行仓库中已经生效的规则。
 
@@ -16,19 +16,20 @@
 
 ## 2. 生产冻结
 
-v3.4.1期间：
+v3.4.2期间：
 
 - 允许修复数据读取、计算、文档歧义和流程遗漏等缺陷。
 - 不允许在交易执行过程中临时增加指标、改变阈值或更换估值口径。
 - 策略变更必须进入 `Research/`，经过独立研究、书面提案和明确批准后，才能作为新版本发布。
 - 常规规则只在年度审核窗口审议；紧急修复仅限于防止明显错误或违反 IPS。
 
-## 2.1 SOXX v3.4.1冻结规则
+## 2.1 SOXX v3.4.2冻结规则
 
 - SOXX是唯一Alpha载体，长期硬上限与最终治理阶段15%，当前阶段6%。
 - 定义\(A_{basis}=\max(A_{actual},A_{stage})\)、\(U=\max(A_{stage}-A_{actual},0)\)；SPYM目标为\(57\%-A_{basis}\)，物理现金目标为\(15\%+U\)。
 - 当前`A_execution_cap=3%`；执行上限按3%→4.5%→6%→10%→12.5%→15%逐档推进，且不得高于`A_stage`。10%/12.5%/15%还须逐级季度批准；风险护栏、现行指数方法证据、实时IBKR和Green穿透优先；本版本不产生订单。
 - 每个PR必须通过`Policy consistency`检查；检查失败时不得合并为Production。
+- 穿透Green证据必须符合`08-Data/LOOKTHROUGH_PACKET.md`并通过`validate_lookthrough_packet.py`；验证通过不改变Registry、不创建候选或授权订单。
 
 ## 3. 每日巡检契约
 

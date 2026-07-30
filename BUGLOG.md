@@ -206,3 +206,14 @@
 - 修复：Registry只保存持久生命周期；候选移至带`approved_as_of`、`data_as_of`、`expires_at`、金额和交易后权重的IC Packet；同审核日采集且三只ETF `source_as_of`一致才为Green。
 - 防复发：账户/订单/现金/NAV/价格/持仓版本变化或当日收盘立即失效；CI要求全部字段与Green规则。
 - 状态：Closed
+
+
+## BUG-020：穿透Data Gate只有文字定义
+
+- 日期：2026-07-30
+- 事件：系统规定同审核日、同`source_as_of`、覆盖率和护栏上界，但没有机器可验证的证据Packet。
+- 影响：手填汇总值、日期错位、权重不守恒或被修改的原始文件可能在人工流程中被误判为Green。
+- 根因：v3.4.1闭合了语义与CI输入域，但没有为真实穿透证据定义版本化文件契约和独立重算。
+- 修复：v3.4.2升级为Look-through Evidence Bundle v1.3；管理人专用解析器覆盖真实字段，证券ID按CUSIP / ISIN / SEDOL优先，发行人由哈希化CIK / LEI注册表统一，多股权类别和衍生品组件不得自由拆分。
+- 防复发：Actions运行扩展故障注入、固定目录扫描与base SHA不可变性检查；不存在按模板文件名静默排除的通道，验证通过仍不得自动改变Registry或产生候选。
+- 状态：Monitoring（待首份真实Production Bundle验收后关闭）

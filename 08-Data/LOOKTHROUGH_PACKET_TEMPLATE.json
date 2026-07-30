@@ -1,0 +1,113 @@
+{
+  "schema_version": "1.3",
+  "packet_id": "lookthrough-YYYY-MM-DD-id",
+  "review_date": "YYYY-MM-DD",
+  "observed_at": "YYYY-MM-DDThh:mm:ss+09:00",
+  "candidate_packet_id": "candidate-YYYY-MM-DD-id",
+  "candidate_path": "candidate.json",
+  "candidate_sha256": "",
+  "weight_basis": "post_trade",
+  "account_scenario_path": "account.json",
+  "account_snapshot_sha256": "",
+  "issuer_registry_path": "issuer-registry.json",
+  "issuer_registry_sha256": "",
+  "mapping_path": "mapping.json",
+  "mapping_sha256": "",
+  "portfolio_weights": {
+    "cash": 0,
+    "SPYM": 0,
+    "QQQM": 0,
+    "SOXX": 0
+  },
+  "funds": [
+    {
+      "ticker": "SPYM",
+      "source_name": "State Street official holdings",
+      "source_url": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-sp-500-etf-spym",
+      "source_format": "ssga-xlsx-v1",
+      "source_as_of": "YYYY-MM-DD",
+      "retrieved_at": "YYYY-MM-DDThh:mm:ss+09:00",
+      "source_file": "raw/SPYM.xlsx",
+      "source_sha256": "",
+      "holdings": [
+        {
+          "security_id": "",
+          "source_identifiers": [],
+          "raw_name": "",
+          "instrument_type": "equity",
+          "market_weight": 0,
+          "exposure_weight": 0,
+          "raw_sector": null,
+          "raw_industry": null
+        }
+      ]
+    },
+    {
+      "ticker": "QQQM",
+      "source_name": "Invesco official holdings",
+      "source_url": "https://www.invesco.com/us/en/financial-products/etfs/invesco-nasdaq-100-etf.html",
+      "source_format": "invesco-csv-v1",
+      "source_as_of": "YYYY-MM-DD",
+      "retrieved_at": "YYYY-MM-DDThh:mm:ss+09:00",
+      "source_file": "raw/QQQM.csv",
+      "source_sha256": "",
+      "holdings": [
+        {
+          "security_id": "",
+          "source_identifiers": [],
+          "raw_name": "",
+          "instrument_type": "equity",
+          "market_weight": 0,
+          "exposure_weight": 0,
+          "raw_sector": null,
+          "raw_industry": null
+        }
+      ]
+    },
+    {
+      "ticker": "SOXX",
+      "source_name": "iShares official holdings",
+      "source_url": "https://www.ishares.com/us/products/239705/ishares-phlx-semiconductor-etf",
+      "source_format": "ishares-csv-v1",
+      "source_as_of": "YYYY-MM-DD",
+      "retrieved_at": "YYYY-MM-DDThh:mm:ss+09:00",
+      "source_file": "raw/SOXX.csv",
+      "source_sha256": "",
+      "holdings": [
+        {
+          "security_id": "",
+          "source_identifiers": [],
+          "raw_name": "",
+          "instrument_type": "derivative",
+          "market_weight": 0,
+          "exposure_weight": 0,
+          "raw_sector": null,
+          "raw_industry": null
+        }
+      ]
+    }
+  ],
+  "metrics": {
+    "gross_lookthrough_exposure": 0,
+    "issuer_coverage_ratio": 0,
+    "classification_coverage_ratio": 0,
+    "issuer_unknown_weight": 0,
+    "classification_unknown_weight": 0,
+    "technology_known_weight": 0,
+    "technology_upper_bound": 0,
+    "semiconductor_known_weight": 0,
+    "semiconductor_upper_bound": 0,
+    "max_issuer_known_weight": 0,
+    "max_issuer_upper_bound": 0
+  },
+  "gates": {
+    "technology_below_50": false,
+    "semiconductor_at_or_below_15": false,
+    "issuer_at_or_below_10": false,
+    "full_issuer_coverage": false,
+    "full_classification_coverage": false,
+    "post_trade_soxx_at_or_below_3": false
+  },
+  "verdict": "DATA INCOMPLETE",
+  "packet_sha256": ""
+}
