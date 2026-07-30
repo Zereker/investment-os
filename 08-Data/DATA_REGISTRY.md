@@ -19,7 +19,8 @@
 | Open Orders | IBKR Orders | 无 | 每次巡检 | Green | 读取失败则所有交易路径关闭 |
 | External Contribution \(F\) | IBKR Activity / Cash Transactions | 无 | 每月 | Green | 只使用已到账外部净入金；提款与内部卖出所得排除 |
 | `A_actual` | IBKR SOXX市值 / Net Liquidation | 无 | 每次巡检 | Green（Derived） | 失败则SOXX与动态目标关闭 |
-| `A_stage` | Position Registry | 无 | 每次巡检 | Green | 当前6%；不得从聊天或价格推导 |
+| `A_stage` | Position Registry | 无 | 每次巡检 | Green | 当前6%；合法阶段6% / 10% / 12.5% / 15%，不得从聊天或价格推导 |
+| `A_execution_cap` | Position Registry | 无 | 每次巡检及任何SOXX IC前 | Green | 当前3%；只能按3%→4.5%→6%→10%→12.5%→15%逐档更新，且不得高于`A_stage` |
 | `A_basis` / `U` | Data Dictionary公式 | 无 | 每次巡检 | Green（Derived） | 失败则配置计算关闭 |
 | Routine Core Gap / Purchase \(G_0,D\) | 实时 IBKR 数据 + Monthly Workflow | 无 | 每月 | Green（Derived） | \(D=\min(F,G_0)\)；\(F-D\) 留在现金 |
 | Benchmark hypothetical 15% USD Cash / modeled interest | 月初基准净值 + IBKR官方利率与计息规则 | 无 | 每日计息、月度重置/报告 | Green（Derived） | 月内不得每日重置15%现金本金；任一输入缺失则当期Policy Benchmark为N/A |
