@@ -24,7 +24,7 @@ v3.3的以下基础继续有效：
 
 - 用 `SPYM = 57% − A` 消除 Alpha“不必填满”与固定配置区间的数学冲突。
 - 将 Observation 定义为 Alpha 的生命周期状态，而不是第五个资产层。
-- v3.3曾将SOXX归入`Alpha / Observation`；v3.4已由Position Registry升级其生命周期。
+- v3.3曾将SOXX置于Observation生命周期；v3.4已由Position Registry升级。
 - 将历史超额现金的战略迁移与估值驱动的战术加速分开。
 - Liquidity 只限制可执行金额，不再与价格、估值相加制造买入信号。
 - 增加科技、半导体和单一发行人的穿透集中度护栏。
