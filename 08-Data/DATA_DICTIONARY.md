@@ -9,7 +9,7 @@
 - `quality`：`Green`、`Yellow` 或 `Red`。
 - `notes`：代理源、延迟、解析失败或口径限制。
 
-## v3.4配置字段
+## v3.4.1配置字段
 
 - `alpha_actual_weight`：\(A_{actual}=\text{SOXX市值}/V\)。
 - `alpha_stage_cap`：\(A_{stage}\)，由Position Registry发布，当前6%。
@@ -33,13 +33,13 @@ IBKR Positions 返回的单项市值。持仓真相以 Positions 为准。
 月度符号 \(F\)。本月已到账的实际外部净入金，且 \(F\ge0\)。提款、内部资产出售所得和未到账计划额不得计入。
 
 ### routine_core_gap_before_usd
-月度符号 \(G_0\)。在 \(F\) 到账后，按 QQQM 28% 与 SPYM \(57\%-A\) 动态目标计算的 Routine DCA 前正缺口合计。
+月度符号 \(G_0\)。在 \(F\) 到账后，按 QQQM 28% 与 SPYM \(57\%-A_{basis}\) 动态目标计算的 Routine DCA 前正缺口合计。
 
 ### routine_core_purchase_usd
 月度符号 \(D\)。定义为 \(D=\min(F,G_0)\)。\(F-D\) 必须保留为现金，不得因默认 2,000 美元计划额而强制买入。
 
 ### strategic_excess_cash_usd / strategic_core_gap_after_usd / strategic_baseline_usd
-分别对应 \(S\)、\(G\) 与 \(B\)。其中 \(S=\max(C-15\%\times V,0)\)，\(G\) 是执行 \(D\) 后 Core 剩余正缺口，\(B=\min(S/R,G)\)。
+分别对应 \(S\)、\(G\) 与 \(B\)。其中 \(S=\max(C-(15\%+U)\times V,0)\)，\(G\) 是执行 \(D\) 后 Core 剩余正缺口，\(B=\min(S/R,G)\)。
 
 ### open_order_status
 IBKR Orders 返回的订单状态。存在 `NEW`、`SUBMITTED` 或 `PARTIALLY_FILLED` 时，Trade Gate 必须检查重复交易。
