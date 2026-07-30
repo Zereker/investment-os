@@ -22,7 +22,7 @@
 | `A_stage` | Position Registry | 无 | 每次巡检 | Green | 当前6%；不得从聊天或价格推导 |
 | `A_basis` / `U` | Data Dictionary公式 | 无 | 每次巡检 | Green（Derived） | 失败则配置计算关闭 |
 | Routine Core Gap / Purchase \(G_0,D\) | 实时 IBKR 数据 + Monthly Workflow | 无 | 每月 | Green（Derived） | \(D=\min(F,G_0)\)；\(F-D\) 留在现金 |
-| Benchmark hypothetical 15% USD Cash / modeled interest | 基准净值 + IBKR官方利率与计息规则 | 无 | 每日/月度 | Green（Derived） | 任一输入缺失则当期Policy Benchmark为N/A；不得使用实际账户收益率或0%代理 |
+| Benchmark hypothetical 15% USD Cash / modeled interest | 月初基准净值 + IBKR官方利率与计息规则 | 无 | 每日计息、月度重置/报告 | Green（Derived） | 月内不得每日重置15%现金本金；任一输入缺失则当期Policy Benchmark为N/A |
 | SPYM Price | IBKR | State Street SPYM 官方页 | 每次巡检 | Green | 标记价格时间戳 |
 | QQQM Price | IBKR | Invesco QQQM 官方页 | 每次巡检 | Green | 标记价格时间戳 |
 | SPYM Total Return | State Street SPYM 官方绩效 / 分红数据 | IBKR 市场数据与分红记录 | 每月 | Green | Policy Benchmark 必须使用含分红同期总收益 |
@@ -31,6 +31,7 @@
 | SPYM Holdings / Sector | State Street SPYM 官方页 | 无 | 每季度及新增 Alpha 前 | Green | 缺失时冻结依赖穿透数据的新 Alpha |
 | QQQM Holdings / Sector | Invesco QQQM 官方页 | 无 | 每季度及新增 Alpha 前 | Green | 同上 |
 | SOXX Holdings / Sector | iShares SOXX 官方页 | 无 | 每季度及追加前 | Green | 缺失时 SOXX 保持 ADD FROZEN |
+| SOXX / NYSE Semiconductor Index Methodology | ICE Index Platform + iShares现行Prospectus | 无 | 每季度及方法变更时 | Red（证据待补齐） | 完整现行方法未形成可审计记录前，SOXX Research保持Incomplete、Registry保持Frozen |
 | Issuer Group / Sector / Industry Map | 管理人官方持仓标识与分类 | 已审计的版本化映射 | 每季度及新增 Alpha 前 | Green（Derived） | 保留原标签、统一标签、映射依据与日期；冲突不得猜测 |
 | Look-through Concentration | IBKR 组合权重 + 官方 ETF 持仓 + Data Dictionary 公式 | 无 | 每季度及新增 Alpha 前 | Green（Derived） | 输出发行人、科技、半导体、覆盖率与未分类权重；可能越线则 WAIT / DATA INCOMPLETE |
 | S&P 500 Price/Earnings | State Street SPYM 官方页 | State Street SPY 官方页 | 每周 | Green | 保存官方 `source_as_of` 和计算标签 |
