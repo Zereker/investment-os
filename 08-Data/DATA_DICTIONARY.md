@@ -9,10 +9,11 @@
 - `quality`：`Green`、`Yellow` 或 `Red`。
 - `notes`：代理源、延迟、解析失败或口径限制。
 
-## v3.4配置字段
+## v3.4.1配置字段
 
 - `alpha_actual_weight`：\(A_{actual}=\text{SOXX市值}/V\)。
-- `alpha_stage_cap`：\(A_{stage}\)，由Position Registry发布，当前6%。
+- `alpha_stage_cap`：\(A_{stage}\)，由Position Registry发布，当前6%；合法集合为6%、10%、12.5%、15%。
+- `alpha_execution_cap`：\(A_{execution\_cap}\)，当前3%；是下一笔SOXX交易后的最大允许实际权重，合法顺序为3%→4.5%→6%→10%→12.5%→15%，必须满足\(A_{execution\_cap}\le A_{stage}\)。
 - `alpha_allocation_basis`：\(A_{basis}=\max(A_{actual},A_{stage})\)。
 - `soxx_stage_reserve_weight`：\(U=\max(A_{stage}-A_{actual},0)\)，是现金用途标签，不得重复计入。
 - `physical_cash_target_weight`：\(15\%+U\)，下限为\(12\%+U\)。
@@ -33,13 +34,13 @@ IBKR Positions 返回的单项市值。持仓真相以 Positions 为准。
 月度符号 \(F\)。本月已到账的实际外部净入金，且 \(F\ge0\)。提款、内部资产出售所得和未到账计划额不得计入。
 
 ### routine_core_gap_before_usd
-月度符号 \(G_0\)。在 \(F\) 到账后，按 QQQM 28% 与 SPYM \(57\%-A\) 动态目标计算的 Routine DCA 前正缺口合计。
+月度符号 \(G_0\)。在 \(F\) 到账后，按 QQQM 28% 与 SPYM \(57\%-A_{basis}\) 动态目标计算的 Routine DCA 前正缺口合计。
 
 ### routine_core_purchase_usd
 月度符号 \(D\)。定义为 \(D=\min(F,G_0)\)。\(F-D\) 必须保留为现金，不得因默认 2,000 美元计划额而强制买入。
 
 ### strategic_excess_cash_usd / strategic_core_gap_after_usd / strategic_baseline_usd
-分别对应 \(S\)、\(G\) 与 \(B\)。其中 \(S=\max(C-15\%\times V,0)\)，\(G\) 是执行 \(D\) 后 Core 剩余正缺口，\(B=\min(S/R,G)\)。
+分别对应 \(S\)、\(G\) 与 \(B\)。其中 \(S=\max(C-(15\%+U)\times V,0)\)，\(G\) 是执行 \(D\) 后 Core 剩余正缺口，\(B=\min(S/R,G)\)。
 
 ### open_order_status
 IBKR Orders 返回的订单状态。存在 `NEW`、`SUBMITTED` 或 `PARTIALLY_FILLED` 时，Trade Gate 必须检查重复交易。
@@ -66,17 +67,62 @@ Invesco QQQM 官方页的 `Forward Price/Earnings Ratio`。使用 QQQ 作为代�
 
 ## Policy Benchmark 字段
 
-### benchmark_cash_balance_usd / benchmark_eligible_cash_usd
+### benchmark_month_start_nav_usd / benchmark_cash_principal_usd / benchmark_accrued_interest_usd / benchmark_cash_sleeve_value_usd
 
-每日假设基准现金\(C_{B,d}=15\%\times V_{B,d}\)。按IBKR公开规则，USD前10,000美元不计息，\(E_{B,d}=\max(C_{B,d}-10000,0)\)。
+政策基准的现金袖套拆成：
+
+- \(P_{B,d}\)：已经入账、可按IBKR规则计息的假设USD现金本金；
+- \(A_{B,d}\)：尚未入账的假设应计利息；
+- \(C_{B,d}=P_{B,d}+A_{B,d}\)：现金袖套总价值。应计利息计入基准NAV，但在正式入账前不得进入计息本金。
+
+每个自然月首个估值时点只重置一次政策权重。月初再平衡转移额记为\(R_{B,m,0}\)，只调整已入账本金，使：
+
+\[
+P_{B,m,0}+A_{B,m,0}=15\%\times V_{B,m,0}
+\]
+
+月内不因SPYM / QQQM每日涨跌重新设定现金权重。若存在上月尚未入账应计利息，月初重置时必须保留该资产并相应调整\(P_{B,m,0}\)，不得把它再次确认为收益。
+
+### benchmark_interest_posting_usd / benchmark_eligible_cash_usd
+
+\(J_{B,d}\)是按模型在当日正式入账的上一自然月应计利息；除IBKR规定的次月第三个工作日外为0。入账先做科目转换：
+
+\[
+P^*_{B,d}=P_{B,d-1}+R_{B,d}+J_{B,d},\qquad
+A^*_{B,d}=A_{B,d-1}-J_{B,d}
+\]
+
+其中\(R_{B,d}\)只允许出现在月初政策再平衡；月内为0。\(J_{B,d}\)必须等于被转出的同一批模型应计利息，转换本身不产生收益。USD前10,000美元不计息：
+
+\[
+E_{B,d}=\max(P^*_{B,d}-10000,0)
+\]
 
 ### ibkr_usd_full_rate / ibkr_nav_scale
 
-\(r_{full,d}\)为当日适用账户计划的官方USD信用利率；\(k_d=\min(V_{B,d}/100000,1)\)。账户计划、币种、Segment、门槛和日计息基数必须按当日官方规则记录。
+\(r_{full,d}\)为当日适用账户计划的官方USD信用利率；\(k_d=\min(V_{B,d}/100000,1)\)。账户计划、币种、Segment、门槛、实际工作日日历和日计息基数必须按当日官方规则记录。
 
 ### benchmark_cash_interest_usd / benchmark_cash_period_return
 
-USD通常按360天：\(I_{B,t}=\sum_d E_{B,d}\times r_{full,d}\times k_d/360\)；\(r^{model}_{cash,t}=I_{B,t}/\bar C_{B,t}\)。任一输入缺失则为N/A，不得使用实际账户利息、单位收益率或0%替代。
+USD通常按360天；当日利息只基于已入账本金，不能基于昨日未入账应计利息：
+
+\[
+i_{B,d}=E_{B,d}\times r_{full,d}\times k_d/360
+\]
+
+\[
+P_{B,d}=P^*_{B,d},\qquad
+A_{B,d}=A^*_{B,d}+i_{B,d}
+\]
+
+因此日计提不会立即复利；只有上一月利息在规定入账日转为\(P\)后，才参与后续日计息。月度现金袖套收益为：
+
+\[
+I_{B,m}=\sum_{d\in m} i_{B,d},\qquad
+r^{model}_{cash,m}=I_{B,m}/C_{B,m,0}
+\]
+
+任一日输入、工作日日历或利率档位缺失则当月为N/A，不得使用实际账户利息、单位收益率或0%替代。外部现金流不进入基准收益分子；组合比较使用时间加权收益，基准只在下一个月首个估值时点重新设为15% / 57% / 28%。
 
 ### spym_total_return / qqqm_total_return
 同一计量期间、含分红的基金总收益 \(r_{SPYM,t}\) 与 \(r_{QQQM,t}\)。价格收益不得冒充总收益。
@@ -124,6 +170,10 @@ W_{sector,s}=\sum_{i:\ normalized\_sector(i)=s}x_i
 W_{semi}=\sum_{i:\ normalized\_industry(i)=\text{Semiconductors \& Semiconductor Equipment}}x_i
 \]
 用于 15%半导体护栏。
+
+### lookthrough_observed_at / lookthrough_source_as_of / lookthrough_freshness
+
+三只ETF必须在同一审核日采集，`lookthrough_observed_at`记录实际读取时点；每只基金使用该时点可取得的最新官方持仓，`lookthrough_source_as_of`保留发布方日期。三者`source_as_of`完全相同才可为Green；最大差异不超过一个交易日只能为Yellow，超过一个交易日、缺失或并非最新官方版本为Red。SOXX新增要求Green；Yellow或Red只能得到`WAIT / DATA INCOMPLETE`。
 
 ### issuer_coverage_ratio / classification_coverage_ratio / unclassified_lookthrough_weight
 覆盖率分母为总非现金投资权重；分子分别为具有有效 `issuer_group_id`、以及具有有效统一行业分类的穿透贡献。未覆盖贡献记录为 `unclassified_lookthrough_weight`，不得归一化或静默丢弃。若某护栏的已知下界未越线，但“已知值 + 未分类暴露”可能越线，则相关新增 Alpha / Observation 结论必须为 `WAIT / DATA INCOMPLETE`。
