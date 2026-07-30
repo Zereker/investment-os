@@ -18,7 +18,7 @@
 
 ## v3.4.1可靠性修复
 
-v3.4.1不改变v3.4策略：SOXX长期硬上限与最终治理阶段仍为15%，当前阶段仍为6%。本补丁修复Data Dictionary公式、Policy Benchmark月度再平衡、SOXX现行指数方法证据状态和生命周期顺序，并加入自动一致性检查。SOXX当前为`Frozen — DATA GATE`，发布不产生交易。
+v3.4.1不改变v3.4策略：SOXX长期硬上限与最终治理阶段仍为15%，当前阶段仍为6%。本补丁修复Data Dictionary公式、Policy Benchmark应计/入账模型、SOXX现行指数方法证据状态、逐档执行上限和有时效候选流程，并加入自动一致性检查。SOXX当前为`Frozen — DATA GATE`，发布不产生交易。
 
 v3.3的以下基础继续有效：
 
@@ -39,7 +39,7 @@ v3.3的以下基础继续有效：
 - 非例行真实资金建议必须通过 Trade Gate 与 Investment Committee Packet。
 - Production 与 Research 严格隔离；研究内容未经正式批准不得影响交易。
 - 已知错误记录在`BUGLOG.md`，并包含根因、修复和防复发控制。
-- 每个PR由`Policy consistency`工作流检查关键公式、生命周期、研究来源与配置边界。
+- 每个PR由`Policy consistency`工作流检查关键公式、生命周期、研究来源、输入域、逐档执行和候选失效约束。
 
 当前生产入口：[PRODUCTION.md](PRODUCTION.md)；补丁说明：[v3.4.1](07-Releases/v3.4.1.md)
 
