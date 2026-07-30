@@ -18,7 +18,7 @@
 
 ## v3.4.2数据门执行化
 
-v3.4.2不改变v3.4策略或v3.4.1可靠性规则：SOXX长期硬上限15%、当前阶段6%、当前执行上限3%。本补丁以Look-through Evidence Bundle v1.2把穿透Data Gate执行化：管理人专用解析器逐行绑定原始文件、独立映射/账户快照/未失效Candidate、名义敞口重算与独立故障注入CI。验证通过只证明数据证据合格，不改变Registry、不创建或批准交易候选。SOXX仍为`Frozen — DATA GATE`，发布不产生交易。
+v3.4.2不改变v3.4策略或v3.4.1可靠性规则：SOXX长期硬上限15%、当前阶段6%、当前执行上限3%。本补丁以Look-through Evidence Bundle v1.3把穿透Data Gate执行化：管理人专用解析器覆盖真实字段，证券标识使用CUSIP / ISIN / SEDOL优先的带类型ID，发行人由CIK / LEI注册表统一；同时绑定账户快照、未失效Candidate、名义敞口和独立故障测试。验证通过只证明数据证据合格，不改变Registry、不创建或批准交易候选。SOXX仍为`Frozen — DATA GATE`，发布不产生交易。
 
 v3.3的以下基础继续有效：
 

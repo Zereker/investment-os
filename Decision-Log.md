@@ -109,7 +109,7 @@
 ### 决定
 
 - 不改变SOXX 15%长期硬上限、6%当前阶段、3%当前执行上限或任何风险护栏。
-- 用Look-through Evidence Bundle v1.2保存SPYM / QQQM / SOXX官方完整持仓；由管理人专用解析器逐行绑定原始文件，并绑定账户快照、未失效Candidate、统一映射、组合权重和重算结果。
+- 用Look-through Evidence Bundle v1.3保存SPYM / QQQM / SOXX官方完整持仓；由管理人专用解析器绑定原始文件，并绑定账户、Candidate、CIK / LEI发行人注册表、行业映射和重算结果。
 - Green Packet必须由验证器从底层持仓重新计算覆盖率与科技、半导体、发行人上下界；手填汇总值不能绕过重算。
 - Packet通过只关闭穿透数据证据项，不关闭NYSE指数方法证据项，不改变Registry，也不创建Add Candidate或授权订单。
 

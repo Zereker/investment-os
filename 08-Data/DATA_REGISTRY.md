@@ -34,7 +34,7 @@
 | SOXX Holdings / Sector | iShares SOXX 官方页 | 无 | 每季度及追加前 | Green | 缺失时 SOXX 保持 ADD FROZEN |
 | SOXX / NYSE Semiconductor Index Methodology | ICE Index Platform + iShares现行Prospectus | 无 | 每季度及方法变更时 | Red（证据待补齐） | 完整现行方法未形成可审计记录前，SOXX Research保持Incomplete、Registry保持Frozen |
 | Issuer Group / Sector / Industry Map | 管理人官方持仓标识与分类 | 已审计的版本化映射 | 每季度及新增 Alpha 前 | Green（Derived） | 保留原标签、统一标签、映射依据与日期；冲突不得猜测 |
-| Look-through Concentration | IBKR 组合权重 + 官方 ETF 持仓 + Look-through Evidence Bundle v1.2验证器 | 无 | 每季度及新增 Alpha 前 | Green（Derived） | 保存原始文件与Packet SHA-256；从完整底层行重算发行人、科技、半导体、覆盖率与未分类权重；验证失败或可能越线则 WAIT / DATA INCOMPLETE |
+| Look-through Concentration | IBKR 组合权重 + 官方 ETF 持仓 + Look-through Evidence Bundle v1.3验证器 | 无 | 每季度及新增 Alpha 前 | Green（Derived） | 保存原始文件与Packet SHA-256；从完整底层行重算发行人、科技、半导体、覆盖率与未分类权重；验证失败或可能越线则 WAIT / DATA INCOMPLETE |
 | S&P 500 Price/Earnings | State Street SPYM 官方页 | State Street SPY 官方页 | 每周 | Green | 保存官方 `source_as_of` 和计算标签 |
 | S&P 500 FY1 P/E | State Street SPYM 官方页 | State Street SPY 官方页 | 每周 | Green | 保存官方 `source_as_of` 和计算定义 |
 | Nasdaq-100 Price/Earnings | Invesco QQQM 官方页 | 同日 Invesco QQQ 官方页，标记 Proxy | 每周 | Red（未稳定采集） | 不进入 Tactical Opportunity Score |

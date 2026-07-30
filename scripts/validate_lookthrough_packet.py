@@ -46,11 +46,20 @@ GICS_SECTORS = {
 INSTRUMENT_TYPES = {"equity", "fund", "derivative", "cash", "other"}
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 PACKET_ID = re.compile(r"^lookthrough-\d{4}-\d{2}-\d{2}-[a-z0-9][a-z0-9-]{0,63}$")
-CANONICAL_ISSUER = re.compile(
-    r"^(?:issuer:[a-z0-9][a-z0-9.-]{0,63}|lei:[0-9A-Z]{20})$"
+CANONICAL_ISSUER = re.compile(r"^(?:cik:[0-9]{10}|lei:[0-9A-Z]{20})$")
+CANONICAL_SECURITY = re.compile(
+    r"^(?:"
+    r"CUSIP:[A-Z0-9*@#]{9}|"
+    r"ISIN:[A-Z]{2}[A-Z0-9]{9}[0-9]|"
+    r"SEDOL:[A-Z0-9]{7}|"
+    r"TICKER:[A-Z0-9][A-Z0-9./-]{0,31}|"
+    r"MANAGER:[A-Z0-9][A-Z0-9./-]{0,63}|"
+    r"CASH:[A-Z]{3}"
+    r")$"
 )
-SCHEMA_VERSION = "1.2"
-MAPPING_VERSION = "1.0"
+SCHEMA_VERSION = "1.3"
+MAPPING_VERSION = "1.1"
+ISSUER_REGISTRY_VERSION = "1.0"
 ACCOUNT_VERSION = "1.0"
 CANDIDATE_VERSION = "1.0"
 EPS = 1e-9
@@ -259,7 +268,6 @@ def load_mapping(bundle: Path, path_value: object, digest_value: object) -> dict
             record,
             {
                 "security_id",
-                "issuer_group_id",
                 "normalized_sector",
                 "normalized_industry",
                 "derivative_components",
@@ -268,10 +276,7 @@ def load_mapping(bundle: Path, path_value: object, digest_value: object) -> dict
             label,
         )
         security_id = record["security_id"]
-        if not isinstance(security_id, str) or not security_id.strip():
-            fail(f"{label}.security_id is required")
-        if security_id != security_id.strip().upper():
-            fail(f"{label}.security_id must be canonical uppercase without edge whitespace")
+        require_security_id(security_id, f"{label}.security_id")
         if security_id in by_security:
             fail(f"mapping has duplicate security_id: {security_id}")
         evidence = record["evidence"]
@@ -280,19 +285,114 @@ def load_mapping(bundle: Path, path_value: object, digest_value: object) -> dict
         components = record["derivative_components"]
         direct = components is None
         if direct:
-            issuer = record["issuer_group_id"]
             sector = record["normalized_sector"]
             industry = record["normalized_industry"]
-            require_issuer(issuer, f"{label}.issuer_group_id")
             validate_taxonomy(sector, industry, label)
         else:
-            if any(
-                record[key] is not None
-                for key in ("issuer_group_id", "normalized_sector", "normalized_industry")
-            ):
+            if any(record[key] is not None for key in ("normalized_sector", "normalized_industry")):
                 fail(f"{label} derivative mapping must use components, not direct fields")
             validate_components(components, label)
         by_security[security_id] = record
+    return by_security
+
+
+def load_issuer_registry(
+    bundle: Path,
+    path_value: object,
+    digest_value: object,
+    *,
+    allow_test: bool,
+) -> dict[str, str]:
+    _, registry = validate_reference(
+        bundle,
+        {"path": path_value, "sha256": digest_value},
+        label="issuer_registry",
+        max_bytes=MAX_MAPPING_BYTES,
+    )
+    require_keys(
+        registry,
+        {"schema_version", "registry_id", "issuers", "securities"},
+        "issuer_registry",
+    )
+    if registry["schema_version"] != ISSUER_REGISTRY_VERSION:
+        fail(f"issuer_registry.schema_version must be {ISSUER_REGISTRY_VERSION}")
+    if not isinstance(registry["registry_id"], str) or not registry["registry_id"].strip():
+        fail("issuer_registry.registry_id is required")
+    issuers = registry["issuers"]
+    securities = registry["securities"]
+    if not isinstance(issuers, list) or not issuers:
+        fail("issuer_registry.issuers must be a non-empty array")
+    if not isinstance(securities, list) or not securities:
+        fail("issuer_registry.securities must be a non-empty array")
+
+    issuer_ids: set[str] = set()
+    issuer_names: set[str] = set()
+    for index, issuer in enumerate(issuers):
+        label = f"issuer_registry.issuers[{index}]"
+        if not isinstance(issuer, dict):
+            fail(f"{label} must be an object")
+        require_keys(
+            issuer,
+            {"issuer_group_id", "canonical_name", "evidence_url"},
+            label,
+        )
+        issuer_id = require_issuer(issuer["issuer_group_id"], f"{label}.issuer_group_id")
+        if issuer_id in issuer_ids:
+            fail(f"issuer_registry has duplicate issuer_group_id: {issuer_id}")
+        issuer_ids.add(issuer_id)
+        canonical_name = issuer["canonical_name"]
+        if not isinstance(canonical_name, str) or not canonical_name.strip():
+            fail(f"{label}.canonical_name is required")
+        normalized_name = re.sub(r"[^a-z0-9]+", "", canonical_name.casefold())
+        if not normalized_name or normalized_name in issuer_names:
+            fail("issuer_registry canonical issuer names must be unique")
+        issuer_names.add(normalized_name)
+        evidence_url = issuer["evidence_url"]
+        if not isinstance(evidence_url, str):
+            fail(f"{label}.evidence_url is required")
+        parsed = urlparse(evidence_url)
+        host = (parsed.hostname or "").lower()
+        if allow_test and host == "example.invalid":
+            continue
+        if issuer_id.startswith("cik:"):
+            cik = issuer_id.removeprefix("cik:")
+            if host not in {"sec.gov", "www.sec.gov"} or cik.lstrip("0") not in evidence_url:
+                fail(f"{label}.evidence_url must identify the same issuer on sec.gov")
+        elif host not in {"gleif.org", "www.gleif.org"} or issuer_id.removeprefix("lei:") not in evidence_url.upper():
+            fail(f"{label}.evidence_url must identify the same issuer on gleif.org")
+
+    by_security: dict[str, str] = {}
+    by_cusip_issuer: dict[str, str] = {}
+    for index, security in enumerate(securities):
+        label = f"issuer_registry.securities[{index}]"
+        if not isinstance(security, dict):
+            fail(f"{label} must be an object")
+        require_keys(security, {"security_id", "issuer_group_id", "evidence"}, label)
+        security_id = require_security_id(security["security_id"], f"{label}.security_id")
+        if security_id in by_security:
+            fail(f"issuer_registry has duplicate security_id: {security_id}")
+        issuer_id = require_issuer(
+            security["issuer_group_id"], f"{label}.issuer_group_id"
+        )
+        if issuer_id not in issuer_ids:
+            fail(f"{label}.issuer_group_id is absent from issuer_registry.issuers")
+        evidence = security["evidence"]
+        if not isinstance(evidence, str) or not evidence.strip():
+            fail(f"{label}.evidence is required")
+        cusip_issuer = (
+            security_id.removeprefix("CUSIP:")[:6]
+            if security_id.startswith("CUSIP:")
+            else security_id.removeprefix("ISIN:")[2:8]
+            if security_id.startswith("ISIN:US")
+            else None
+        )
+        if cusip_issuer is not None:
+            previous = by_cusip_issuer.setdefault(cusip_issuer, issuer_id)
+            if previous != issuer_id:
+                fail(
+                    "securities sharing a CUSIP issuer number must share one issuer identity"
+                )
+        by_security[security_id] = issuer_id
     return by_security
 
 
@@ -309,20 +409,20 @@ def validate_components(value: object, label: str) -> None:
     if not isinstance(value, list) or not value:
         fail(f"{label}.derivative_components must be a non-empty array or null")
     total = 0.0
+    seen_security_ids: set[str] = set()
     for index, component in enumerate(value):
         prefix = f"{label}.derivative_components[{index}]"
         if not isinstance(component, dict):
             fail(f"{prefix} must be an object")
         require_keys(
             component,
-            {"issuer_group_id", "normalized_sector", "normalized_industry", "weight"},
+            {"security_id", "weight"},
             prefix,
         )
-        issuer = component["issuer_group_id"]
-        require_issuer(issuer, f"{prefix}.issuer_group_id")
-        validate_taxonomy(
-            component["normalized_sector"], component["normalized_industry"], prefix
-        )
+        security_id = require_security_id(component["security_id"], f"{prefix}.security_id")
+        if security_id in seen_security_ids:
+            fail(f"{label}.derivative_components has duplicate security_id: {security_id}")
+        seen_security_ids.add(security_id)
         total += bounded(component["weight"], f"{prefix}.weight", 0, 1)
     if abs(total - 1) > ROUNDING_TOLERANCE:
         fail(f"{label}.derivative_components weights must sum to 1 within 5 bps")
@@ -330,8 +430,16 @@ def validate_components(value: object, label: str) -> None:
 
 def require_issuer(value: object, field: str) -> str:
     if not isinstance(value, str) or not CANONICAL_ISSUER.fullmatch(value):
+        fail(f"{field} must be a canonical cik:<10-digits> or lei:<20-character-LEI>")
+    if value == "cik:0000000000":
+        fail(f"{field} must not use the null CIK")
+    return value
+
+
+def require_security_id(value: object, field: str) -> str:
+    if not isinstance(value, str) or not CANONICAL_SECURITY.fullmatch(value):
         fail(
-            f"{field} must be a canonical issuer:<lowercase-id> or lei:<20-character-LEI>"
+            f"{field} must be a typed CUSIP, ISIN, SEDOL, TICKER, MANAGER or CASH identifier"
         )
     return value
 
@@ -475,27 +583,46 @@ def reconcile_parsed_holdings(ticker: str, reported: object, parsed: list[dict])
                 fail(f"{label}.{field} does not match parsed archived source")
 
 
-def expand_mapping(record: dict) -> list[tuple[str, str, str, float]]:
+def expand_mapping(
+    record: dict,
+    mapping: dict[str, dict],
+    issuer_registry: dict[str, str],
+) -> list[tuple[str, str, str, float]]:
     components = record["derivative_components"]
     if components is None:
+        security_id = record["security_id"]
+        issuer = issuer_registry.get(security_id)
+        if issuer is None:
+            fail(f"issuer registry has no entry for {security_id}")
         return [
             (
-                record["issuer_group_id"],
+                issuer,
                 record["normalized_sector"],
                 record["normalized_industry"],
                 1.0,
             )
         ]
     total = sum(float(item["weight"]) for item in components)
-    return [
-        (
-            item["issuer_group_id"],
-            item["normalized_sector"],
-            item["normalized_industry"],
-            float(item["weight"]) / total,
+    expanded = []
+    for item in components:
+        security_id = item["security_id"]
+        component_mapping = mapping.get(security_id)
+        issuer = issuer_registry.get(security_id)
+        if component_mapping is None or issuer is None:
+            fail(
+                f"derivative component {security_id} must exist in both mapping and issuer registry"
+            )
+        if component_mapping["derivative_components"] is not None:
+            fail(f"derivative component {security_id} must resolve to a direct security")
+        expanded.append(
+            (
+                issuer,
+                component_mapping["normalized_sector"],
+                component_mapping["normalized_industry"],
+                float(item["weight"]) / total,
+            )
         )
-        for item in components
-    ]
+    return expanded
 
 
 def check_raw_mapping(record: dict, holding: dict, label: str) -> None:
@@ -557,6 +684,8 @@ def evaluate(
         "weight_basis",
         "account_scenario_path",
         "account_snapshot_sha256",
+        "issuer_registry_path",
+        "issuer_registry_sha256",
         "mapping_path",
         "mapping_sha256",
         "portfolio_weights",
@@ -603,9 +732,17 @@ def evaluate(
         fail("account_scenario_path must be account.json")
     if packet["mapping_path"] != "mapping.json":
         fail("mapping_path must be mapping.json")
+    if packet["issuer_registry_path"] != "issuer-registry.json":
+        fail("issuer_registry_path must be issuer-registry.json")
     if packet["candidate_path"] != "candidate.json":
         fail("candidate_path must be candidate.json")
 
+    issuer_registry = load_issuer_registry(
+        bundle,
+        packet["issuer_registry_path"],
+        packet["issuer_registry_sha256"],
+        allow_test=allow_test,
+    )
     mapping = load_mapping(bundle, packet["mapping_path"], packet["mapping_sha256"])
     account = load_account(
         bundle,
@@ -739,10 +876,7 @@ def evaluate(
                 prefix,
             )
             security_id = holding["security_id"]
-            if not isinstance(security_id, str) or not security_id.strip():
-                fail(f"{prefix}.security_id is required")
-            if security_id != security_id.strip().upper():
-                fail(f"{prefix}.security_id must be canonical uppercase without edge whitespace")
+            require_security_id(security_id, f"{prefix}.security_id")
             if security_id in seen_ids:
                 fail(f"{ticker} has duplicate security_id: {security_id}")
             seen_ids.add(security_id)
@@ -769,27 +903,36 @@ def evaluate(
                 fail(f"{prefix} exposure_weight must match positive market_weight")
             if instrument == "other" and exposure_weight <= EPS:
                 fail(f"{prefix} unexplained other instrument cannot have zero exposure")
-            if instrument != "derivative" and exposure_weight > EPS and security_id not in mapping:
-                issuer_unknown += portfolio_weights[ticker] * exposure_weight
-                class_unknown += portfolio_weights[ticker] * exposure_weight
-                gross += portfolio_weights[ticker] * exposure_weight
-                continue
             if exposure_weight <= EPS:
                 continue
             record = mapping.get(security_id)
-            if record is None:
-                issuer_unknown += portfolio_weights[ticker] * exposure_weight
-                class_unknown += portfolio_weights[ticker] * exposure_weight
-                gross += portfolio_weights[ticker] * exposure_weight
-                continue
-            if instrument == "derivative" and record["derivative_components"] is None:
-                fail(f"{prefix} derivative requires audited look-through components")
-            if instrument != "derivative" and record["derivative_components"] is not None:
-                fail(f"{prefix} non-derivative cannot use derivative components")
-            check_raw_mapping(record, holding, prefix)
+            issuer = issuer_registry.get(security_id)
             contribution = portfolio_weights[ticker] * exposure_weight
             gross += contribution
-            for issuer, sector, industry, fraction in expand_mapping(record):
+            if instrument != "derivative":
+                if issuer is None:
+                    issuer_unknown += contribution
+                else:
+                    issuer_weights[issuer] = issuer_weights.get(issuer, 0.0) + contribution
+                if record is None:
+                    class_unknown += contribution
+                else:
+                    if record["derivative_components"] is not None:
+                        fail(f"{prefix} non-derivative cannot use derivative components")
+                    check_raw_mapping(record, holding, prefix)
+                    if record["normalized_sector"] == TECH:
+                        tech_known += contribution
+                    if record["normalized_industry"] == SEMI:
+                        semi_known += contribution
+                continue
+            if record is None:
+                fail(f"{prefix} derivative requires a mapping record")
+            if record["derivative_components"] is None:
+                fail(f"{prefix} derivative requires audited look-through components")
+            check_raw_mapping(record, holding, prefix)
+            for issuer, sector, industry, fraction in expand_mapping(
+                record, mapping, issuer_registry
+            ):
                 part = contribution * fraction
                 issuer_weights[issuer] = issuer_weights.get(issuer, 0.0) + part
                 if sector == TECH:
@@ -936,17 +1079,51 @@ def sample(root: Path) -> tuple[dict, Path]:
     bundle = root / review / packet_id
     bundle.mkdir(parents=True)
     mapping_records = []
+    registry_issuers: dict[str, dict] = {}
+    registry_securities: dict[str, dict] = {}
     funds = []
-    for ticker in FUNDS:
+    for fund_number, ticker in enumerate(FUNDS, start=1):
         source_rows = []
+        direct_security_ids = []
         for index in range(10):
-            security_id = "AAA" if index == 0 else f"{ticker}-{index}"
+            is_alphabet = ticker == "QQQM" and index in {8, 9}
+            raw_identifier = (
+                "02079K305"
+                if is_alphabet and index == 8
+                else "02079K107"
+                if is_alphabet
+                else "000000001"
+                if index == 0
+                else f"{fund_number}{index:05d}00{index}"
+            )
+            security_id = f"CUSIP:{raw_identifier}"
+            direct_security_ids.append(security_id)
             is_semi = index == 0 or ticker == "SOXX"
+            sector = (
+                "Technology"
+                if is_semi
+                else "Communication Services"
+                if is_alphabet
+                else "Industrials"
+            )
+            raw_name = (
+                f"Alphabet Inc Class {'A' if index == 8 else 'C'}"
+                if is_alphabet
+                else f"{ticker} Security {index}"
+            )
+            raw_ticker = (
+                "GOOGL"
+                if is_alphabet and index == 8
+                else "GOOG"
+                if is_alphabet
+                else f"{ticker}{index}"
+            )
             source_rows.append(
                 [
-                    security_id,
-                    f"{ticker} Security {index}",
-                    "Technology" if is_semi else "Industrials",
+                    raw_identifier,
+                    raw_ticker,
+                    raw_name,
+                    sector,
                     "Semiconductors" if is_semi else "Other",
                     "Equity",
                     10.0,
@@ -958,18 +1135,47 @@ def sample(root: Path) -> tuple[dict, Path]:
                 mapping_records.append(
                     {
                         "security_id": security_id,
-                        "issuer_group_id": "issuer:issuer-a"
-                        if security_id == "AAA"
-                        else f"issuer:{security_id.lower()}",
-                        "normalized_sector": TECH if is_semi else "Industrials",
+                        "normalized_sector": (
+                            TECH
+                            if is_semi
+                            else "Communication Services"
+                            if is_alphabet
+                            else "Industrials"
+                        ),
                         "normalized_industry": SEMI if is_semi else OTHER_INDUSTRY,
                         "derivative_components": None,
                         "evidence": "self-test mapping",
                     }
                 )
+                issuer_number = (
+                    1
+                    if raw_identifier == "000000001"
+                    else 1_652_044
+                    if is_alphabet
+                    else int(raw_identifier)
+                )
+                issuer_id = f"cik:{issuer_number:010d}"
+                registry_issuers.setdefault(
+                    issuer_id,
+                    {
+                        "issuer_group_id": issuer_id,
+                        "canonical_name": (
+                            "Alphabet Inc"
+                            if is_alphabet
+                            else f"Self Test Issuer {issuer_number}"
+                        ),
+                        "evidence_url": f"https://example.invalid/cik/{issuer_number}",
+                    },
+                )
+                registry_securities[security_id] = {
+                    "security_id": security_id,
+                    "issuer_group_id": issuer_id,
+                    "evidence": "self-test security-to-issuer identity",
+                }
         if ticker == "SOXX":
             source_rows[-1] = [
-                "SOXX-FUT",
+                "900000009",
+                "--",
                 "SOXX Index Future",
                 "Cash and/or Derivatives",
                 "Futures",
@@ -978,28 +1184,27 @@ def sample(root: Path) -> tuple[dict, Path]:
                 10_000,
                 500_000,
             ]
-            source_rows[1][5] = 19.99
-            source_rows[1][6] = 19_990_000
+            source_rows[1][6] = 19.99
             source_rows[1][7] = 19_990_000
+            source_rows[1][8] = 19_990_000
+            future_security_id = "CUSIP:900000009"
             mapping_records.append(
                 {
-                    "security_id": "SOXX-FUT",
-                    "issuer_group_id": None,
+                    "security_id": future_security_id,
                     "normalized_sector": None,
                     "normalized_industry": None,
                     "derivative_components": [
                         {
-                            "issuer_group_id": f"issuer:future-{index}",
-                            "normalized_sector": TECH,
-                            "normalized_industry": SEMI,
-                            "weight": 0.1,
+                            "security_id": component_security_id,
+                            "weight": 1 / len(direct_security_ids[:-1]),
                         }
-                        for index in range(10)
+                        for component_security_id in direct_security_ids[:-1]
                     ],
                     "evidence": "self-test derivative decomposition",
                 }
             )
         headers = [
+            "CUSIP",
             "Ticker",
             "Name",
             "Sector",
@@ -1017,14 +1222,32 @@ def sample(root: Path) -> tuple[dict, Path]:
             )
         else:
             source_file = f"raw/{ticker}.csv"
-            prefix = (
-                [["Portfolio Holdings as of", "07/29/2026"]]
-                if ticker == "QQQM"
-                else [["Fund Holdings as of", "Jul 29, 2026"]]
-            )
+            if ticker == "QQQM":
+                invesco_headers = [
+                    "Security Identifier",
+                    "Holding Ticker",
+                    "Holding Name",
+                    "Date",
+                    "Sector",
+                    "Industry",
+                    "Holding Type",
+                    "Percentage of Fund",
+                    "Market Value",
+                    "Notional Value",
+                ]
+                source_rows = [
+                    [*row[:3], "07/29/2026", *row[3:]] for row in source_rows
+                ]
+                source_table = [invesco_headers, *source_rows]
+            else:
+                source_table = [
+                    ["Fund Holdings as of", "Jul 29, 2026"],
+                    headers,
+                    *source_rows,
+                ]
             csv_text = io.StringIO()
             writer = csv.writer(csv_text, lineterminator="\n")
-            writer.writerows([*prefix, headers, *source_rows])
+            writer.writerows(source_table)
             source_sha = write_fixture(bundle / source_file, csv_text.getvalue().encode())
         parsed = parse_source(ticker, bundle / source_file, SOURCE_FORMATS[ticker])
         funds.append(
@@ -1040,6 +1263,15 @@ def sample(root: Path) -> tuple[dict, Path]:
                 "holdings": parsed["holdings"],
             }
         )
+    issuer_registry = {
+        "schema_version": ISSUER_REGISTRY_VERSION,
+        "registry_id": "selftest-issuer-registry-1",
+        "issuers": list(registry_issuers.values()),
+        "securities": list(registry_securities.values()),
+    }
+    issuer_registry_sha = write_fixture(
+        bundle / "issuer-registry.json", issuer_registry
+    )
     mapping = {
         "schema_version": MAPPING_VERSION,
         "mapping_id": "selftest-map-1",
@@ -1084,6 +1316,8 @@ def sample(root: Path) -> tuple[dict, Path]:
         "weight_basis": "post_trade",
         "account_scenario_path": "account.json",
         "account_snapshot_sha256": account_sha,
+        "issuer_registry_path": "issuer-registry.json",
+        "issuer_registry_sha256": issuer_registry_sha,
         "mapping_path": "mapping.json",
         "mapping_sha256": mapping_sha,
         "portfolio_weights": {"cash": 0.15, "SPYM": 0.55, "QQQM": 0.28, "SOXX": 0.02},
@@ -1230,7 +1464,7 @@ def self_test() -> None:
         rounded["packet_sha256"] = canonical_sha256(rounded)
         validate(rounded, packet_path, allow_test=True)
 
-        duplicate = '{"schema_version":"1.2","schema_version":"0.0"}'
+        duplicate = '{"schema_version":"1.3","schema_version":"0.0"}'
         duplicate_path = packet_path.parent / "duplicate.json"
         duplicate_path.write_text(duplicate, encoding="utf-8")
         try:

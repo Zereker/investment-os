@@ -214,6 +214,6 @@
 - 事件：系统规定同审核日、同`source_as_of`、覆盖率和护栏上界，但没有机器可验证的证据Packet。
 - 影响：手填汇总值、日期错位、权重不守恒或被修改的原始文件可能在人工流程中被误判为Green。
 - 根因：v3.4.1闭合了语义与CI输入域，但没有为真实穿透证据定义版本化文件契约和独立重算。
-- 修复：v3.4.2升级为Look-through Evidence Bundle v1.2；通过管理人专用解析器逐行绑定归档字节与holdings，绑定账户快照和未失效Candidate，规范化发行人ID，验证名义敞口，并强制历史只增不改。
+- 修复：v3.4.2升级为Look-through Evidence Bundle v1.3；管理人专用解析器覆盖真实字段，证券ID按CUSIP / ISIN / SEDOL优先，发行人由哈希化CIK / LEI注册表统一，多股权类别和衍生品组件不得自由拆分。
 - 防复发：Actions运行扩展故障注入、固定目录扫描与base SHA不可变性检查；不存在按模板文件名静默排除的通道，验证通过仍不得自动改变Registry或产生候选。
 - 状态：Monitoring（待首份真实Production Bundle验收后关闭）
