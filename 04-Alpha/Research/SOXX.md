@@ -2,8 +2,8 @@
 
 - Production classification: `Alpha`
 - Role: 唯一半导体 Alpha ETF，替代 MU、TSM 等分散的单股主动预算
-- Policy research status: `Complete`
-- Production lifecycle: `Approved / Frozen — DATA GATE`
+- Policy research status: `Incomplete — INDEX METHODOLOGY EVIDENCE`
+- Production lifecycle: `Frozen — DATA GATE`
 - Long-term hard cap / final governance stage: 15%
 - Current governance stage cap: 6%
 - Current action: `HOLD — ADD FROZEN`
@@ -19,7 +19,7 @@
 
 - iShares页面显示SOXX跟踪NYSE Semiconductor Index；基金费用率0.34%，持仓30只。
 - 2026-06-30官方Fact Sheet显示3年标准差35.47%、P/E 76.39倍、前十大持仓61.29%，说明ETF仍高度集中且估值敏感。
-- 指数采用修改市值加权；官方方法更新允许前三大权重上限分别为12%、10%、8%，其余成分通常不超过4%，并按既定周期调整。
+- 现行NYSE Semiconductor Index完整方法文件尚未从ICE Index Platform取得可审计副本；在核验成分选择、加权、上限和再平衡规则前，不得把旧PHLX SOX方法当作现行方法。
 
 ## 正方
 
@@ -52,13 +52,16 @@
 - 当前 `A_stage=6%`；3%与4.5%为阶段内检查点。
 - 未来阶段：10%、12.5%、15%。
 - 任何追加前必须通过实时IBKR、同日SPYM/QQQM/SOXX穿透、阶段上限和完整IC。
+- 现行指数方法证据缺口关闭前，Registry不得升级为`Approved / Add Candidate`。
 - 价格档位仅触发研究复核，不写入Production自动规则。
 
 ## 官方来源
 
 - iShares SOXX产品页：https://www.ishares.com/us/products/239705/ishares-phlx-semiconductor-etf
 - iShares Fact Sheet（2026-06-30）：https://www.ishares.com/us/literature/fact-sheet/soxx-ishares-semiconductor-etf-fund-fact-sheet-en-us.pdf
-- Nasdaq SOX方法更新：https://indexes.nasdaq.com/docs/202404%20SOX%20Latest%20Changes.pdf
+- iShares SOXX Summary Prospectus：https://www.ishares.com/us/literature/summary-prospectus/sp-ishares-phlx-semiconductor-etf-3-31.pdf
+- ICE Equity Index Methodologies：https://www.ice.com/fixed-income-data-services/index-solutions/equity-indices/methodologies
+- ICE Semiconductor Index 2022方法更新通知：https://www.ice.com/publicdocs/equity_indices/notices/ICEBIO_ICESEMI_Methodology_Updates_20220128.pdf
 - WSTS Spring 2026 Forecast：https://www.wsts.org/esraCMS/extension/media/f/WST/7618/WSTS_FC-Release-2026-May.pdf
 
-本Thesis完成不等于交易授权。没有生产级同日穿透快照时，结论保持 `WAIT / DATA INCOMPLETE`。
+核心投资逻辑已记录，但现行指数方法证据尚未完整，因此Policy research status保持`Incomplete`。该状态与缺少生产级同日穿透快照均会使结论保持`WAIT / DATA INCOMPLETE`；本文件不构成交易授权。
