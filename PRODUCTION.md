@@ -1,4 +1,4 @@
-# Investment OS v3.4 — Production Contract
+# Investment OS v3.4.1 — Production Contract
 
 本文件是当前生产系统的入口与执行契约。它不创造新的投资策略，只规定如何可靠地读取、验证和执行仓库中已经生效的规则。
 
@@ -16,18 +16,19 @@
 
 ## 2. 生产冻结
 
-v3.4 期间：
+v3.4.1期间：
 
 - 允许修复数据读取、计算、文档歧义和流程遗漏等缺陷。
 - 不允许在交易执行过程中临时增加指标、改变阈值或更换估值口径。
 - 策略变更必须进入 `Research/`，经过独立研究、书面提案和明确批准后，才能作为新版本发布。
 - 常规规则只在年度审核窗口审议；紧急修复仅限于防止明显错误或违反 IPS。
 
-## 2.1 SOXX v3.4冻结规则
+## 2.1 SOXX v3.4.1冻结规则
 
 - SOXX是唯一Alpha载体，长期硬上限与最终治理阶段15%，当前阶段6%。
 - 定义\(A_{basis}=\max(A_{actual},A_{stage})\)、\(U=\max(A_{stage}-A_{actual},0)\)；SPYM目标为\(57\%-A_{basis}\)，物理现金目标为\(15\%+U\)。
-- 10%/12.5%/15%须逐级季度批准；风险护栏、实时IBKR和同日穿透优先；本版本不产生订单。
+- 10%/12.5%/15%须逐级季度批准；风险护栏、现行指数方法证据、实时IBKR和同日穿透优先；本版本不产生订单。
+- 每个PR必须通过`Policy consistency`检查；检查失败时不得合并为Production。
 
 ## 3. 每日巡检契约
 
@@ -39,13 +40,13 @@ v3.4 期间：
 4. 从 IBKR 读取 Open Orders。
 5. 检查数据时间、币种、合计差异和异常值。
 6. 计算 Cash、Core、Alpha（含有真实资金的 Observation）和 Legacy 的市值与权重。
-7. 为Alpha列示生命周期状态；SOXX当前为`Alpha / Approved / Frozen — DATA GATE`。
+7. 为Alpha列示生命周期状态；SOXX当前为`Alpha / Frozen — DATA GATE`。
 8. 检查融资、越界、未完成订单、重复订单和真正无法分类的异常持仓。
 9. 仅依据当前生产规则输出事实、风险和动作。
 
 若第 1–5 步任一失败，巡检必须标记为 `DATA INCOMPLETE`，不得使用历史数据冒充实时数据，也不得给出新的 BUY 或 SELL 建议。完整格式见 `02-Operating-System/Daily-Review.md`。
 
-SOXX当前为`Alpha / Approved / Frozen — DATA GATE`：现有仓位可持有；追加仍须实时账户、同日穿透、当前阶段与完整IC。
+SOXX当前为`Alpha / Frozen — DATA GATE`：现有仓位可持有，禁止追加。只有现行指数方法证据、实时账户与同日穿透通过，且Registry先更新为`Approved / Add Candidate`后，才可进入完整IC。
 
 ## 4. 周度与季度契约
 
