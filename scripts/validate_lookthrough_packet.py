@@ -58,8 +58,8 @@ CANONICAL_SECURITY = re.compile(
     r")$"
 )
 SCHEMA_VERSION = "1.3"
-MAPPING_VERSION = "1.1"
-ISSUER_REGISTRY_VERSION = "1.0"
+MAPPING_VERSION = "1.2"
+ISSUER_REGISTRY_VERSION = "1.1"
 ACCOUNT_VERSION = "1.0"
 CANDIDATE_VERSION = "1.0"
 EPS = 1e-9
@@ -74,6 +74,28 @@ CURRENT_EXECUTION_CAP = 0.03
 MIN_FUND_ECONOMIC_EXPOSURE = 0.95
 MAX_CLOCK_SKEW = timedelta(minutes=5)
 MAX_CANDIDATE_TTL = timedelta(days=1)
+ROOT = Path(__file__).resolve().parents[1]
+ISSUER_AUTHORITY_PATH = ROOT / "08-Data/REGISTRIES/LOOKTHROUGH_ISSUER_AUTHORITY.json"
+CLASSIFICATION_AUTHORITY_PATH = (
+    ROOT / "08-Data/REGISTRIES/LOOKTHROUGH_CLASSIFICATION_AUTHORITY.json"
+)
+IDENTITY_EVIDENCE_HOSTS = {
+    "sec.gov",
+    "gleif.org",
+    "openfigi.com",
+    "ssga.com",
+    "invesco.com",
+    "ishares.com",
+    "blackrock.com",
+}
+CLASSIFICATION_EVIDENCE_HOSTS = {
+    "msci.com",
+    "spglobal.com",
+    "ssga.com",
+    "invesco.com",
+    "ishares.com",
+    "blackrock.com",
+}
 
 
 class PacketError(ValueError):
@@ -224,6 +246,156 @@ def canonical_sha256(packet: dict) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
+def canonical_record(value: dict) -> str:
+    return json.dumps(
+        value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False
+    )
+
+
+def validate_evidence(
+    value: object,
+    label: str,
+    *,
+    allowed_hosts: set[str],
+    allow_test: bool,
+) -> None:
+    if not isinstance(value, dict):
+        fail(f"{label} must be a structured evidence object")
+    require_keys(value, {"source_url", "as_of"}, label)
+    source_url = value["source_url"]
+    if not isinstance(source_url, str):
+        fail(f"{label}.source_url must be HTTPS")
+    parsed = urlparse(source_url)
+    host = (parsed.hostname or "").lower().rstrip(".")
+    if parsed.scheme != "https" or not host:
+        fail(f"{label}.source_url must be HTTPS")
+    if not (allow_test and host == "example.invalid") and not any(
+        host == allowed or host.endswith("." + allowed) for allowed in allowed_hosts
+    ):
+        fail(f"{label}.source_url host is not approved: {host}")
+    iso_date(value["as_of"], f"{label}.as_of")
+
+
+def test_authorities() -> tuple[dict, dict]:
+    """Repository-controlled authority used only by the synthetic self-test."""
+    issuers: dict[str, dict] = {}
+    securities: dict[str, dict] = {}
+    mappings: dict[str, dict] = {}
+    for fund_number, ticker in enumerate(FUNDS, start=1):
+        direct_security_ids = []
+        for index in range(10):
+            is_alphabet = ticker == "QQQM" and index in {8, 9}
+            raw_identifier = (
+                "02079K305"
+                if is_alphabet and index == 8
+                else "02079K107"
+                if is_alphabet
+                else "000000001"
+                if index == 0
+                else f"{fund_number}{index:05d}00{index}"
+            )
+            security_id = f"CUSIP:{raw_identifier}"
+            direct_security_ids.append(security_id)
+            is_semi = index == 0 or ticker == "SOXX"
+            issuer_number = (
+                1
+                if raw_identifier == "000000001"
+                else 1_652_044
+                if is_alphabet
+                else int(raw_identifier)
+            )
+            issuer_id = f"cik:{issuer_number:010d}"
+            issuers.setdefault(
+                issuer_id,
+                {
+                    "issuer_group_id": issuer_id,
+                    "canonical_name": (
+                        "Alphabet Inc"
+                        if is_alphabet
+                        else f"Self Test Issuer {issuer_number}"
+                    ),
+                    "evidence_url": f"https://example.invalid/cik/{issuer_number}",
+                },
+            )
+            securities[security_id] = {
+                "security_id": security_id,
+                "canonical_security_id": security_id,
+                "issuer_group_id": issuer_id,
+                "evidence": {
+                    "source_url": "https://example.invalid/identity",
+                    "as_of": "2026-07-29",
+                },
+            }
+            mappings[security_id] = {
+                "security_id": security_id,
+                "normalized_sector": (
+                    TECH
+                    if is_semi
+                    else "Communication Services"
+                    if is_alphabet
+                    else "Industrials"
+                ),
+                "normalized_industry": SEMI if is_semi else OTHER_INDUSTRY,
+                "derivative_components": None,
+                "evidence": {
+                    "source_url": "https://example.invalid/classification",
+                    "as_of": "2026-07-29",
+                },
+            }
+        if ticker == "SOXX":
+            future_security_id = "CUSIP:900000009"
+            mappings[future_security_id] = {
+                "security_id": future_security_id,
+                "normalized_sector": None,
+                "normalized_industry": None,
+                "derivative_components": [
+                    {
+                        "security_id": component_security_id,
+                        "weight": 1 / len(direct_security_ids[:-1]),
+                    }
+                    for component_security_id in direct_security_ids[:-1]
+                ],
+                "evidence": {
+                    "source_url": "https://example.invalid/derivative",
+                    "as_of": "2026-07-29",
+                },
+            }
+    for sedol, cusip in (
+        ("SEDOL:BYVY8G0", "CUSIP:02079K305"),
+        ("SEDOL:BYY88Y7", "CUSIP:02079K107"),
+    ):
+        securities[sedol] = {
+            "security_id": sedol,
+            "canonical_security_id": cusip,
+            "issuer_group_id": "cik:0001652044",
+            "evidence": {
+                "source_url": "https://example.invalid/cross-identifier",
+                "as_of": "2026-07-29",
+            },
+        }
+    return (
+        {
+            "schema_version": ISSUER_REGISTRY_VERSION,
+            "authority_id": "lookthrough-issuer-authority",
+            "issuers": list(issuers.values()),
+            "securities": list(securities.values()),
+        },
+        {
+            "schema_version": MAPPING_VERSION,
+            "authority_id": "lookthrough-classification-authority",
+            "taxonomy": "GICS",
+            "records": list(mappings.values()),
+        },
+    )
+
+
+def load_authority(path: Path, label: str, *, allow_test: bool) -> dict:
+    if allow_test:
+        issuer, classification = test_authorities()
+        return issuer if label == "issuer authority" else classification
+    return read_json(path, MAX_MAPPING_BYTES, label)
+
+
 def validate_reference(
     bundle: Path,
     reference: object,
@@ -242,7 +414,13 @@ def validate_reference(
     return path, read_json(path, max_bytes, label)
 
 
-def load_mapping(bundle: Path, path_value: object, digest_value: object) -> dict[str, dict]:
+def load_mapping(
+    bundle: Path,
+    path_value: object,
+    digest_value: object,
+    *,
+    allow_test: bool,
+) -> dict[str, dict]:
     _, mapping = validate_reference(
         bundle,
         {"path": path_value, "sha256": digest_value},
@@ -279,9 +457,12 @@ def load_mapping(bundle: Path, path_value: object, digest_value: object) -> dict
         require_security_id(security_id, f"{label}.security_id")
         if security_id in by_security:
             fail(f"mapping has duplicate security_id: {security_id}")
-        evidence = record["evidence"]
-        if not isinstance(evidence, str) or not evidence.strip():
-            fail(f"{label}.evidence is required")
+        validate_evidence(
+            record["evidence"],
+            f"{label}.evidence",
+            allowed_hosts=CLASSIFICATION_EVIDENCE_HOSTS,
+            allow_test=allow_test,
+        )
         components = record["derivative_components"]
         direct = components is None
         if direct:
@@ -293,6 +474,28 @@ def load_mapping(bundle: Path, path_value: object, digest_value: object) -> dict
                 fail(f"{label} derivative mapping must use components, not direct fields")
             validate_components(components, label)
         by_security[security_id] = record
+
+    authority = load_authority(
+        CLASSIFICATION_AUTHORITY_PATH, "classification authority", allow_test=allow_test
+    )
+    require_keys(
+        authority,
+        {"schema_version", "authority_id", "taxonomy", "records"},
+        "classification authority",
+    )
+    if authority["schema_version"] != MAPPING_VERSION:
+        fail(f"classification authority schema_version must be {MAPPING_VERSION}")
+    if authority["authority_id"] != "lookthrough-classification-authority":
+        fail("classification authority_id is invalid")
+    if authority["taxonomy"] != "GICS" or not isinstance(authority["records"], list):
+        fail("classification authority must contain a GICS records array")
+    approved = {canonical_record(item) for item in authority["records"]}
+    for record in records:
+        if canonical_record(record) not in approved:
+            fail(
+                f"mapping record is not present in the reviewed classification authority: "
+                f"{record['security_id']}"
+            )
     return by_security
 
 
@@ -302,7 +505,7 @@ def load_issuer_registry(
     digest_value: object,
     *,
     allow_test: bool,
-) -> dict[str, str]:
+) -> dict[str, dict[str, str]]:
     _, registry = validate_reference(
         bundle,
         {"path": path_value, "sha256": digest_value},
@@ -361,24 +564,39 @@ def load_issuer_registry(
         elif host not in {"gleif.org", "www.gleif.org"} or issuer_id.removeprefix("lei:") not in evidence_url.upper():
             fail(f"{label}.evidence_url must identify the same issuer on gleif.org")
 
-    by_security: dict[str, str] = {}
+    by_security: dict[str, dict[str, str]] = {}
     by_cusip_issuer: dict[str, str] = {}
     for index, security in enumerate(securities):
         label = f"issuer_registry.securities[{index}]"
         if not isinstance(security, dict):
             fail(f"{label} must be an object")
-        require_keys(security, {"security_id", "issuer_group_id", "evidence"}, label)
+        require_keys(
+            security,
+            {
+                "security_id",
+                "canonical_security_id",
+                "issuer_group_id",
+                "evidence",
+            },
+            label,
+        )
         security_id = require_security_id(security["security_id"], f"{label}.security_id")
         if security_id in by_security:
             fail(f"issuer_registry has duplicate security_id: {security_id}")
+        canonical_security_id = require_security_id(
+            security["canonical_security_id"], f"{label}.canonical_security_id"
+        )
         issuer_id = require_issuer(
             security["issuer_group_id"], f"{label}.issuer_group_id"
         )
         if issuer_id not in issuer_ids:
             fail(f"{label}.issuer_group_id is absent from issuer_registry.issuers")
-        evidence = security["evidence"]
-        if not isinstance(evidence, str) or not evidence.strip():
-            fail(f"{label}.evidence is required")
+        validate_evidence(
+            security["evidence"],
+            f"{label}.evidence",
+            allowed_hosts=IDENTITY_EVIDENCE_HOSTS,
+            allow_test=allow_test,
+        )
         cusip_issuer = (
             security_id.removeprefix("CUSIP:")[:6]
             if security_id.startswith("CUSIP:")
@@ -392,7 +610,59 @@ def load_issuer_registry(
                 fail(
                     "securities sharing a CUSIP issuer number must share one issuer identity"
                 )
-        by_security[security_id] = issuer_id
+        by_security[security_id] = {
+            "canonical_security_id": canonical_security_id,
+            "issuer_group_id": issuer_id,
+        }
+
+    for security_id, identity in by_security.items():
+        canonical_security_id = identity["canonical_security_id"]
+        canonical = by_security.get(canonical_security_id)
+        if canonical is None:
+            fail(
+                f"issuer_registry canonical security is absent: {canonical_security_id}"
+            )
+        if canonical["canonical_security_id"] != canonical_security_id:
+            fail(
+                f"issuer_registry canonical security must resolve to itself: "
+                f"{canonical_security_id}"
+            )
+        if canonical["issuer_group_id"] != identity["issuer_group_id"]:
+            fail(
+                f"issuer_registry alias and canonical security must share one issuer: "
+                f"{security_id}"
+            )
+
+    authority = load_authority(
+        ISSUER_AUTHORITY_PATH, "issuer authority", allow_test=allow_test
+    )
+    require_keys(
+        authority,
+        {"schema_version", "authority_id", "issuers", "securities"},
+        "issuer authority",
+    )
+    if authority["schema_version"] != ISSUER_REGISTRY_VERSION:
+        fail(f"issuer authority schema_version must be {ISSUER_REGISTRY_VERSION}")
+    if authority["authority_id"] != "lookthrough-issuer-authority":
+        fail("issuer authority_id is invalid")
+    if not isinstance(authority["issuers"], list) or not isinstance(
+        authority["securities"], list
+    ):
+        fail("issuer authority must contain issuer and security arrays")
+    approved_issuers = {canonical_record(item) for item in authority["issuers"]}
+    approved_securities = {canonical_record(item) for item in authority["securities"]}
+    for issuer in issuers:
+        if canonical_record(issuer) not in approved_issuers:
+            fail(
+                "issuer record is not present in the reviewed issuer authority: "
+                f"{issuer['issuer_group_id']}"
+            )
+    for security in securities:
+        if canonical_record(security) not in approved_securities:
+            fail(
+                "security identity is not present in the reviewed issuer authority: "
+                f"{security['security_id']}"
+            )
     return by_security
 
 
@@ -562,6 +832,7 @@ def reconcile_parsed_holdings(ticker: str, reported: object, parsed: list[dict])
         fail(f"{ticker}.holdings must contain every parser-derived source row")
     keys = {
         "security_id",
+        "source_identifiers",
         "raw_name",
         "instrument_type",
         "market_weight",
@@ -583,20 +854,49 @@ def reconcile_parsed_holdings(ticker: str, reported: object, parsed: list[dict])
                 fail(f"{label}.{field} does not match parsed archived source")
 
 
+def resolve_identity(
+    holding: dict,
+    issuer_registry: dict[str, dict[str, str]],
+    label: str,
+) -> dict[str, str] | None:
+    source_identifiers = holding["source_identifiers"]
+    if (
+        not isinstance(source_identifiers, list)
+        or not source_identifiers
+        or len(set(source_identifiers)) != len(source_identifiers)
+        or source_identifiers[0] != holding["security_id"]
+    ):
+        fail(f"{label}.source_identifiers must be a unique primary-first array")
+    identities = []
+    for index, security_id in enumerate(source_identifiers):
+        require_security_id(
+            security_id, f"{label}.source_identifiers[{index}]"
+        )
+        identity = issuer_registry.get(security_id)
+        if identity is None:
+            return None
+        identities.append(identity)
+    canonical_ids = {item["canonical_security_id"] for item in identities}
+    issuer_ids = {item["issuer_group_id"] for item in identities}
+    if len(canonical_ids) != 1 or len(issuer_ids) != 1:
+        fail(f"{label} source identifiers do not resolve to one security and issuer")
+    return identities[0]
+
+
 def expand_mapping(
     record: dict,
     mapping: dict[str, dict],
-    issuer_registry: dict[str, str],
+    issuer_registry: dict[str, dict[str, str]],
 ) -> list[tuple[str, str, str, float]]:
     components = record["derivative_components"]
     if components is None:
         security_id = record["security_id"]
-        issuer = issuer_registry.get(security_id)
-        if issuer is None:
+        identity = issuer_registry.get(security_id)
+        if identity is None:
             fail(f"issuer registry has no entry for {security_id}")
         return [
             (
-                issuer,
+                identity["issuer_group_id"],
                 record["normalized_sector"],
                 record["normalized_industry"],
                 1.0,
@@ -607,8 +907,8 @@ def expand_mapping(
     for item in components:
         security_id = item["security_id"]
         component_mapping = mapping.get(security_id)
-        issuer = issuer_registry.get(security_id)
-        if component_mapping is None or issuer is None:
+        identity = issuer_registry.get(security_id)
+        if component_mapping is None or identity is None:
             fail(
                 f"derivative component {security_id} must exist in both mapping and issuer registry"
             )
@@ -616,7 +916,7 @@ def expand_mapping(
             fail(f"derivative component {security_id} must resolve to a direct security")
         expanded.append(
             (
-                issuer,
+                identity["issuer_group_id"],
                 component_mapping["normalized_sector"],
                 component_mapping["normalized_industry"],
                 float(item["weight"]) / total,
@@ -743,7 +1043,12 @@ def evaluate(
         packet["issuer_registry_sha256"],
         allow_test=allow_test,
     )
-    mapping = load_mapping(bundle, packet["mapping_path"], packet["mapping_sha256"])
+    mapping = load_mapping(
+        bundle,
+        packet["mapping_path"],
+        packet["mapping_sha256"],
+        allow_test=allow_test,
+    )
     account = load_account(
         bundle,
         packet["account_scenario_path"],
@@ -866,6 +1171,7 @@ def evaluate(
                 holding,
                 {
                     "security_id",
+                    "source_identifiers",
                     "raw_name",
                     "instrument_type",
                     "market_weight",
@@ -905,14 +1211,18 @@ def evaluate(
                 fail(f"{prefix} unexplained other instrument cannot have zero exposure")
             if exposure_weight <= EPS:
                 continue
-            record = mapping.get(security_id)
-            issuer = issuer_registry.get(security_id)
+            identity = resolve_identity(holding, issuer_registry, prefix)
+            canonical_security_id = (
+                identity["canonical_security_id"] if identity is not None else security_id
+            )
+            record = mapping.get(canonical_security_id)
             contribution = portfolio_weights[ticker] * exposure_weight
             gross += contribution
             if instrument != "derivative":
-                if issuer is None:
+                if identity is None:
                     issuer_unknown += contribution
                 else:
+                    issuer = identity["issuer_group_id"]
                     issuer_weights[issuer] = issuer_weights.get(issuer, 0.0) + contribution
                 if record is None:
                     class_unknown += contribution
@@ -1144,7 +1454,10 @@ def sample(root: Path) -> tuple[dict, Path]:
                         ),
                         "normalized_industry": SEMI if is_semi else OTHER_INDUSTRY,
                         "derivative_components": None,
-                        "evidence": "self-test mapping",
+                        "evidence": {
+                            "source_url": "https://example.invalid/classification",
+                            "as_of": "2026-07-29",
+                        },
                     }
                 )
                 issuer_number = (
@@ -1169,8 +1482,12 @@ def sample(root: Path) -> tuple[dict, Path]:
                 )
                 registry_securities[security_id] = {
                     "security_id": security_id,
+                    "canonical_security_id": security_id,
                     "issuer_group_id": issuer_id,
-                    "evidence": "self-test security-to-issuer identity",
+                    "evidence": {
+                        "source_url": "https://example.invalid/identity",
+                        "as_of": "2026-07-29",
+                    },
                 }
         if ticker == "SOXX":
             source_rows[-1] = [
@@ -1200,7 +1517,10 @@ def sample(root: Path) -> tuple[dict, Path]:
                         }
                         for component_security_id in direct_security_ids[:-1]
                     ],
-                    "evidence": "self-test derivative decomposition",
+                    "evidence": {
+                        "source_url": "https://example.invalid/derivative",
+                        "as_of": "2026-07-29",
+                    },
                 }
             )
         headers = [
@@ -1218,7 +1538,7 @@ def sample(root: Path) -> tuple[dict, Path]:
             source_file = "raw/SPYM.xlsx"
             source_sha = write_xlsx_fixture(
                 bundle / source_file,
-                [["Fund Holdings as of", "Jul 29, 2026"], headers, *source_rows],
+                [["SPYM 3 Holdings: As of 29-Jul-2026"], headers, *source_rows],
             )
         else:
             source_file = f"raw/{ticker}.csv"
@@ -1263,6 +1583,19 @@ def sample(root: Path) -> tuple[dict, Path]:
                 "holdings": parsed["holdings"],
             }
         )
+    for sedol, cusip in (
+        ("SEDOL:BYVY8G0", "CUSIP:02079K305"),
+        ("SEDOL:BYY88Y7", "CUSIP:02079K107"),
+    ):
+        registry_securities[sedol] = {
+            "security_id": sedol,
+            "canonical_security_id": cusip,
+            "issuer_group_id": "cik:0001652044",
+            "evidence": {
+                "source_url": "https://example.invalid/cross-identifier",
+                "as_of": "2026-07-29",
+            },
+        }
     issuer_registry = {
         "schema_version": ISSUER_REGISTRY_VERSION,
         "registry_id": "selftest-issuer-registry-1",
@@ -1477,7 +1810,72 @@ def self_test() -> None:
     print(f"Look-through packet schema {SCHEMA_VERSION} self-tests passed.")
 
 
+def validate_authority_catalogs() -> None:
+    issuer = read_json(
+        ISSUER_AUTHORITY_PATH, MAX_MAPPING_BYTES, "issuer authority"
+    )
+    require_keys(
+        issuer,
+        {"schema_version", "authority_id", "issuers", "securities"},
+        "issuer authority",
+    )
+    if issuer["schema_version"] != ISSUER_REGISTRY_VERSION:
+        fail(f"issuer authority schema_version must be {ISSUER_REGISTRY_VERSION}")
+    if issuer["authority_id"] != "lookthrough-issuer-authority":
+        fail("issuer authority_id is invalid")
+    if not isinstance(issuer["issuers"], list) or not isinstance(
+        issuer["securities"], list
+    ):
+        fail("issuer authority must contain issuer and security arrays")
+
+    classification = read_json(
+        CLASSIFICATION_AUTHORITY_PATH,
+        MAX_MAPPING_BYTES,
+        "classification authority",
+    )
+    require_keys(
+        classification,
+        {"schema_version", "authority_id", "taxonomy", "records"},
+        "classification authority",
+    )
+    if classification["schema_version"] != MAPPING_VERSION:
+        fail(f"classification authority schema_version must be {MAPPING_VERSION}")
+    if (
+        classification["authority_id"] != "lookthrough-classification-authority"
+        or classification["taxonomy"] != "GICS"
+        or not isinstance(classification["records"], list)
+    ):
+        fail("classification authority metadata is invalid")
+
+    with tempfile.TemporaryDirectory(prefix="lookthrough-authority-") as tmp:
+        root = Path(tmp)
+        if issuer["issuers"] or issuer["securities"]:
+            snapshot = {
+                "schema_version": ISSUER_REGISTRY_VERSION,
+                "registry_id": "authority-validation",
+                "issuers": issuer["issuers"],
+                "securities": issuer["securities"],
+            }
+            digest = write_fixture(root / "issuer-registry.json", snapshot)
+            load_issuer_registry(
+                root,
+                "issuer-registry.json",
+                digest,
+                allow_test=False,
+            )
+        if classification["records"]:
+            snapshot = {
+                "schema_version": MAPPING_VERSION,
+                "mapping_id": "authority-validation",
+                "taxonomy": "GICS",
+                "records": classification["records"],
+            }
+            digest = write_fixture(root / "mapping.json", snapshot)
+            load_mapping(root, "mapping.json", digest, allow_test=False)
+
+
 def scan_root(root: Path) -> None:
+    validate_authority_catalogs()
     if not root.is_dir():
         fail(f"snapshot root does not exist: {root}")
     packet_paths = []
