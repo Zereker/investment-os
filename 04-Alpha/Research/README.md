@@ -1,6 +1,6 @@
 # Alpha Research
 
-> v3.4：SOXX是唯一Production Alpha，其政策级Thesis已完成；其他候选仅可留在Research，半导体个股必须与SOXX共用15%预算。
+> v3.4.1：SOXX是唯一Production Alpha；核心投资逻辑已记录，但现行NYSE Semiconductor Index方法证据尚未完整，Registry保持`Frozen — DATA GATE`。其他候选仅可留在Research，半导体个股必须与SOXX共用15%预算。
 
 每个候选建立一个独立文件，文件名使用代码，例如 `SOXX.md`。只有完成研究、通过准入和 IC 的标的才能升级为 `Approved Alpha` 或获得新增资金。
 

@@ -1,0 +1,188 @@
+#!/usr/bin/env python3
+"""Fail CI when Production policy formulas, state or guardrails diverge."""
+
+from math import isfinite, nan, inf
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+STAGES = (0.06, 0.10, 0.125, 0.15)
+EXECUTION_CAPS = (0.03, 0.045, 0.06, 0.10, 0.125, 0.15)
+CURRENT_STAGE = 0.06
+CURRENT_EXECUTION_CAP = 0.03
+
+
+def read(path: str) -> str:
+    return (ROOT / path).read_text(encoding="utf-8")
+
+
+def require(path: str, *needles: str) -> None:
+    text = read(path)
+    for needle in needles:
+        if needle not in text:
+            raise AssertionError(f"{path}: missing required text: {needle}")
+
+
+def forbid(path: str, *needles: str) -> None:
+    text = read(path)
+    for needle in needles:
+        if needle in text:
+            raise AssertionError(f"{path}: forbidden stale text: {needle}")
+
+
+def close_to_member(value: float, allowed: tuple[float, ...]) -> bool:
+    return any(abs(value - item) <= 1e-12 for item in allowed)
+
+
+def allocation(actual: float, stage: float, execution_cap: float) -> dict[str, float]:
+    values = (actual, stage, execution_cap)
+    if not all(isinstance(value, (int, float)) and not isinstance(value, bool) and isfinite(value) for value in values):
+        raise ValueError("weights must be finite numbers")
+    if not 0 <= actual <= 0.15:
+        raise ValueError("A_actual outside [0, 15%]")
+    if not close_to_member(stage, STAGES):
+        raise ValueError("illegal A_stage")
+    if not close_to_member(execution_cap, EXECUTION_CAPS):
+        raise ValueError("illegal A_execution_cap")
+    if execution_cap > stage + 1e-12:
+        raise ValueError("execution cap exceeds stage")
+
+    basis = max(actual, stage)
+    reserve = max(stage - actual, 0.0)
+    targets = {
+        "cash_base": 0.15,
+        "stage_reserve": reserve,
+        "qqqm": 0.28,
+        "spym": 0.57 - basis,
+        "soxx": actual,
+    }
+    if not all(0.0 <= value <= 1.0 for value in targets.values()):
+        raise ValueError(f"target outside [0, 100%]: {targets}")
+    if abs(sum(targets.values()) - 1.0) > 1e-12:
+        raise ValueError(f"allocation does not sum to 100%: {targets}")
+    return targets
+
+
+def next_execution_cap(current: float, proposed: float) -> bool:
+    if not (close_to_member(current, EXECUTION_CAPS) and close_to_member(proposed, EXECUTION_CAPS)):
+        return False
+    old = min(range(len(EXECUTION_CAPS)), key=lambda i: abs(EXECUTION_CAPS[i] - current))
+    new = min(range(len(EXECUTION_CAPS)), key=lambda i: abs(EXECUTION_CAPS[i] - proposed))
+    return new == old + 1
+
+
+def allocation_tests() -> None:
+    valid = [
+        (0.00, 0.06, 0.03), (0.03, 0.06, 0.03), (0.06, 0.06, 0.06),
+        (0.08, 0.10, 0.06), (0.10, 0.10, 0.10), (0.12, 0.125, 0.10),
+        (0.125, 0.125, 0.125), (0.15, 0.15, 0.15),
+    ]
+    for args in valid:
+        allocation(*args)
+
+    invalid = [
+        (-0.01, 0.06, 0.03), (0.16, 0.15, 0.15), (nan, 0.06, 0.03),
+        (inf, 0.06, 0.03), (0.03, 0.07, 0.03), (0.03, 0.06, 0.04),
+        (0.03, 0.06, 0.10), (True, 0.06, 0.03),
+    ]
+    for args in invalid:
+        try:
+            allocation(*args)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"illegal allocation accepted: {args}")
+
+    if not next_execution_cap(0.03, 0.045):
+        raise AssertionError("next checkpoint rejected")
+    for proposed in (0.03, 0.06, 0.10, nan):
+        if next_execution_cap(0.03, proposed):
+            raise AssertionError(f"illegal checkpoint transition accepted: 3% -> {proposed}")
+
+
+def benchmark_interest_tests() -> None:
+    principal = 20_000.0
+    accrued = 0.0
+    rate = 0.036
+    first = max(principal - 10_000.0, 0.0) * rate / 360.0
+    accrued += first
+    second = max(principal - 10_000.0, 0.0) * rate / 360.0
+    if abs(first - second) > 1e-12:
+        raise AssertionError("unposted accrual compounded")
+    nav_before_posting = principal + accrued
+    posting = accrued
+    principal += posting
+    accrued -= posting
+    if abs((principal + accrued) - nav_before_posting) > 1e-12:
+        raise AssertionError("posting conversion changed benchmark NAV")
+
+
+def main() -> None:
+    dictionary = "08-Data/DATA_DICTIONARY.md"
+    require(
+        dictionary,
+        r"SPYM \(57\%-A_{basis}\)",
+        r"\(S=\max(C-(15\%+U)\times V,0)\)",
+        r"P_{B,m,0}+A_{B,m,0}=15\%\times V_{B,m,0}",
+        r"E_{B,d}=\max(P^*_{B,d}-10000,0)",
+        r"A_{B,d}=A^*_{B,d}+i_{B,d}",
+        "应计利息计入基准NAV，但在正式入账前不得进入计息本金",
+        "`source_as_of`完全相同才可为Green",
+    )
+    forbid(
+        dictionary,
+        r"SPYM \(57\%-A\)",
+        r"\(S=\max(C-15\%\times V,0)\)",
+        r"C_{B,d}=15\%\times V_{B,d}",
+        r"C_{B,m,d}=C^-_{B,m,d}+i_{B,m,d}",
+    )
+
+    active_lifecycle_files = [
+        "README.md", "PRODUCTION.md",
+        "02-Operating-System/Daily-Review.md",
+        "02-Operating-System/Decision-Checklist.md",
+        "02-Operating-System/Monthly-Workflow.md",
+        "02-Operating-System/Weekly-Review.md",
+        "03-Transition/Transition-Dashboard.md",
+        "03-Transition/Transition-Plan.md",
+        "04-Alpha/Alpha-Framework.md",
+        "04-Alpha/Position-Registry.md",
+        "04-Alpha/Research/SOXX.md",
+    ]
+    for path in active_lifecycle_files:
+        forbid(path, "Approved / Frozen", "Registry先更新为`Approved / Add Candidate`")
+
+    require(
+        "04-Alpha/Position-Registry.md",
+        r"当前\(A_{execution\_cap}=3\%\)",
+        "3%→4.5%→6%→10%→12.5%→15%",
+        "同一次IC不得既跳档又执行交易",
+        "短时效的`Add Candidate` IC Packet",
+        "`approved_as_of`", "`data_as_of`", "`expires_at`",
+        "`max_notional`", "`max_post_trade_weight`",
+        "最迟于当日常规收盘失效",
+    )
+    require(
+        "04-Alpha/Research/SOXX.md",
+        "Incomplete — INDEX METHODOLOGY EVIDENCE",
+        "NYSE Semiconductor Index",
+    )
+    forbid(
+        "04-Alpha/Research/SOXX.md",
+        "indexes.nasdaq.com",
+        "前三大权重上限分别为12%、10%、8%",
+    )
+    require("README.md", "# Investment OS v3.4.1")
+    require("PRODUCTION.md", "# Investment OS v3.4.1 — Production Contract")
+    require("07-Releases/v3.4.1.md", "本发布不授权任何订单")
+    forbid("02-Operating-System/Monthly-Workflow.md", "SOXX 等 Observation")
+    forbid("03-Transition/Transition-Plan.md", r"现金、\(A\)、目标缺口")
+
+    if CURRENT_EXECUTION_CAP > CURRENT_STAGE:
+        raise AssertionError("current execution cap exceeds current stage")
+    allocation_tests()
+    benchmark_interest_tests()
+    print("Policy consistency checks passed.")
+
+
+if __name__ == "__main__":
+    main()

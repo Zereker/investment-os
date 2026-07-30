@@ -84,3 +84,21 @@
 - 每笔SOXX追加：完整IC。
 - 每次阶段推进：季度治理并更新Registry。
 - 每年：复核15%长期上限、QQQM成长倾斜和Policy Benchmark。
+
+
+## 2026-07-30 — v3.4.1 Reliability Patch
+
+### 决定
+
+- 不改变SOXX 15%长期硬上限、当前6%阶段或任何风险护栏。
+- 修复Data Dictionary的`A_basis`与`U`执行公式。
+- Policy Benchmark改为月初重置权重、月内现金递归计息，不做每日再平衡。
+- SOXX现行指数方法证据状态改为Incomplete；旧Nasdaq PHLX SOX方法不得支持现行NYSE指数断言。
+- 当前持久生命周期统一为`Frozen — DATA GATE`；长期准入完成后Registry只能先更新为`Approved / Hold`。`Add Candidate`改为绑定实时账户、Green穿透、金额/权重和当日过期时间的独立IC Packet。
+- 当前`A_execution_cap=3%`，只能按3%→4.5%→6%→10%→12.5%→15%逐档推进且不得高于`A_stage`；一次IC不得跳档。
+- Policy Benchmark拆分已入账本金与未入账应计利息，次月第三个工作日只转换科目，不提前日复利。
+- 扩展Policy consistency GitHub Actions，自动检查关键公式、生命周期、输入域、逐档执行与候选失效约束。
+
+### 非交易声明
+
+本补丁只修复可靠性，不授权SOXX、SPYM或QQQM订单。
