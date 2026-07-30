@@ -49,10 +49,10 @@
 
 ## 阶段与交易
 
-- 当前 `A_stage=6%`；3%与4.5%为阶段内检查点。
+- 当前`A_stage=6%`，当前`A_execution_cap=3%`；执行上限只能逐档推进且不得高于阶段。
 - 未来阶段：10%、12.5%、15%。
 - 任何追加前必须通过实时IBKR、同日SPYM/QQQM/SOXX穿透、阶段上限和完整IC。
-- 现行指数方法证据缺口关闭前，Registry不得升级为`Approved / Add Candidate`。
+- 现行指数方法证据缺口关闭前，Registry不得升级为`Approved / Hold`；`Add Candidate`只能存在于满足时效字段的独立IC Packet。
 - 价格档位仅触发研究复核，不写入Production自动规则。
 
 ## 官方来源
@@ -64,4 +64,4 @@
 - ICE Semiconductor Index 2022方法更新通知：https://www.ice.com/publicdocs/equity_indices/notices/ICEBIO_ICESEMI_Methodology_Updates_20220128.pdf
 - WSTS Spring 2026 Forecast：https://www.wsts.org/esraCMS/extension/media/f/WST/7618/WSTS_FC-Release-2026-May.pdf
 
-核心投资逻辑已记录，但现行指数方法证据尚未完整，因此Policy research status保持`Incomplete`。该状态与缺少生产级同日穿透快照均会使结论保持`WAIT / DATA INCOMPLETE`；本文件不构成交易授权。
+核心投资逻辑已记录，但现行指数方法证据尚未完整，因此Policy research status保持`Incomplete`。该状态与缺少同一审核日采集、三只ETF `source_as_of`一致的Green穿透快照均会使结论保持`WAIT / DATA INCOMPLETE`；本文件不构成交易授权。
