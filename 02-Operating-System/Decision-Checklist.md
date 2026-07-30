@@ -27,10 +27,12 @@
 - 为什么现在必须行动，而不是继续持有或等待：
 - 为什么直接持有/买入 SPYM 或 QQQM 不是更好的选择：
 
-## 1.1 SOXX v3.4必填
+## 1.1 SOXX v3.4.1必填
 
 - 交易前后`A_actual`、当前`A_stage`、`A_basis`与`U`：
 - 交易后SPYM动态目标和物理现金目标：
+- 现行NYSE Semiconductor Index方法证据与核验日期：
+- Registry是否已为`Approved / Add Candidate`：
 - SPYM、QQQM、SOXX同日穿透与覆盖率：
 - 阶段与科技50%、半导体15%、发行人10%边界：
 
@@ -74,7 +76,7 @@
 - 理由只有价格、新闻、害怕错过、回本愿望或“想做点什么”。
 - 使用了尚未发布的 Research 指标或规则。
 - 新Alpha会使一般单只超过6%、持仓超过5只或Alpha合计超过15%；SOXX交易后超过Registry当前阶段或长期15%。
-- Observation 没有完成 Thesis 与升级批准却申请追加。
+- Observation没有完成Thesis与升级批准却申请追加；或`Frozen`标的未先更新为`Approved / Add Candidate`就申请追加。
 - 新科技 Alpha 会让科技穿透达到或超过 50%，且没有年度规则批准。
 - 需要借款，或在没有 Transition Plan 依据时突破现金约束。
 - 标的不在现行 Core / Alpha / Legacy 分类中，且未完成准入研究。
