@@ -105,3 +105,43 @@
 - 防复发：
 - 状态：Open / Monitoring / Closed
 ```
+
+## BUG-010：聊天中的SOXX 15%决定未进入Production
+
+- 日期：2026-07-30
+- 事件：用户已确认SOXX长期15%、当前6%执行上限，但Production仍把SOXX限定为一般Observation与永久6%上限。
+- 影响：聊天决策与生产规则分叉。
+- 根因：战略决定未经过正式版本发布。
+- 修复：v3.4建立SOXX唯一例外、阶段治理与Registry。
+- 防复发：阶段变化必须先更新Constitution、Registry、Decision Log与Release。
+- 状态：Closed
+
+## BUG-011：SOXX阶段路径依赖
+
+- 日期：2026-07-30
+- 事件：按实际Alpha权重计算SPYM目标，会先把未来SOXX阶段预算投入SPYM。
+- 影响：后续推进SOXX时可能被迫回转SPYM。
+- 根因：没有区分实际权重和批准阶段。
+- 修复：引入`A_actual`、`A_stage`、`A_basis`与阶段储备`U`。
+- 防复发：发布测试覆盖实际权重低于、等于和高于阶段三类边界。
+- 状态：Closed
+
+## BUG-012：Dashboard混淆F与D
+
+- 日期：2026-07-30
+- 事件：Dashboard把Routine DCA `D`写成默认2,000美元。
+- 影响：Core缺口小于入金时可能侵蚀现金目标。
+- 根因：展示层没有同步v3.3的字段拆分。
+- 修复：明确`F`为已到账入金，`D=min(F,G0)`为实际Core买入。
+- 防复发：Dashboard必须列示F、G0、D三个独立字段。
+- 状态：Closed
+
+## BUG-013：Policy Benchmark现金收益不可比
+
+- 日期：2026-07-30
+- 事件：使用实际高现金账户的单位收益率代表假设15%现金基准。
+- 影响：IBKR免息门槛、NAV比例和Segment使该收益率不可线性映射。
+- 根因：没有对假设现金袖套重新运行经纪商规则。
+- 修复：v3.4按每日假设15%现金、官方利率、NAV比例和门槛重算。
+- 防复发：模型输入不完整时Benchmark标记N/A，不允许实际收益率或0%代理。
+- 状态：Closed

@@ -15,8 +15,8 @@
 ## 七步执行
 
 1. 通过 Data Gate，更新 Cash、SPYM、QQQM、各 Alpha / Observation 和 Legacy 的市值。
-2. 计算 \(A\)、SPYM 动态目标 `57%−A`、当前权重与正缺口。
-3. 检查 Cash、QQQM、`SPYM + Alpha` 袖套及 Alpha 硬上限。
+2. 计算`A_actual`、`A_stage`、`A_basis=max(A_actual,A_stage)`、`U=max(A_stage-A_actual,0)`及SPYM动态目标`57%-A_basis`。
+3. 检查Cash、QQQM、`SPYM + SOXX + Stage Reserve`袖套及SOXX阶段/硬上限。
 4. 确认实际外部净入金 \(F\)，计算入金后 Core 正缺口 \(G_0\) 与 Routine DCA \(D=\min(F,G_0)\)；\(F-D\) 留在现金。
 5. 以 Routine DCA 后的预计现金和剩余 Core 正缺口，按 Deployment Framework 计算并执行战略现金迁移基线 \(B\)。
 6. 只有估值数据合格且完整 IC 批准时，才允许执行基线之外的战术加速 \(T\)。
@@ -25,15 +25,15 @@
 ## 资金分配算法
 
 - \(F\) = 本月已到账的实际外部净入金，且 \(F\ge0\)；提款或未到账计划额不计入。
-- \(V\) = \(F\) 到账后、交易前的账户净值；\(A\) = 全部实盘 Alpha（含 Observation）市值 ÷ \(V\)。
+- \(V\)=入金后、交易前净值；`A_actual`=SOXX市值÷V；`A_stage`来自Registry；`A_basis=max(A_actual,A_stage)`；`U=max(A_stage-A_actual,0)`。
 - QQQM 目标美元值 = \(V\times28\%\)。
-- SPYM 目标美元值 = \(V\times(57\%-A)\)。
+- SPYM目标美元值=\(V\times(57\%-A_{basis})\)。
 - \(G_0\) = Routine DCA 前两只 Core 的 `max(目标美元值 − 当前市值, 0)` 合计。
 - \(D=\min(F,G_0)\)；\(D\) 按正缺口分配，\(F-D\) 留在现金。
 - \(C=C_0-D\)，\(G\) = 分配 \(D\) 后两只 Core 的剩余正缺口合计。
-- \(S=\max(C-15\%\times V,0)\)，\(B=\min(S/R,G)\)。
+- \(S=\max(C-(15\%+U)\times V,0)\)，\(B=\min(S/R,G)\)。
 - \(B\) 按剩余正缺口分配；为减少碎片交易，可只购买缺口最大的 1–2 项。
-- Alpha 未使用额度自动留在 SPYM，不为未来候选预留空置现金。
+- 一般未授权Alpha额度不预留；已发布SOXX当前阶段差额`U`作为现金用途标签保留，不先投入SPYM。
 - Alpha / Observation 追加不属于月度例行路径。
 
 ## 例行路径检查
@@ -43,7 +43,7 @@ Routine DCA \(D\) 与 \(B\) 无需完整四视角 Packet，但必须全部满足
 - 四项 IBKR 数据实时读取成功；
 - 只买 SPYM / QQQM；
 - 金额完全由已发布公式产生；
-- 交易后现金不低于 12%，且不使用融资；
+- 交易后物理现金不低于`12%+U`，且不使用融资；
 - 没有重复或冲突订单；
 - 没有突破 Constitution；
 - 订单类型、数量、限价和有效期明确。
@@ -75,4 +75,4 @@ Routine DCA \(D\) 与 \(B\) 无需完整四视角 Packet，但必须全部满足
 
 ## Maintenance Mode
 
-当 Cash、QQQM、`SPYM + Alpha` 袖套连续三个自然月落在允许区间，且 Legacy 已按计划处理后，退出 Transition Mode。维护期 \(B=0\)，仅用每月新增资金修复偏差；任何非例行部署继续使用完整 IC。
+当Cash、QQQM、`SPYM + SOXX + Stage Reserve`袖套连续三个自然月落在允许区间，且 Legacy 已按计划处理后，退出 Transition Mode。维护期 \(B=0\)，仅用每月新增资金修复偏差；任何非例行部署继续使用完整 IC。

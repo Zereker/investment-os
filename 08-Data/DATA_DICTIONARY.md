@@ -9,6 +9,15 @@
 - `quality`：`Green`、`Yellow` 或 `Red`。
 - `notes`：代理源、延迟、解析失败或口径限制。
 
+## v3.4配置字段
+
+- `alpha_actual_weight`：\(A_{actual}=\text{SOXX市值}/V\)。
+- `alpha_stage_cap`：\(A_{stage}\)，由Position Registry发布，当前6%。
+- `alpha_allocation_basis`：\(A_{basis}=\max(A_{actual},A_{stage})\)。
+- `soxx_stage_reserve_weight`：\(U=\max(A_{stage}-A_{actual},0)\)，是现金用途标签，不得重复计入。
+- `physical_cash_target_weight`：\(15\%+U\)，下限为\(12\%+U\)。
+- SPYM目标：\(57\%-A_{basis}\)。
+
 ## 账户与月度执行字段
 
 ### net_liquidation_usd
@@ -57,17 +66,17 @@ Invesco QQQM 官方页的 `Forward Price/Earnings Ratio`。使用 QQQ 作为代�
 
 ## Policy Benchmark 字段
 
-### usd_cash_interest_usd
-月度符号 \(I_t\)。IBKR 在同一计量期间实际计提的 USD 现金利息，单位 USD。外部入金、证券收益和已实现盈亏不得混入。
+### benchmark_cash_balance_usd / benchmark_eligible_cash_usd
 
-### usd_eligible_cash_twa_usd
-月度符号 \(\bar C^{eligible}_t\)。同一期间合格 USD 现金余额的期限加权平均值；必须与 \(I_t\) 使用相同计息口径和日期范围。
+每日假设基准现金\(C_{B,d}=15\%\times V_{B,d}\)。按IBKR公开规则，USD前10,000美元不计息，\(E_{B,d}=\max(C_{B,d}-10000,0)\)。
 
-### usd_cash_period_return
-\[
-r_{cash,t}=\frac{I_t}{\bar C^{eligible}_t}
-\]
-只有分子、分母和期间均可复现且分母大于 0 时才计算。实际利息美元不得直接作为 Policy Benchmark 的现金收益；输入不合格时按 0%计并披露限制。
+### ibkr_usd_full_rate / ibkr_nav_scale
+
+\(r_{full,d}\)为当日适用账户计划的官方USD信用利率；\(k_d=\min(V_{B,d}/100000,1)\)。账户计划、币种、Segment、门槛和日计息基数必须按当日官方规则记录。
+
+### benchmark_cash_interest_usd / benchmark_cash_period_return
+
+USD通常按360天：\(I_{B,t}=\sum_d E_{B,d}\times r_{full,d}\times k_d/360\)；\(r^{model}_{cash,t}=I_{B,t}/\bar C_{B,t}\)。任一输入缺失则为N/A，不得使用实际账户利息、单位收益率或0%替代。
 
 ### spym_total_return / qqqm_total_return
 同一计量期间、含分红的基金总收益 \(r_{SPYM,t}\) 与 \(r_{QQQM,t}\)。价格收益不得冒充总收益。
@@ -75,7 +84,7 @@ r_{cash,t}=\frac{I_t}{\bar C^{eligible}_t}
 ### policy_benchmark_period_return
 按月重置权重后计算：
 \[
-R_{B,t}=15\%\times r_{cash,t}+57\%\times r_{SPYM,t}+28\%\times r_{QQQM,t}
+R_{B,t}=15\%\times r^{model}_{cash,t}+57\%\times r_{SPYM,t}+28\%\times r_{QQQM,t}
 \]
 外部现金流按时间加权收益规则处理，不进入收益分子。
 
