@@ -17,7 +17,17 @@
       "source_url": "https://",
       "source_as_of": "YYYY-MM-DD",
       "source_sha256": "",
-      "holdings": []
+      "holdings": [
+        {
+          "security_id": "",
+          "weight": 0,
+          "raw_sector": null,
+          "raw_industry": null,
+          "issuer_group_id": null,
+          "normalized_sector": null,
+          "normalized_industry": null
+        }
+      ]
     },
     {
       "ticker": "QQQM",
@@ -25,7 +35,17 @@
       "source_url": "https://",
       "source_as_of": "YYYY-MM-DD",
       "source_sha256": "",
-      "holdings": []
+      "holdings": [
+        {
+          "security_id": "",
+          "weight": 0,
+          "raw_sector": null,
+          "raw_industry": null,
+          "issuer_group_id": null,
+          "normalized_sector": null,
+          "normalized_industry": null
+        }
+      ]
     },
     {
       "ticker": "SOXX",
@@ -33,7 +53,17 @@
       "source_url": "https://",
       "source_as_of": "YYYY-MM-DD",
       "source_sha256": "",
-      "holdings": []
+      "holdings": [
+        {
+          "security_id": "",
+          "weight": 0,
+          "raw_sector": null,
+          "raw_industry": null,
+          "issuer_group_id": null,
+          "normalized_sector": null,
+          "normalized_industry": null
+        }
+      ]
     }
   ],
   "metrics": {
@@ -55,5 +85,6 @@
     "full_classification_coverage": false
   },
   "verdict": "DATA INCOMPLETE",
-  "packet_sha256": ""
+  "packet_sha256": "",
+  "mapping_version": ""
 }
