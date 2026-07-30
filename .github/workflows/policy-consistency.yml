@@ -19,3 +19,12 @@ jobs:
         env:
           PYTHONDONTWRITEBYTECODE: "1"
         run: python3 scripts/check_policy_consistency.py
+      - name: Validate look-through evidence packets
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: |
+          python3 scripts/validate_lookthrough_packet.py --self-test
+          mapfile -t packets < <(find 08-Data/SNAPSHOTS/lookthrough -type f -name '*.json' ! -name 'TEMPLATE.json' -print)
+          if (( ${#packets[@]} )); then
+            python3 scripts/validate_lookthrough_packet.py "${packets[@]}"
+          fi
