@@ -1,11 +1,10 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "mapping_id": "",
   "taxonomy": "GICS",
   "records": [
     {
       "security_id": "",
-      "issuer_group_id": "issuer:canonical-lowercase-id",
       "normalized_sector": "Information Technology",
       "normalized_industry": "Semiconductors & Semiconductor Equipment",
       "derivative_components": null,

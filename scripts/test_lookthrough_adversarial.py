@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
-"""Independent adversarial regression tests for Look-through Bundle v1.2."""
+"""Independent adversarial regression tests for Look-through Bundle v1.3."""
 
 from __future__ import annotations
 
 import copy
+import csv
+import io
 import json
 import tempfile
 from pathlib import Path
 
+import parse_lookthrough_sources as parser
 import validate_lookthrough_packet as validator
 
 
@@ -30,6 +33,43 @@ def rewrite_json(path: Path, value: dict) -> str:
 
 def main() -> None:
     with tempfile.TemporaryDirectory(prefix="lookthrough-adversarial-") as tmp:
+        tmp_path = Path(tmp)
+        qqqm_path = tmp_path / "QQQM-real-format.csv"
+        qqqm_text = io.StringIO()
+        csv.writer(qqqm_text, lineterminator="\n").writerows(
+            [
+                [
+                    "Security Identifier",
+                    "Holding Ticker",
+                    "Holding Name",
+                    "Date",
+                    "Holding Type",
+                    "Percentage of Fund",
+                    "Market Value",
+                ],
+                ["02079K305", "GOOGL", "Alphabet Inc Class A", "07/29/2026", "Equity", 60, 600],
+                ["02079K107", "--", "Alphabet Inc Class C", "07/29/2026", "Equity", 40, 400],
+            ]
+        )
+        qqqm_path.write_text(qqqm_text.getvalue(), encoding="utf-8")
+        parsed_qqqm = parser.parse_source("QQQM", qqqm_path, "invesco-csv-v1")
+        assert parsed_qqqm["source_as_of"] == "2026-07-29"
+        assert [item["security_id"] for item in parsed_qqqm["holdings"]] == [
+            "CUSIP:02079K305",
+            "CUSIP:02079K107",
+        ]
+        missing_id_path = tmp_path / "QQQM-placeholder-only.csv"
+        missing_id_path.write_text(
+            qqqm_text.getvalue().replace("02079K305,GOOGL", ",--"),
+            encoding="utf-8",
+        )
+        try:
+            parser.parse_source("QQQM", missing_id_path, "invesco-csv-v1")
+        except parser.SourceParseError:
+            pass
+        else:
+            raise AssertionError("parser accepted a placeholder ticker without a stable ID")
+
         good, packet_path = validator.sample(Path(tmp))
         validator.validate(good, packet_path, allow_test=True)
 
@@ -53,10 +93,50 @@ def main() -> None:
         mapping = validator.read_json(
             mapping_path, validator.MAX_MAPPING_BYTES, "adversarial mapping"
         )
-        mapping["records"][0]["issuer_group_id"] += " "
+        mapping["records"][0]["issuer_group_id"] = "cik:0000000001"
         alias_packet = copy.deepcopy(good)
         alias_packet["mapping_sha256"] = rewrite_json(mapping_path, mapping)
-        reject("issuer split with trailing whitespace", alias_packet, packet_path)
+        reject("mapping bypasses issuer registry", alias_packet, packet_path)
+        mapping_path.write_bytes(original_mapping)
+
+        registry_path = packet_path.parent / good["issuer_registry_path"]
+        original_registry = registry_path.read_bytes()
+        registry = validator.read_json(
+            registry_path, validator.MAX_MAPPING_BYTES, "adversarial issuer registry"
+        )
+        alphabet = next(
+            item
+            for item in registry["issuers"]
+            if item["issuer_group_id"] == "cik:0001652044"
+        )
+        registry["issuers"].append(
+            {
+                "issuer_group_id": "cik:9999999999",
+                "canonical_name": f"{alphabet['canonical_name']} Class C",
+                "evidence_url": "https://example.invalid/cik/9999999999",
+            }
+        )
+        alphabet_c = next(
+            item
+            for item in registry["securities"]
+            if item["security_id"] == "CUSIP:02079K107"
+        )
+        alphabet_c["issuer_group_id"] = "cik:9999999999"
+        split_packet = copy.deepcopy(good)
+        split_packet["issuer_registry_sha256"] = rewrite_json(registry_path, registry)
+        reject("Alphabet A and C split across issuer identities", split_packet, packet_path)
+        registry_path.write_bytes(original_registry)
+
+        mapping = validator.read_json(
+            mapping_path, validator.MAX_MAPPING_BYTES, "adversarial mapping"
+        )
+        derivative = next(
+            item for item in mapping["records"] if item["derivative_components"] is not None
+        )
+        derivative["derivative_components"][0]["issuer_group_id"] = "cik:9999999999"
+        free_issuer_packet = copy.deepcopy(good)
+        free_issuer_packet["mapping_sha256"] = rewrite_json(mapping_path, mapping)
+        reject("derivative component uses a free issuer id", free_issuer_packet, packet_path)
         mapping_path.write_bytes(original_mapping)
 
         account_path = packet_path.parent / good["account_scenario_path"]
@@ -87,7 +167,7 @@ def main() -> None:
         future_path.parent.mkdir(parents=True)
         reject("future-dated 2099 bundle", future, future_path)
 
-    print("Independent Look-through Bundle v1.2 adversarial tests passed.")
+    print("Independent Look-through Bundle v1.3 adversarial tests passed.")
 
 
 if __name__ == "__main__":

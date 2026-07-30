@@ -182,19 +182,33 @@ def main() -> None:
         "Decision-Log.md",
         "README.md",
     ):
-        require(path, "Bundle v1.2")
+        require(path, "Bundle v1.3")
     require(
         "08-Data/LOOKTHROUGH_PACKET.md",
         "验证通过不改变 Position Registry",
         "source_sha256",
-        "schema_version`：当前固定为 `1.2",
+        "schema_version`：当前固定为 `1.3",
         "account_snapshot_sha256",
         "candidate_sha256",
+        "issuer_registry_sha256",
         "mapping_sha256",
         "逐行等于验证器从归档字节解析的结果",
         "exposure_weight",
         "科技严格低于 50%",
         "Packet通过只是SOXX解冻的必要条件之一",
+    )
+    require(
+        "08-Data/LOOKTHROUGH_PACKET_TEMPLATE.json",
+        '"schema_version": "1.3"',
+        '"issuer_registry_path": "issuer-registry.json"',
+        '"issuer_registry_sha256": ""',
+    )
+    require(
+        "08-Data/LOOKTHROUGH_ISSUER_REGISTRY_TEMPLATE.json",
+        '"schema_version": "1.0"',
+        '"issuer_group_id": "cik:0001652044"',
+        '"security_id": "CUSIP:02079K305"',
+        '"security_id": "CUSIP:02079K107"',
     )
     require(
         ".github/workflows/policy-consistency.yml",
@@ -206,7 +220,7 @@ def main() -> None:
     )
     require(
         "scripts/validate_lookthrough_packet.py",
-        'SCHEMA_VERSION = "1.2"',
+        'SCHEMA_VERSION = "1.3"',
         "duplicate JSON key",
         "source_sha256 does not match archived source bytes",
         "does not match parsed archived source",
@@ -218,12 +232,18 @@ def main() -> None:
         '"SPYM": "ssga-xlsx-v1"',
         '"QQQM": "invesco-csv-v1"',
         '"SOXX": "ishares-csv-v1"',
+        '"holding ticker"',
+        '"security identifier"',
+        '"date"',
+        '"CUSIP:"',
         "derivative has zero economic exposure",
     )
     require(
         "scripts/test_lookthrough_adversarial.py",
         "packet holdings unrelated to archived bytes",
         "SOXX erased as zero-exposure other instruments",
+        "Alphabet A and C split across issuer identities",
+        "derivative component uses a free issuer id",
         "future-dated 2099 bundle",
     )
     require(

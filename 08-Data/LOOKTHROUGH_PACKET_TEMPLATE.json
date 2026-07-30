@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.2",
+  "schema_version": "1.3",
   "packet_id": "lookthrough-YYYY-MM-DD-id",
   "review_date": "YYYY-MM-DD",
   "observed_at": "YYYY-MM-DDThh:mm:ss+09:00",
@@ -9,6 +9,8 @@
   "weight_basis": "post_trade",
   "account_scenario_path": "account.json",
   "account_snapshot_sha256": "",
+  "issuer_registry_path": "issuer-registry.json",
+  "issuer_registry_sha256": "",
   "mapping_path": "mapping.json",
   "mapping_sha256": "",
   "portfolio_weights": {

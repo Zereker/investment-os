@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "registry_id": "",
+  "issuers": [
+    {
+      "issuer_group_id": "cik:0001652044",
+      "canonical_name": "Alphabet Inc",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=1652044"
+    }
+  ],
+  "securities": [
+    {
+      "security_id": "CUSIP:02079K305",
+      "issuer_group_id": "cik:0001652044",
+      "evidence": "Official security-to-issuer identity evidence"
+    },
+    {
+      "security_id": "CUSIP:02079K107",
+      "issuer_group_id": "cik:0001652044",
+      "evidence": "Official security-to-issuer identity evidence"
+    }
+  ]
+}

@@ -28,13 +28,43 @@ DATE_PATTERNS = (
     re.compile(r"(?:as\s+of|asofdate)[,:]?\s*[\"']?(\d{4}-\d{2}-\d{2})", re.I),
 )
 DATE_FORMATS = ("%b %d, %Y", "%B %d, %Y", "%m/%d/%Y", "%Y-%m-%d")
+IDENTIFIER_COLUMNS = ("cusip", "isin", "sedol", "identifier")
+PLACEHOLDER_TICKERS = {
+    "",
+    "-",
+    "--",
+    "---",
+    "N/A",
+    "NA",
+    "NONE",
+    "NULL",
+    "CASH",
+    "-CASH-",
+}
 HEADER_ALIASES = {
-    "ticker": {"ticker", "symbol"},
-    "name": {"name", "company", "security name", "securityname", "description"},
-    "identifier": {"identifier", "cusip", "isin", "sedol"},
+    "ticker": {"ticker", "symbol", "holding ticker"},
+    "name": {
+        "name",
+        "company",
+        "security name",
+        "securityname",
+        "holding name",
+        "description",
+    },
+    "identifier": {"identifier", "security identifier"},
+    "cusip": {"cusip"},
+    "isin": {"isin"},
+    "sedol": {"sedol"},
+    "date": {"date", "as of date", "holding date", "holdings date"},
     "sector": {"sector", "gics sector"},
     "industry": {"industry", "gics industry"},
-    "asset_class": {"asset class", "assetclass", "security type", "type"},
+    "asset_class": {
+        "asset class",
+        "assetclass",
+        "security type",
+        "holding type",
+        "type",
+    },
     "weight": {
         "weight",
         "% weight",
@@ -44,6 +74,10 @@ HEADER_ALIASES = {
         "portfolio weight (%)",
         "fund weight",
         "fund weight (%)",
+        "% of fund",
+        "percent of fund",
+        "percentage of fund",
+        "holding weight",
     },
     "market_value": {"market value", "marketvalue"},
     "notional_value": {"notional value", "notionalvalue", "notional"},
@@ -75,17 +109,47 @@ def _number(value: object, label: str) -> float:
     return result
 
 
-def _parse_date(text: str) -> str:
+def _parse_date_value(raw: str) -> str | None:
+    raw = _clean(raw)
+    if re.match(r"^\d{4}-\d{2}-\d{2}(?:[T\s].*)?$", raw):
+        try:
+            return date.fromisoformat(raw[:10]).isoformat()
+        except ValueError:
+            pass
+    for fmt in DATE_FORMATS:
+        try:
+            return datetime.strptime(raw, fmt).date().isoformat()
+        except ValueError:
+            pass
+    return None
+
+
+def _parse_date(
+    text: str,
+    rows: list[list[object]],
+    header_row: int,
+    columns: dict[str, int],
+) -> str:
+    if "date" in columns:
+        dates = set()
+        for row_number, row in enumerate(rows[header_row + 1 :], start=header_row + 2):
+            if not (_cell(row, columns, "name") or _cell(row, columns, "weight")):
+                continue
+            parsed = _parse_date_value(_cell(row, columns, "date"))
+            if parsed is None:
+                _fail(f"source row {row_number} has no recognized holdings date")
+            dates.add(parsed)
+        if len(dates) == 1:
+            return dates.pop()
+        if len(dates) > 1:
+            _fail("archived source contains multiple holdings dates")
     for pattern in DATE_PATTERNS:
         match = pattern.search(text)
         if not match:
             continue
-        raw = match.group(1)
-        for fmt in DATE_FORMATS:
-            try:
-                return datetime.strptime(raw, fmt).date().isoformat()
-            except ValueError:
-                pass
+        parsed = _parse_date_value(match.group(1))
+        if parsed is not None:
+            return parsed
     _fail("archived source does not contain a recognized holdings as-of date")
 
 
@@ -104,8 +168,10 @@ def _column_map(row: list[object]) -> dict[str, int]:
 def _find_table(rows: list[list[object]]) -> tuple[int, dict[str, int]]:
     for index, row in enumerate(rows):
         columns = _column_map(row)
-        if "name" in columns and "weight" in columns and (
-            "ticker" in columns or "identifier" in columns
+        if (
+            "name" in columns
+            and "weight" in columns
+            and ("ticker" in columns or any(key in columns for key in IDENTIFIER_COLUMNS))
         ):
             return index, columns
     _fail("archived source does not contain a recognized holdings header")
@@ -131,16 +197,47 @@ def _instrument(asset_class: str, ticker: str, name: str) -> str:
     return "other"
 
 
-def _security_id(row: list[object], columns: dict[str, int], row_number: int) -> str:
-    ticker = _cell(row, columns, "ticker")
-    identifier = _cell(row, columns, "identifier")
-    value = ticker or identifier
-    if not value:
-        _fail(f"source row {row_number} has no stable ticker or identifier")
-    canonical = re.sub(r"\s+", "", value).upper()
+def _typed_identifier(kind: str, value: str) -> str | None:
+    canonical = re.sub(r"[\s-]+", "", value).upper()
     if not canonical:
-        _fail(f"source row {row_number} has an empty security identifier")
-    return canonical
+        return None
+    if kind == "isin" or (kind == "identifier" and re.fullmatch(r"[A-Z]{2}[A-Z0-9]{9}\d", canonical)):
+        return f"ISIN:{canonical}"
+    if kind == "cusip" or (kind == "identifier" and re.fullmatch(r"[A-Z0-9*@#]{9}", canonical)):
+        return f"CUSIP:{canonical}"
+    if kind == "sedol" or (kind == "identifier" and re.fullmatch(r"[A-Z0-9]{7}", canonical)):
+        return f"SEDOL:{canonical}"
+    if kind == "identifier":
+        manager_id = re.sub(r"[^A-Z0-9./-]+", "-", value.upper()).strip("-")
+        if manager_id:
+            return f"MANAGER:{manager_id}"
+    return None
+
+
+def _security_id(
+    row: list[object],
+    columns: dict[str, int],
+    row_number: int,
+    instrument: str,
+    name: str,
+) -> str:
+    for kind in IDENTIFIER_COLUMNS:
+        value = _cell(row, columns, kind)
+        if value and (typed := _typed_identifier(kind, value)) is not None:
+            return typed
+
+    ticker = re.sub(r"\s+", "", _cell(row, columns, "ticker")).upper()
+    if ticker not in PLACEHOLDER_TICKERS:
+        if not re.fullmatch(r"[A-Z0-9][A-Z0-9./-]{0,31}", ticker):
+            _fail(f"source row {row_number} ticker is not a stable identifier")
+        return f"TICKER:{ticker}"
+    if instrument == "cash":
+        currency = next(
+            (item for item in re.findall(r"\b[A-Z]{3}\b", name.upper()) if item in {"USD"}),
+            "USD",
+        )
+        return f"CASH:{currency}"
+    _fail(f"source row {row_number} has no stable non-placeholder security identifier")
 
 
 def _derive_nav(
@@ -179,13 +276,13 @@ def _rows_to_holdings(
         raw_weight = _cell(row, columns, "weight")
         if not name and not raw_weight:
             continue
-        security_id = _security_id(row, columns, offset)
-        if security_id in seen:
-            _fail(f"archived source has duplicate security identifier: {security_id}")
-        seen.add(security_id)
         ticker = _cell(row, columns, "ticker")
         asset_class = _cell(row, columns, "asset_class")
         instrument = _instrument(asset_class, ticker, name)
+        security_id = _security_id(row, columns, offset, instrument, name)
+        if security_id in seen:
+            _fail(f"archived source has duplicate security identifier: {security_id}")
+        seen.add(security_id)
         market_weight = _number(raw_weight, f"source row {offset} weight") / 100
         if instrument == "cash":
             exposure_weight = 0.0
@@ -324,6 +421,6 @@ def parse_source(ticker: str, path: Path, source_format: str) -> dict:
         text, rows = _csv_rows(path)
     header_row, columns = _find_table(rows)
     return {
-        "source_as_of": _parse_date(text),
+        "source_as_of": _parse_date(text, rows, header_row, columns),
         "holdings": _rows_to_holdings(rows, columns, header_row),
     }
