@@ -27,7 +27,7 @@ v3.4.1期间：
 
 - SOXX是唯一Alpha载体，长期硬上限与最终治理阶段15%，当前阶段6%。
 - 定义\(A_{basis}=\max(A_{actual},A_{stage})\)、\(U=\max(A_{stage}-A_{actual},0)\)；SPYM目标为\(57\%-A_{basis}\)，物理现金目标为\(15\%+U\)。
-- 10%/12.5%/15%须逐级季度批准；风险护栏、现行指数方法证据、实时IBKR和同日穿透优先；本版本不产生订单。
+- 当前`A_execution_cap=3%`；执行上限按3%→4.5%→6%→10%→12.5%→15%逐档推进，且不得高于`A_stage`。10%/12.5%/15%还须逐级季度批准；风险护栏、现行指数方法证据、实时IBKR和Green穿透优先；本版本不产生订单。
 - 每个PR必须通过`Policy consistency`检查；检查失败时不得合并为Production。
 
 ## 3. 每日巡检契约
@@ -46,7 +46,7 @@ v3.4.1期间：
 
 若第 1–5 步任一失败，巡检必须标记为 `DATA INCOMPLETE`，不得使用历史数据冒充实时数据，也不得给出新的 BUY 或 SELL 建议。完整格式见 `02-Operating-System/Daily-Review.md`。
 
-SOXX当前为`Alpha / Frozen — DATA GATE`：现有仓位可持有，禁止追加。只有现行指数方法证据、实时账户与同日穿透通过，且Registry先更新为`Approved / Add Candidate`后，才可进入完整IC。
+SOXX当前为`Alpha / Frozen — DATA GATE`：现有仓位可持有，禁止追加。只有现行指数方法证据完成、Registry先更新为`Approved / Hold`，并用实时账户与同一审核日/同`source_as_of`的Green穿透形成未过期`Add Candidate` Packet后，才可进入完整IC。
 
 ## 4. 周度与季度契约
 
