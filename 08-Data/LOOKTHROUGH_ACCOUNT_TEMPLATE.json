@@ -1,10 +1,13 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "account_snapshot_id": "",
   "observed_at": "YYYY-MM-DDThh:mm:ss+09:00",
+  "source": "Interactive Brokers",
+  "active_order_count": 0,
   "nav": 0,
   "current_market_values": {
     "cash": 0,
+    "other": 0,
     "SPYM": 0,
     "QQQM": 0,
     "SOXX": 0

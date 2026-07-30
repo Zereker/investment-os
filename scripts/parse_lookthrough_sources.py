@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 import math
 import re
 import zipfile
@@ -19,7 +20,7 @@ class SourceParseError(ValueError):
 
 SOURCE_FORMATS = {
     "SPYM": "ssga-xlsx-v1",
-    "QQQM": "invesco-csv-v1",
+    "QQQM": "invesco-json-v1",
     "SOXX": "ishares-csv-v1",
 }
 DATE_PATTERNS = (
@@ -90,6 +91,7 @@ HEADER_ALIASES = {
         "percent of fund",
         "percentage of fund",
         "holding weight",
+        "% tna",
     },
     "market_value": {"market value", "marketvalue"},
     "notional_value": {"notional value", "notionalvalue", "notional"},
@@ -198,7 +200,7 @@ def _instrument(asset_class: str, ticker: str, name: str) -> str:
     value = f"{asset_class} {ticker} {name}".lower()
     if any(token in value for token in ("future", "option", "swap", "forward")):
         return "derivative"
-    if any(token in value for token in ("cash collateral", "margin", "cash")):
+    if any(token in value for token in ("cash collateral", "margin", "cash", "currency")):
         return "cash"
     if any(token in value for token in ("money market", "mutual fund", " etf", "fund")):
         return "fund"
@@ -365,6 +367,60 @@ def _csv_rows(path: Path) -> tuple[str, list[list[str]]]:
     return text, list(csv.reader(io.StringIO(text)))
 
 
+def _invesco_json_rows(path: Path) -> tuple[str, list[list[object]]]:
+    try:
+        raw = path.read_bytes()
+        text = raw.decode("utf-8")
+        payload = json.loads(text)
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise SourceParseError(f"archived Invesco JSON is not readable: {exc}") from exc
+    if not isinstance(payload, dict):
+        _fail("archived Invesco JSON root must be an object")
+    effective_date = _clean(payload.get("effectiveDate"))
+    if _parse_date_value(effective_date) is None:
+        _fail("archived Invesco JSON has no recognized effectiveDate")
+    holdings = payload.get("holdings")
+    if not isinstance(holdings, list) or not holdings:
+        _fail("archived Invesco JSON has no holdings array")
+    header = [
+        "Security Identifier",
+        "Ticker",
+        "Company",
+        "Date",
+        "Security Type",
+        "Sector",
+        "% TNA",
+        "Market Value",
+        "Notional Value",
+    ]
+    rows: list[list[object]] = [header]
+    for index, item in enumerate(holdings, start=1):
+        if not isinstance(item, dict):
+            _fail(f"archived Invesco holding {index} must be an object")
+        raw_identifier = _clean(item.get("cusip"))
+        security_type_code = _clean(item.get("securityTypeCode")).upper()
+        if security_type_code not in {"COM", "ADR", "DRNY", "MMT"}:
+            raw_identifier = (
+                f"{raw_identifier or _clean(item.get('ticker'))}.{security_type_code}"
+            )
+        elif not re.fullmatch(r"[A-Z0-9*@#]{9}", raw_identifier.upper()):
+            raw_identifier = ""
+        rows.append(
+            [
+                raw_identifier,
+                item.get("ticker"),
+                item.get("issuerName"),
+                effective_date,
+                item.get("securityTypeName"),
+                item.get("sectorName"),
+                item.get("percentageOfTotalNetAssets"),
+                item.get("marketValueBase"),
+                item.get("marketValueBase"),
+            ]
+        )
+    return text, rows
+
+
 def _xlsx_rows(path: Path) -> tuple[str, list[list[object]]]:
     try:
         archive = zipfile.ZipFile(path)
@@ -453,6 +509,10 @@ def parse_source(ticker: str, path: Path, source_format: str) -> dict:
         if path.suffix.lower() != ".xlsx":
             _fail("SPYM archived source must be .xlsx")
         text, rows = _xlsx_rows(path)
+    elif ticker == "QQQM":
+        if path.suffix.lower() != ".json":
+            _fail("QQQM archived source must be .json")
+        text, rows = _invesco_json_rows(path)
     else:
         if path.suffix.lower() != ".csv":
             _fail(f"{ticker} archived source must be .csv")

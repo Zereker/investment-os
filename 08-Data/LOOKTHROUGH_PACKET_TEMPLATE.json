@@ -1,12 +1,12 @@
 {
-  "schema_version": "1.3",
+  "schema_version": "1.4",
   "packet_id": "lookthrough-YYYY-MM-DD-id",
   "review_date": "YYYY-MM-DD",
   "observed_at": "YYYY-MM-DDThh:mm:ss+09:00",
   "candidate_packet_id": "candidate-YYYY-MM-DD-id",
   "candidate_path": "candidate.json",
   "candidate_sha256": "",
-  "weight_basis": "post_trade",
+  "weight_basis": "current",
   "account_scenario_path": "account.json",
   "account_snapshot_sha256": "",
   "issuer_registry_path": "issuer-registry.json",
@@ -15,6 +15,7 @@
   "mapping_sha256": "",
   "portfolio_weights": {
     "cash": 0,
+    "other": 0,
     "SPYM": 0,
     "QQQM": 0,
     "SOXX": 0
@@ -22,6 +23,8 @@
   "funds": [
     {
       "ticker": "SPYM",
+      "status": "complete",
+      "failure_reason": null,
       "source_name": "State Street official holdings",
       "source_url": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-sp-500-etf-spym",
       "source_format": "ssga-xlsx-v1",
@@ -44,12 +47,14 @@
     },
     {
       "ticker": "QQQM",
+      "status": "complete",
+      "failure_reason": null,
       "source_name": "Invesco official holdings",
       "source_url": "https://www.invesco.com/us/en/financial-products/etfs/invesco-nasdaq-100-etf.html",
-      "source_format": "invesco-csv-v1",
+      "source_format": "invesco-json-v1",
       "source_as_of": "YYYY-MM-DD",
       "retrieved_at": "YYYY-MM-DDThh:mm:ss+09:00",
-      "source_file": "raw/QQQM.csv",
+      "source_file": "raw/QQQM.json",
       "source_sha256": "",
       "holdings": [
         {
@@ -66,6 +71,8 @@
     },
     {
       "ticker": "SOXX",
+      "status": "complete",
+      "failure_reason": null,
       "source_name": "iShares official holdings",
       "source_url": "https://www.ishares.com/us/products/239705/ishares-phlx-semiconductor-etf",
       "source_format": "ishares-csv-v1",
@@ -106,7 +113,9 @@
     "issuer_at_or_below_10": false,
     "full_issuer_coverage": false,
     "full_classification_coverage": false,
-    "post_trade_soxx_at_or_below_3": false
+    "sources_complete_same_date": false,
+    "soxx_at_or_below_3": false,
+    "no_active_orders": false
   },
   "verdict": "DATA INCOMPLETE",
   "packet_sha256": ""

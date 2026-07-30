@@ -62,5 +62,5 @@ Red 数据不得进入依赖该字段的计算。影响按字段局部化：
 | IBKR 账户、持仓、订单 | 本次巡检实时读取 |
 | 市场价格 | 本次巡检实时读取，注明市场状态 |
 | 官方 ETF / 指数估值 | 7 个自然日以内 |
-| ETF 持仓 / 行业穿透 | 管理人最新公布版本，并记录 `source_as_of`；SOXX新增所需Green还必须通过Look-through Evidence Bundle v1.3验证器 |
+| ETF 持仓 / 行业穿透 | 管理人最新公布版本，并记录 `source_as_of`；SOXX新增所需Green还必须通过Look-through Evidence Bundle v1.4验证器 |
 | 历史百分位 | 当前禁止用于战术加速 |
