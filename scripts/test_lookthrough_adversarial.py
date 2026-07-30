@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-"""Adversarial regression tests for Look-through Bundle v1.3."""
+"""Adversarial regression tests for Look-through Bundle v1.4."""
 
 from __future__ import annotations
 
 import copy
-import csv
-import io
 import json
 import tempfile
 from pathlib import Path
@@ -34,37 +32,47 @@ def rewrite_json(path: Path, value: dict) -> str:
 def main() -> None:
     with tempfile.TemporaryDirectory(prefix="lookthrough-adversarial-") as tmp:
         tmp_path = Path(tmp)
-        qqqm_path = tmp_path / "QQQM-real-format.csv"
-        qqqm_text = io.StringIO()
-        csv.writer(qqqm_text, lineterminator="\n").writerows(
-            [
-                [
-                    "Security Identifier",
-                    "Holding Ticker",
-                    "Holding Name",
-                    "Date",
-                    "Holding Type",
-                    "Percentage of Fund",
-                    "Market Value",
-                ],
-                ["02079K305", "GOOGL", "Alphabet Inc Class A", "07/29/2026", "Equity", 60, 600],
-                ["02079K107", "--", "Alphabet Inc Class C", "07/29/2026", "Equity", 40, 400],
-            ]
-        )
-        qqqm_path.write_text(qqqm_text.getvalue(), encoding="utf-8")
-        parsed_qqqm = parser.parse_source("QQQM", qqqm_path, "invesco-csv-v1")
+        qqqm_path = tmp_path / "QQQM-real-format.json"
+        qqqm_payload = {
+            "cusip": "46138G649",
+            "effectiveDate": "2026-07-29",
+            "effectiveBusinessDate": "2026-07-29",
+            "totalNumberOfHoldings": 2,
+            "holdings": [
+                {
+                    "cusip": "02079K305",
+                    "ticker": "GOOGL",
+                    "issuerName": "Alphabet Inc Class A",
+                    "securityTypeName": "Common Stock",
+                    "securityTypeCode": "COM",
+                    "percentageOfTotalNetAssets": 60,
+                    "marketValueBase": 600,
+                },
+                {
+                    "cusip": "02079K107",
+                    "ticker": "--",
+                    "issuerName": "Alphabet Inc Class C",
+                    "securityTypeName": "Common Stock",
+                    "securityTypeCode": "COM",
+                    "percentageOfTotalNetAssets": 40,
+                    "marketValueBase": 400,
+                },
+            ],
+        }
+        qqqm_path.write_text(json.dumps(qqqm_payload), encoding="utf-8")
+        parsed_qqqm = parser.parse_source("QQQM", qqqm_path, "invesco-json-v1")
         assert parsed_qqqm["source_as_of"] == "2026-07-29"
         assert [item["security_id"] for item in parsed_qqqm["holdings"]] == [
             "CUSIP:02079K305",
             "CUSIP:02079K107",
         ]
-        missing_id_path = tmp_path / "QQQM-placeholder-only.csv"
-        missing_id_path.write_text(
-            qqqm_text.getvalue().replace("02079K305,GOOGL", ",--"),
-            encoding="utf-8",
-        )
+        missing_id_path = tmp_path / "QQQM-placeholder-only.json"
+        missing_id = copy.deepcopy(qqqm_payload)
+        missing_id["holdings"][0]["cusip"] = None
+        missing_id["holdings"][0]["ticker"] = "--"
+        missing_id_path.write_text(json.dumps(missing_id), encoding="utf-8")
         try:
-            parser.parse_source("QQQM", missing_id_path, "invesco-csv-v1")
+            parser.parse_source("QQQM", missing_id_path, "invesco-json-v1")
         except parser.SourceParseError:
             pass
         else:
@@ -123,6 +131,57 @@ def main() -> None:
 
         good, packet_path = validator.sample(Path(tmp))
         validator.validate(good, packet_path, allow_test=True)
+
+        account_path = packet_path.parent / good["account_scenario_path"]
+        candidate_path = packet_path.parent / good["candidate_path"]
+        original_account = account_path.read_bytes()
+        original_candidate = candidate_path.read_bytes()
+        observed_hold = copy.deepcopy(good)
+        account = validator.read_json(
+            account_path, validator.MAX_ACCOUNT_BYTES, "HOLD account"
+        )
+        account["current_market_values"]["cash"] = 9000
+        account["current_market_values"]["SOXX"] = 8000
+        account_sha = rewrite_json(account_path, account)
+        candidate = validator.read_json(
+            candidate_path, validator.MAX_ACCOUNT_BYTES, "HOLD candidate"
+        )
+        candidate["side"] = "HOLD"
+        candidate["proposed_notional"] = 0
+        candidate["max_notional"] = 0
+        candidate["account_snapshot_sha256"] = account_sha
+        candidate_sha = rewrite_json(candidate_path, candidate)
+        observed_hold["account_snapshot_sha256"] = account_sha
+        observed_hold["candidate_sha256"] = candidate_sha
+        observed_hold["weight_basis"] = "current"
+        observed_hold["portfolio_weights"] = {
+            "cash": 0.09,
+            "other": 0.0,
+            "SPYM": 0.55,
+            "QQQM": 0.28,
+            "SOXX": 0.08,
+        }
+        spym = observed_hold["funds"][0]
+        spym["status"] = "unavailable"
+        spym["failure_reason"] = "official download unavailable at retrieval time"
+        spym["source_as_of"] = None
+        spym["source_file"] = None
+        spym["source_sha256"] = None
+        spym["holdings"] = []
+        metrics, gates, verdict = validator.evaluate(
+            observed_hold, packet_path, allow_test=True
+        )
+        observed_hold["metrics"] = metrics
+        observed_hold["gates"] = gates
+        observed_hold["verdict"] = verdict
+        observed_hold["packet_sha256"] = validator.canonical_sha256(observed_hold)
+        validator.validate(observed_hold, packet_path, allow_test=True)
+        assert verdict == "DATA INCOMPLETE"
+        assert gates["sources_complete_same_date"] is False
+        assert gates["soxx_at_or_below_3"] is False
+        assert metrics["issuer_unknown_weight"] >= 0.55
+        account_path.write_bytes(original_account)
+        candidate_path.write_bytes(original_candidate)
 
         registry_path = packet_path.parent / good["issuer_registry_path"]
         identities = validator.load_issuer_registry(
@@ -290,23 +349,16 @@ def main() -> None:
 
         qqqm_source = packet_path.parent / good["funds"][1]["source_file"]
         original_qqqm_source = qqqm_source.read_bytes()
-        qqqm_rows = list(csv.reader(io.StringIO(qqqm_source.read_text(encoding="utf-8"))))
-        qqqm_header = qqqm_rows[0]
-        remove_columns = sorted(
-            [qqqm_header.index("Sector"), qqqm_header.index("Industry")], reverse=True
-        )
-        for row in qqqm_rows:
-            for column in remove_columns:
-                row.pop(column)
-        buffer = io.StringIO()
-        csv.writer(buffer, lineterminator="\n").writerows(qqqm_rows)
-        qqqm_source.write_text(buffer.getvalue(), encoding="utf-8")
+        qqqm_payload = json.loads(qqqm_source.read_text(encoding="utf-8"))
+        for holding in qqqm_payload["holdings"]:
+            holding.pop("sectorName", None)
+        qqqm_source.write_text(json.dumps(qqqm_payload), encoding="utf-8")
         false_classification = copy.deepcopy(good)
         false_classification["funds"][1]["source_sha256"] = validator.digest_file(
             qqqm_source, validator.MAX_SOURCE_BYTES, "QQQM missing-classification fixture"
         )
         false_classification["funds"][1]["holdings"] = parser.parse_source(
-            "QQQM", qqqm_source, "invesco-csv-v1"
+            "QQQM", qqqm_source, "invesco-json-v1"
         )["holdings"]
         mapping = validator.read_json(
             mapping_path, validator.MAX_MAPPING_BYTES, "adversarial mapping"
@@ -367,7 +419,7 @@ def main() -> None:
         future_path.parent.mkdir(parents=True)
         reject("future-dated 2099 bundle", future, future_path)
 
-    print("Look-through Bundle v1.3 adversarial tests passed.")
+    print("Look-through Bundle v1.4 adversarial tests passed.")
 
 
 if __name__ == "__main__":
