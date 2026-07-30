@@ -2,53 +2,78 @@
 
 一套以资产配置为中心、以低决策复杂度长期运行的个人投资系统。
 
-> 使命：通过纪律性的资产配置、长期成长倾斜和一个受严格护栏约束的半导体 Alpha 袖套，实现长期财富增长。
+> 使命：通过纪律性的资产配置和少量高确信投资，实现长期财富增长。
 
 ## 当前架构
 
-- 结构性投资组合现金：15%（普通允许区间 12%–18%）
+- 现金：15%（允许区间 12%–18%）
 - QQQM：28% 战略成长引擎（允许区间 25%–31%）
-- SPYM + SOXX实际持仓 + SOXX阶段储备：57%组合袖套
-- SOXX：唯一 Alpha 载体；长期战略上限与最终治理阶段 15%
-- 当前 SOXX 治理阶段上限：6%
-- 其他 Alpha：0%；未来半导体个股必须与 SOXX 共用同一 15%预算
-- 每月计划外部净入金：2,000 美元，实际执行只使用已到账金额
+- SPYM + Alpha：57% 组合袖套（允许区间 54%–60%）
+- Alpha：0%–15% 机会预算，包含有真实资金的 Observation
+- SPYM：剩余市场底仓，目标为 `57% − A`
+- 每月新增投入：2,000 美元
 
-v3.4 区分 SOXX 的实际权重、当前批准阶段与长期上限。未完成的当前阶段额度保留为 SOXX 阶段储备，不先投入 SPYM；该储备只是现金的用途标签，不是第五个资产层，也不是买入授权。
+其中 \(A\) 是当前或拟议交易后全部 Alpha 持仓的组合权重。Alpha 不必填满；没有合格机会时，未使用额度自动留在 SPYM。QQQM 28% 是有意保留的长期成长倾斜，不因与 SPYM 重叠而机械削减。
 
 ## v3.4 目标
 
-- 将 SOXX 从一般 Observation 明确为唯一战略 Alpha 载体。
-- 将 15%定义为长期上限和最终治理阶段，而不是立即执行目标。
-- 当前阶段上限保持 6%；之后仅能按 `10% → 12.5% → 15%` 经季度治理推进。
-- 用 `A_actual`、`A_stage`、`A_basis` 与阶段储备 `U` 消除先买 SPYM、后为 SOXX 回转的路径依赖。
-- 保留科技 50%冻结线、半导体 15% IC 线和发行人护栏；风险护栏优先于阶段目标。
-- 完成 SOXX 的政策级 Thesis；当前仍因实时账户与同日穿透快照缺失而 `ADD FROZEN`。
-- 修复 Transition Dashboard 的 `F/D` 标签。
-- Policy Benchmark 的 15%现金袖套改用假设现金余额重新运行 IBKR 公布的计息规则，不再套用实际账户现金收益率。
+v3.4保留v3.3闭环，并发布SOXX战略Alpha：长期硬上限与最终治理阶段15%，当前阶段6%；3%与4.5%为阶段内检查点，10%/12.5%/15%须逐级季度批准。引入`A_actual`、`A_stage`、`A_basis`与阶段储备`U`；风险护栏和实时数据优先，发布不产生交易。
+
+v3.3的以下基础继续有效：
+
+- 用 `SPYM = 57% − A` 消除 Alpha“不必填满”与固定配置区间的数学冲突。
+- 将 Observation 定义为 Alpha 的生命周期状态，而不是第五个资产层。
+- 将 SOXX 归入 `Alpha / Observation`；计入全部 Alpha 上限，但本次归类不授权买卖。
+- 将历史超额现金的战略迁移与估值驱动的战术加速分开。
+- Liquidity 只限制可执行金额，不再与价格、估值相加制造买入信号。
+- 增加科技、半导体和单一发行人的穿透集中度护栏。
+- 统一现行 Core 名称为 SPYM / QQQM。
+- 区分例行月度执行与需要完整 Investment Committee Packet 的非例行交易。
 
 ## 生产可靠性
 
 - 真实账户数据必须从 IBKR 实时读取，不得用历史快照冒充今日状态。
-- SOXX 追加必须同时通过账户 Data Gate、同日 ETF 穿透、阶段上限和完整 Investment Committee。
-- 价格档位、回撤或研究结论本身不构成下单授权。
-- Production 与 Research 严格隔离；任何交易仍由账户所有者在 IBKR 中亲手确认。
+- IBKR Positions 是当前持仓数量的权威来源。
+- 每日巡检和周度复盘采用固定流程，任何关键数据缺失都必须显式停止交易建议。
+- 非例行真实资金建议必须通过 Trade Gate 与 Investment Committee Packet。
+- Production 与 Research 严格隔离；研究内容未经正式批准不得影响交易。
+- 已知错误记录在 `BUGLOG.md`，并包含根因、修复和防复发控制。
 
 当前生产入口：[PRODUCTION.md](PRODUCTION.md)
 
-## 关键文件
+## 如何使用
 
-- [投资政策声明](00-IPS/Investment-Policy-Statement.md)
-- [目标配置与 SOXX 例外](01-Constitution/Target-Allocation.md)
-- [交易前决策清单](02-Operating-System/Decision-Checklist.md)
-- [月度流程](02-Operating-System/Monthly-Workflow.md)
-- [转型仪表盘](03-Transition/Transition-Dashboard.md)
-- [Alpha Position Registry](04-Alpha/Position-Registry.md)
-- [SOXX Thesis](04-Alpha/Research/SOXX.md)
-- [v3.4 Release](07-Releases/v3.4.md)
+1. 先读 [生产契约](PRODUCTION.md)。
+2. 再读 [投资政策声明](00-IPS/Investment-Policy-Statement.md) 和 [目标配置](01-Constitution/Target-Allocation.md)。
+3. 每日按 [Daily Review Workflow](02-Operating-System/Daily-Review.md) 读取 IBKR 并检查账户。
+4. 每周按 [Weekly Review Workflow](02-Operating-System/Weekly-Review.md) 汇总运行质量与待处理项。
+5. 每月按 [月度流程](02-Operating-System/Monthly-Workflow.md) 执行固定投入和战略现金迁移。
+6. 只有超出月度基线的战术加速才使用 [部署框架](02-Operating-System/Deployment-Framework.md)。
+7. 任何非例行真实资金候选先完成 [Investment Committee Packet](02-Operating-System/Decision-Checklist.md)。
+8. 每季度按 [Quarterly Workflow](02-Operating-System/Quarterly-Workflow.md) 审核 Alpha、Observation 与穿透集中度。
+9. 转型期维护 [Transition Dashboard](03-Transition/Transition-Dashboard.md)。
+10. 所有新假设进入 [Research Sandbox](Research/README.md)，不得直接影响生产交易。
+11. 每年审核系统规则与 Policy Benchmark。
+
+## 目录
+
+- `PRODUCTION.md`：生产系统入口、规则冻结、运行流程和交易闸门
+- `BUGLOG.md`：可靠性缺陷、根因和防复发措施
+- `Decision-Log.md`：改变系统方向或产生长期影响的决定
+- `Research/`：未生效的研究、假设和版本提案
+- `00-IPS/`：使命、期限、风险与治理
+- `01-Constitution/`：不可随意改变的目标配置和边界
+- `02-Operating-System/`：每日、周度、月度、季度、年度流程及交易闸门
+- `03-Transition/`：2026–2028 转型计划与仪表盘
+- `04-Alpha/`：Alpha 规则、生命周期和当前分类
+- `05-Journal/`：重大投资决策记录
+- `06-Lessons/`：长期有效的经验
+- `07-Releases/`：版本说明
+- `08-Data/`：Production 数据注册表、字段定义、质量闸门和快照
+- `Archive/`：旧规则与历史运行记录，仅供追溯
 
 ## 优先级
 
-发生冲突时：投资政策声明 → Constitution → Operating System → Transition Dashboard → Journal。聊天记录、Research 草稿和 Archive 不具有现行规则效力。
+发生冲突时：投资政策声明 → Constitution → Operating System → Transition Dashboard → Journal。`PRODUCTION.md` 负责执行契约和入口，不覆盖以上策略优先级。聊天记录、Research 和 Archive 不具有现行规则效力。
 
 本仓库用于个人决策纪律与记录，不构成面向他人的投资建议。
