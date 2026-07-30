@@ -9,7 +9,7 @@ v3.4将Alpha总硬上限保持在15%，但Production只授权SOXX作为唯一战
 - 一般单只硬上限：6%；SOXX适用15%长期硬上限与当前6%阶段例外，后续阶段须逐级批准。
 - 有真实资金的 Observation 按全部市值计入合计上限、持仓数和单只上限。
 - 不使用杠杆，不用短线技术信号建立长期仓位。
-- 没有合格机会时，未使用的 Alpha 额度自动留在 SPYM。
+- 一般未授权Alpha额度留在SPYM；已批准但未完成的SOXX当前阶段差额按`U`保留为现金用途标签。
 - 当前分类与状态的唯一登记表为 `04-Alpha/Position-Registry.md`。
 
 ## v3.4 SOXX唯一载体
@@ -33,9 +33,12 @@ SOXX是唯一Production Alpha；长期硬上限与最终治理阶段15%，当前
 
 1. `Research`：仅研究、没有真实资金，不计入 \(A\)。
 2. `Observation`：已有小额真实仓位但 Thesis 或准入尚未完成；全额计入 \(A\)，默认允许持有、冻结追加。
-3. `Approved / Holding`：Thesis、目标权重和可证伪条件完整，完成准入并允许按批准范围持有或追加。
-4. `Frozen`：逻辑尚可但权重、集中度或相对 ETF 优势不足，不再追加。
-5. `Exit Review`：满足卖出规则，进入完整 IC；状态本身不等于卖出授权。
+3. `Approved / Hold`：Thesis与准入完整，允许按当前仓位持有，但没有新增授权。
+4. `Approved / Add Candidate`：研究、阶段、数据与治理已形成真实追加候选；仍须另行取得完整IC `APPROVE`。
+5. `Frozen`：逻辑尚可但研究证据、数据、权重或集中度条件不足，允许持有、禁止追加。
+6. `Exit Review`：满足卖出规则，进入完整 IC；状态本身不等于卖出授权。
+
+SOXX当前顺序固定为：`Frozen → Approved / Add Candidate → IC APPROVE → 账户所有者人工下单 → Approved / Hold或Frozen`。任何一步不得跳过；Data Gate通过本身不会自动改变Registry。
 
 生命周期变化必须更新 Position Registry。`Observation` 不自动升级为 `Approved`，也不因治理文件尚未完成而自动卖出。
 
