@@ -15,7 +15,7 @@
 ## 七步执行
 
 1. 通过 Data Gate，更新 Cash、SPYM、QQQM、各 Alpha / Observation 和 Legacy 的市值。
-2. 计算`A_actual`、`A_stage`、`A_basis=max(A_actual,A_stage)`、`U=max(A_stage-A_actual,0)`及SPYM动态目标`57%-A_basis`。
+2. 读取`A_stage`与`A_execution_cap`，计算`A_actual`、`A_basis=max(A_actual,A_stage)`、`U=max(A_stage-A_actual,0)`及SPYM动态目标`57%-A_basis`；检查执行上限不得高于阶段。
 3. 检查Cash、QQQM、`SPYM + SOXX + Stage Reserve`袖套及SOXX阶段/硬上限。
 4. 确认实际外部净入金 \(F\)，计算入金后 Core 正缺口 \(G_0\) 与 Routine DCA \(D=\min(F,G_0)\)；\(F-D\) 留在现金。
 5. 以 Routine DCA 后的预计现金和剩余 Core 正缺口，按 Deployment Framework 计算并执行战略现金迁移基线 \(B\)。
@@ -25,7 +25,7 @@
 ## 资金分配算法
 
 - \(F\) = 本月已到账的实际外部净入金，且 \(F\ge0\)；提款或未到账计划额不计入。
-- \(V\)=入金后、交易前净值；`A_actual`=SOXX市值÷V；`A_stage`来自Registry；`A_basis=max(A_actual,A_stage)`；`U=max(A_stage-A_actual,0)`。
+- \(V\)=入金后、交易前净值；`A_actual`=SOXX市值÷V；`A_stage`与`A_execution_cap`来自Registry；`A_execution_cap≤A_stage`；`A_basis=max(A_actual,A_stage)`；`U=max(A_stage-A_actual,0)`。
 - QQQM 目标美元值 = \(V\times28\%\)。
 - SPYM目标美元值=\(V\times(57\%-A_{basis})\)。
 - \(G_0\) = Routine DCA 前两只 Core 的 `max(目标美元值 − 当前市值, 0)` 合计。
