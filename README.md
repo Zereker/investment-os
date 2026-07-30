@@ -1,4 +1,4 @@
-# Investment OS v3.4.1
+# Investment OS v3.4.2
 
 一套以资产配置为中心、以低决策复杂度长期运行的个人投资系统。
 
@@ -16,9 +16,9 @@
 
 其中`A_basis=max(A_actual,A_stage)`，`U=max(A_stage-A_actual,0)`；未完成的当前SOXX阶段额度作为现金中的用途标签保留，不先投入SPYM。风险护栏和数据门优先于阶段目标。QQQM 28%保持不变。
 
-## v3.4.1可靠性修复
+## v3.4.2数据门执行化
 
-v3.4.1不改变v3.4策略：SOXX长期硬上限与最终治理阶段仍为15%，当前阶段仍为6%。本补丁修复Data Dictionary公式、Policy Benchmark应计/入账模型、SOXX现行指数方法证据状态、逐档执行上限和有时效候选流程，并加入自动一致性检查。SOXX当前为`Frozen — DATA GATE`，发布不产生交易。
+v3.4.2不改变v3.4策略或v3.4.1可靠性规则：SOXX长期硬上限15%、当前阶段6%、当前执行上限3%。本补丁把穿透Data Gate执行化：新增不可变证据Packet、原始文件SHA-256、底层持仓重算验证器与故障注入CI。验证通过只证明数据证据合格，不改变Registry、不创建交易候选。SOXX仍为`Frozen — DATA GATE`，发布不产生交易。
 
 v3.3的以下基础继续有效：
 
@@ -39,9 +39,9 @@ v3.3的以下基础继续有效：
 - 非例行真实资金建议必须通过 Trade Gate 与 Investment Committee Packet。
 - Production 与 Research 严格隔离；研究内容未经正式批准不得影响交易。
 - 已知错误记录在`BUGLOG.md`，并包含根因、修复和防复发控制。
-- 每个PR由`Policy consistency`工作流检查关键公式、生命周期、研究来源、输入域、逐档执行和候选失效约束。
+- 每个PR由`Policy consistency`工作流检查关键公式、生命周期、研究来源、输入域、逐档执行、候选失效约束和Look-through Packet完整性。
 
-当前生产入口：[PRODUCTION.md](PRODUCTION.md)；补丁说明：[v3.4.1](07-Releases/v3.4.1.md)
+当前生产入口：[PRODUCTION.md](PRODUCTION.md)；补丁说明：[v3.4.2](07-Releases/v3.4.2.md)
 
 ## 如何使用
 
