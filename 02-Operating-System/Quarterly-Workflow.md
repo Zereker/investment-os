@@ -1,40 +1,49 @@
 # 季度流程
 
-季度审核处理 SOXX Thesis、阶段资格、穿透集中度和组合级风险。
+季度审核只处理 Alpha / Observation 的必要性、穿透集中度和组合级风险，不重新设计 Core，也不因一次涨跌修改 Constitution。
 
 ## 输入
 
-- 实时 IBKR Positions 与净值
-- Position Registry 与 SOXX Thesis
-- SPYM、QQQM、SOXX 同日最新官方持仓
-- 发行人、行业、半导体、覆盖率与未分类暴露
-- SOXX 相对等额 SPYM 及组合相对 Policy Benchmark 的表现
+- 实时 IBKR Positions 与账户净值
+- `04-Alpha/Position-Registry.md`
+- 每只 Approved Alpha 的完整 Thesis
+- Observation 的研究进度与证据缺口
+- SPYM、QQQM 和全部 Alpha 的官方持仓 / 行业快照
+- 组合与 IPS Policy Benchmark 的季度及滚动三年数据
 
-## 必答
+## 每只 Alpha 必答
 
-1. Thesis 与可证伪条件是否仍成立？
-2. ETF 的指数方法、费用、流动性、集中度和周期性是否仍可接受？
-3. `A_actual` 是否低于当前 `A_stage`？
-4. 当前阶段内的追加是否通过完整 IC？
-5. 是否有充分证据把 `A_stage` 从6%推进到10%、12.5%或15%？
-6. 科技50%、半导体15%、发行人10%和未分类暴露是否阻止推进？
-7. 最坏情景及与 QQQM/SPYM 的相关损失是否可接受？
+1. 当前生命周期是否准确？
+2. 原始投资逻辑是否仍成立；若为 Observation，Thesis 哪些部分仍未完成？
+3. 哪项证据最可能证明判断错误？
+4. 未来三年的预期回报是否仍明显优于直接持有 SPYM / QQQM？
+5. 个股的商业质量，或 ETF 的指数方法、集中度、费用、流动性和周期性，是否支持继续持有？
+6. 与 SPYM、QQQM 和其他 Alpha 的穿透重复暴露是否有明确补偿？
+7. SOXX是否符合当前阶段与长期15%；其他Alpha是否符合一般单只6%、合计15%和最多5只？
 
-## 输出
+## SOXX阶段输出
 
-- `Approved / Hold`
-- `Approved / Add Candidate`：仍须逐笔完整IC
-- `Frozen`
-- `Exit Review`
-- `Stage Advance Proposal`
+除生命周期外，必须给出当前阶段“维持 / 冻结 / Stage Advance Proposal”。阶段推进只允许`6%→10%→12.5%→15%`逐级进行，并须在交易前更新Registry；风险护栏优先于15%长期目标。
 
-阶段推进必须在交易前更新 Position Registry 和 Decision Log。价格上涨或下跌不构成推进依据。
+## 生命周期输出
 
-## 风险优先级
+每只标的只给出一种状态：
 
-- 科技达到50%且新增会提高科技暴露：冻结。
-- 半导体达到15%：每次新增强制IC。
-- 单一发行人达到10%且新增会提高该发行人：冻结。
-- 数据或覆盖率不足：`DATA INCOMPLETE`。
+- `Observation`：继续计入风险预算并允许持有，但追加冻结；完成 Thesis 与准入审查后才可申请升级。
+- `Approved / Hold`：逻辑有效，权重合理。
+- `Approved / Add Candidate`：逻辑有效且低于已批准目标；仍须在交易前取得完整 IC `APPROVE`。
+- `Frozen`：继续持有，但不追加。
+- `Exit Review`：触发 Constitution 卖出规则，先记录证据、税务和执行影响，再进入完整 IC。
 
-以上护栏优先于15%长期目标；超线不自动卖出。
+Observation 身份本身不是退出触发器，也不能成为先买后补研究的常规通道。
+
+## 组合级检查
+
+- Alpha 相对其所替代的等额 SPYM，以及整体组合相对 Policy Benchmark 的季度及滚动三年表现。
+- 最大回撤、税费、研究时间和复杂度成本。
+- 信息技术穿透是否超过 45%预警或达到 50%新增科技 Alpha 冻结线。
+- 半导体及设备是否达到 15% IC 复核线。
+- 单一发行人是否超过 8%预警或达到 10%年度强制审核线。
+- 官方穿透数据是否合格；缺失时冻结新的重叠 Alpha，而不是猜测。
+
+若 Alpha 连续五年在风险、税费和时间成本后跑输 Policy Benchmark，年度审核应讨论降低 Alpha 上限。超过软护栏只限制新增风险或触发复核，不自动卖出。
