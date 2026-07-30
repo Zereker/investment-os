@@ -18,10 +18,11 @@ AUTHORITIES = {
     ),
     "08-Data/REGISTRIES/LOOKTHROUGH_CLASSIFICATION_AUTHORITY.json": ("records",),
 }
-ZERO_SHA = re.compile(r"^0+$")
+ZERO_SHA = re.compile(r"^0{40}$")
+COMMIT_SHA = re.compile(r"^[0-9a-f]{40}$")
 
 
-def authority_at(revision: str, path: str) -> dict | None:
+def authority_at(revision: str, path: str) -> dict:
     result = subprocess.run(
         ["git", "show", f"{revision}:{path}"],
         check=False,
@@ -29,17 +30,35 @@ def authority_at(revision: str, path: str) -> dict | None:
         capture_output=True,
     )
     if result.returncode:
-        return None
-    return json.loads(result.stdout)
+        raise RuntimeError(
+            f"cannot read required authority at base revision: {path}: "
+            f"{result.stderr.strip()}"
+        )
+    try:
+        value = json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"base authority is not valid JSON: {path}: {exc}") from exc
+    if not isinstance(value, dict):
+        raise RuntimeError(f"base authority root must be an object: {path}")
+    return value
 
 
 def check_authorities(base_sha: str) -> list[str]:
     violations = []
     for path, arrays in AUTHORITIES.items():
-        previous = authority_at(base_sha, path)
-        if previous is None:
+        try:
+            previous = authority_at(base_sha, path)
+        except RuntimeError as exc:
+            violations.append(str(exc))
             continue
-        current = json.loads(Path(path).read_text(encoding="utf-8"))
+        try:
+            current = json.loads(Path(path).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            violations.append(f"{path}: current authority cannot be read: {exc}")
+            continue
+        if not isinstance(current, dict):
+            violations.append(f"{path}: current authority root must be an object")
+            continue
         metadata = set(previous) - set(arrays)
         if set(current) != set(previous) or any(
             current.get(key) != previous.get(key) for key in metadata
@@ -66,6 +85,18 @@ def main() -> int:
     if ZERO_SHA.fullmatch(args.base_sha):
         print("No prior commit exists; immutability comparison skipped.")
         return 0
+    if not COMMIT_SHA.fullmatch(args.base_sha):
+        print("base_sha must be a full lowercase 40-character commit SHA", file=sys.stderr)
+        return 1
+    revision = subprocess.run(
+        ["git", "rev-parse", "--verify", "--quiet", f"{args.base_sha}^{{commit}}"],
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+    if revision.returncode:
+        print("base_sha is not an available commit", file=sys.stderr)
+        return 1
     result = subprocess.run(
         ["git", "diff", "--name-status", "--find-renames", args.base_sha, "HEAD", "--", ROOT],
         check=False,

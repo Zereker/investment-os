@@ -216,4 +216,14 @@
 - 根因：v3.4.1闭合了语义与CI输入域，但没有为真实穿透证据定义版本化文件契约和独立重算。
 - 修复：v3.4.2升级为Look-through Evidence Bundle v1.4；管理人专用解析器覆盖真实字段，证券ID按CUSIP / ISIN / SEDOL优先，发行人由哈希化CIK / LEI注册表统一，多股权类别和衍生品组件不得自由拆分。
 - 防复发：Actions运行扩展故障注入、固定目录扫描与base SHA不可变性检查；不存在按模板文件名静默排除的通道，验证通过仍不得自动改变Registry或产生候选。
-- 状态：Monitoring（待首份真实Production Bundle验收后关闭）
+- 状态：Closed
+
+## BUG-021：v1.4首份Production Bundle存在可重哈希逻辑旁路
+
+- 日期：2026-07-31
+- 事件：预合并独立审计证明验证器会接受归档字节内产品身份错误、Invesco声明行数错误、未绑定的额外Bundle文件，并把账户`other`完全排除在最坏情形之外；同时把同一期货的Synthetic Cash抵销行重复计为正名义敞口。
+- 影响：Workflow可以成功，但原始来源绑定、完整性、发行人/分类上界和总经济敞口仍可能不真实。
+- 根因：Parser只校验Packet URL和通用表格结构，Gate只从三只基金累计，目录扫描只要求存在`packet.json`，期货配对语义未纳入fixture。
+- 修复：v1.4验证器绑定三只基金归档元数据，校验QQQM产品CUSIP/双日期/声明行数/重复键；Synthetic Cash只保留市场抵销；账户`other`进入两类未知；Bundle目录精确封闭；base authority读取失败时append-only检查失败关闭。
+- 防复发：对抗测试覆盖错产品、错行数、日期分叉、重复JSON键、影子文件、Synthetic Cash双计和账户残差消失。
+- 状态：Closed
