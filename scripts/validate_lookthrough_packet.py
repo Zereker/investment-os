@@ -236,7 +236,7 @@ def sample() -> dict:
             {"security_id": "BBB", "raw_sector": "Other", "raw_industry": "Other", "weight": 0.90, "issuer_group_id": "issuer-b", "normalized_sector": "Other", "normalized_industry": "Other"},
         ],
         "QQQM": [
-            {"security_id": "AAA", "weight": 0.10, "issuer_group_id": "issuer-a", "normalized_sector": TECH, "normalized_industry": SEMI},
+            {"security_id": "AAA", "raw_sector": "Technology", "raw_industry": "Semiconductors", "weight": 0.10, "issuer_group_id": "issuer-a", "normalized_sector": TECH, "normalized_industry": SEMI},
             {"security_id": "CCC", "raw_sector": "Other", "raw_industry": "Other", "weight": 0.90, "issuer_group_id": "issuer-c", "normalized_sector": "Other", "normalized_industry": "Other"},
         ],
         "SOXX": [
