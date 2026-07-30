@@ -6,7 +6,7 @@
 
 - Cash 目标：15%（12%–18%）
 - QQQM 目标：28%（25%–31%）
-- SOXX长期上限15%，当前`A_stage=6%`
+- SOXX长期上限15%，当前`A_stage=6%`，当前`A_execution_cap=3%`
 - `A_basis=max(A_actual,A_stage)`；`U=max(A_stage-A_actual,0)`
 - SPYM目标：`57%-A_basis`
 - 物理现金目标：`15%+U`
@@ -36,7 +36,7 @@
 | 其中：SOXX Stage Reserve | 不重复计入 | `U` | `U` | 现金用途标签 |
 | SPYM | 待更新 | 待更新 | `57%-A_basis` | 待更新 |
 | QQQM | 待更新 | 待更新 | 28% | 待更新 |
-| SOXX / Alpha | 待更新 | `A_actual` | 当前阶段≤6%，长期≤15% | `Frozen — DATA GATE` |
+| SOXX / Alpha | 待更新 | `A_actual` | 当前执行≤3%，阶段≤6%，长期≤15% | `Frozen — DATA GATE` |
 | Legacy / Restricted | 待更新 | 待更新 | 按独立计划 | 待更新 |
 
 ## Alpha 状态
@@ -45,7 +45,7 @@
 |---|---|---:|---:|---|
 | SOXX | Frozen — DATA GATE | 从IBKR读取 | 0 | `HOLD — ADD FROZEN` |
 
-本表不缓存数量；新增、升级或退出以`04-Alpha/Position-Registry.md`和相应治理流程为准。当前顺序为`Frozen → Approved / Add Candidate → IC APPROVE → 人工下单`。
+本表不缓存数量；新增、升级或退出以`04-Alpha/Position-Registry.md`和相应治理流程为准。当前顺序为`Frozen → Approved / Hold → 有时效Add Candidate Packet → IC APPROVE → 人工下单`；候选最迟当日收盘失效，账户或数据变化立即失效。
 
 ## 三条资金通道
 
