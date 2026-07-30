@@ -40,12 +40,12 @@
 
 - Cash
 - Core ETF：SPYM、QQQM
-- Alpha：同时列示`Research / Observation / Approved / Hold / Approved / Add Candidate / Frozen / Exit Review`
+- Alpha：同时列示`Research | Observation | Approved / Hold | Frozen | Exit Review`；临时`Add Candidate`单列并显示有效期
 - Restricted / Legacy
 
 同时列出各持仓数量、市值、组合占比、成本和未实现盈亏。Alpha 权重 \(A\) 包含全部实盘 Observation。
 
-SOXX按`Alpha / Frozen — DATA GATE`列示。每日同时报告`A_actual`、`A_stage`、`A_basis=max(A_actual,A_stage)`与`U=max(A_stage-A_actual,0)`；阶段储备属于现金用途标签，不得重复计入。
+SOXX按`Alpha / Frozen — DATA GATE`列示。每日同时报告`A_actual`、`A_stage`、`A_execution_cap`、`A_basis=max(A_actual,A_stage)`与`U=max(A_stage-A_actual,0)`；阶段储备属于现金用途标签，不得重复计入。
 
 ### 3. Open Orders
 
@@ -73,7 +73,7 @@ SOXX按`Alpha / Frozen — DATA GATE`列示。每日同时报告`A_actual`、`A_
 
 - 融资借款
 - Cash、QQQM、`SPYM + SOXX + Stage Reserve`袖套
-- Alpha合计15%硬上限；SOXX检查当前阶段6%与长期15%，其他单一Alpha仍执行6%一般上限
+- Alpha合计15%硬上限；SOXX检查当前执行上限3%、当前阶段6%与长期15%，其他单一Alpha仍执行6%一般上限
 - Observation 是否出现未经批准的追加
 - 未完成或重复订单
 - 碎股与零数量残留
