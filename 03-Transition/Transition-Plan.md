@@ -21,7 +21,7 @@ Red / N/A 估值将战术加速降为 0，但不阻塞符合公式和 Data Gate 
 ## 原则
 
 1. Routine DCA \(D\) 和战略基线 \(B\) 只进入 SPYM / QQQM 正缺口。
-2. 每月根据实时净值、现金、\(A\)、目标缺口和到 2028-12 的剩余执行次数重算。
+2. 每月根据实时净值、现金、\(A_{actual}\)、\(A_{stage}\)、\(A_{basis}\)、\(U\)、目标缺口和到 2028-12 的剩余执行次数重算。
 3. 交易后物理现金不得低于`12%+U`，不得使用融资。
 4. Observation 全额计入 Alpha，但月度新增分配恒为 0。
 5. 所有 Alpha 新建、追加、升级和卖出均走完整 Investment Committee。
@@ -38,7 +38,7 @@ Red / N/A 估值将战术加速降为 0，但不阻塞符合公式和 Data Gate 
 
 ### 阶段 B：处理 Alpha 与 Legacy
 
-- SOXX按`Alpha / Approved / Frozen — DATA GATE`持有；长期上限15%、当前阶段6%，任何追加须完整IC。
+- SOXX按`Alpha / Frozen — DATA GATE`持有；长期上限15%、当前阶段6%。只有Registry先升级为`Approved / Add Candidate`后，才可进入完整IC。
 - 对其他非 Core 持仓区分 Alpha、Legacy、税务成本、投资逻辑和组合重叠。
 - 对确定退出的旧持仓制定分批或一次性方案，不用价格预测替代决策。
 - 若硬上限无法靠稀释修复，再依据 Constitution 进入卖出评审。
