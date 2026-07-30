@@ -7,7 +7,7 @@
 - 固定执行日前实时读取的 Account Summary、Balances、Positions、Open Orders
 - 本月计划外部净入金：默认 2,000 美元；实际计算只使用已到账金额 \(F\)
 - 当前税务或流动性约束
-- `04-Alpha/Position-Registry.md` 中的 Alpha 与 Observation
+- `04-Alpha/Position-Registry.md` 中的全部Alpha生命周期状态
 - SPYM 与 QQQM 的动态目标和正缺口
 - 到 2028-12 剩余的月度执行次数
 - 战术加速需要的可验证回撤和 PE 历史百分位数据
@@ -70,7 +70,7 @@ Routine DCA \(D\) 与 \(B\) 无需完整四视角 Packet，但必须全部满足
 - 没有未经审核的新标的。
 - Dashboard 已更新。
 - Red / N/A 估值没有触发 \(T\)，但没有阻塞合格的 Routine DCA \(D\) 与 \(B\)。
-- SOXX 等 Observation 没有通过月度例行路径获得追加。
+- 处于`Frozen`或`Observation`的SOXX及其他Alpha没有通过月度例行路径获得追加。
 - 无操作也是有效结果。
 
 ## Maintenance Mode
