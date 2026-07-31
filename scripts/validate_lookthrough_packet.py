@@ -1648,8 +1648,10 @@ def sample(root: Path) -> tuple[dict, Path]:
                     *source_rows,
                     [],
                     [
+                        None,
+                        None,
                         "Portfolio holdings, allocations and weightings are as of "
-                        "the date indicated and are subject to change."
+                        "the date indicated and are subject to change.",
                     ],
                 ],
             )
