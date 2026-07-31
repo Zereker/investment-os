@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Adversarial regression tests for Look-through Bundle v1.4."""
+"""Adversarial regression tests for Look-through Bundle v1.5."""
 
 from __future__ import annotations
 
@@ -367,6 +367,17 @@ def main() -> None:
         )
         account["current_market_values"]["cash"] -= 5000
         account["current_market_values"]["other"] = 5000
+        account["direct_holdings"] = [
+            {
+                "security_id": "TICKER:UNKNOWN",
+                "source_identifiers": ["TICKER:UNKNOWN"],
+                "raw_name": "Unmapped Direct Equity",
+                "instrument_type": "equity",
+                "market_value": 5000,
+                "raw_sector": None,
+                "raw_industry": None,
+            }
+        ]
         account_sha = rewrite_json(account_path, account)
         candidate = validator.read_json(
             candidate_path, validator.MAX_ACCOUNT_BYTES, "residual candidate"
@@ -502,7 +513,7 @@ def main() -> None:
         validator.validate(cross_identifier, packet_path, allow_test=True)
         assert metrics["max_issuer_known_weight"] > 0.10
         assert gates["issuer_at_or_below_10"] is False
-        assert verdict == "DATA INCOMPLETE"
+        assert verdict == "POLICY GATE FAIL"
         spym_source.write_bytes(original_spym_source)
 
         unrelated_holdings = copy.deepcopy(good)
@@ -659,7 +670,7 @@ def main() -> None:
 
         test_history_checker(tmp_path)
 
-    print("Look-through Bundle v1.4 adversarial tests passed.")
+    print("Look-through Bundle v1.5 adversarial tests passed.")
 
 
 if __name__ == "__main__":
