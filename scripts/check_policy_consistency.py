@@ -227,7 +227,7 @@ def main() -> None:
         "前三大权重上限分别为12%、10%、8%",
     )
     require("README.md", "# Investment OS v3.5.1")
-    require("PRODUCTION.md", "# Investment OS v3.5 — Production Contract")
+    require("PRODUCTION.md", "# Investment OS v3.5.1 — Production Contract")
     require("07-Releases/v3.4.2.md", "本发布不授权任何订单")
     require("07-Releases/v3.5.md", "本发布不写入当前价格、P/E或当日动作，不授权任何订单")
     require(
