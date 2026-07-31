@@ -21,7 +21,7 @@
 - 全部例行订单前现金 \(C_0\)：待更新
 - 本月已到账外部净入金 \(F\)：待更新
 - Routine DCA前Core正缺口 \(G_0\)：待更新
-- 本月Routine DCA上限\(D_{max}=\min(F,G_0)\)与估值过滤后实际Core买入\(D\le D_{max}\)：待更新
+- 本月Routine DCA上限\(D_{max}=\min(F,G_0)\)与按正缺口分配的实际Core买入\(D\le D_{max}\)：待更新
 - Routine DCA 后预计现金 \(C=C_0-D\)：待更新
 - SOXX实际权重`A_actual`、`A_basis`与阶段储备`U`：待更新
 - 到 2028-12 剩余执行次数 \(R\)：待更新
@@ -51,7 +51,7 @@
 
 | 通道 | 当月金额 | 目标 | 所需闸门 |
 |---|---:|---|---|
-| Routine DCA | \(D\le\min(F,G_0)\)；计划入金为$2,000但D无默认值 | 通过估值新增资格的SPYM / QQQM正缺口 | 月度Data / Valuation / Execution Gate |
+| Routine DCA | \(D\le\min(F,G_0)\)；计划入金为$2,000但D无默认值 | SPYM / QQQM正缺口；估值不得关闭D | 月度Data / Execution Gate |
 | Strategic Baseline | \(B\) | `CHEAP / FAIR`的SPYM / QQQM正缺口 | 月度Data / Valuation / Execution Gate |
 | Tactical Acceleration | \(T\) | `CHEAP`且通过数据质量的Core缺口 | 完整IC |
 
@@ -70,7 +70,7 @@
 ## 完成判断
 
 - 交易后物理现金不低于`12%+U`，且无融资。
-- Routine DCA与\(B\)完全符合公式和估值新增资格。
-- Red / N/A估值只允许Routine DCA \(D\)，并令\(B=T=0\)；`VERY EXPENSIVE`暂停对应标的全部新增。
+- Routine DCA与\(B\)完全符合公式和估值资金权限。
+- Red / N/A估值或`PROXY CAUTION`保留Routine DCA \(D\)与既定战略基线\(B\)，并令\(T=0\)；只有生产级`VERY EXPENSIVE`可延缓对应标的\(B\)，不得暂停\(D\)。
 - SOXX没有通过月度流程获得追加；任何追加只走独立完整IC。
 - 预计进入 Maintenance Mode：待更新。
