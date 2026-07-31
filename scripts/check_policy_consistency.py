@@ -116,11 +116,64 @@ def benchmark_interest_tests() -> None:
         raise AssertionError("posting conversion changed benchmark NAV")
 
 
+def valuation_tier(percentile: float) -> str:
+    if not isinstance(percentile, (int, float)) or isinstance(percentile, bool) or not isfinite(percentile):
+        raise ValueError("valuation percentile must be finite")
+    if not 0 <= percentile <= 100:
+        raise ValueError("valuation percentile outside [0, 100]")
+    if percentile < 20:
+        return "CHEAP"
+    if percentile < 70:
+        return "FAIR"
+    if percentile < 90:
+        return "EXPENSIVE"
+    return "VERY EXPENSIVE"
+
+
+def valuation_action(tier: str) -> tuple[bool, bool, bool]:
+    actions = {
+        "CHEAP": (True, True, True),
+        "FAIR": (True, True, False),
+        "EXPENSIVE": (True, False, False),
+        "VERY EXPENSIVE": (False, False, False),
+        "N/A": (True, False, False),
+    }
+    if tier not in actions:
+        raise ValueError("unknown valuation tier")
+    return actions[tier]
+
+
+def valuation_policy_tests() -> None:
+    expected = {
+        0: "CHEAP", 19.999: "CHEAP", 20: "FAIR", 69.999: "FAIR",
+        70: "EXPENSIVE", 89.999: "EXPENSIVE", 90: "VERY EXPENSIVE",
+        100: "VERY EXPENSIVE",
+    }
+    for percentile, tier in expected.items():
+        if valuation_tier(percentile) != tier:
+            raise AssertionError(f"wrong valuation tier at {percentile}")
+    for invalid in (-0.01, 100.01, nan, inf, True):
+        try:
+            valuation_tier(invalid)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"illegal valuation percentile accepted: {invalid}")
+    if valuation_action("CHEAP") != (True, True, True):
+        raise AssertionError("CHEAP action mapping changed")
+    if valuation_action("VERY EXPENSIVE") != (False, False, False):
+        raise AssertionError("VERY EXPENSIVE must pause all additions")
+    if valuation_action("N/A") != (True, False, False):
+        raise AssertionError("N/A must allow D only")
+
+
 def main() -> None:
     dictionary = "08-Data/DATA_DICTIONARY.md"
     require(
         dictionary,
         r"SPYM \(57\%-A_{basis}\)",
+        r"\(D_{max}=\min(F,G_0)\)",
+        r"\(D\le D_{max}\)",
         r"\(S=\max(C-(15\%+U)\times V,0)\)",
         r"P_{B,m,0}+A_{B,m,0}=15\%\times V_{B,m,0}",
         r"E_{B,d}=\max(P^*_{B,d}-10000,0)",
@@ -171,9 +224,31 @@ def main() -> None:
         "indexes.nasdaq.com",
         "前三大权重上限分别为12%、10%、8%",
     )
-    require("README.md", "# Investment OS v3.4.2")
-    require("PRODUCTION.md", "# Investment OS v3.4.2 — Production Contract")
+    require("README.md", "# Investment OS v3.5")
+    require("PRODUCTION.md", "# Investment OS v3.5 — Production Contract")
     require("07-Releases/v3.4.2.md", "本发布不授权任何订单")
+    require("07-Releases/v3.5.md", "本发布不写入当前价格、P/E或当日动作，不授权任何订单")
+    require(
+        "02-Operating-System/ETF-Valuation-Framework.md",
+        "本框架只覆盖 `SPYM / QQQM / SOXX`",
+        "`p < 20`",
+        "`20 ≤ p < 70`",
+        "`70 ≤ p < 90`",
+        "`p ≥ 90`",
+        "估值贵本身不能触发卖出",
+        "至少需要连续 5 年、60 个互不重复的月末观察值",
+        "Trailing P/E 时不得判定为便宜",
+    )
+    for path in (
+        "README.md",
+        "PRODUCTION.md",
+        "02-Operating-System/Daily-Review.md",
+        "02-Operating-System/Monthly-Workflow.md",
+        "02-Operating-System/Deployment-Framework.md",
+        "02-Operating-System/Weekly-Review.md",
+        "03-Transition/Transition-Dashboard.md",
+    ):
+        forbid(path, "Valuation Score", "Opportunity Score")
     for path in (
         "08-Data/DATA_QUALITY.md",
         "08-Data/DATA_REGISTRY.md",
@@ -328,6 +403,7 @@ def main() -> None:
         raise AssertionError("current execution cap exceeds current stage")
     allocation_tests()
     benchmark_interest_tests()
+    valuation_policy_tests()
     print("Policy consistency checks passed.")
 
 
