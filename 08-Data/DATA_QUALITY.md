@@ -39,7 +39,7 @@ Yellow 数据可以展示；涉及真实资金时必须披露限制。不得单�
 Red 数据不得进入依赖该字段的计算。影响按字段局部化：
 
 - IBKR 账户、持仓或订单为 Red：全部交易路径关闭，结论 `DATA INCOMPLETE`。
-- 三只ETF估值等级为Red或N/A：SPYM/QQQM只允许Routine DCA `D`，`B=T=0`；SOXX不得产生估值追加结论。
+- 三只ETF估值等级为Red、N/A或仅有代理提示：SPYM/QQQM的Routine DCA `D`与既定战略基线`B`照常，`T=0`；SOXX不得产生估值追加结论。低质量估值不得通过单边关闭`B`造成现金拖累。
 - ETF穿透数据为Red：SOXX与新的重叠Alpha保持`ADD FROZEN`；已有仓位不自动卖出。
 - Policy Benchmark现金模型任一日Red：当期Benchmark为`N/A / DATA INCOMPLETE`，不得静默使用0%。
 
@@ -62,7 +62,7 @@ Red 数据不得进入依赖该字段的计算。影响按字段局部化：
 | IBKR 账户、持仓、订单 | 本次巡检实时读取 |
 | 市场价格 | 本次巡检实时读取，注明市场状态 |
 | 官方 ETF / 指数估值 | 7 个自然日以内 |
-| Forward P/E历史序列 | 同一来源与定义；至少连续5年/60个历史月末值，10年优先；当前值排除在历史分布之外 |
+| Forward P/E历史序列 | 同一ETF或精确跟踪指数、同一来源与P/E定义；至少连续5年/60个历史月末值，10年优先；当前值排除在历史分布之外；首次启用及口径变化须正式验证 |
 | Forward EPS增长 / 3个月预测修正 | 30个自然日以内 |
 | 美国10年期国债收益率 | 3个工作日以内 |
 | ETF 持仓 / 行业穿透 | 管理人最新公布版本，并记录 `source_as_of`；SOXX新增所需Green还必须通过Look-through Evidence Bundle v1.5验证器 |
