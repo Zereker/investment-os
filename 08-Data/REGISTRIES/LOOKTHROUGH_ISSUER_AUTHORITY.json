@@ -1,6 +1,779 @@
 {
-  "schema_version": "1.1",
   "authority_id": "lookthrough-issuer-authority",
-  "issuers": [],
-  "securities": []
+  "issuers": [
+    {
+      "canonical_name": "NVIDIA Corp",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0001045810",
+      "issuer_group_id": "cik:0001045810"
+    },
+    {
+      "canonical_name": "Advanced Micro Devices Inc",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0000002488",
+      "issuer_group_id": "cik:0000002488"
+    },
+    {
+      "canonical_name": "Broadcom Inc",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0001730168",
+      "issuer_group_id": "cik:0001730168"
+    },
+    {
+      "canonical_name": "Micron Technology Inc",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0000723125",
+      "issuer_group_id": "cik:0000723125"
+    },
+    {
+      "canonical_name": "Intel Corp",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0000050863",
+      "issuer_group_id": "cik:0000050863"
+    },
+    {
+      "canonical_name": "Applied Materials Inc",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0000006951",
+      "issuer_group_id": "cik:0000006951"
+    },
+    {
+      "canonical_name": "Taiwan Semiconductor Manufacturing Co Ltd",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0001046179",
+      "issuer_group_id": "cik:0001046179"
+    },
+    {
+      "canonical_name": "Texas Instruments Inc",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0000097476",
+      "issuer_group_id": "cik:0000097476"
+    },
+    {
+      "canonical_name": "KLA Corp",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0000319201",
+      "issuer_group_id": "cik:0000319201"
+    },
+    {
+      "canonical_name": "Analog Devices Inc",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0000006281",
+      "issuer_group_id": "cik:0000006281"
+    },
+    {
+      "canonical_name": "Marvell Technology Inc",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0001835632",
+      "issuer_group_id": "cik:0001835632"
+    },
+    {
+      "canonical_name": "Lam Research Corp",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0000707549",
+      "issuer_group_id": "cik:0000707549"
+    },
+    {
+      "canonical_name": "NXP Semiconductors NV",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0001413447",
+      "issuer_group_id": "cik:0001413447"
+    },
+    {
+      "canonical_name": "Monolithic Power Systems Inc",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0001280452",
+      "issuer_group_id": "cik:0001280452"
+    },
+    {
+      "canonical_name": "QUALCOMM Inc",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0000804328",
+      "issuer_group_id": "cik:0000804328"
+    },
+    {
+      "canonical_name": "Teradyne Inc",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0000097210",
+      "issuer_group_id": "cik:0000097210"
+    },
+    {
+      "canonical_name": "ASML Holding NV",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0000937966",
+      "issuer_group_id": "cik:0000937966"
+    },
+    {
+      "canonical_name": "Microchip Technology Inc",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0000827054",
+      "issuer_group_id": "cik:0000827054"
+    },
+    {
+      "canonical_name": "Astera Labs Inc",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0001736297",
+      "issuer_group_id": "cik:0001736297"
+    },
+    {
+      "canonical_name": "ON Semiconductor Corp",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0001097864",
+      "issuer_group_id": "cik:0001097864"
+    },
+    {
+      "canonical_name": "Credo Technology Group Holding Ltd",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0001807794",
+      "issuer_group_id": "cik:0001807794"
+    },
+    {
+      "canonical_name": "ASE Technology Holding Co Ltd",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0001122411",
+      "issuer_group_id": "cik:0001122411"
+    },
+    {
+      "canonical_name": "Entegris Inc",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0001101302",
+      "issuer_group_id": "cik:0001101302"
+    },
+    {
+      "canonical_name": "MACOM Technology Solutions Holdings Inc",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0001493594",
+      "issuer_group_id": "cik:0001493594"
+    },
+    {
+      "canonical_name": "United Microelectronics Corp",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0001033767",
+      "issuer_group_id": "cik:0001033767"
+    },
+    {
+      "canonical_name": "Nova Ltd",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0001109345",
+      "issuer_group_id": "cik:0001109345"
+    },
+    {
+      "canonical_name": "STMicroelectronics NV",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0000932787",
+      "issuer_group_id": "cik:0000932787"
+    },
+    {
+      "canonical_name": "Arm Holdings plc",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0001973239",
+      "issuer_group_id": "cik:0001973239"
+    },
+    {
+      "canonical_name": "Skyworks Solutions Inc",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0000004127",
+      "issuer_group_id": "cik:0000004127"
+    },
+    {
+      "canonical_name": "Rambus Inc",
+      "evidence_url": "https://www.sec.gov/edgar/browse/?CIK=0000917273",
+      "issuer_group_id": "cik:0000917273"
+    }
+  ],
+  "schema_version": "1.1",
+  "securities": [
+    {
+      "canonical_security_id": "CUSIP:67066G104",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/46138G649/holdings/fund?idType=cusip&productType=ETF"
+      },
+      "issuer_group_id": "cik:0001045810",
+      "security_id": "CUSIP:67066G104"
+    },
+    {
+      "canonical_security_id": "CUSIP:67066G104",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-sp-500-etf-spym"
+      },
+      "issuer_group_id": "cik:0001045810",
+      "security_id": "SEDOL:2379504"
+    },
+    {
+      "canonical_security_id": "CUSIP:67066G104",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0001045810",
+      "security_id": "TICKER:NVDA"
+    },
+    {
+      "canonical_security_id": "CUSIP:007903107",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/46138G649/holdings/fund?idType=cusip&productType=ETF"
+      },
+      "issuer_group_id": "cik:0000002488",
+      "security_id": "CUSIP:007903107"
+    },
+    {
+      "canonical_security_id": "CUSIP:007903107",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-sp-500-etf-spym"
+      },
+      "issuer_group_id": "cik:0000002488",
+      "security_id": "SEDOL:2007849"
+    },
+    {
+      "canonical_security_id": "CUSIP:007903107",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0000002488",
+      "security_id": "TICKER:AMD"
+    },
+    {
+      "canonical_security_id": "CUSIP:11135F101",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/46138G649/holdings/fund?idType=cusip&productType=ETF"
+      },
+      "issuer_group_id": "cik:0001730168",
+      "security_id": "CUSIP:11135F101"
+    },
+    {
+      "canonical_security_id": "CUSIP:11135F101",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-sp-500-etf-spym"
+      },
+      "issuer_group_id": "cik:0001730168",
+      "security_id": "SEDOL:BDZ78H9"
+    },
+    {
+      "canonical_security_id": "CUSIP:11135F101",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0001730168",
+      "security_id": "TICKER:AVGO"
+    },
+    {
+      "canonical_security_id": "CUSIP:595112103",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/46138G649/holdings/fund?idType=cusip&productType=ETF"
+      },
+      "issuer_group_id": "cik:0000723125",
+      "security_id": "CUSIP:595112103"
+    },
+    {
+      "canonical_security_id": "CUSIP:595112103",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-sp-500-etf-spym"
+      },
+      "issuer_group_id": "cik:0000723125",
+      "security_id": "SEDOL:2588184"
+    },
+    {
+      "canonical_security_id": "CUSIP:595112103",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0000723125",
+      "security_id": "TICKER:MU"
+    },
+    {
+      "canonical_security_id": "CUSIP:458140100",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/46138G649/holdings/fund?idType=cusip&productType=ETF"
+      },
+      "issuer_group_id": "cik:0000050863",
+      "security_id": "CUSIP:458140100"
+    },
+    {
+      "canonical_security_id": "CUSIP:458140100",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-sp-500-etf-spym"
+      },
+      "issuer_group_id": "cik:0000050863",
+      "security_id": "SEDOL:2463247"
+    },
+    {
+      "canonical_security_id": "CUSIP:458140100",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0000050863",
+      "security_id": "TICKER:INTC"
+    },
+    {
+      "canonical_security_id": "CUSIP:038222105",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/46138G649/holdings/fund?idType=cusip&productType=ETF"
+      },
+      "issuer_group_id": "cik:0000006951",
+      "security_id": "CUSIP:038222105"
+    },
+    {
+      "canonical_security_id": "CUSIP:038222105",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-sp-500-etf-spym"
+      },
+      "issuer_group_id": "cik:0000006951",
+      "security_id": "SEDOL:2046552"
+    },
+    {
+      "canonical_security_id": "CUSIP:038222105",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0000006951",
+      "security_id": "TICKER:AMAT"
+    },
+    {
+      "canonical_security_id": "TICKER:TSM",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0001046179",
+      "security_id": "TICKER:TSM"
+    },
+    {
+      "canonical_security_id": "CUSIP:882508104",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/46138G649/holdings/fund?idType=cusip&productType=ETF"
+      },
+      "issuer_group_id": "cik:0000097476",
+      "security_id": "CUSIP:882508104"
+    },
+    {
+      "canonical_security_id": "CUSIP:882508104",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-sp-500-etf-spym"
+      },
+      "issuer_group_id": "cik:0000097476",
+      "security_id": "SEDOL:2885409"
+    },
+    {
+      "canonical_security_id": "CUSIP:882508104",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0000097476",
+      "security_id": "TICKER:TXN"
+    },
+    {
+      "canonical_security_id": "CUSIP:482480100",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/46138G649/holdings/fund?idType=cusip&productType=ETF"
+      },
+      "issuer_group_id": "cik:0000319201",
+      "security_id": "CUSIP:482480100"
+    },
+    {
+      "canonical_security_id": "CUSIP:482480100",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-sp-500-etf-spym"
+      },
+      "issuer_group_id": "cik:0000319201",
+      "security_id": "SEDOL:2480138"
+    },
+    {
+      "canonical_security_id": "CUSIP:482480100",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0000319201",
+      "security_id": "TICKER:KLAC"
+    },
+    {
+      "canonical_security_id": "CUSIP:032654105",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/46138G649/holdings/fund?idType=cusip&productType=ETF"
+      },
+      "issuer_group_id": "cik:0000006281",
+      "security_id": "CUSIP:032654105"
+    },
+    {
+      "canonical_security_id": "CUSIP:032654105",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-sp-500-etf-spym"
+      },
+      "issuer_group_id": "cik:0000006281",
+      "security_id": "SEDOL:2032067"
+    },
+    {
+      "canonical_security_id": "CUSIP:032654105",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0000006281",
+      "security_id": "TICKER:ADI"
+    },
+    {
+      "canonical_security_id": "CUSIP:573874104",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/46138G649/holdings/fund?idType=cusip&productType=ETF"
+      },
+      "issuer_group_id": "cik:0001835632",
+      "security_id": "CUSIP:573874104"
+    },
+    {
+      "canonical_security_id": "CUSIP:573874104",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-sp-500-etf-spym"
+      },
+      "issuer_group_id": "cik:0001835632",
+      "security_id": "SEDOL:BNKJSM5"
+    },
+    {
+      "canonical_security_id": "CUSIP:573874104",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0001835632",
+      "security_id": "TICKER:MRVL"
+    },
+    {
+      "canonical_security_id": "CUSIP:512807306",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/46138G649/holdings/fund?idType=cusip&productType=ETF"
+      },
+      "issuer_group_id": "cik:0000707549",
+      "security_id": "CUSIP:512807306"
+    },
+    {
+      "canonical_security_id": "CUSIP:512807306",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-sp-500-etf-spym"
+      },
+      "issuer_group_id": "cik:0000707549",
+      "security_id": "SEDOL:BSML4N7"
+    },
+    {
+      "canonical_security_id": "CUSIP:512807306",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0000707549",
+      "security_id": "TICKER:LRCX"
+    },
+    {
+      "canonical_security_id": "CUSIP:N6596X109",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/46138G649/holdings/fund?idType=cusip&productType=ETF"
+      },
+      "issuer_group_id": "cik:0001413447",
+      "security_id": "CUSIP:N6596X109"
+    },
+    {
+      "canonical_security_id": "CUSIP:N6596X109",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-sp-500-etf-spym"
+      },
+      "issuer_group_id": "cik:0001413447",
+      "security_id": "SEDOL:B505PN7"
+    },
+    {
+      "canonical_security_id": "CUSIP:N6596X109",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0001413447",
+      "security_id": "TICKER:NXPI"
+    },
+    {
+      "canonical_security_id": "CUSIP:609839105",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/46138G649/holdings/fund?idType=cusip&productType=ETF"
+      },
+      "issuer_group_id": "cik:0001280452",
+      "security_id": "CUSIP:609839105"
+    },
+    {
+      "canonical_security_id": "CUSIP:609839105",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-sp-500-etf-spym"
+      },
+      "issuer_group_id": "cik:0001280452",
+      "security_id": "SEDOL:B01Z7J1"
+    },
+    {
+      "canonical_security_id": "CUSIP:609839105",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0001280452",
+      "security_id": "TICKER:MPWR"
+    },
+    {
+      "canonical_security_id": "CUSIP:747525103",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/46138G649/holdings/fund?idType=cusip&productType=ETF"
+      },
+      "issuer_group_id": "cik:0000804328",
+      "security_id": "CUSIP:747525103"
+    },
+    {
+      "canonical_security_id": "CUSIP:747525103",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-sp-500-etf-spym"
+      },
+      "issuer_group_id": "cik:0000804328",
+      "security_id": "SEDOL:2714923"
+    },
+    {
+      "canonical_security_id": "CUSIP:747525103",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0000804328",
+      "security_id": "TICKER:QCOM"
+    },
+    {
+      "canonical_security_id": "CUSIP:880770102",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/46138G649/holdings/fund?idType=cusip&productType=ETF"
+      },
+      "issuer_group_id": "cik:0000097210",
+      "security_id": "CUSIP:880770102"
+    },
+    {
+      "canonical_security_id": "CUSIP:880770102",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-sp-500-etf-spym"
+      },
+      "issuer_group_id": "cik:0000097210",
+      "security_id": "SEDOL:2884183"
+    },
+    {
+      "canonical_security_id": "CUSIP:880770102",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0000097210",
+      "security_id": "TICKER:TER"
+    },
+    {
+      "canonical_security_id": "CUSIP:N07059210",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/46138G649/holdings/fund?idType=cusip&productType=ETF"
+      },
+      "issuer_group_id": "cik:0000937966",
+      "security_id": "CUSIP:N07059210"
+    },
+    {
+      "canonical_security_id": "CUSIP:N07059210",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0000937966",
+      "security_id": "TICKER:ASML"
+    },
+    {
+      "canonical_security_id": "CUSIP:595017104",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/46138G649/holdings/fund?idType=cusip&productType=ETF"
+      },
+      "issuer_group_id": "cik:0000827054",
+      "security_id": "CUSIP:595017104"
+    },
+    {
+      "canonical_security_id": "CUSIP:595017104",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-sp-500-etf-spym"
+      },
+      "issuer_group_id": "cik:0000827054",
+      "security_id": "SEDOL:2592174"
+    },
+    {
+      "canonical_security_id": "CUSIP:595017104",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0000827054",
+      "security_id": "TICKER:MCHP"
+    },
+    {
+      "canonical_security_id": "CUSIP:04626A103",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/46138G649/holdings/fund?idType=cusip&productType=ETF"
+      },
+      "issuer_group_id": "cik:0001736297",
+      "security_id": "CUSIP:04626A103"
+    },
+    {
+      "canonical_security_id": "CUSIP:04626A103",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0001736297",
+      "security_id": "TICKER:ALAB"
+    },
+    {
+      "canonical_security_id": "CUSIP:682189105",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-sp-500-etf-spym"
+      },
+      "issuer_group_id": "cik:0001097864",
+      "security_id": "CUSIP:682189105"
+    },
+    {
+      "canonical_security_id": "CUSIP:682189105",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-sp-500-etf-spym"
+      },
+      "issuer_group_id": "cik:0001097864",
+      "security_id": "SEDOL:2583576"
+    },
+    {
+      "canonical_security_id": "CUSIP:682189105",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0001097864",
+      "security_id": "TICKER:ON"
+    },
+    {
+      "canonical_security_id": "TICKER:CRDO",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0001807794",
+      "security_id": "TICKER:CRDO"
+    },
+    {
+      "canonical_security_id": "TICKER:ASX",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0001122411",
+      "security_id": "TICKER:ASX"
+    },
+    {
+      "canonical_security_id": "TICKER:ENTG",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0001101302",
+      "security_id": "TICKER:ENTG"
+    },
+    {
+      "canonical_security_id": "TICKER:MTSI",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0001493594",
+      "security_id": "TICKER:MTSI"
+    },
+    {
+      "canonical_security_id": "TICKER:UMC",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0001033767",
+      "security_id": "TICKER:UMC"
+    },
+    {
+      "canonical_security_id": "TICKER:NVMI",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0001109345",
+      "security_id": "TICKER:NVMI"
+    },
+    {
+      "canonical_security_id": "TICKER:STM",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0000932787",
+      "security_id": "TICKER:STM"
+    },
+    {
+      "canonical_security_id": "CUSIP:042068205",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/46138G649/holdings/fund?idType=cusip&productType=ETF"
+      },
+      "issuer_group_id": "cik:0001973239",
+      "security_id": "CUSIP:042068205"
+    },
+    {
+      "canonical_security_id": "CUSIP:042068205",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0001973239",
+      "security_id": "TICKER:ARM"
+    },
+    {
+      "canonical_security_id": "CUSIP:83088M102",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-sp-500-etf-spym"
+      },
+      "issuer_group_id": "cik:0000004127",
+      "security_id": "CUSIP:83088M102"
+    },
+    {
+      "canonical_security_id": "CUSIP:83088M102",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-sp-500-etf-spym"
+      },
+      "issuer_group_id": "cik:0000004127",
+      "security_id": "SEDOL:2961053"
+    },
+    {
+      "canonical_security_id": "CUSIP:83088M102",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0000004127",
+      "security_id": "TICKER:SWKS"
+    },
+    {
+      "canonical_security_id": "TICKER:RMBS",
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "issuer_group_id": "cik:0000917273",
+      "security_id": "TICKER:RMBS"
+    }
+  ]
 }

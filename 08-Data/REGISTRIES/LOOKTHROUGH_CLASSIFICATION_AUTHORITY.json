@@ -1,6 +1,307 @@
 {
-  "schema_version": "1.2",
   "authority_id": "lookthrough-classification-authority",
-  "taxonomy": "GICS",
-  "records": []
+  "records": [
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "CUSIP:67066G104"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "CUSIP:007903107"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "CUSIP:11135F101"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "CUSIP:595112103"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "CUSIP:458140100"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "CUSIP:038222105"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "TICKER:TSM"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "CUSIP:882508104"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "CUSIP:482480100"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "CUSIP:032654105"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "CUSIP:573874104"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "CUSIP:512807306"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "CUSIP:N6596X109"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "CUSIP:609839105"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "CUSIP:747525103"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "CUSIP:880770102"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "CUSIP:N07059210"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "CUSIP:595017104"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "CUSIP:04626A103"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "CUSIP:682189105"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "TICKER:CRDO"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "TICKER:ASX"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "TICKER:ENTG"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "TICKER:MTSI"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "TICKER:UMC"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "TICKER:NVMI"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "TICKER:STM"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "CUSIP:042068205"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "CUSIP:83088M102"
+    },
+    {
+      "derivative_components": null,
+      "evidence": {
+        "as_of": "2026-07-29",
+        "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv"
+      },
+      "normalized_industry": "Semiconductors & Semiconductor Equipment",
+      "normalized_sector": "Information Technology",
+      "security_id": "TICKER:RMBS"
+    }
+  ],
+  "schema_version": "1.2",
+  "taxonomy": "GICS"
 }
