@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.4",
+  "schema_version": "1.5",
   "packet_id": "lookthrough-YYYY-MM-DD-id",
   "review_date": "YYYY-MM-DD",
   "observed_at": "YYYY-MM-DDThh:mm:ss+09:00",
