@@ -1,9 +1,9 @@
 {
   "account_scenario_path": "account.json",
-  "account_snapshot_sha256": "84eb813ee2fd59864e53b490ecb1368151fc30d6ac569431ae117f83b2cf2fba",
+  "account_snapshot_sha256": "08327c8557d3a603d4c13c5d6bad1a9549fe7bd9689e2975e7e6c2a6c3105b94",
   "candidate_packet_id": "soxx-hold-2026-07-31-2",
   "candidate_path": "candidate.json",
-  "candidate_sha256": "854680b80feb3ac5ad9e8caffb3b8290b2c72c030da04b4b46c68e1b204c6de5",
+  "candidate_sha256": "2b53f7f19547bea1850a5ae223afa727341a6a1da4dc60c005817006bc02295f",
   "funds": [
     {
       "failure_reason": null,
@@ -8376,35 +8376,35 @@
     }
   ],
   "gates": {
-    "full_classification_coverage": false,
-    "full_issuer_coverage": false,
-    "issuer_at_or_below_10": false,
+    "full_classification_coverage": true,
+    "full_issuer_coverage": true,
+    "issuer_at_or_below_10": true,
     "no_active_orders": true,
     "semiconductor_at_or_below_15": false,
     "sources_complete_same_date": true,
     "soxx_at_or_below_3": false,
-    "technology_below_50": false
+    "technology_below_50": true
   },
   "issuer_registry_path": "issuer-registry.json",
-  "issuer_registry_sha256": "f49258ce0d40ba5fe1fcfef8cd5602338eee3b9390597bac23df1405fb5c7eb4",
+  "issuer_registry_sha256": "b03c310e89cdabeea5640a73efaafbc339bb9f694b61d7a2df3a3213829bf1eb",
   "mapping_path": "mapping.json",
-  "mapping_sha256": "923df9c2e1f0ac9837e55c16369bbc13126ab880e93a2188dc557ea83898be24",
+  "mapping_sha256": "06625178b6b6f103ccf3730675e400b6c4f11f1ad93a27935795fad77c589d5d",
   "metrics": {
-    "classification_coverage_ratio": 0.25281435420753107,
-    "classification_unknown_weight": 0.4958785184743082,
-    "gross_lookthrough_exposure": 0.6636617302094674,
-    "issuer_coverage_ratio": 0.25281435420753107,
-    "issuer_unknown_weight": 0.4958785184743082,
-    "max_issuer_known_weight": 0.03653345514852956,
-    "max_issuer_upper_bound": 0.5324119736228378,
-    "semiconductor_known_weight": 0.1677832117351586,
-    "semiconductor_upper_bound": 0.6636617302094667,
-    "technology_known_weight": 0.1677832117351586,
-    "technology_upper_bound": 0.6636617302094667
+    "classification_coverage_ratio": 1.0,
+    "classification_unknown_weight": 0.0,
+    "gross_lookthrough_exposure": 0.663157224678339,
+    "issuer_coverage_ratio": 1.0,
+    "issuer_unknown_weight": 0.0,
+    "max_issuer_known_weight": 0.05061775298776856,
+    "max_issuer_upper_bound": 0.05061775298776856,
+    "semiconductor_known_weight": 0.1989262878809951,
+    "semiconductor_upper_bound": 0.1989262878809951,
+    "technology_known_weight": 0.32745113530870174,
+    "technology_upper_bound": 0.32745113530870174
   },
   "observed_at": "2026-07-31T10:50:11+09:00",
   "packet_id": "lookthrough-2026-07-31-three-source-production",
-  "packet_sha256": "354c0d679531efe3ba4d8e48696e7f58d4b2106ea4bfd7fd79617a890022f201",
+  "packet_sha256": "b6aec19869175f00e16c85add2188331be9ea0461fc0ce42bf91a5722918086d",
   "portfolio_weights": {
     "QQQM": 0.19658871453863627,
     "SOXX": 0.07764439647681305,
@@ -8413,7 +8413,7 @@
     "other": 0.005156565682833975
   },
   "review_date": "2026-07-31",
-  "schema_version": "1.4",
-  "verdict": "DATA INCOMPLETE",
+  "schema_version": "1.5",
+  "verdict": "POLICY GATE FAIL",
   "weight_basis": "current"
 }
