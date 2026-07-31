@@ -22,13 +22,13 @@
 | `A_stage` | Position Registry | 无 | 每次巡检 | Green | 当前6%；合法阶段6% / 10% / 12.5% / 15%，不得从聊天或价格推导 |
 | `A_execution_cap` | Position Registry | 无 | 每次巡检及任何SOXX IC前 | Green | 当前3%；只能按3%→4.5%→6%→10%→12.5%→15%逐档更新，且不得高于`A_stage` |
 | `A_basis` / `U` | Data Dictionary公式 | 无 | 每次巡检 | Green（Derived） | 失败则配置计算关闭 |
-| Routine Core Gap / Purchase \(G_0,D\) | 实时 IBKR 数据 + Monthly Workflow | 无 | 每月 | Green（Derived） | \(D=\min(F,G_0)\)；\(F-D\) 留在现金 |
+| Routine Core Gap / Purchase \(G_0,D_{max},D\) | 实时IBKR数据 + Monthly Workflow + ETF Valuation Framework | 无 | 每月 | Green（Derived） | \(D_{max}=\min(F,G_0)\)，估值过滤后\(D\le D_{max}\)；\(F-D\)留在现金 |
 | Benchmark hypothetical 15% USD Cash / modeled interest | 月初基准净值 + IBKR官方利率与计息规则 | 无 | 每日计息、月度重置/报告 | Green（Derived） | 月内不得每日重置15%现金本金；任一输入缺失则当期Policy Benchmark为N/A |
 | SPYM Price | IBKR | State Street SPYM 官方页 | 每次巡检 | Green | 标记价格时间戳 |
 | QQQM Price | IBKR | Invesco QQQM 官方页 | 每次巡检 | Green | 标记价格时间戳 |
 | SPYM Total Return | State Street SPYM 官方绩效 / 分红数据 | IBKR 市场数据与分红记录 | 每月 | Green | Policy Benchmark 必须使用含分红同期总收益 |
 | QQQM Total Return | Invesco QQQM 官方绩效 / 分红数据 | IBKR 市场数据与分红记录 | 每月 | Green | 同上 |
-| SOXX Price | IBKR | iShares SOXX 官方页 | 每次巡检 | Green | 只用于持仓计量，不授权追加 |
+| SOXX Price | IBKR | iShares SOXX 官方页 | 每次巡检 | Green | 用于持仓计量与估值监控，不授权追加 |
 | SPYM Holdings / Sector | State Street SPYM 官方页 | 无 | 每季度及新增 Alpha 前 | Green | 缺失时冻结依赖穿透数据的新 Alpha |
 | QQQM Holdings / Sector | Invesco QQQM 官方页 | 无 | 每季度及新增 Alpha 前 | Green | 同上 |
 | SOXX Holdings / Sector | iShares SOXX 官方页 | 无 | 每季度及追加前 | Green | 缺失时 SOXX 保持 ADD FROZEN |
@@ -36,11 +36,13 @@
 | Security Identity / Issuer Group | SEC / GLEIF / 证券主数据插件 + 管理人官方稳定标识 | 已登记的第二身份源 | 运行时；决策留证 | Green（Derived） | 跨CUSIP / ISIN / SEDOL / ticker统一到canonical security与CIK / LEI；记录来源与`as_of`；缺失或冲突则DATA INCOMPLETE |
 | Sector / Industry Map | 权威GICS数据插件 + 管理人原始分类 | 已登记的第二分类源 | 运行时；决策留证 | Green（Derived） | 原始分类缺失时必须有独立权威来源；记录来源与`as_of`；缺失、冲突或无法验证则DATA INCOMPLETE |
 | Look-through Concentration | IBKR 组合权重 + 官方 ETF 持仓 + Look-through Evidence Bundle v1.5验证器 | 无 | 每季度及新增 Alpha 前 | Green（Derived） | 运行时组合多源数据；仅在真实决策时保存原始文件、身份/分类快照与Packet SHA-256；从完整底层行重算发行人、科技、半导体、覆盖率与未分类权重 |
-| S&P 500 Price/Earnings | State Street SPYM 官方页 | State Street SPY 官方页 | 每周 | Green | 保存官方 `source_as_of` 和计算标签 |
-| S&P 500 FY1 P/E | State Street SPYM 官方页 | State Street SPY 官方页 | 每周 | Green | 保存官方 `source_as_of` 和计算定义 |
-| Nasdaq-100 Price/Earnings | Invesco QQQM 官方页 | 同日 Invesco QQQ 官方页，标记 Proxy | 每周 | Red（未稳定采集） | 不进入 Tactical Opportunity Score |
-| Nasdaq-100 Forward P/E | Invesco QQQM 官方页 | 同日 Invesco QQQ 官方页，标记 Proxy | 每周 | Red（未稳定采集） | 不进入 Tactical Opportunity Score |
-| PE 历史百分位 | 暂无合格源 | 无 | — | Red | 战术加速 \(T=0\)；不阻塞 DCA 与战略基线 \(B\) |
+| SPYM Forward P/E | State Street SPYM官方页 | 同日SPY官方页，标记Proxy | 每周 | Green | 保存官方标签、`source_as_of`和定义 |
+| QQQM Forward P/E | Invesco QQQM官方页 | 同日QQQ官方页，标记Proxy | 每周 | Red（未稳定采集） | 等级为N/A；只允许Routine DCA |
+| SOXX Forward P/E | iShares SOXX官方页或已登记Market Data & Estimates源 | 无 | 每周 | Red（来源待验证） | 不得用Trailing P/E产生CHEAP或追加结论 |
+| 三只ETF Forward P/E历史序列与百分位 | 同一Market Data & Estimates源、同一指数和同一定义 | 无 | 每月 | Red（来源待验证） | 最少5年/60个历史月末值，10年优先；失败时等级N/A、`B=T=0` |
+| Forward EPS Growth / 3M Revision | 已登记Market Data & Estimates源 | 无 | 每周 | Red（来源待连接） | 缺失时不改善基础等级并降低置信度；SOXX不得判定CHEAP |
+| US 10Y Treasury Yield | FRED DGS10 | 美国财政部官方序列 | 每周 | Green | 与估值`source_as_of`对齐；超过时效则确认项N/A |
+| Earnings Yield Spread | `1 / Forward P/E − US10Y` | 无 | 每周 | Green（Derived） | 只作确认；不得单独制造CHEAP结论 |
 
 ## 变更治理
 
