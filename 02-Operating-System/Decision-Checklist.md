@@ -13,6 +13,7 @@
 - [ ] 标的价格、币种、数量和时间戳已确认
 - [ ] 账户接口之间不存在未解释冲突
 - [ ] 依赖的市场、估值和穿透字段通过 `08-Data/DATA_QUALITY.md`
+- [ ] SPYM / QQQM / SOXX估值仅按`ETF-Valuation-Framework.md`的同口径数据判定，未把绝对P/E横向比较当作贵便宜
 
 任一项失败，结论只能是 `DATA INCOMPLETE / STOP`。
 
@@ -25,6 +26,8 @@
 - 交易后`A_actual`与`SPYM + SOXX + Stage Reserve`袖套权重：
 - 本次操作解决的组合问题：
 - 为什么现在必须行动，而不是继续持有或等待：
+- Forward P/E、自身历史百分位、利率差、盈利增长/修正、最终等级与置信度：
+- 本次新增是否符合`D / B / T`动作映射；若为卖出，确认估值贵不是唯一理由：
 - 为什么直接持有/买入 SPYM 或 QQQM 不是更好的选择：
 
 ## 1.1 SOXX v3.4.1必填
@@ -87,6 +90,7 @@
 - 标的不在现行 Core / Alpha / Legacy 分类中，且未完成准入研究。
 - 没有写出可证伪条件、最强反方观点或交易后权重。
 - Data Gate 未通过。
+- 仅因`EXPENSIVE / VERY EXPENSIVE`申请卖出，或用Trailing P/E把SOXX判定为便宜。
 - 无法证明这笔操作优于 `HOLD`。
 
 ## 4. Verdict 与执行
