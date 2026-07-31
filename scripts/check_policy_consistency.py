@@ -258,10 +258,12 @@ def main() -> None:
     )
     require(
         "scripts/validate_lookthrough_packet.py",
-        'SCHEMA_VERSION = "1.4"',
+        'SCHEMA_VERSION = "1.5"',
+        'SUPPORTED_SCHEMA_VERSIONS = {"1.4", SCHEMA_VERSION}',
         'MAPPING_VERSION = "1.2"',
         'ISSUER_REGISTRY_VERSION = "1.1"',
-        'ACCOUNT_VERSION = "1.1"',
+        'ACCOUNT_VERSION = "1.2"',
+        'SUPPORTED_ACCOUNT_VERSIONS = {"1.1", ACCOUNT_VERSION}',
         'CANDIDATE_VERSION = "1.1"',
         "duplicate JSON key",
         "source_sha256 does not match archived source bytes",
@@ -276,6 +278,8 @@ def main() -> None:
         "candidate must be an ADD or HOLD scenario for SOXX",
         "sources_complete_same_date",
         "soxx_at_or_below_3",
+        "direct_holdings",
+        'verdict = "POLICY GATE FAIL"',
     )
     require(
         "scripts/parse_lookthrough_sources.py",

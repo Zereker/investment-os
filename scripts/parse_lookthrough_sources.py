@@ -211,7 +211,10 @@ def _instrument(asset_class: str, ticker: str, name: str) -> str:
     value = f"{asset_class} {ticker} {name}".lower()
     if any(token in value for token in ("synthetic cash", "contra future")):
         return "cash"
-    if any(token in value for token in ("future", "option", "swap", "forward")):
+    if (
+        any(token in value for token in ("future", "option", "swap", "forward"))
+        or re.search(r"\bfut\b", value)
+    ):
         return "derivative"
     if any(token in value for token in ("cash collateral", "margin", "cash", "currency")):
         return "cash"
@@ -347,16 +350,19 @@ def _rows_to_holdings(
             exposure_weight = 0.0
         elif instrument == "derivative":
             if "notional_value" not in columns or nav is None or nav <= 0:
-                _fail(
-                    f"source row {offset} derivative lacks auditable notional value or NAV basis"
+                # Some manager files identify a derivative but disclose only its
+                # small accounting market value, not its economic notional.
+                # Treat the position as a full-fund unknown exposure so the
+                # packet can be archived without ever understating the gate.
+                exposure_weight = 1.0
+            else:
+                exposure_weight = abs(
+                    _number(
+                        _cell(row, columns, "notional_value"),
+                        f"source row {offset} notional value",
+                    )
+                    / nav
                 )
-            exposure_weight = abs(
-                _number(
-                    _cell(row, columns, "notional_value"),
-                    f"source row {offset} notional value",
-                )
-                / nav
-            )
             if exposure_weight <= 0:
                 _fail(f"source row {offset} derivative has zero economic exposure")
         else:
@@ -557,11 +563,23 @@ def parse_source(ticker: str, path: Path, source_format: str) -> dict:
         for cell in row
         if _clean(cell)
     ]
-    if ticker == "SPYM" and not any(
-        re.match(r"^SPYM(?:\s+\d+)?\s+(?:Holdings|Portfolio)\b", cell, re.I)
-        for cell in metadata_cells
-    ):
-        _fail("archived State Street XLSX metadata does not identify SPYM")
+    if ticker == "SPYM":
+        legacy_identity = any(
+            re.match(r"^SPYM(?:\s+\d+)?\s+(?:Holdings|Portfolio)\b", cell, re.I)
+            for cell in metadata_cells
+        )
+        labeled_identity = (
+            any(cell.casefold() == "ticker symbol:" for cell in metadata_cells)
+            and any(cell.casefold() == "spym" for cell in metadata_cells)
+            and any(
+                "spdr" in cell.casefold()
+                and "portfolio s&p 500" in cell.casefold()
+                and "etf" in cell.casefold()
+                for cell in metadata_cells
+            )
+        )
+        if not (legacy_identity or labeled_identity):
+            _fail("archived State Street XLSX metadata does not identify SPYM")
     if ticker == "SOXX" and not any(
         cell.casefold() == SOXX_PRODUCT_NAME.casefold() for cell in metadata_cells
     ):
