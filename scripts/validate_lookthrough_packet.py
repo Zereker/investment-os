@@ -1642,7 +1642,18 @@ def sample(root: Path) -> tuple[dict, Path]:
             source_file = "raw/SPYM.xlsx"
             source_sha = write_xlsx_fixture(
                 bundle / source_file,
-                [["SPYM 3 Holdings: As of 29-Jul-2026"], headers, *source_rows],
+                [
+                    ["SPYM 3 Holdings: As of 29-Jul-2026"],
+                    headers,
+                    *source_rows,
+                    [],
+                    [
+                        "",
+                        "",
+                        "Portfolio holdings, allocations and weightings are as of "
+                        "the date indicated and are subject to change.",
+                    ],
+                ],
             )
         elif ticker == "QQQM":
             source_file = "raw/QQQM.json"
