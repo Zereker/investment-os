@@ -46,7 +46,7 @@ v3.5期间：
 9. 仅对SPYM / QQQM / SOXX读取估值状态，并按`ETF-Valuation-Framework.md`输出新增资格；不读取ETF内部持仓来判断日常加减仓。
 10. 仅依据当前生产规则输出事实、风险和动作。
 
-若账户读取或核对失败，巡检必须标记为`DATA INCOMPLETE`，不得使用历史数据冒充实时数据，也不得给出新的BUY或SELL建议。估值数据失败只局部关闭对应新增路径。完整格式见`02-Operating-System/Daily-Review.md`。
+若账户读取或核对失败，巡检必须标记为`DATA INCOMPLETE`，不得使用历史数据冒充实时数据，也不得给出新的BUY或SELL建议。估值数据失败只关闭战术加速`T`；Routine DCA `D`与既定战略基线`B`照常。完整格式见`02-Operating-System/Daily-Review.md`。
 
 SOXX当前为`Alpha / Frozen — DATA GATE`：现有仓位可持有，禁止追加。只有现行指数方法证据完成、Registry先更新为`Approved / Hold`，并用实时账户与同一审核日/同`source_as_of`的Green穿透形成未过期`Add Candidate` Packet后，才可进入完整IC。
 
@@ -65,7 +65,7 @@ SOXX当前为`Alpha / Frozen — DATA GATE`：现有仓位可持有，禁止追�
 - 每月固定新增投入；
 - 按已发布公式计算的战略现金迁移基线；
 - 资金只流向 SPYM / QQQM 的正缺口；
-- 每只Core通过`ETF-Valuation-Framework.md`对应的新增资格；
+- 每只Core通过`ETF-Valuation-Framework.md`对应的资金权限；低质量或缺失估值不得关闭`D/B`；
 - 金额、方向和交易后权重完全符合 Constitution、Transition Plan 和实时 Data Gate。
 
 例行路径仍必须通过实时账户数据、目标缺口、现金下限、订单冲突和执行细节检查。任一条件不满足，升级为完整 IC 或 `HOLD / STOP`。
