@@ -12,7 +12,7 @@
 
 ## 三条资金通道
 
-1. `Routine DCA`：每月计划外部净入金 2,000 美元；只使用已到账的 \(F\)，Core 买入额 \(D=\min(F,G_0)\)，\(F-D\) 留在现金。
+1. `Routine DCA`：每月计划外部净入金2,000美元；只使用已到账的\(F\)，先算\(D_{max}=\min(F,G_0)\)，再按三只ETF估值框架得到实际Core买入额\(D\le D_{max}\)，\(F-D\)留在现金。
 2. `Strategic Baseline`：在固定月度执行日，按 Deployment Framework 的 \(B=\min(S/R,G)\) 公式迁移历史超额现金。
 3. `Tactical Acceleration`：只有价格与估值数据合格并通过完整 IC 时，才允许在 \(B\) 之上加速。
 
