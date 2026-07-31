@@ -1,4 +1,4 @@
-# Investment OS v3.4.2 — Production Contract
+# Investment OS v3.5 — Production Contract
 
 本文件是当前生产系统的入口与执行契约。它不创造新的投资策略，只规定如何可靠地读取、验证和执行仓库中已经生效的规则。
 
@@ -16,7 +16,7 @@
 
 ## 2. 生产冻结
 
-v3.4.2期间：
+v3.5期间：
 
 - 允许修复数据读取、计算、文档歧义和流程遗漏等缺陷。
 - 不允许在交易执行过程中临时增加指标、改变阈值或更换估值口径。
@@ -43,9 +43,10 @@ v3.4.2期间：
 6. 计算 Cash、Core、Alpha（含有真实资金的 Observation）和 Legacy 的市值与权重。
 7. 为Alpha列示生命周期状态；SOXX当前为`Alpha / Frozen — DATA GATE`。
 8. 检查融资、越界、未完成订单、重复订单和真正无法分类的异常持仓。
-9. 仅依据当前生产规则输出事实、风险和动作。
+9. 仅对SPYM / QQQM / SOXX读取估值状态，并按`ETF-Valuation-Framework.md`输出新增资格；不读取ETF内部持仓来判断日常加减仓。
+10. 仅依据当前生产规则输出事实、风险和动作。
 
-若第 1–5 步任一失败，巡检必须标记为 `DATA INCOMPLETE`，不得使用历史数据冒充实时数据，也不得给出新的 BUY 或 SELL 建议。完整格式见 `02-Operating-System/Daily-Review.md`。
+若账户读取或核对失败，巡检必须标记为`DATA INCOMPLETE`，不得使用历史数据冒充实时数据，也不得给出新的BUY或SELL建议。估值数据失败只局部关闭对应新增路径。完整格式见`02-Operating-System/Daily-Review.md`。
 
 SOXX当前为`Alpha / Frozen — DATA GATE`：现有仓位可持有，禁止追加。只有现行指数方法证据完成、Registry先更新为`Approved / Hold`，并用实时账户与同一审核日/同`source_as_of`的Green穿透形成未过期`Add Candidate` Packet后，才可进入完整IC。
 
@@ -64,6 +65,7 @@ SOXX当前为`Alpha / Frozen — DATA GATE`：现有仓位可持有，禁止追�
 - 每月固定新增投入；
 - 按已发布公式计算的战略现金迁移基线；
 - 资金只流向 SPYM / QQQM 的正缺口；
+- 每只Core通过`ETF-Valuation-Framework.md`对应的新增资格；
 - 金额、方向和交易后权重完全符合 Constitution、Transition Plan 和实时 Data Gate。
 
 例行路径仍必须通过实时账户数据、目标缺口、现金下限、订单冲突和执行细节检查。任一条件不满足，升级为完整 IC 或 `HOLD / STOP`。
@@ -108,6 +110,7 @@ SOXX当前为`Alpha / Frozen — DATA GATE`：现有仓位可持有，禁止追�
 - 成交记录：用于解释变化，不用于替代当前持仓
 - Alpha 状态：`04-Alpha/Position-Registry.md`
 - 市场、估值和 ETF 穿透数据：必须符合 `08-Data/DATA_REGISTRY.md`、`08-Data/DATA_DICTIONARY.md` 与 `08-Data/DATA_QUALITY.md`
+- 三只ETF估值方法与新增动作：`02-Operating-System/ETF-Valuation-Framework.md`
 
 外部金融数据在运行时从分别登记的专业来源读取，仓库不维护行情、ETF成分、issuer或GICS中央数据库。普通巡检不写仓库；真实决策才保存不可变证据Bundle。来源缺失或冲突时失败关闭，不得回退到陈旧中央副本冒充当前数据。
 
@@ -122,5 +125,6 @@ SOXX当前为`Alpha / Frozen — DATA GATE`：现有仓位可持有，禁止追�
 - Risk Check
 - Production Decision
 - 下一观察条件
+- SPYM / QQQM / SOXX估值等级、置信度与今日需要做什么
 
 事实、推断和建议必须明确分开。无法验证的内容必须标记为未知。
