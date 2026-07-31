@@ -57,10 +57,12 @@ CANONICAL_SECURITY = re.compile(
     r"CASH:[A-Z]{3}"
     r")$"
 )
-SCHEMA_VERSION = "1.4"
+SCHEMA_VERSION = "1.5"
+SUPPORTED_SCHEMA_VERSIONS = {"1.4", SCHEMA_VERSION}
 MAPPING_VERSION = "1.2"
 ISSUER_REGISTRY_VERSION = "1.1"
-ACCOUNT_VERSION = "1.1"
+ACCOUNT_VERSION = "1.2"
+SUPPORTED_ACCOUNT_VERSIONS = {"1.1", ACCOUNT_VERSION}
 CANDIDATE_VERSION = "1.1"
 EPS = 1e-9
 ROUNDING_TOLERANCE = 5e-4  # 5 bps; accepts an official 100.01% rounded total.
@@ -744,21 +746,27 @@ def load_account(
         label="account_scenario",
         max_bytes=MAX_ACCOUNT_BYTES,
     )
-    require_keys(
-        account,
-        {
-            "schema_version",
-            "account_snapshot_id",
-            "observed_at",
-            "source",
-            "active_order_count",
-            "nav",
-            "current_market_values",
-        },
-        "account_scenario",
+    packet_schema = packet.get("schema_version")
+    account_keys = {
+        "schema_version",
+        "account_snapshot_id",
+        "observed_at",
+        "source",
+        "active_order_count",
+        "nav",
+        "current_market_values",
+    }
+    if packet_schema == SCHEMA_VERSION:
+        account_keys.add("direct_holdings")
+    require_keys(account, account_keys, "account_scenario")
+    expected_account_version = (
+        ACCOUNT_VERSION if packet_schema == SCHEMA_VERSION else "1.1"
     )
-    if account["schema_version"] != ACCOUNT_VERSION:
-        fail(f"account_scenario.schema_version must be {ACCOUNT_VERSION}")
+    if account["schema_version"] != expected_account_version:
+        fail(
+            "account_scenario.schema_version must be "
+            f"{expected_account_version} for packet schema {packet_schema}"
+        )
     if not isinstance(account["account_snapshot_id"], str) or not account[
         "account_snapshot_id"
     ].strip():
@@ -790,12 +798,79 @@ def load_account(
     }
     if abs(sum(values.values()) - nav) > max(0.01, nav * EPS):
         fail("account_scenario current market values must reconcile to nav")
+    direct_holdings = []
+    if packet_schema == SCHEMA_VERSION:
+        direct_holdings = account["direct_holdings"]
+        if not isinstance(direct_holdings, list):
+            fail("account_scenario.direct_holdings must be an array")
+        direct_total = 0.0
+        seen_direct_ids = set()
+        for index, holding in enumerate(direct_holdings):
+            label = f"account_scenario.direct_holdings[{index}]"
+            if not isinstance(holding, dict):
+                fail(f"{label} must be an object")
+            require_keys(
+                holding,
+                {
+                    "security_id",
+                    "source_identifiers",
+                    "raw_name",
+                    "instrument_type",
+                    "market_value",
+                    "raw_sector",
+                    "raw_industry",
+                },
+                label,
+            )
+            security_id = require_security_id(
+                holding["security_id"], f"{label}.security_id"
+            )
+            if security_id in seen_direct_ids:
+                fail(f"account_scenario.direct_holdings has duplicate {security_id}")
+            seen_direct_ids.add(security_id)
+            source_identifiers = holding["source_identifiers"]
+            if (
+                not isinstance(source_identifiers, list)
+                or not source_identifiers
+                or source_identifiers[0] != security_id
+                or len(source_identifiers) != len(set(source_identifiers))
+            ):
+                fail(f"{label}.source_identifiers must be unique and primary-first")
+            for source_index, source_id in enumerate(source_identifiers):
+                require_security_id(
+                    source_id, f"{label}.source_identifiers[{source_index}]"
+                )
+            if holding["instrument_type"] != "equity":
+                fail(f"{label}.instrument_type must be equity")
+            if not isinstance(holding["raw_name"], str) or not holding[
+                "raw_name"
+            ].strip():
+                fail(f"{label}.raw_name is required")
+            if holding["raw_sector"] is not None and not isinstance(
+                holding["raw_sector"], str
+            ):
+                fail(f"{label}.raw_sector must be a string or null")
+            if holding["raw_industry"] is not None and not isinstance(
+                holding["raw_industry"], str
+            ):
+                fail(f"{label}.raw_industry must be a string or null")
+            market_value = bounded(
+                holding["market_value"], f"{label}.market_value", 0, nav
+            )
+            if market_value <= EPS:
+                fail(f"{label}.market_value must be positive")
+            direct_total += market_value
+        if abs(direct_total - values["other"]) > max(0.01, nav * EPS):
+            fail(
+                "account_scenario.direct_holdings market values must reconcile to other"
+            )
     return {
         "account_snapshot_id": account["account_snapshot_id"],
         "observed_at": observed,
         "active_order_count": active_order_count,
         "nav": nav,
         "values": values,
+        "direct_holdings": direct_holdings,
     }
 
 
@@ -1068,8 +1143,11 @@ def evaluate(
         fail("test_only packet cannot enter Production")
     if allow_test and packet.get("test_only") is not True:
         fail("self-test packet must set test_only=true")
-    if packet["schema_version"] != SCHEMA_VERSION:
-        fail(f"schema_version must be {SCHEMA_VERSION}")
+    if packet["schema_version"] not in SUPPORTED_SCHEMA_VERSIONS:
+        fail(
+            "schema_version must be one of "
+            f"{sorted(SUPPORTED_SCHEMA_VERSIONS)}"
+        )
     if packet["weight_basis"] not in {"current", "post_trade"}:
         fail("weight_basis must be current or post_trade")
 
@@ -1197,7 +1275,37 @@ def evaluate(
     complete_source_count = 0
     issuer_weights: dict[str, float] = {}
     tech_known = semi_known = 0.0
-    issuer_unknown = class_unknown = gross = portfolio_weights["other"]
+    current_schema = packet["schema_version"] == SCHEMA_VERSION
+    if current_schema:
+        issuer_unknown = class_unknown = gross = 0.0
+        for index, holding in enumerate(account["direct_holdings"]):
+            prefix = f"account_scenario.direct_holdings[{index}]"
+            identity = resolve_identity(holding, issuer_registry, prefix)
+            canonical_security_id = (
+                identity["canonical_security_id"]
+                if identity is not None
+                else holding["security_id"]
+            )
+            record = mapping.get(canonical_security_id)
+            contribution = float(holding["market_value"]) / account["nav"]
+            gross += contribution
+            if identity is None:
+                issuer_unknown += contribution
+            else:
+                issuer = identity["issuer_group_id"]
+                issuer_weights[issuer] = issuer_weights.get(issuer, 0.0) + contribution
+            if record is None:
+                class_unknown += contribution
+            else:
+                if record["derivative_components"] is not None:
+                    fail(f"{prefix} direct equity cannot use derivative components")
+                check_raw_mapping(record, holding, prefix)
+                if record["normalized_sector"] == TECH:
+                    tech_known += contribution
+                if record["normalized_industry"] == SEMI:
+                    semi_known += contribution
+    else:
+        issuer_unknown = class_unknown = gross = portfolio_weights["other"]
     seen_source_files = set()
 
     for ticker in FUNDS:
@@ -1309,6 +1417,23 @@ def evaluate(
                 fail(f"{prefix} unexplained other instrument cannot have zero exposure")
             if exposure_weight <= EPS:
                 continue
+            if current_schema and (
+                holding["raw_name"].strip().upper() == "US DOLLAR"
+                or holding["raw_name"].strip().upper().startswith("CONTRA ")
+                or (
+                    instrument == "fund"
+                    and (
+                        "MONEY MARKET" in holding["raw_name"].upper()
+                        or "GOVERNMENT & AGENCY PORTFOLIO"
+                        in holding["raw_name"].upper()
+                        or "CSH FND TREASURY" in holding["raw_name"].upper()
+                    )
+                )
+            ):
+                # The v1.5 evidence contract excludes narrowly recognized cash
+                # equivalents from issuer/GICS look-through. Their accounting
+                # market weights still remain in fund reconciliation.
+                continue
             identity = resolve_identity(holding, issuer_registry, prefix)
             canonical_security_id = (
                 identity["canonical_security_id"] if identity is not None else security_id
@@ -1387,7 +1512,20 @@ def evaluate(
         "soxx_at_or_below_3": portfolio_weights["SOXX"] <= CURRENT_EXECUTION_CAP + EPS,
         "no_active_orders": account["active_order_count"] == 0,
     }
-    verdict = "DATA GATE PASS" if all(gates.values()) else "DATA INCOMPLETE"
+    if current_schema:
+        data_gates = (
+            "full_issuer_coverage",
+            "full_classification_coverage",
+            "sources_complete_same_date",
+        )
+        if not all(gates[key] for key in data_gates):
+            verdict = "DATA INCOMPLETE"
+        elif all(gates.values()):
+            verdict = "DATA GATE PASS"
+        else:
+            verdict = "POLICY GATE FAIL"
+    else:
+        verdict = "DATA GATE PASS" if all(gates.values()) else "DATA INCOMPLETE"
     return metrics, gates, verdict
 
 
@@ -1750,6 +1888,7 @@ def sample(root: Path) -> tuple[dict, Path]:
             "QQQM": 28000,
             "SOXX": 1000,
         },
+        "direct_holdings": [],
     }
     account_sha = write_fixture(bundle / "account.json", account)
     candidate = {
