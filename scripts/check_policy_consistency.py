@@ -254,7 +254,7 @@ def main() -> None:
         "Routine DCA `D`与既定战略基线`B`照常",
         "低质量估值不得通过单边关闭`B`造成现金拖累",
     )
-    require("07-Releases/v3.5.1.md", "本发布不授权任何订单")
+    require("07-Releases/v3.5.1.md", "不授权任何订单")
     for path in (
         "README.md",
         "PRODUCTION.md",
