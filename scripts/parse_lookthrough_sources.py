@@ -323,9 +323,16 @@ def _rows_to_holdings(
             continue
         name = _cell(row, columns, "name")
         raw_weight = _cell(row, columns, "weight")
-        if not name and not raw_weight:
-            continue
         ticker = _cell(row, columns, "ticker")
+        # State Street appends disclosure prose below the holdings table in the
+        # same worksheet. Ignore only rows that have neither a weight nor any
+        # security identity; zero-weight or blank-weight securities still need
+        # to survive reconciliation.
+        if not raw_weight and not (
+            ticker
+            or any(_cell(row, columns, key) for key in IDENTIFIER_COLUMNS)
+        ):
+            continue
         asset_class = _cell(row, columns, "asset_class")
         instrument = _instrument(asset_class, ticker, name)
         security_id, source_identifiers = _security_ids(
