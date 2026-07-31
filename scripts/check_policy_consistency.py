@@ -182,7 +182,7 @@ def main() -> None:
         "Decision-Log.md",
         "README.md",
     ):
-        require(path, "Bundle v1.3")
+        require(path, "Bundle v1.4")
     require(
         "08-Data/README.md",
         "REGISTRIES/LOOKTHROUGH_ISSUER_AUTHORITY.json",
@@ -201,7 +201,7 @@ def main() -> None:
         "08-Data/LOOKTHROUGH_PACKET.md",
         "验证通过不改变 Position Registry",
         "source_sha256",
-        "schema_version`：当前固定为 `1.3",
+        "schema_version`：当前固定为 `1.4",
         "account_snapshot_sha256",
         "candidate_sha256",
         "issuer_registry_sha256",
@@ -209,14 +209,18 @@ def main() -> None:
         "逐行等于验证器从归档字节解析的结果",
         "exposure_weight",
         "科技严格低于 50%",
+        "`HOLD` Bundle 永远不构成交易授权",
         "Packet通过只是SOXX解冻的必要条件之一",
     )
     require(
         "08-Data/LOOKTHROUGH_PACKET_TEMPLATE.json",
-        '"schema_version": "1.3"',
+        '"schema_version": "1.4"',
         '"issuer_registry_path": "issuer-registry.json"',
         '"issuer_registry_sha256": ""',
         '"source_identifiers": []',
+        '"status": "complete"',
+        '"source_format": "invesco-json-v1"',
+        '"other": 0',
     )
     require(
         "08-Data/LOOKTHROUGH_ISSUER_REGISTRY_TEMPLATE.json",
@@ -254,28 +258,33 @@ def main() -> None:
     )
     require(
         "scripts/validate_lookthrough_packet.py",
-        'SCHEMA_VERSION = "1.3"',
+        'SCHEMA_VERSION = "1.4"',
         'MAPPING_VERSION = "1.2"',
         'ISSUER_REGISTRY_VERSION = "1.1"',
+        'ACCOUNT_VERSION = "1.1"',
+        'CANDIDATE_VERSION = "1.1"',
         "duplicate JSON key",
         "source_sha256 does not match archived source bytes",
         "does not match parsed archived source",
         "derivative requires audited look-through components",
-        "post-trade account scenario",
+        "does not match account scenario",
         "canonical_security_id",
         "source_identifiers",
         "reviewed issuer authority",
         "reviewed classification authority",
         "validate_authority_catalogs",
+        "candidate must be an ADD or HOLD scenario for SOXX",
+        "sources_complete_same_date",
+        "soxx_at_or_below_3",
     )
     require(
         "scripts/parse_lookthrough_sources.py",
         '"SPYM": "ssga-xlsx-v1"',
-        '"QQQM": "invesco-csv-v1"',
+        '"QQQM": "invesco-json-v1"',
         '"SOXX": "ishares-csv-v1"',
-        '"holding ticker"',
-        '"security identifier"',
-        '"date"',
+        '"effectiveDate"',
+        '"holdings"',
+        "_invesco_json_rows",
         "CUSIP:",
         "%d-%b-%Y",
         "derivative has zero economic exposure",
@@ -288,6 +297,7 @@ def main() -> None:
         "SEDOL and canonical CUSIP split across issuer identities",
         "derivative component uses a free issuer id",
         "future-dated 2099 bundle",
+        "official download unavailable at retrieval time",
         "SPYM 3 Holdings: As of 29-Jul-2026",
         "missing raw labels cannot authorize a bundle-local false classification",
         "max_issuer_known_weight",

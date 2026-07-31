@@ -1,0 +1,1819 @@
+{
+  "account_scenario_path": "account.json",
+  "account_snapshot_sha256": "ca11978ef03019ccb4548cde2de2480620c1de7114a26c30065411cf855fc360",
+  "candidate_packet_id": "soxx-hold-2026-07-31-1",
+  "candidate_path": "candidate.json",
+  "candidate_sha256": "907b202c086a18d0f7f4bc2763d39e6210f7922a97b3f6ad56f892af228f20e5",
+  "funds": [
+    {
+      "failure_reason": "The controlled retrieval environment blocked the official Daily XLSX download; no State Street source bytes were archived.",
+      "holdings": [],
+      "retrieved_at": "2026-07-31T02:35:37+09:00",
+      "source_as_of": null,
+      "source_file": null,
+      "source_format": "ssga-xlsx-v1",
+      "source_name": "State Street SPYM Daily Holdings XLSX",
+      "source_sha256": null,
+      "source_url": "https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-sp-500-etf-spym",
+      "status": "unavailable",
+      "ticker": "SPYM"
+    },
+    {
+      "failure_reason": null,
+      "holdings": [
+        {
+          "exposure_weight": 0.0855095,
+          "instrument_type": "equity",
+          "market_weight": 0.0855095,
+          "raw_industry": null,
+          "raw_name": "Apple Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:037833100",
+          "source_identifiers": [
+            "CUSIP:037833100"
+          ]
+        },
+        {
+          "exposure_weight": 0.07915888,
+          "instrument_type": "equity",
+          "market_weight": 0.07915888,
+          "raw_industry": null,
+          "raw_name": "NVIDIA Corp",
+          "raw_sector": null,
+          "security_id": "CUSIP:67066G104",
+          "source_identifiers": [
+            "CUSIP:67066G104"
+          ]
+        },
+        {
+          "exposure_weight": 0.0499412,
+          "instrument_type": "equity",
+          "market_weight": 0.0499412,
+          "raw_industry": null,
+          "raw_name": "Microsoft Corp",
+          "raw_sector": null,
+          "security_id": "CUSIP:594918104",
+          "source_identifiers": [
+            "CUSIP:594918104"
+          ]
+        },
+        {
+          "exposure_weight": 0.041970919999999995,
+          "instrument_type": "equity",
+          "market_weight": 0.041970919999999995,
+          "raw_industry": null,
+          "raw_name": "Amazon.com Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:023135106",
+          "source_identifiers": [
+            "CUSIP:023135106"
+          ]
+        },
+        {
+          "exposure_weight": 0.039607250000000004,
+          "instrument_type": "equity",
+          "market_weight": 0.039607250000000004,
+          "raw_industry": null,
+          "raw_name": "Micron Technology Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:595112103",
+          "source_identifiers": [
+            "CUSIP:595112103"
+          ]
+        },
+        {
+          "exposure_weight": 0.03375825,
+          "instrument_type": "equity",
+          "market_weight": 0.03375825,
+          "raw_industry": null,
+          "raw_name": "Alphabet Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:02079K305",
+          "source_identifiers": [
+            "CUSIP:02079K305"
+          ]
+        },
+        {
+          "exposure_weight": 0.03328817,
+          "instrument_type": "equity",
+          "market_weight": 0.03328817,
+          "raw_industry": null,
+          "raw_name": "Advanced Micro Devices Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:007903107",
+          "source_identifiers": [
+            "CUSIP:007903107"
+          ]
+        },
+        {
+          "exposure_weight": 0.03153661,
+          "instrument_type": "equity",
+          "market_weight": 0.03153661,
+          "raw_industry": null,
+          "raw_name": "Alphabet Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:02079K107",
+          "source_identifiers": [
+            "CUSIP:02079K107"
+          ]
+        },
+        {
+          "exposure_weight": 0.0302248,
+          "instrument_type": "equity",
+          "market_weight": 0.0302248,
+          "raw_industry": null,
+          "raw_name": "Broadcom Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:11135F101",
+          "source_identifiers": [
+            "CUSIP:11135F101"
+          ]
+        },
+        {
+          "exposure_weight": 0.029854500000000003,
+          "instrument_type": "equity",
+          "market_weight": 0.029854500000000003,
+          "raw_industry": null,
+          "raw_name": "Meta Platforms Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:30303M102",
+          "source_identifiers": [
+            "CUSIP:30303M102"
+          ]
+        },
+        {
+          "exposure_weight": 0.02648083,
+          "instrument_type": "equity",
+          "market_weight": 0.02648083,
+          "raw_industry": null,
+          "raw_name": "Walmart Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:931142103",
+          "source_identifiers": [
+            "CUSIP:931142103"
+          ]
+        },
+        {
+          "exposure_weight": 0.025653950000000002,
+          "instrument_type": "equity",
+          "market_weight": 0.025653950000000002,
+          "raw_industry": null,
+          "raw_name": "Tesla Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:88160R101",
+          "source_identifiers": [
+            "CUSIP:88160R101"
+          ]
+        },
+        {
+          "exposure_weight": 0.021069209999999998,
+          "instrument_type": "equity",
+          "market_weight": 0.021069209999999998,
+          "raw_industry": null,
+          "raw_name": "Cisco Systems Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:17275R102",
+          "source_identifiers": [
+            "CUSIP:17275R102"
+          ]
+        },
+        {
+          "exposure_weight": 0.020564460000000003,
+          "instrument_type": "equity",
+          "market_weight": 0.020564460000000003,
+          "raw_industry": null,
+          "raw_name": "Costco Wholesale Corp",
+          "raw_sector": null,
+          "security_id": "CUSIP:22160K105",
+          "source_identifiers": [
+            "CUSIP:22160K105"
+          ]
+        },
+        {
+          "exposure_weight": 0.01955822,
+          "instrument_type": "equity",
+          "market_weight": 0.01955822,
+          "raw_industry": null,
+          "raw_name": "Intel Corp",
+          "raw_sector": null,
+          "security_id": "CUSIP:458140100",
+          "source_identifiers": [
+            "CUSIP:458140100"
+          ]
+        },
+        {
+          "exposure_weight": 0.016469400000000002,
+          "instrument_type": "equity",
+          "market_weight": 0.016469400000000002,
+          "raw_industry": null,
+          "raw_name": "Applied Materials Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:038222105",
+          "source_identifiers": [
+            "CUSIP:038222105"
+          ]
+        },
+        {
+          "exposure_weight": 0.01499828,
+          "instrument_type": "equity",
+          "market_weight": 0.01499828,
+          "raw_industry": null,
+          "raw_name": "Lam Research Corp",
+          "raw_sector": null,
+          "security_id": "CUSIP:512807306",
+          "source_identifiers": [
+            "CUSIP:512807306"
+          ]
+        },
+        {
+          "exposure_weight": 0.01473468,
+          "instrument_type": "equity",
+          "market_weight": 0.01473468,
+          "raw_industry": null,
+          "raw_name": "Netflix Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:64110L106",
+          "source_identifiers": [
+            "CUSIP:64110L106"
+          ]
+        },
+        {
+          "exposure_weight": 0.01342165,
+          "instrument_type": "equity",
+          "market_weight": 0.01342165,
+          "raw_industry": null,
+          "raw_name": "Palantir Technologies Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:69608A108",
+          "source_identifiers": [
+            "CUSIP:69608A108"
+          ]
+        },
+        {
+          "exposure_weight": 0.012183900000000001,
+          "instrument_type": "equity",
+          "market_weight": 0.012183900000000001,
+          "raw_industry": null,
+          "raw_name": "Palo Alto Networks Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:697435105",
+          "source_identifiers": [
+            "CUSIP:697435105"
+          ]
+        },
+        {
+          "exposure_weight": 0.01173477,
+          "instrument_type": "equity",
+          "market_weight": 0.01173477,
+          "raw_industry": null,
+          "raw_name": "Texas Instruments Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:882508104",
+          "source_identifiers": [
+            "CUSIP:882508104"
+          ]
+        },
+        {
+          "exposure_weight": 0.01123265,
+          "instrument_type": "equity",
+          "market_weight": 0.01123265,
+          "raw_industry": null,
+          "raw_name": "Linde PLC",
+          "raw_sector": null,
+          "security_id": "CUSIP:G54950103",
+          "source_identifiers": [
+            "CUSIP:G54950103"
+          ]
+        },
+        {
+          "exposure_weight": 0.01056538,
+          "instrument_type": "equity",
+          "market_weight": 0.01056538,
+          "raw_industry": null,
+          "raw_name": "KLA Corp",
+          "raw_sector": null,
+          "security_id": "CUSIP:482480100",
+          "source_identifiers": [
+            "CUSIP:482480100"
+          ]
+        },
+        {
+          "exposure_weight": 0.01025206,
+          "instrument_type": "equity",
+          "market_weight": 0.01025206,
+          "raw_industry": null,
+          "raw_name": "Space Exploration Technologies Corp",
+          "raw_sector": null,
+          "security_id": "CUSIP:84615Q103",
+          "source_identifiers": [
+            "CUSIP:84615Q103"
+          ]
+        },
+        {
+          "exposure_weight": 0.00994329,
+          "instrument_type": "equity",
+          "market_weight": 0.00994329,
+          "raw_industry": null,
+          "raw_name": "Amgen Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:031162100",
+          "source_identifiers": [
+            "CUSIP:031162100"
+          ]
+        },
+        {
+          "exposure_weight": 0.00933576,
+          "instrument_type": "equity",
+          "market_weight": 0.00933576,
+          "raw_industry": null,
+          "raw_name": "T-Mobile US Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:872590104",
+          "source_identifiers": [
+            "CUSIP:872590104"
+          ]
+        },
+        {
+          "exposure_weight": 0.00932124,
+          "instrument_type": "equity",
+          "market_weight": 0.00932124,
+          "raw_industry": null,
+          "raw_name": "PepsiCo Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:713448108",
+          "source_identifiers": [
+            "CUSIP:713448108"
+          ]
+        },
+        {
+          "exposure_weight": 0.00868152,
+          "instrument_type": "equity",
+          "market_weight": 0.00868152,
+          "raw_industry": null,
+          "raw_name": "Crowdstrike Holdings Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:22788C105",
+          "source_identifiers": [
+            "CUSIP:22788C105"
+          ]
+        },
+        {
+          "exposure_weight": 0.00817994,
+          "instrument_type": "equity",
+          "market_weight": 0.00817994,
+          "raw_industry": null,
+          "raw_name": "Analog Devices Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:032654105",
+          "source_identifiers": [
+            "CUSIP:032654105"
+          ]
+        },
+        {
+          "exposure_weight": 0.00814596,
+          "instrument_type": "equity",
+          "market_weight": 0.00814596,
+          "raw_industry": null,
+          "raw_name": "Seagate Technology Holdings PLC",
+          "raw_sector": null,
+          "security_id": "CUSIP:G7997R103",
+          "source_identifiers": [
+            "CUSIP:G7997R103"
+          ]
+        },
+        {
+          "exposure_weight": 0.00783215,
+          "instrument_type": "equity",
+          "market_weight": 0.00783215,
+          "raw_industry": null,
+          "raw_name": "Gilead Sciences Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:375558103",
+          "source_identifiers": [
+            "CUSIP:375558103"
+          ]
+        },
+        {
+          "exposure_weight": 0.00779766,
+          "instrument_type": "equity",
+          "market_weight": 0.00779766,
+          "raw_industry": null,
+          "raw_name": "QUALCOMM Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:747525103",
+          "source_identifiers": [
+            "CUSIP:747525103"
+          ]
+        },
+        {
+          "exposure_weight": 0.007570240000000001,
+          "instrument_type": "equity",
+          "market_weight": 0.007570240000000001,
+          "raw_industry": null,
+          "raw_name": "Western Digital Corp",
+          "raw_sector": null,
+          "security_id": "CUSIP:958102105",
+          "source_identifiers": [
+            "CUSIP:958102105"
+          ]
+        },
+        {
+          "exposure_weight": 0.00748692,
+          "instrument_type": "equity",
+          "market_weight": 0.00748692,
+          "raw_industry": null,
+          "raw_name": "Shopify Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:82509L107",
+          "source_identifiers": [
+            "CUSIP:82509L107"
+          ]
+        },
+        {
+          "exposure_weight": 0.0074126,
+          "instrument_type": "equity",
+          "market_weight": 0.0074126,
+          "raw_industry": null,
+          "raw_name": "Booking Holdings Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:09857L108",
+          "source_identifiers": [
+            "CUSIP:09857L108"
+          ]
+        },
+        {
+          "exposure_weight": 0.00714828,
+          "instrument_type": "equity",
+          "market_weight": 0.00714828,
+          "raw_industry": null,
+          "raw_name": "Sandisk Corp",
+          "raw_sector": null,
+          "security_id": "CUSIP:80004C200",
+          "source_identifiers": [
+            "CUSIP:80004C200"
+          ]
+        },
+        {
+          "exposure_weight": 0.006795440000000001,
+          "instrument_type": "equity",
+          "market_weight": 0.006795440000000001,
+          "raw_industry": null,
+          "raw_name": "Marvell Technology Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:573874104",
+          "source_identifiers": [
+            "CUSIP:573874104"
+          ]
+        },
+        {
+          "exposure_weight": 0.00676434,
+          "instrument_type": "other",
+          "market_weight": 0.00676434,
+          "raw_industry": null,
+          "raw_name": "ASML Holding NV",
+          "raw_sector": null,
+          "security_id": "CUSIP:N07059210",
+          "source_identifiers": [
+            "CUSIP:N07059210"
+          ]
+        },
+        {
+          "exposure_weight": 0.00594372,
+          "instrument_type": "equity",
+          "market_weight": 0.00594372,
+          "raw_industry": null,
+          "raw_name": "Intuitive Surgical Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:46120E602",
+          "source_identifiers": [
+            "CUSIP:46120E602"
+          ]
+        },
+        {
+          "exposure_weight": 0.0058306,
+          "instrument_type": "equity",
+          "market_weight": 0.0058306,
+          "raw_industry": null,
+          "raw_name": "Vertex Pharmaceuticals Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:92532F100",
+          "source_identifiers": [
+            "CUSIP:92532F100"
+          ]
+        },
+        {
+          "exposure_weight": 0.00580562,
+          "instrument_type": "equity",
+          "market_weight": 0.00580562,
+          "raw_industry": null,
+          "raw_name": "AppLovin Corp",
+          "raw_sector": null,
+          "security_id": "CUSIP:03831W108",
+          "source_identifiers": [
+            "CUSIP:03831W108"
+          ]
+        },
+        {
+          "exposure_weight": 0.0056411,
+          "instrument_type": "equity",
+          "market_weight": 0.0056411,
+          "raw_industry": null,
+          "raw_name": "Starbucks Corp",
+          "raw_sector": null,
+          "security_id": "CUSIP:855244109",
+          "source_identifiers": [
+            "CUSIP:855244109"
+          ]
+        },
+        {
+          "exposure_weight": 0.0053352,
+          "instrument_type": "equity",
+          "market_weight": 0.0053352,
+          "raw_industry": null,
+          "raw_name": "Fortinet Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:34959E109",
+          "source_identifiers": [
+            "CUSIP:34959E109"
+          ]
+        },
+        {
+          "exposure_weight": 0.00519393,
+          "instrument_type": "equity",
+          "market_weight": 0.00519393,
+          "raw_industry": null,
+          "raw_name": "Automatic Data Processing Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:053015103",
+          "source_identifiers": [
+            "CUSIP:053015103"
+          ]
+        },
+        {
+          "exposure_weight": 0.00505964,
+          "instrument_type": "equity",
+          "market_weight": 0.00505964,
+          "raw_industry": null,
+          "raw_name": "Adobe Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:00724F101",
+          "source_identifiers": [
+            "CUSIP:00724F101"
+          ]
+        },
+        {
+          "exposure_weight": 0.00477567,
+          "instrument_type": "equity",
+          "market_weight": 0.00477567,
+          "raw_industry": null,
+          "raw_name": "Marriott International Inc/MD",
+          "raw_sector": null,
+          "security_id": "CUSIP:571903202",
+          "source_identifiers": [
+            "CUSIP:571903202"
+          ]
+        },
+        {
+          "exposure_weight": 0.00453198,
+          "instrument_type": "other",
+          "market_weight": 0.00453198,
+          "raw_industry": null,
+          "raw_name": "ARM Holdings PLC",
+          "raw_sector": null,
+          "security_id": "CUSIP:042068205",
+          "source_identifiers": [
+            "CUSIP:042068205"
+          ]
+        },
+        {
+          "exposure_weight": 0.0045195800000000005,
+          "instrument_type": "equity",
+          "market_weight": 0.0045195800000000005,
+          "raw_industry": null,
+          "raw_name": "Monster Beverage Corp",
+          "raw_sector": null,
+          "security_id": "CUSIP:61174X109",
+          "source_identifiers": [
+            "CUSIP:61174X109"
+          ]
+        },
+        {
+          "exposure_weight": 0.00449663,
+          "instrument_type": "equity",
+          "market_weight": 0.00449663,
+          "raw_industry": null,
+          "raw_name": "MercadoLibre Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:58733R102",
+          "source_identifiers": [
+            "CUSIP:58733R102"
+          ]
+        },
+        {
+          "exposure_weight": 0.00448096,
+          "instrument_type": "equity",
+          "market_weight": 0.00448096,
+          "raw_industry": null,
+          "raw_name": "CSX Corp",
+          "raw_sector": null,
+          "security_id": "CUSIP:126408103",
+          "source_identifiers": [
+            "CUSIP:126408103"
+          ]
+        },
+        {
+          "exposure_weight": 0.00442842,
+          "instrument_type": "equity",
+          "market_weight": 0.00442842,
+          "raw_industry": null,
+          "raw_name": "Constellation Energy Corp",
+          "raw_sector": null,
+          "security_id": "CUSIP:21037T109",
+          "source_identifiers": [
+            "CUSIP:21037T109"
+          ]
+        },
+        {
+          "exposure_weight": 0.00436274,
+          "instrument_type": "equity",
+          "market_weight": 0.00436274,
+          "raw_industry": null,
+          "raw_name": "Cadence Design Systems Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:127387108",
+          "source_identifiers": [
+            "CUSIP:127387108"
+          ]
+        },
+        {
+          "exposure_weight": 0.00432944,
+          "instrument_type": "equity",
+          "market_weight": 0.00432944,
+          "raw_industry": null,
+          "raw_name": "Intuit Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:461202103",
+          "source_identifiers": [
+            "CUSIP:461202103"
+          ]
+        },
+        {
+          "exposure_weight": 0.00416696,
+          "instrument_type": "equity",
+          "market_weight": 0.00416696,
+          "raw_industry": null,
+          "raw_name": "Comcast Corp",
+          "raw_sector": null,
+          "security_id": "CUSIP:20030N101",
+          "source_identifiers": [
+            "CUSIP:20030N101"
+          ]
+        },
+        {
+          "exposure_weight": 0.00415429,
+          "instrument_type": "equity",
+          "market_weight": 0.00415429,
+          "raw_industry": null,
+          "raw_name": "Datadog Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:23804L103",
+          "source_identifiers": [
+            "CUSIP:23804L103"
+          ]
+        },
+        {
+          "exposure_weight": 0.0041175299999999995,
+          "instrument_type": "equity",
+          "market_weight": 0.0041175299999999995,
+          "raw_industry": null,
+          "raw_name": "Cintas Corp",
+          "raw_sector": null,
+          "security_id": "CUSIP:172908105",
+          "source_identifiers": [
+            "CUSIP:172908105"
+          ]
+        },
+        {
+          "exposure_weight": 0.00396465,
+          "instrument_type": "equity",
+          "market_weight": 0.00396465,
+          "raw_industry": null,
+          "raw_name": "Mondelez International Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:609207105",
+          "source_identifiers": [
+            "CUSIP:609207105"
+          ]
+        },
+        {
+          "exposure_weight": 0.0038582,
+          "instrument_type": "equity",
+          "market_weight": 0.0038582,
+          "raw_industry": null,
+          "raw_name": "Ross Stores Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:778296103",
+          "source_identifiers": [
+            "CUSIP:778296103"
+          ]
+        },
+        {
+          "exposure_weight": 0.00378285,
+          "instrument_type": "equity",
+          "market_weight": 0.00378285,
+          "raw_industry": null,
+          "raw_name": "DoorDash Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:25809K105",
+          "source_identifiers": [
+            "CUSIP:25809K105"
+          ]
+        },
+        {
+          "exposure_weight": 0.0036305599999999997,
+          "instrument_type": "equity",
+          "market_weight": 0.0036305599999999997,
+          "raw_industry": null,
+          "raw_name": "Honeywell International Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:438516205",
+          "source_identifiers": [
+            "CUSIP:438516205"
+          ]
+        },
+        {
+          "exposure_weight": 0.00356922,
+          "instrument_type": "equity",
+          "market_weight": 0.00356922,
+          "raw_industry": null,
+          "raw_name": "O'Reilly Automotive Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:67103H107",
+          "source_identifiers": [
+            "CUSIP:67103H107"
+          ]
+        },
+        {
+          "exposure_weight": 0.00340279,
+          "instrument_type": "equity",
+          "market_weight": 0.00340279,
+          "raw_industry": null,
+          "raw_name": "Regeneron Pharmaceuticals Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:75886F107",
+          "source_identifiers": [
+            "CUSIP:75886F107"
+          ]
+        },
+        {
+          "exposure_weight": 0.0034013100000000003,
+          "instrument_type": "equity",
+          "market_weight": 0.0034013100000000003,
+          "raw_industry": null,
+          "raw_name": "Synopsys Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:871607107",
+          "source_identifiers": [
+            "CUSIP:871607107"
+          ]
+        },
+        {
+          "exposure_weight": 0.00334818,
+          "instrument_type": "equity",
+          "market_weight": 0.00334818,
+          "raw_industry": null,
+          "raw_name": "PACCAR Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:693718108",
+          "source_identifiers": [
+            "CUSIP:693718108"
+          ]
+        },
+        {
+          "exposure_weight": 0.0033456399999999996,
+          "instrument_type": "equity",
+          "market_weight": 0.0033456399999999996,
+          "raw_industry": null,
+          "raw_name": "American Electric Power Co Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:025537101",
+          "source_identifiers": [
+            "CUSIP:025537101"
+          ]
+        },
+        {
+          "exposure_weight": 0.00308956,
+          "instrument_type": "equity",
+          "market_weight": 0.00308956,
+          "raw_industry": null,
+          "raw_name": "Honeywell Aerospace Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:43849R105",
+          "source_identifiers": [
+            "CUSIP:43849R105"
+          ]
+        },
+        {
+          "exposure_weight": 0.00305515,
+          "instrument_type": "equity",
+          "market_weight": 0.00305515,
+          "raw_industry": null,
+          "raw_name": "Warner Bros Discovery Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:934423104",
+          "source_identifiers": [
+            "CUSIP:934423104"
+          ]
+        },
+        {
+          "exposure_weight": 0.0030389699999999998,
+          "instrument_type": "equity",
+          "market_weight": 0.0030389699999999998,
+          "raw_industry": null,
+          "raw_name": "Airbnb Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:009066101",
+          "source_identifiers": [
+            "CUSIP:009066101"
+          ]
+        },
+        {
+          "exposure_weight": 0.00291177,
+          "instrument_type": "equity",
+          "market_weight": 0.00291177,
+          "raw_industry": null,
+          "raw_name": "Monolithic Power Systems Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:609839105",
+          "source_identifiers": [
+            "CUSIP:609839105"
+          ]
+        },
+        {
+          "exposure_weight": 0.00289212,
+          "instrument_type": "equity",
+          "market_weight": 0.00289212,
+          "raw_industry": null,
+          "raw_name": "NXP Semiconductors NV",
+          "raw_sector": null,
+          "security_id": "CUSIP:N6596X109",
+          "source_identifiers": [
+            "CUSIP:N6596X109"
+          ]
+        },
+        {
+          "exposure_weight": 0.00280323,
+          "instrument_type": "other",
+          "market_weight": 0.00280323,
+          "raw_industry": null,
+          "raw_name": "PDD Holdings Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:722304102",
+          "source_identifiers": [
+            "CUSIP:722304102"
+          ]
+        },
+        {
+          "exposure_weight": 0.00276833,
+          "instrument_type": "equity",
+          "market_weight": 0.00276833,
+          "raw_industry": null,
+          "raw_name": "Baker Hughes Co",
+          "raw_sector": null,
+          "security_id": "CUSIP:05722G100",
+          "source_identifiers": [
+            "CUSIP:05722G100"
+          ]
+        },
+        {
+          "exposure_weight": 0.00266152,
+          "instrument_type": "equity",
+          "market_weight": 0.00266152,
+          "raw_industry": null,
+          "raw_name": "Diamondback Energy Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:25278X109",
+          "source_identifiers": [
+            "CUSIP:25278X109"
+          ]
+        },
+        {
+          "exposure_weight": 0.00262122,
+          "instrument_type": "equity",
+          "market_weight": 0.00262122,
+          "raw_industry": null,
+          "raw_name": "Fastenal Co",
+          "raw_sector": null,
+          "security_id": "CUSIP:311900104",
+          "source_identifiers": [
+            "CUSIP:311900104"
+          ]
+        },
+        {
+          "exposure_weight": 0.00248878,
+          "instrument_type": "equity",
+          "market_weight": 0.00248878,
+          "raw_industry": null,
+          "raw_name": "Electronic Arts Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:285512109",
+          "source_identifiers": [
+            "CUSIP:285512109"
+          ]
+        },
+        {
+          "exposure_weight": 0.00245863,
+          "instrument_type": "equity",
+          "market_weight": 0.00245863,
+          "raw_industry": null,
+          "raw_name": "Autodesk Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:052769106",
+          "source_identifiers": [
+            "CUSIP:052769106"
+          ]
+        },
+        {
+          "exposure_weight": 0.00244606,
+          "instrument_type": "equity",
+          "market_weight": 0.00244606,
+          "raw_industry": null,
+          "raw_name": "PayPal Holdings Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:70450Y103",
+          "source_identifiers": [
+            "CUSIP:70450Y103"
+          ]
+        },
+        {
+          "exposure_weight": 0.00237556,
+          "instrument_type": "equity",
+          "market_weight": 0.00237556,
+          "raw_industry": null,
+          "raw_name": "Teradyne Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:880770102",
+          "source_identifiers": [
+            "CUSIP:880770102"
+          ]
+        },
+        {
+          "exposure_weight": 0.00235458,
+          "instrument_type": "equity",
+          "market_weight": 0.00235458,
+          "raw_industry": null,
+          "raw_name": "Coca-Cola Europacific Partners PLC",
+          "raw_sector": null,
+          "security_id": "CUSIP:G25839104",
+          "source_identifiers": [
+            "CUSIP:G25839104"
+          ]
+        },
+        {
+          "exposure_weight": 0.00233652,
+          "instrument_type": "equity",
+          "market_weight": 0.00233652,
+          "raw_industry": null,
+          "raw_name": "Xcel Energy Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:98389B100",
+          "source_identifiers": [
+            "CUSIP:98389B100"
+          ]
+        },
+        {
+          "exposure_weight": 0.0022868,
+          "instrument_type": "equity",
+          "market_weight": 0.0022868,
+          "raw_industry": null,
+          "raw_name": "Exelon Corp",
+          "raw_sector": null,
+          "security_id": "CUSIP:30161N101",
+          "source_identifiers": [
+            "CUSIP:30161N101"
+          ]
+        },
+        {
+          "exposure_weight": 0.00222678,
+          "instrument_type": "equity",
+          "market_weight": 0.00222678,
+          "raw_industry": null,
+          "raw_name": "Lumentum Holdings Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:55024U109",
+          "source_identifiers": [
+            "CUSIP:55024U109"
+          ]
+        },
+        {
+          "exposure_weight": 0.00220214,
+          "instrument_type": "equity",
+          "market_weight": 0.00220214,
+          "raw_industry": null,
+          "raw_name": "Old Dominion Freight Line Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:679580100",
+          "source_identifiers": [
+            "CUSIP:679580100"
+          ]
+        },
+        {
+          "exposure_weight": 0.00217438,
+          "instrument_type": "equity",
+          "market_weight": 0.00217438,
+          "raw_industry": null,
+          "raw_name": "Take-Two Interactive Software Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:874054109",
+          "source_identifiers": [
+            "CUSIP:874054109"
+          ]
+        },
+        {
+          "exposure_weight": 0.00213831,
+          "instrument_type": "equity",
+          "market_weight": 0.00213831,
+          "raw_industry": null,
+          "raw_name": "Ferrovial NV",
+          "raw_sector": null,
+          "security_id": "CUSIP:N3168P101",
+          "source_identifiers": [
+            "CUSIP:N3168P101"
+          ]
+        },
+        {
+          "exposure_weight": 0.00213496,
+          "instrument_type": "equity",
+          "market_weight": 0.00213496,
+          "raw_industry": null,
+          "raw_name": "IDEXX Laboratories Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:45168D104",
+          "source_identifiers": [
+            "CUSIP:45168D104"
+          ]
+        },
+        {
+          "exposure_weight": 0.00209942,
+          "instrument_type": "equity",
+          "market_weight": 0.00209942,
+          "raw_industry": null,
+          "raw_name": "Paychex Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:704326107",
+          "source_identifiers": [
+            "CUSIP:704326107"
+          ]
+        },
+        {
+          "exposure_weight": 0.00203401,
+          "instrument_type": "equity",
+          "market_weight": 0.00203401,
+          "raw_industry": null,
+          "raw_name": "Astera Labs Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:04626A103",
+          "source_identifiers": [
+            "CUSIP:04626A103"
+          ]
+        },
+        {
+          "exposure_weight": 0.00203354,
+          "instrument_type": "equity",
+          "market_weight": 0.00203354,
+          "raw_industry": null,
+          "raw_name": "Keurig Dr Pepper Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:49271V100",
+          "source_identifiers": [
+            "CUSIP:49271V100"
+          ]
+        },
+        {
+          "exposure_weight": 0.00203279,
+          "instrument_type": "equity",
+          "market_weight": 0.00203279,
+          "raw_industry": null,
+          "raw_name": "Axon Enterprise Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:05464C101",
+          "source_identifiers": [
+            "CUSIP:05464C101"
+          ]
+        },
+        {
+          "exposure_weight": 0.00195692,
+          "instrument_type": "equity",
+          "market_weight": 0.00195692,
+          "raw_industry": null,
+          "raw_name": "Roper Technologies Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:776696106",
+          "source_identifiers": [
+            "CUSIP:776696106"
+          ]
+        },
+        {
+          "exposure_weight": 0.00192553,
+          "instrument_type": "equity",
+          "market_weight": 0.00192553,
+          "raw_industry": null,
+          "raw_name": "Thomson Reuters Corp",
+          "raw_sector": null,
+          "security_id": "CUSIP:884903881",
+          "source_identifiers": [
+            "CUSIP:884903881"
+          ]
+        },
+        {
+          "exposure_weight": 0.00183855,
+          "instrument_type": "equity",
+          "market_weight": 0.00183855,
+          "raw_industry": null,
+          "raw_name": "Microchip Technology Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:595017104",
+          "source_identifiers": [
+            "CUSIP:595017104"
+          ]
+        },
+        {
+          "exposure_weight": 0.00181794,
+          "instrument_type": "equity",
+          "market_weight": 0.00181794,
+          "raw_industry": null,
+          "raw_name": "Alnylam Pharmaceuticals Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:02043Q107",
+          "source_identifiers": [
+            "CUSIP:02043Q107"
+          ]
+        },
+        {
+          "exposure_weight": 0.00161184,
+          "instrument_type": "equity",
+          "market_weight": 0.00161184,
+          "raw_industry": null,
+          "raw_name": "Rocket Lab Corp",
+          "raw_sector": null,
+          "security_id": "CUSIP:773121108",
+          "source_identifiers": [
+            "CUSIP:773121108"
+          ]
+        },
+        {
+          "exposure_weight": 0.0016048899999999999,
+          "instrument_type": "equity",
+          "market_weight": 0.0016048899999999999,
+          "raw_industry": null,
+          "raw_name": "Workday Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:98138H101",
+          "source_identifiers": [
+            "CUSIP:98138H101"
+          ]
+        },
+        {
+          "exposure_weight": 0.0015566199999999999,
+          "instrument_type": "equity",
+          "market_weight": 0.0015566199999999999,
+          "raw_industry": null,
+          "raw_name": "Kraft Heinz Co/The",
+          "raw_sector": null,
+          "security_id": "CUSIP:500754106",
+          "source_identifiers": [
+            "CUSIP:500754106"
+          ]
+        },
+        {
+          "exposure_weight": 0.00155522,
+          "instrument_type": "equity",
+          "market_weight": 0.00155522,
+          "raw_industry": null,
+          "raw_name": "GE HealthCare Technologies Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:36266G107",
+          "source_identifiers": [
+            "CUSIP:36266G107"
+          ]
+        },
+        {
+          "exposure_weight": 0.00155319,
+          "instrument_type": "equity",
+          "market_weight": 0.00155319,
+          "raw_industry": null,
+          "raw_name": "Nebius Group NV",
+          "raw_sector": null,
+          "security_id": "CUSIP:N97284108",
+          "source_identifiers": [
+            "CUSIP:N97284108"
+          ]
+        },
+        {
+          "exposure_weight": 0.00154446,
+          "instrument_type": "fund",
+          "market_weight": 0.00154446,
+          "raw_industry": null,
+          "raw_name": "Invesco Government & Agency Portfolio",
+          "raw_sector": null,
+          "security_id": "CUSIP:825252885",
+          "source_identifiers": [
+            "CUSIP:825252885"
+          ]
+        },
+        {
+          "exposure_weight": 0.00146745,
+          "instrument_type": "equity",
+          "market_weight": 0.00146745,
+          "raw_industry": null,
+          "raw_name": "Strategy Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:594972408",
+          "source_identifiers": [
+            "CUSIP:594972408"
+          ]
+        },
+        {
+          "exposure_weight": 0.0014619573769178002,
+          "instrument_type": "derivative",
+          "market_weight": 0.00146196,
+          "raw_industry": null,
+          "raw_name": "CME E-Mini NASDAQ 100 Index Future",
+          "raw_sector": null,
+          "security_id": "MANAGER:NQU6.IFUT",
+          "source_identifiers": [
+            "MANAGER:NQU6.IFUT"
+          ]
+        },
+        {
+          "exposure_weight": 0.001378,
+          "instrument_type": "equity",
+          "market_weight": 0.001378,
+          "raw_industry": null,
+          "raw_name": "Dexcom Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:252131107",
+          "source_identifiers": [
+            "CUSIP:252131107"
+          ]
+        },
+        {
+          "exposure_weight": 0.0013561,
+          "instrument_type": "equity",
+          "market_weight": 0.0013561,
+          "raw_industry": null,
+          "raw_name": "Copart Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:217204106",
+          "source_identifiers": [
+            "CUSIP:217204106"
+          ]
+        },
+        {
+          "exposure_weight": 0.0012937299999999999,
+          "instrument_type": "equity",
+          "market_weight": 0.0012937299999999999,
+          "raw_industry": null,
+          "raw_name": "CoreWeave Inc",
+          "raw_sector": null,
+          "security_id": "CUSIP:21873S108",
+          "source_identifiers": [
+            "CUSIP:21873S108"
+          ]
+        },
+        {
+          "exposure_weight": 0.0,
+          "instrument_type": "cash",
+          "market_weight": 0.0002119,
+          "raw_industry": null,
+          "raw_name": "CASH COLLATERAL",
+          "raw_sector": null,
+          "security_id": "MANAGER:FUTPLGCSH.CURRCOL",
+          "source_identifiers": [
+            "MANAGER:FUTPLGCSH.CURRCOL"
+          ]
+        },
+        {
+          "exposure_weight": 0.0,
+          "instrument_type": "cash",
+          "market_weight": 2.3e-07,
+          "raw_industry": null,
+          "raw_name": "CASH & EQUIVALENTS",
+          "raw_sector": null,
+          "security_id": "MANAGER:CASHUSD00.CURR",
+          "source_identifiers": [
+            "MANAGER:CASHUSD00.CURR"
+          ]
+        },
+        {
+          "exposure_weight": 0.0,
+          "instrument_type": "cash",
+          "market_weight": 0.0,
+          "raw_industry": null,
+          "raw_name": "SECURITIES LENDING - BNYM",
+          "raw_sector": null,
+          "security_id": "MANAGER:BNYMLEND.UCURR",
+          "source_identifiers": [
+            "MANAGER:BNYMLEND.UCURR"
+          ]
+        },
+        {
+          "exposure_weight": 0.0,
+          "instrument_type": "cash",
+          "market_weight": -0.00146196,
+          "raw_industry": null,
+          "raw_name": "CONTRA FUTURE NASDAQ 100 E-MINI SEP26NQU6",
+          "raw_sector": null,
+          "security_id": "MANAGER:NQU6.SYN",
+          "source_identifiers": [
+            "MANAGER:NQU6.SYN"
+          ]
+        },
+        {
+          "exposure_weight": 0.0,
+          "instrument_type": "cash",
+          "market_weight": 0.0,
+          "raw_industry": null,
+          "raw_name": "USD Pending Dividends",
+          "raw_sector": null,
+          "security_id": "MANAGER:USDPDV.CURR",
+          "source_identifiers": [
+            "MANAGER:USDPDV.CURR"
+          ]
+        }
+      ],
+      "retrieved_at": "2026-07-31T02:35:37+09:00",
+      "source_as_of": "2026-07-29",
+      "source_file": "raw/QQQM.json",
+      "source_format": "invesco-json-v1",
+      "source_name": "Invesco holdings API",
+      "source_sha256": "74c7dd3d103bb00fdf16f4d168e6d992b9024c1018853ec2115340d6787516bc",
+      "source_url": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/46138G649/holdings/fund?idType=cusip&productType=ETF",
+      "status": "complete",
+      "ticker": "QQQM"
+    },
+    {
+      "failure_reason": null,
+      "holdings": [
+        {
+          "exposure_weight": 0.08929999999999999,
+          "instrument_type": "equity",
+          "market_weight": 0.08929999999999999,
+          "raw_industry": null,
+          "raw_name": "NVIDIA CORP",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:NVDA",
+          "source_identifiers": [
+            "TICKER:NVDA"
+          ]
+        },
+        {
+          "exposure_weight": 0.08259999999999999,
+          "instrument_type": "equity",
+          "market_weight": 0.08259999999999999,
+          "raw_industry": null,
+          "raw_name": "ADVANCED MICRO DEVICES INC",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:AMD",
+          "source_identifiers": [
+            "TICKER:AMD"
+          ]
+        },
+        {
+          "exposure_weight": 0.08220000000000001,
+          "instrument_type": "equity",
+          "market_weight": 0.08220000000000001,
+          "raw_industry": null,
+          "raw_name": "BROADCOM INC",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:AVGO",
+          "source_identifiers": [
+            "TICKER:AVGO"
+          ]
+        },
+        {
+          "exposure_weight": 0.0755,
+          "instrument_type": "equity",
+          "market_weight": 0.0755,
+          "raw_industry": null,
+          "raw_name": "MICRON TECHNOLOGY INC",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:MU",
+          "source_identifiers": [
+            "TICKER:MU"
+          ]
+        },
+        {
+          "exposure_weight": 0.0512,
+          "instrument_type": "equity",
+          "market_weight": 0.0512,
+          "raw_industry": null,
+          "raw_name": "INTEL CORPORATION",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:INTC",
+          "source_identifiers": [
+            "TICKER:INTC"
+          ]
+        },
+        {
+          "exposure_weight": 0.0481,
+          "instrument_type": "equity",
+          "market_weight": 0.0481,
+          "raw_industry": null,
+          "raw_name": "APPLIED MATERIAL INC",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:AMAT",
+          "source_identifiers": [
+            "TICKER:AMAT"
+          ]
+        },
+        {
+          "exposure_weight": 0.0462,
+          "instrument_type": "equity",
+          "market_weight": 0.0462,
+          "raw_industry": null,
+          "raw_name": "TAIWAN SEMICONDUCTOR MANUFACTURING",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:TSM",
+          "source_identifiers": [
+            "TICKER:TSM"
+          ]
+        },
+        {
+          "exposure_weight": 0.044000000000000004,
+          "instrument_type": "equity",
+          "market_weight": 0.044000000000000004,
+          "raw_industry": null,
+          "raw_name": "TEXAS INSTRUMENT INC",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:TXN",
+          "source_identifiers": [
+            "TICKER:TXN"
+          ]
+        },
+        {
+          "exposure_weight": 0.043899999999999995,
+          "instrument_type": "equity",
+          "market_weight": 0.043899999999999995,
+          "raw_industry": null,
+          "raw_name": "KLA CORP",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:KLAC",
+          "source_identifiers": [
+            "TICKER:KLAC"
+          ]
+        },
+        {
+          "exposure_weight": 0.0424,
+          "instrument_type": "equity",
+          "market_weight": 0.0424,
+          "raw_industry": null,
+          "raw_name": "ANALOG DEVICES INC",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:ADI",
+          "source_identifiers": [
+            "TICKER:ADI"
+          ]
+        },
+        {
+          "exposure_weight": 0.0395,
+          "instrument_type": "equity",
+          "market_weight": 0.0395,
+          "raw_industry": null,
+          "raw_name": "MARVELL TECHNOLOGY INC",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:MRVL",
+          "source_identifiers": [
+            "TICKER:MRVL"
+          ]
+        },
+        {
+          "exposure_weight": 0.0393,
+          "instrument_type": "equity",
+          "market_weight": 0.0393,
+          "raw_industry": null,
+          "raw_name": "LAM RESEARCH CORP",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:LRCX",
+          "source_identifiers": [
+            "TICKER:LRCX"
+          ]
+        },
+        {
+          "exposure_weight": 0.037200000000000004,
+          "instrument_type": "equity",
+          "market_weight": 0.037200000000000004,
+          "raw_industry": null,
+          "raw_name": "NXP SEMICONDUCTORS NV",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:NXPI",
+          "source_identifiers": [
+            "TICKER:NXPI"
+          ]
+        },
+        {
+          "exposure_weight": 0.0365,
+          "instrument_type": "equity",
+          "market_weight": 0.0365,
+          "raw_industry": null,
+          "raw_name": "MONOLITHIC POWER SYSTEMS INC",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:MPWR",
+          "source_identifiers": [
+            "TICKER:MPWR"
+          ]
+        },
+        {
+          "exposure_weight": 0.0308,
+          "instrument_type": "equity",
+          "market_weight": 0.0308,
+          "raw_industry": null,
+          "raw_name": "QUALCOMM INC",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:QCOM",
+          "source_identifiers": [
+            "TICKER:QCOM"
+          ]
+        },
+        {
+          "exposure_weight": 0.030699999999999998,
+          "instrument_type": "equity",
+          "market_weight": 0.030699999999999998,
+          "raw_industry": null,
+          "raw_name": "TERADYNE INC",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:TER",
+          "source_identifiers": [
+            "TICKER:TER"
+          ]
+        },
+        {
+          "exposure_weight": 0.0248,
+          "instrument_type": "equity",
+          "market_weight": 0.0248,
+          "raw_industry": null,
+          "raw_name": "ASML HOLDING ADR REPRESENTING NV",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:ASML",
+          "source_identifiers": [
+            "TICKER:ASML"
+          ]
+        },
+        {
+          "exposure_weight": 0.023399999999999997,
+          "instrument_type": "equity",
+          "market_weight": 0.023399999999999997,
+          "raw_industry": null,
+          "raw_name": "MICROCHIP TECHNOLOGY INC",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:MCHP",
+          "source_identifiers": [
+            "TICKER:MCHP"
+          ]
+        },
+        {
+          "exposure_weight": 0.0216,
+          "instrument_type": "equity",
+          "market_weight": 0.0216,
+          "raw_industry": null,
+          "raw_name": "ASTERA LABS INC",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:ALAB",
+          "source_identifiers": [
+            "TICKER:ALAB"
+          ]
+        },
+        {
+          "exposure_weight": 0.019,
+          "instrument_type": "equity",
+          "market_weight": 0.019,
+          "raw_industry": null,
+          "raw_name": "ON SEMICONDUCTOR CORP",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:ON",
+          "source_identifiers": [
+            "TICKER:ON"
+          ]
+        },
+        {
+          "exposure_weight": 0.0181,
+          "instrument_type": "equity",
+          "market_weight": 0.0181,
+          "raw_industry": null,
+          "raw_name": "CREDO TECHNOLOGY GROUP HOLDING LTD",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:CRDO",
+          "source_identifiers": [
+            "TICKER:CRDO"
+          ]
+        },
+        {
+          "exposure_weight": 0.0116,
+          "instrument_type": "equity",
+          "market_weight": 0.0116,
+          "raw_industry": null,
+          "raw_name": "ASE TECHNOLOGY HOLDING ADR REP",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:ASX",
+          "source_identifiers": [
+            "TICKER:ASX"
+          ]
+        },
+        {
+          "exposure_weight": 0.01,
+          "instrument_type": "equity",
+          "market_weight": 0.01,
+          "raw_industry": null,
+          "raw_name": "ENTEGRIS INC",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:ENTG",
+          "source_identifiers": [
+            "TICKER:ENTG"
+          ]
+        },
+        {
+          "exposure_weight": 0.0097,
+          "instrument_type": "equity",
+          "market_weight": 0.0097,
+          "raw_industry": null,
+          "raw_name": "MACOM TECHNOLOGY SOLUTIONS INC",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:MTSI",
+          "source_identifiers": [
+            "TICKER:MTSI"
+          ]
+        },
+        {
+          "exposure_weight": 0.0088,
+          "instrument_type": "equity",
+          "market_weight": 0.0088,
+          "raw_industry": null,
+          "raw_name": "UNITED MICROELECTRONICS ADR REP",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:UMC",
+          "source_identifiers": [
+            "TICKER:UMC"
+          ]
+        },
+        {
+          "exposure_weight": 0.0072,
+          "instrument_type": "equity",
+          "market_weight": 0.0072,
+          "raw_industry": null,
+          "raw_name": "NOVA LTD",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:NVMI",
+          "source_identifiers": [
+            "TICKER:NVMI"
+          ]
+        },
+        {
+          "exposure_weight": 0.006999999999999999,
+          "instrument_type": "equity",
+          "market_weight": 0.006999999999999999,
+          "raw_industry": null,
+          "raw_name": "STMICROELECTRONICS ADR NV",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:STM",
+          "source_identifiers": [
+            "TICKER:STM"
+          ]
+        },
+        {
+          "exposure_weight": 0.0069,
+          "instrument_type": "equity",
+          "market_weight": 0.0069,
+          "raw_industry": null,
+          "raw_name": "ARM HOLDINGS AMERICAN DEPOSITARY S",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:ARM",
+          "source_identifiers": [
+            "TICKER:ARM"
+          ]
+        },
+        {
+          "exposure_weight": 0.005699999999999999,
+          "instrument_type": "equity",
+          "market_weight": 0.005699999999999999,
+          "raw_industry": null,
+          "raw_name": "SKYWORKS SOLUTIONS INC",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:SWKS",
+          "source_identifiers": [
+            "TICKER:SWKS"
+          ]
+        },
+        {
+          "exposure_weight": 0.0055000000000000005,
+          "instrument_type": "equity",
+          "market_weight": 0.0055000000000000005,
+          "raw_industry": null,
+          "raw_name": "RAMBUS INC",
+          "raw_sector": "Information Technology",
+          "security_id": "TICKER:RMBS",
+          "source_identifiers": [
+            "TICKER:RMBS"
+          ]
+        },
+        {
+          "exposure_weight": 0.0012,
+          "instrument_type": "fund",
+          "market_weight": 0.0012,
+          "raw_industry": null,
+          "raw_name": "BLK CSH FND TREASURY SL AGENCY",
+          "raw_sector": "Cash and/or Derivatives",
+          "security_id": "TICKER:XTSLA",
+          "source_identifiers": [
+            "TICKER:XTSLA"
+          ]
+        },
+        {
+          "exposure_weight": 0.0,
+          "instrument_type": "cash",
+          "market_weight": 0.0001,
+          "raw_industry": null,
+          "raw_name": "CASH COLLATERAL USD WFFUT",
+          "raw_sector": "Cash and/or Derivatives",
+          "security_id": "TICKER:WFFUT",
+          "source_identifiers": [
+            "TICKER:WFFUT"
+          ]
+        },
+        {
+          "exposure_weight": 0.0,
+          "instrument_type": "cash",
+          "market_weight": 0.0001,
+          "raw_industry": null,
+          "raw_name": "USD CASH",
+          "raw_sector": "Cash and/or Derivatives",
+          "security_id": "TICKER:USD",
+          "source_identifiers": [
+            "TICKER:USD"
+          ]
+        },
+        {
+          "exposure_weight": 0.0012966798887611745,
+          "instrument_type": "derivative",
+          "market_weight": 0.0,
+          "raw_industry": null,
+          "raw_name": "EMINI TECHNOLOGY SELECT SECTOR SEP",
+          "raw_sector": "Cash and/or Derivatives",
+          "security_id": "TICKER:IXTU6",
+          "source_identifiers": [
+            "TICKER:IXTU6"
+          ]
+        }
+      ],
+      "retrieved_at": "2026-07-31T02:35:37+09:00",
+      "source_as_of": "2026-07-29",
+      "source_file": "raw/SOXX.csv",
+      "source_format": "ishares-csv-v1",
+      "source_name": "iShares latest holdings CSV",
+      "source_sha256": "476eeeaeb3a7838ea7d975efd225c57b0eb6843d8d9ad84f3b6c492f03e28c06",
+      "source_url": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv",
+      "status": "complete",
+      "ticker": "SOXX"
+    }
+  ],
+  "gates": {
+    "full_classification_coverage": false,
+    "full_issuer_coverage": false,
+    "issuer_at_or_below_10": false,
+    "no_active_orders": true,
+    "semiconductor_at_or_below_15": false,
+    "sources_complete_same_date": false,
+    "soxx_at_or_below_3": false,
+    "technology_below_50": true
+  },
+  "issuer_registry_path": "issuer-registry.json",
+  "issuer_registry_sha256": "ccd07c14969e5fb4bc8c811158b2e8be65b8460618f026ad188601b2b265a518",
+  "mapping_path": "mapping.json",
+  "mapping_sha256": "d99433fcfdfd98276ffc65dffba614cd790575e649ecbd6fe5030aa6cf2c24be",
+  "metrics": {
+    "classification_coverage_ratio": 0.0,
+    "classification_unknown_weight": 0.46926587110548684,
+    "gross_lookthrough_exposure": 0.46926587110548684,
+    "issuer_coverage_ratio": 0.0,
+    "issuer_unknown_weight": 0.46926587110548684,
+    "max_issuer_known_weight": 0.0,
+    "max_issuer_upper_bound": 0.46926587110548684,
+    "semiconductor_known_weight": 0.0,
+    "semiconductor_upper_bound": 0.46926587110548684,
+    "technology_known_weight": 0.0,
+    "technology_upper_bound": 0.46926587110548684
+  },
+  "observed_at": "2026-07-31T02:35:38+09:00",
+  "packet_id": "lookthrough-2026-07-31-first-production",
+  "packet_sha256": "83433d186e7cce632c6ee6b4822403b8d604c3c41c25b994216c056a6d506eda",
+  "portfolio_weights": {
+    "QQQM": 0.19529684636531014,
+    "SOXX": 0.07615462693154149,
+    "SPYM": 0.19167612283590557,
+    "cash": 0.531069343091306,
+    "other": 0.005803060775936781
+  },
+  "review_date": "2026-07-31",
+  "schema_version": "1.4",
+  "verdict": "DATA INCOMPLETE",
+  "weight_basis": "current"
+}
