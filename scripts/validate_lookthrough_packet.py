@@ -475,6 +475,23 @@ def load_mapping(
             validate_components(components, label)
         by_security[security_id] = record
 
+    for record in records:
+        components = record["derivative_components"]
+        if components is None:
+            continue
+        for component in components:
+            security_id = component["security_id"]
+            target = by_security.get(security_id)
+            if target is None:
+                fail(
+                    f"mapping derivative component is absent from the same snapshot: "
+                    f"{security_id}"
+                )
+            if target["derivative_components"] is not None:
+                fail(
+                    f"mapping derivative component must resolve directly: {security_id}"
+                )
+
     authority = load_authority(
         CLASSIFICATION_AUTHORITY_PATH, "classification authority", allow_test=allow_test
     )
@@ -850,6 +867,34 @@ def raw_source_path(bundle: Path, ticker: str, value: object) -> Path:
     return path
 
 
+def validate_bundle_layout(bundle: Path, expected_raw_paths: set[Path]) -> None:
+    expected_top_level = {
+        "packet.json",
+        "account.json",
+        "candidate.json",
+        "issuer-registry.json",
+        "mapping.json",
+        "raw",
+    }
+    actual_top_level = {entry.name for entry in bundle.iterdir()}
+    if actual_top_level != expected_top_level:
+        fail(
+            "bundle files must exactly match the evidence contract; "
+            f"missing={sorted(expected_top_level - actual_top_level)}, "
+            f"extra={sorted(actual_top_level - expected_top_level)}"
+        )
+    raw_dir = bundle / "raw"
+    if raw_dir.is_symlink() or not raw_dir.is_dir():
+        fail("bundle raw must be a regular directory")
+    actual_raw_paths = set()
+    for entry in raw_dir.iterdir():
+        if entry.is_symlink() or not entry.is_file():
+            fail(f"bundle raw may contain only regular source files: {entry.name}")
+        actual_raw_paths.add(entry.resolve())
+    if actual_raw_paths != expected_raw_paths:
+        fail("bundle raw files must exactly match complete fund source_file references")
+
+
 def reconcile_parsed_holdings(ticker: str, reported: object, parsed: list[dict]) -> None:
     if not isinstance(reported, list) or len(reported) != len(parsed):
         fail(f"{ticker}.holdings must contain every parser-derived source row")
@@ -910,7 +955,7 @@ def expand_mapping(
     record: dict,
     mapping: dict[str, dict],
     issuer_registry: dict[str, dict[str, str]],
-) -> list[tuple[str, str, str, float]]:
+) -> list[tuple[str | None, str, str, float]]:
     components = record["derivative_components"]
     if components is None:
         security_id = record["security_id"]
@@ -931,15 +976,13 @@ def expand_mapping(
         security_id = item["security_id"]
         component_mapping = mapping.get(security_id)
         identity = issuer_registry.get(security_id)
-        if component_mapping is None or identity is None:
-            fail(
-                f"derivative component {security_id} must exist in both mapping and issuer registry"
-            )
+        if component_mapping is None:
+            fail(f"derivative component {security_id} must exist in mapping")
         if component_mapping["derivative_components"] is not None:
             fail(f"derivative component {security_id} must resolve to a direct security")
         expanded.append(
             (
-                identity["issuer_group_id"],
+                identity["issuer_group_id"] if identity is not None else None,
                 component_mapping["normalized_sector"],
                 component_mapping["normalized_industry"],
                 float(item["weight"]) / total,
@@ -1153,7 +1196,8 @@ def evaluate(
     source_dates = set()
     complete_source_count = 0
     issuer_weights: dict[str, float] = {}
-    tech_known = semi_known = issuer_unknown = class_unknown = gross = 0.0
+    tech_known = semi_known = 0.0
+    issuer_unknown = class_unknown = gross = portfolio_weights["other"]
     seen_source_files = set()
 
     for ticker in FUNDS:
@@ -1300,7 +1344,10 @@ def evaluate(
                 record, mapping, issuer_registry
             ):
                 part = contribution * fraction
-                issuer_weights[issuer] = issuer_weights.get(issuer, 0.0) + part
+                if issuer is None:
+                    issuer_unknown += part
+                else:
+                    issuer_weights[issuer] = issuer_weights.get(issuer, 0.0) + part
                 if sector == TECH:
                     tech_known += part
                 if industry == SEMI:
@@ -1310,6 +1357,7 @@ def evaluate(
         if exposure_sum < MIN_FUND_ECONOMIC_EXPOSURE - ROUNDING_TOLERANCE:
             fail(f"{ticker} parsed economic exposure is below 95% of fund NAV")
 
+    validate_bundle_layout(bundle, seen_source_files)
     sources_complete_same_date = complete_source_count == len(FUNDS) and len(source_dates) == 1
     if gross <= EPS:
         fail("gross look-through exposure must be positive")
@@ -1632,6 +1680,7 @@ def sample(root: Path) -> tuple[dict, Path]:
         else:
             source_file = f"raw/{ticker}.csv"
             source_table = [
+                ["iShares Semiconductor ETF"],
                 ["Fund Holdings as of", "Jul 29, 2026"],
                 headers,
                 *source_rows,
@@ -1744,6 +1793,7 @@ def sample(root: Path) -> tuple[dict, Path]:
         "test_only": True,
     }
     packet_path = bundle / "packet.json"
+    write_fixture(packet_path, packet)
     metrics, gates, verdict = evaluate(packet, packet_path, allow_test=True)
     packet["metrics"] = metrics
     packet["gates"] = gates
@@ -1928,6 +1978,26 @@ def validate_authority_catalogs() -> None:
         or not isinstance(classification["records"], list)
     ):
         fail("classification authority metadata is invalid")
+
+    issuer_securities = {
+        item.get("security_id"): item
+        for item in issuer["securities"]
+        if isinstance(item, dict)
+    }
+    for record in classification["records"]:
+        if not isinstance(record, dict):
+            continue
+        for component in record.get("derivative_components") or []:
+            security_id = component.get("security_id")
+            identity = issuer_securities.get(security_id)
+            if (
+                identity is None
+                or identity.get("canonical_security_id") != security_id
+            ):
+                fail(
+                    "classification authority derivative component must be a "
+                    f"canonical security in issuer authority: {security_id}"
+                )
 
     with tempfile.TemporaryDirectory(prefix="lookthrough-authority-") as tmp:
         root = Path(tmp)
