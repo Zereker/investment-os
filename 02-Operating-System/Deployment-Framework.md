@@ -14,7 +14,7 @@
 - \(V\)：\(F\) 到账后、交易前的账户净值；
 - \(C_0\)：包含 \(F\)、全部例行订单前的投资组合现金；
 - \(G_0\)：按QQQM 28%与SPYM \(57\%-A_{basis}\)计算的Routine DCA前正缺口；
-- \(D_{max}=\min(F,G_0)\)：估值过滤前的Routine DCA上限；\(D\le D_{max}\)是应用每只Core估值新增资格后的实际买入额；\(F-D\)留在现金；
+- \(D_{max}=\min(F,G_0)\)：Routine DCA上限；\(D\le D_{max}\)按每只Core正缺口分配，估值不得关闭\(D\)；\(F-D\)留在现金；
 - \(C=C_0-D\)：执行 Routine DCA 后的预计现金；
 - \(G\)：分配 \(D\) 后 SPYM 与 QQQM 的剩余正缺口合计；
 - \(R\)：到 2028-12（含）剩余的月度执行次数，最小为 1；
@@ -33,7 +33,7 @@ B=\min\left(\frac{S}{R},G\right)
 - 资金只进入 SPYM / QQQM 正缺口；
 - Data Gate、订单冲突和执行检查通过。
 
-先计算未经估值过滤的理论基线，再按 `ETF-Valuation-Framework.md` 对每只Core应用新增资格。`CHEAP / FAIR`可执行`B`，`EXPENSIVE / VERY EXPENSIVE / N/A`的`B=0`。若账户数据不完整、没有Core正缺口或现金已不高于目标，则全部`B=0`。
+先计算理论基线，再按`ETF-Valuation-Framework.md`应用资金权限。`CHEAP / FAIR / EXPENSIVE / N/A`均不因估值关闭`B`；只有生产级高质量信号确认`VERY EXPENSIVE`时才可延缓对应标的`B`。若账户数据不完整、没有Core正缺口或现金已不高于目标，则全部`B=0`。
 
 ## 2. 价格与估值的职责
 
@@ -51,9 +51,10 @@ B=\min\left(\frac{S}{R},G\right)
 |---|---|---|---|
 | `CHEAP` | 允许 | 允许 | 可提交完整IC |
 | `FAIR` | 允许 | 允许 | 0 |
-| `EXPENSIVE` | 允许 | 0 | 0 |
-| `VERY EXPENSIVE` | 0 | 0 | 0 |
-| `N/A / DATA INCOMPLETE` | 允许 | 0 | 0 |
+| `EXPENSIVE` | 允许 | 允许 | 0 |
+| `VERY EXPENSIVE`（生产级） | 允许 | 可延缓 | 0 |
+| `N/A / VALUATION UNAVAILABLE` | 允许 | 允许 | 0 |
+| `PROXY CAUTION` | 允许 | 允许 | 0 |
 
 以上只适用于SPYM / QQQM正缺口。SOXX沿用Alpha、Registry、Data Gate和完整IC路径，估值等级不授权追加。
 
