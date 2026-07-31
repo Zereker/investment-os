@@ -1,0 +1,15 @@
+{
+  "account_snapshot_id": "ibkr-2026-07-31-production-2",
+  "active_order_count": 0,
+  "current_market_values": {
+    "QQQM": 17046.599121,
+    "SOXX": 6732.7003172,
+    "SPYM": 16649.6994775,
+    "cash": 45835.8574,
+    "other": 447.1360843000005
+  },
+  "nav": 86711.9924,
+  "observed_at": "2026-07-31T10:50:11+09:00",
+  "schema_version": "1.1",
+  "source": "Interactive Brokers"
+}
