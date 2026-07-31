@@ -36,8 +36,8 @@ IBKR Positions 返回的单项市值。持仓真相以 Positions 为准。
 ### routine_core_gap_before_usd
 月度符号 \(G_0\)。在 \(F\) 到账后，按 QQQM 28% 与 SPYM \(57\%-A_{basis}\) 动态目标计算的 Routine DCA 前正缺口合计。
 
-### routine_core_purchase_usd
-月度符号 \(D\)。定义为 \(D=\min(F,G_0)\)。\(F-D\) 必须保留为现金，不得因默认 2,000 美元计划额而强制买入。
+### routine_core_purchase_limit_usd / routine_core_purchase_usd
+月度符号\(D_{max}\)与\(D\)。\(D_{max}=\min(F,G_0)\)是估值过滤前的Routine DCA上限；\(D\le D_{max}\)是按每只Core的最终估值等级应用新增资格后的实际买入额。\(F-D\)必须保留为现金，不得因默认2,000美元计划额而强制买入。
 
 ### strategic_excess_cash_usd / strategic_core_gap_after_usd / strategic_baseline_usd
 分别对应 \(S\)、\(G\) 与 \(B\)。其中 \(S=\max(C-(15\%+U)\times V,0)\)，\(G\) 是执行 \(D\) 后 Core 剩余正缺口，\(B=\min(S/R,G)\)。
@@ -62,8 +62,20 @@ Invesco QQQM 官方页的 `Price/Earnings Ratio`，要求页面可稳定提取�
 ### nasdaq100_forward_pe
 Invesco QQQM 官方页的 `Forward Price/Earnings Ratio`。使用 QQQ 作为代理时，必须为同一日期、同一指数并标记 `proxy=true`。
 
-### pe_percentile_10y
-同一指数、同一 PE 定义、同一数据源的 10 年历史百分位。当前没有合格生产数据源，状态固定为 Red，不得进入 Tactical Opportunity Score；其缺失只令 \(T=0\)。
+### forward_pe_percentile
+当前Forward P/E在同一ETF/指数、同一P/E定义和同一来源历史序列中的百分位。历史窗口优先10年；最低为连续5年、60个互不重复的历史月末观察值。当前值不得放入历史分布，不得混接Trailing P/E或不同供应商定义。
+
+### forward_eps_growth / forward_eps_revision_3m
+未来12个月EPS增长率，以及相同预测口径在过去三个月的变化率。`forward_eps_growth > 0`且`forward_eps_revision_3m ≥ 0`才构成盈利支持；缺失不能假定为零或正值。
+
+### us10y_yield / earnings_yield_spread
+`us10y_yield`使用FRED DGS10或已登记美国财政部官方序列。`earnings_yield_spread = 1 / forward_pe − us10y_yield`，两项均以小数计算并保留`source_as_of`。该利差只确认相对无风险收益的补偿，不单独定义贵便宜。
+
+### valuation_tier / valuation_confidence
+`valuation_tier`只允许`CHEAP / FAIR / EXPENSIVE / VERY EXPENSIVE / N/A`，基础等级由Forward P/E自身历史百分位按`<20 / 20–70 / 70–90 / ≥90`确定。盈利和利率确认只能维持或保守上调一级，不能把等级改得更便宜。`valuation_confidence`记录`HIGH / LOW / MIXED / DATA INCOMPLETE`。
+
+### valuation_action
+只允许`ADD / HOLD / PAUSE / REVIEW`。它按最终等级、正缺口、现金、订单和生命周期共同生成；估值等级本身不得生成卖出。
 
 ## Policy Benchmark 字段
 
@@ -181,6 +193,6 @@ W_{semi}=\sum_{i:\ normalized\_industry(i)=\text{Semiconductors \& Semiconductor
 ## 缺失值规则
 
 - Markdown 快照使用 `N/A`，不得写 `0`。
-- 缺失或 Red 估值字段不得进入 Tactical Opportunity Score，只关闭战术加速 \(T\)。
+- 缺失或Red估值字段不得猜测等级；SPYM/QQQM只允许Routine DCA `D`，`B=T=0`。SOXX继续受Alpha/Data Gate约束。
 - 缺失或 Red 穿透字段不得被当作零暴露；按覆盖率与上下界规则冻结可能增加相关集中度的新增风险。
 - 旧快照可用于审计，不可冒充当前估值或穿透暴露。
