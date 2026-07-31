@@ -78,10 +78,9 @@ v3.3的以下基础继续有效：
 - `06-Lessons/`：长期有效的经验
 - `07-Releases/`：版本说明
 - `08-Data/`：Production 数据注册表、字段定义、质量闸门和快照
-- `Archive/`：旧规则与历史运行记录，仅供追溯
 
 ## 优先级
 
-发生冲突时：投资政策声明 → Constitution → Operating System → Transition Dashboard → Journal。`PRODUCTION.md` 负责执行契约和入口，不覆盖以上策略优先级。聊天记录、Research 和 Archive 不具有现行规则效力。
+发生冲突时：投资政策声明 → Constitution → Operating System → Transition Dashboard → Journal。`PRODUCTION.md` 负责执行契约和入口，不覆盖以上策略优先级。聊天记录和 Research 不具有现行规则效力。
 
 本仓库用于个人决策纪律与记录，不构成面向他人的投资建议。
