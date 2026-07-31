@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 import math
 import re
 import zipfile
@@ -19,9 +20,11 @@ class SourceParseError(ValueError):
 
 SOURCE_FORMATS = {
     "SPYM": "ssga-xlsx-v1",
-    "QQQM": "invesco-csv-v1",
+    "QQQM": "invesco-json-v1",
     "SOXX": "ishares-csv-v1",
 }
+QQQM_CUSIP = "46138G649"
+SOXX_PRODUCT_NAME = "iShares Semiconductor ETF"
 DATE_PATTERNS = (
     re.compile(
         r"(?:holdings|portfolio)\s*:?\s*as\s+of[,:]?\s*[\"']?"
@@ -90,6 +93,7 @@ HEADER_ALIASES = {
         "percent of fund",
         "percentage of fund",
         "holding weight",
+        "% tna",
     },
     "market_value": {"market value", "marketvalue"},
     "notional_value": {"notional value", "notionalvalue", "notional"},
@@ -98,6 +102,15 @@ HEADER_ALIASES = {
 
 def _fail(message: str) -> None:
     raise SourceParseError(message)
+
+
+def _strict_json_object(pairs: list[tuple[str, object]]) -> dict:
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            _fail(f"archived Invesco JSON has duplicate key: {key}")
+        result[key] = value
+    return result
 
 
 def _clean(value: object) -> str:
@@ -196,9 +209,11 @@ def _cell(row: list[object], columns: dict[str, int], key: str) -> str:
 
 def _instrument(asset_class: str, ticker: str, name: str) -> str:
     value = f"{asset_class} {ticker} {name}".lower()
+    if any(token in value for token in ("synthetic cash", "contra future")):
+        return "cash"
     if any(token in value for token in ("future", "option", "swap", "forward")):
         return "derivative"
-    if any(token in value for token in ("cash collateral", "margin", "cash")):
+    if any(token in value for token in ("cash collateral", "margin", "cash", "currency")):
         return "cash"
     if any(token in value for token in ("money market", "mutual fund", " etf", "fund")):
         return "fund"
@@ -365,6 +380,73 @@ def _csv_rows(path: Path) -> tuple[str, list[list[str]]]:
     return text, list(csv.reader(io.StringIO(text)))
 
 
+def _invesco_json_rows(path: Path) -> tuple[str, list[list[object]]]:
+    try:
+        raw = path.read_bytes()
+        text = raw.decode("utf-8")
+        payload = json.loads(text, object_pairs_hook=_strict_json_object)
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise SourceParseError(f"archived Invesco JSON is not readable: {exc}") from exc
+    if not isinstance(payload, dict):
+        _fail("archived Invesco JSON root must be an object")
+    if _clean(payload.get("cusip")).upper() != QQQM_CUSIP:
+        _fail(f"archived Invesco JSON is not QQQM CUSIP {QQQM_CUSIP}")
+    effective_date = _clean(payload.get("effectiveDate"))
+    parsed_effective_date = _parse_date_value(effective_date)
+    if parsed_effective_date is None:
+        _fail("archived Invesco JSON has no recognized effectiveDate")
+    business_date = _parse_date_value(_clean(payload.get("effectiveBusinessDate")))
+    if business_date is None or business_date != parsed_effective_date:
+        _fail("archived Invesco JSON effectiveBusinessDate must equal effectiveDate")
+    holdings = payload.get("holdings")
+    if not isinstance(holdings, list) or not holdings:
+        _fail("archived Invesco JSON has no holdings array")
+    declared_count = payload.get("totalNumberOfHoldings")
+    if (
+        isinstance(declared_count, bool)
+        or not isinstance(declared_count, int)
+        or declared_count != len(holdings)
+    ):
+        _fail("archived Invesco JSON holdings count does not match totalNumberOfHoldings")
+    header = [
+        "Security Identifier",
+        "Ticker",
+        "Company",
+        "Date",
+        "Security Type",
+        "Sector",
+        "% TNA",
+        "Market Value",
+        "Notional Value",
+    ]
+    rows: list[list[object]] = [header]
+    for index, item in enumerate(holdings, start=1):
+        if not isinstance(item, dict):
+            _fail(f"archived Invesco holding {index} must be an object")
+        raw_identifier = _clean(item.get("cusip"))
+        security_type_code = _clean(item.get("securityTypeCode")).upper()
+        if security_type_code not in {"COM", "ADR", "DRNY", "MMT"}:
+            raw_identifier = (
+                f"{raw_identifier or _clean(item.get('ticker'))}.{security_type_code}"
+            )
+        elif not re.fullmatch(r"[A-Z0-9*@#]{9}", raw_identifier.upper()):
+            raw_identifier = ""
+        rows.append(
+            [
+                raw_identifier,
+                item.get("ticker"),
+                item.get("issuerName"),
+                effective_date,
+                item.get("securityTypeName"),
+                item.get("sectorName"),
+                item.get("percentageOfTotalNetAssets"),
+                item.get("marketValueBase"),
+                item.get("marketValueBase"),
+            ]
+        )
+    return text, rows
+
+
 def _xlsx_rows(path: Path) -> tuple[str, list[list[object]]]:
     try:
         archive = zipfile.ZipFile(path)
@@ -453,11 +535,30 @@ def parse_source(ticker: str, path: Path, source_format: str) -> dict:
         if path.suffix.lower() != ".xlsx":
             _fail("SPYM archived source must be .xlsx")
         text, rows = _xlsx_rows(path)
+    elif ticker == "QQQM":
+        if path.suffix.lower() != ".json":
+            _fail("QQQM archived source must be .json")
+        text, rows = _invesco_json_rows(path)
     else:
         if path.suffix.lower() != ".csv":
             _fail(f"{ticker} archived source must be .csv")
         text, rows = _csv_rows(path)
     header_row, columns = _find_table(rows)
+    metadata_cells = [
+        _clean(cell)
+        for row in rows[:header_row]
+        for cell in row
+        if _clean(cell)
+    ]
+    if ticker == "SPYM" and not any(
+        re.match(r"^SPYM(?:\s+\d+)?\s+(?:Holdings|Portfolio)\b", cell, re.I)
+        for cell in metadata_cells
+    ):
+        _fail("archived State Street XLSX metadata does not identify SPYM")
+    if ticker == "SOXX" and not any(
+        cell.casefold() == SOXX_PRODUCT_NAME.casefold() for cell in metadata_cells
+    ):
+        _fail("archived iShares CSV metadata does not identify SOXX")
     return {
         "source_as_of": _parse_date(text, rows, header_row, columns),
         "holdings": _rows_to_holdings(rows, columns, header_row),
