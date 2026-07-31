@@ -178,30 +178,30 @@ def main() -> None:
         "08-Data/DATA_QUALITY.md",
         "08-Data/DATA_REGISTRY.md",
         "08-Data/README.md",
-        "BUGLOG.md",
-        "Decision-Log.md",
-        "README.md",
     ):
+        require(path, "Bundle v1.5")
+    for path in ("BUGLOG.md", "Decision-Log.md", "README.md"):
         require(path, "Bundle v1.4")
     require(
-        "08-Data/README.md",
-        "REGISTRIES/LOOKTHROUGH_ISSUER_AUTHORITY.json",
-        "REGISTRIES/LOOKTHROUGH_CLASSIFICATION_AUTHORITY.json",
+        "README.md",
+        "仓库不维护重复的中央证券数据库",
+        "普通数据变化不更新项目",
     )
     require(
-        "08-Data/DATA_REGISTRY.md",
-        "中央Issuer Authority",
-        "中央Classification Authority",
+        "PRODUCTION.md",
+        "仓库不维护行情、ETF成分、issuer或GICS中央数据库",
+        "普通巡检不写仓库",
     )
     require(
-        "08-Data/DATA_QUALITY.md",
-        "只增不改中央authority",
+        "Decision-Log.md",
+        "运行时多源数据与决策留证",
+        "删除仓库中的中央issuer/GICS全量表",
     )
     require(
         "08-Data/LOOKTHROUGH_PACKET.md",
         "验证通过不改变 Position Registry",
         "source_sha256",
-        "schema_version`：当前固定为 `1.4",
+        "schema_version`：当前固定为 `1.5",
         "account_snapshot_sha256",
         "candidate_sha256",
         "issuer_registry_sha256",
@@ -211,10 +211,12 @@ def main() -> None:
         "科技严格低于 50%",
         "`HOLD` Bundle 永远不构成交易授权",
         "Packet通过只是SOXX解冻的必要条件之一",
+        "仓库不维护中央 issuer / GICS 数据库",
+        "普通巡检不写仓库",
     )
     require(
         "08-Data/LOOKTHROUGH_PACKET_TEMPLATE.json",
-        '"schema_version": "1.4"',
+        '"schema_version": "1.5"',
         '"issuer_registry_path": "issuer-registry.json"',
         '"issuer_registry_sha256": ""',
         '"source_identifiers": []',
@@ -232,15 +234,9 @@ def main() -> None:
         '"security_id": "SEDOL:BYVY8G0"',
     )
     require(
-        "08-Data/REGISTRIES/LOOKTHROUGH_ISSUER_AUTHORITY.json",
-        '"authority_id": "lookthrough-issuer-authority"',
-        '"schema_version": "1.1"',
-    )
-    require(
-        "08-Data/REGISTRIES/LOOKTHROUGH_CLASSIFICATION_AUTHORITY.json",
-        '"authority_id": "lookthrough-classification-authority"',
+        "08-Data/LOOKTHROUGH_ACCOUNT_TEMPLATE.json",
         '"schema_version": "1.2"',
-        '"taxonomy": "GICS"',
+        '"direct_holdings": []',
     )
     require(
         "08-Data/LOOKTHROUGH_MAPPING_TEMPLATE.json",
@@ -272,9 +268,8 @@ def main() -> None:
         "does not match account scenario",
         "canonical_security_id",
         "source_identifiers",
-        "reviewed issuer authority",
-        "reviewed classification authority",
-        "validate_authority_catalogs",
+        "mapping derivative component is absent from the same snapshot",
+        "issuer_registry canonical security is absent",
         "candidate must be an ADD or HOLD scenario for SOXX",
         "sources_complete_same_date",
         "soxx_at_or_below_3",
@@ -303,16 +298,29 @@ def main() -> None:
         "future-dated 2099 bundle",
         "official download unavailable at retrieval time",
         "SPYM 3 Holdings: As of 29-Jul-2026",
-        "missing raw labels cannot authorize a bundle-local false classification",
+        "bundle mapping cannot violate controlled GICS semantics",
         "max_issuer_known_weight",
     )
     require(
         "scripts/check_lookthrough_history.py",
         "Historical look-through evidence is append-only",
-        "LOOKTHROUGH_ISSUER_AUTHORITY.json",
-        "LOOKTHROUGH_CLASSIFICATION_AUTHORITY.json",
-        "is not append-only",
+        "status != \"A\"",
     )
+    for path in (
+        "08-Data/README.md",
+        "08-Data/DATA_REGISTRY.md",
+        "08-Data/DATA_QUALITY.md",
+        "08-Data/LOOKTHROUGH_PACKET.md",
+        "scripts/validate_lookthrough_packet.py",
+        "scripts/check_lookthrough_history.py",
+    ):
+        forbid(
+            path,
+            "LOOKTHROUGH_ISSUER_AUTHORITY",
+            "LOOKTHROUGH_CLASSIFICATION_AUTHORITY",
+            "reviewed issuer authority",
+            "reviewed classification authority",
+        )
     forbid("02-Operating-System/Monthly-Workflow.md", "SOXX 等 Observation")
     forbid("03-Transition/Transition-Plan.md", r"现金、\(A\)、目标缺口")
 
