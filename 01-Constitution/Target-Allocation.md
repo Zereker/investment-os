@@ -81,12 +81,12 @@ SPYM、SOXX实际持仓和未完成阶段储备共同构成57%袖套；只有在
 
 ## 再平衡与卖出
 
-1. Routine DCA 与战略基线按 `A_basis` 和 `U` 计算，只进入 SPYM / QQQM 正缺口；具体新增资格由 `ETF-Valuation-Framework.md` 控制，但估值不得创造负缺口或突破目标上限。
+1. Routine DCA 与战略基线按 `A_basis` 和 `U` 计算，只进入 SPYM / QQQM 正缺口；Routine DCA不因估值关闭，战略基线只在生产级`VERY EXPENSIVE`时可延缓，估值不得创造负缺口或突破目标上限。
 2. SOXX 阶段储备不得在 Data Gate 关闭时转投 SPYM，也不得因其存在而强制买入 SOXX。
 3. SOXX 追加始终走完整 IC。
 4. 卖出仅基于 Thesis 证伪、永久性资本损害、严重硬上限越界、经审核替换或税务/法律/流动性需要。
 5. “涨得太高”“跌得太多”、阶段冻结或短期新闻本身不是卖出理由。
-6. `EXPENSIVE / VERY EXPENSIVE` 只减少或暂停该 ETF 的新增资金；估值等级本身不构成卖出理由。
+6. `EXPENSIVE`不改变既定战略基线；只有生产级`VERY EXPENSIVE`可延缓该ETF的战略基线，且不得停止Routine DCA。估值等级本身不构成卖出理由。
 
 目标配置原则上只在年度审核或正式版本发布中修改。
 
