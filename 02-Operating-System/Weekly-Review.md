@@ -39,7 +39,7 @@
 - Yellow / Red 字段及其影响范围
 - 是否需要新增数据快照、修复解析或更新 Data Registry
 
-Red / N/A估值不得猜测等级；SPYM/QQQM只允许Routine DCA \(D\)，\(B=T=0\)，SOXX不得产生估值追加结论。缺失值不得用旧值或估算值填补。
+Red / N/A估值不得猜测等级；SPYM/QQQM的Routine DCA \(D\)与既定战略基线\(B\)照常，\(T=0\)，SOXX不得产生估值追加结论。板块代理只标记`PROXY CAUTION`，不得改变资金安排；缺失值不得用旧值或估算值填补。
 
 ## E. 行为与执行
 
