@@ -10,8 +10,9 @@
 2. IBKR Balances
 3. IBKR Positions
 4. IBKR Open Orders
+5. SPYM / QQQM / SOXX 最近仍在时效内的估值快照
 
-若任一接口失败，报告状态为 `DATA INCOMPLETE`。不得用上次快照填充“今日”数据。
+若前四项任一接口失败，账户报告状态为 `DATA INCOMPLETE`。不得用上次快照填充“今日”账户数据。估值快照缺失只关闭相应估值动作，不得冒充当前估值。
 
 ## B. 一致性检查
 
@@ -82,13 +83,25 @@ SOXX按`Alpha / Frozen — DATA GATE`列示。每日同时报告`A_actual`、`A_
 
 穿透集中度在季度及任何新增 Alpha 前完整计算；日报只在已有合格快照时标记已知越线，不用旧数据制造交易信号。
 
+### 5.1 Three-ETF Valuation Monitor
+
+只监控 SPYM、QQQM、SOXX，并按 `ETF-Valuation-Framework.md` 列示：
+
+- 当前价格、Forward P/E、各自历史百分位；
+- 盈利收益率减美国10年期国债收益率；
+- Forward EPS增长与三个月预测修正；
+- `CHEAP / FAIR / EXPENSIVE / VERY EXPENSIVE / N/A`、置信度与`source_as_of`；
+- 当前仓位、动态目标、正缺口以及 `ADD / HOLD / PAUSE / REVIEW`。
+
+回撤只辅助执行时点，不与估值相加。SOXX 必须显示周期调整和 `Frozen — DATA GATE` 状态；估值不得绕过 Alpha 治理。
+
 ### 6. Production Decision
 
 只允许以下结论：
 
 - `HOLD`：无生产规则触发，或`Observation / Frozen`仅按既定状态持有
 - `REVIEW`：存在异常，需要人工确认，但不直接交易
-- `BUY CANDIDATE`：现行规则触发，仍需相应月度路径或完整 Trade Gate
+- `BUY CANDIDATE`：现行规则和估值新增资格同时触发，仍需相应月度路径或完整 Trade Gate
 - `SELL CANDIDATE`：现行卖出规则触发，仍需完整 Trade Gate
 
 每日复盘本身不等于下单授权。
@@ -102,4 +115,5 @@ SOXX按`Alpha / Frozen — DATA GATE`列示。每日同时报告`A_actual`、`A_
 - 清楚区分实时事实、计算结果、推断和建议。
 - 历史快照必须标注日期。
 - 研究指标只能放在独立的 Research Note，不得混入 Production Decision。
+- 估值贵本身不产生 `SELL CANDIDATE`。
 - 无操作是有效结果。
