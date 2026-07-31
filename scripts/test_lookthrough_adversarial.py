@@ -42,17 +42,21 @@ def reject_source(name: str, ticker: str, path: Path, source_format: str) -> Non
 def test_history_checker(root: Path) -> None:
     repository = root / "history-repository"
     (repository / "scripts").mkdir(parents=True)
-    registry_dir = repository / "08-Data" / "REGISTRIES"
-    registry_dir.mkdir(parents=True)
+    bundle = (
+        repository
+        / "08-Data"
+        / "SNAPSHOTS"
+        / "lookthrough"
+        / "2026-07-31"
+        / "test-bundle"
+    )
+    bundle.mkdir(parents=True)
+    packet = bundle / "packet.json"
+    packet.write_text('{"packet_id":"immutable"}\n', encoding="utf-8")
     shutil.copy2(
-        validator.ROOT / "scripts" / "check_lookthrough_history.py",
+        Path(__file__).resolve().parent / "check_lookthrough_history.py",
         repository / "scripts" / "check_lookthrough_history.py",
     )
-    for name in (
-        "LOOKTHROUGH_ISSUER_AUTHORITY.json",
-        "LOOKTHROUGH_CLASSIFICATION_AUTHORITY.json",
-    ):
-        shutil.copy2(validator.ROOT / "08-Data" / "REGISTRIES" / name, registry_dir / name)
     commands = [
         ["git", "init", "-q"],
         ["git", "config", "user.email", "audit@example.invalid"],
@@ -76,7 +80,9 @@ def test_history_checker(root: Path) -> None:
     assert subprocess.run(
         [*checker, "f" * 40], cwd=repository, check=False, capture_output=True
     ).returncode != 0
-    (registry_dir / "LOOKTHROUGH_ISSUER_AUTHORITY.json").unlink()
+    packet.write_text('{"packet_id":"mutated"}\n', encoding="utf-8")
+    subprocess.run(["git", "add", "."], cwd=repository, check=True)
+    subprocess.run(["git", "commit", "-qm", "mutate"], cwd=repository, check=True)
     assert subprocess.run(
         [*checker, base_sha], cwd=repository, check=False, capture_output=True
     ).returncode != 0
@@ -618,10 +624,9 @@ def main() -> None:
             if item["normalized_industry"] == validator.SEMI
         )
         semiconductor["normalized_sector"] = "Industrials"
-        semiconductor["normalized_industry"] = validator.OTHER_INDUSTRY
         false_classification["mapping_sha256"] = rewrite_json(mapping_path, mapping)
         reject(
-            "missing raw labels cannot authorize a bundle-local false classification",
+            "bundle mapping cannot violate controlled GICS semantics",
             false_classification,
             packet_path,
         )

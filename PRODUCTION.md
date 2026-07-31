@@ -109,6 +109,8 @@ SOXX当前为`Alpha / Frozen — DATA GATE`：现有仓位可持有，禁止追�
 - Alpha 状态：`04-Alpha/Position-Registry.md`
 - 市场、估值和 ETF 穿透数据：必须符合 `08-Data/DATA_REGISTRY.md`、`08-Data/DATA_DICTIONARY.md` 与 `08-Data/DATA_QUALITY.md`
 
+外部金融数据在运行时从分别登记的专业来源读取，仓库不维护行情、ETF成分、issuer或GICS中央数据库。普通巡检不写仓库；真实决策才保存不可变证据Bundle。来源缺失或冲突时失败关闭，不得回退到陈旧中央副本冒充当前数据。
+
 ## 7. 输出标准
 
 每日复盘只包含：

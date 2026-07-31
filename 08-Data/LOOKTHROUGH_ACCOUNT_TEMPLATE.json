@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "account_snapshot_id": "",
   "observed_at": "YYYY-MM-DDThh:mm:ss+09:00",
   "source": "Interactive Brokers",
@@ -11,5 +11,6 @@
     "SPYM": 0,
     "QQQM": 0,
     "SOXX": 0
-  }
+  },
+  "direct_holdings": []
 }
