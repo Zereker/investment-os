@@ -34,12 +34,12 @@
 ## D. 数据质量
 
 - IBKR 账户数据是否保持 Green
-- SPYM、QQQM 价格和估值数据的来源、`source_as_of` 与刷新状态
+- SPYM、QQQM、SOXX价格和估值数据的来源、`source_as_of`、自身历史百分位与刷新状态
 - 穿透持仓与行业数据是否足够支持新增 Alpha 审查
 - Yellow / Red 字段及其影响范围
 - 是否需要新增数据快照、修复解析或更新 Data Registry
 
-Red 估值不得进入 Tactical Opportunity Score；它将 \(T\) 降为 0，但不阻塞符合公式的固定投入与战略基线 \(B\)。缺失值不得用旧值或估算值填补。
+Red / N/A估值不得猜测等级；SPYM/QQQM只允许Routine DCA \(D\)，\(B=T=0\)，SOXX不得产生估值追加结论。缺失值不得用旧值或估算值填补。
 
 ## E. 行为与执行
 
