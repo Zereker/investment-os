@@ -1,4 +1,4 @@
-# Investment OS v3.5
+# Investment OS v3.5.1
 
 一套以资产配置为中心、以低决策复杂度长期运行的个人投资系统。
 
@@ -22,9 +22,9 @@ v3.4.2不改变v3.4策略或v3.4.1可靠性规则：SOXX长期硬上限15%、当
 
 当前穿透契约已升级为Bundle v1.5。日常巡检在运行时组合IBKR、基金管理人、身份源和权威分类源；仓库不维护重复的中央证券数据库。普通数据变化不更新项目，只有形成真实决策证据时才保存带来源、`as_of`和哈希的不可变Bundle。
 
-## v3.5三只ETF估值执行
+## v3.5.1三只ETF估值执行
 
-日常与月度估值范围固定为SPYM、QQQM、SOXX。Forward P/E相对各自历史百分位形成`CHEAP / FAIR / EXPENSIVE / VERY EXPENSIVE`基础等级，盈利增长、三个月预测修正和盈利收益率相对美国10年期国债的利差只做确认；SOXX另加周期保护。价格回撤只辅助执行时点，不再与估值相加。估值等级可减少或暂停新增资金，但估值贵本身不卖出，也不能绕过目标配置、SOXX Data Gate或人工下单边界。
+日常与月度估值范围固定为SPYM、QQQM、SOXX。只有同ETF或精确指数、同P/E口径、可复现且至少60个月的Forward P/E历史才可形成生产级`CHEAP / FAIR / EXPENSIVE / VERY EXPENSIVE`；板块代理或跨口径数据只输出`PROXY CAUTION`。Routine DCA `D`不因估值关闭，战略基线`B`默认执行且仅可被生产级`VERY EXPENSIVE`延缓，战术加速`T`仅可由生产级`CHEAP`提交完整IC。估值贵本身不卖出，也不能绕过目标配置、SOXX Data Gate或人工下单边界。
 
 v3.3的以下基础继续有效：
 
