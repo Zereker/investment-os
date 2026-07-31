@@ -134,9 +134,9 @@ def valuation_action(tier: str) -> tuple[bool, bool, bool]:
     actions = {
         "CHEAP": (True, True, True),
         "FAIR": (True, True, False),
-        "EXPENSIVE": (True, False, False),
-        "VERY EXPENSIVE": (False, False, False),
-        "N/A": (True, False, False),
+        "EXPENSIVE": (True, True, False),
+        "VERY EXPENSIVE": (True, False, False),
+        "N/A": (True, True, False),
     }
     if tier not in actions:
         raise ValueError("unknown valuation tier")
@@ -161,10 +161,12 @@ def valuation_policy_tests() -> None:
             raise AssertionError(f"illegal valuation percentile accepted: {invalid}")
     if valuation_action("CHEAP") != (True, True, True):
         raise AssertionError("CHEAP action mapping changed")
-    if valuation_action("VERY EXPENSIVE") != (False, False, False):
-        raise AssertionError("VERY EXPENSIVE must pause all additions")
-    if valuation_action("N/A") != (True, False, False):
-        raise AssertionError("N/A must allow D only")
+    if valuation_action("EXPENSIVE") != (True, True, False):
+        raise AssertionError("EXPENSIVE must preserve D and B")
+    if valuation_action("VERY EXPENSIVE") != (True, False, False):
+        raise AssertionError("VERY EXPENSIVE may delay B but must preserve D")
+    if valuation_action("N/A") != (True, True, False):
+        raise AssertionError("N/A must preserve strategic D and B")
 
 
 def main() -> None:
@@ -224,7 +226,7 @@ def main() -> None:
         "indexes.nasdaq.com",
         "前三大权重上限分别为12%、10%、8%",
     )
-    require("README.md", "# Investment OS v3.5")
+    require("README.md", "# Investment OS v3.5.1")
     require("PRODUCTION.md", "# Investment OS v3.5 — Production Contract")
     require("07-Releases/v3.4.2.md", "本发布不授权任何订单")
     require("07-Releases/v3.5.md", "本发布不写入当前价格、P/E或当日动作，不授权任何订单")
@@ -238,7 +240,21 @@ def main() -> None:
         "估值贵本身不能触发卖出",
         "至少需要连续 5 年、60 个互不重复的月末观察值",
         "Trailing P/E 时不得判定为便宜",
+        "只有生产级高质量信号确认时才可延缓 `B`",
+        "板块代理、跨口径序列或不足 60 个月的数据只输出 `PROXY CAUTION`",
     )
+    require(
+        "02-Operating-System/Monthly-Workflow.md",
+        "估值不得关闭例行 `D`",
+        "`B`默认按既定迁移计划执行",
+        "`N/A / VALUATION UNAVAILABLE`或`PROXY CAUTION`不阻塞Routine DCA",
+    )
+    require(
+        "08-Data/DATA_QUALITY.md",
+        "Routine DCA `D`与既定战略基线`B`照常",
+        "低质量估值不得通过单边关闭`B`造成现金拖累",
+    )
+    require("07-Releases/v3.5.1.md", "本发布不授权任何订单")
     for path in (
         "README.md",
         "PRODUCTION.md",
