@@ -9,7 +9,12 @@ STAGES = (0.06,)  # v4.0: 6% is the permanent hard cap; 10/12.5/15% stages are v
 EXECUTION_CAPS = (0.03, 0.045, 0.06)
 CURRENT_STAGE = 0.06
 CURRENT_EXECUTION_CAP = 0.03
-DRAWDOWN_TIERS = ((0.10, 0.10), (0.25, 0.08), (0.35, 0.06))  # (dd trigger, cash floor)
+# v4.4: each tier releases a FIXED tranche of NAV. The older "deploy everything
+# above a floor" shape dumped the whole 15%->floor band into the first tier,
+# which is exactly what tranching exists to prevent.
+DRAWDOWN_TRIGGERS = (0.10, 0.15, 0.20, 0.25, 0.30, 0.35)
+TRANCHE = 0.015          # released per tier, as a weight of NAV
+ABSOLUTE_FLOOR = 0.06    # drawdown deployment never takes cash below this (+U)
 NORMAL_CASH_FLOOR = 0.12
 
 
@@ -103,46 +108,45 @@ def allocation_tests() -> None:
             raise AssertionError(f"illegal checkpoint transition accepted: 3% -> {proposed}")
 
 
-def drawdown_cash_floor(dd: float, executed: set[float] | None = None) -> float:
-    """Return the currently authorized cash floor for a drawdown level."""
+def drawdown_release(dd: float, executed: set[float] | None = None) -> float:
+    """Weight of NAV the drawdown clause releases at this level, given fired tiers."""
     if not isinstance(dd, (int, float)) or isinstance(dd, bool) or not isfinite(dd):
         raise ValueError("drawdown must be a finite number")
     if not 0 <= dd <= 1:
         raise ValueError("drawdown outside [0, 100%]")
     executed = executed or set()
-    floor = NORMAL_CASH_FLOOR
-    for trigger, tier_floor in DRAWDOWN_TIERS:
-        if dd >= trigger and trigger not in executed:
-            floor = min(floor, tier_floor)
-    return floor
+    return sum(TRANCHE for trigger in DRAWDOWN_TRIGGERS
+               if dd >= trigger and trigger not in executed)
 
 
 def drawdown_tests() -> None:
-    if drawdown_cash_floor(0.0) != NORMAL_CASH_FLOOR:
-        raise AssertionError("no-drawdown floor must be the normal 12% floor")
-    if drawdown_cash_floor(0.099999) != NORMAL_CASH_FLOOR:
+    if drawdown_release(0.0) != 0.0:
+        raise AssertionError("no drawdown must release nothing")
+    if drawdown_release(0.099999) != 0.0:
         raise AssertionError("below-tier drawdown must not unlock deployment")
-    expected = {0.10: 0.10, 0.2499: 0.10, 0.25: 0.08, 0.3499: 0.08, 0.35: 0.06, 1.0: 0.06}
-    for dd, floor in expected.items():
-        if abs(drawdown_cash_floor(dd) - floor) > 1e-12:
-            raise AssertionError(f"wrong cash floor at drawdown {dd}")
-    # once-per-cycle: an executed tier no longer lowers the floor
-    if drawdown_cash_floor(0.20, executed={0.10}) != NORMAL_CASH_FLOOR:
+    expected = {0.10: 1, 0.1499: 1, 0.15: 2, 0.20: 3, 0.25: 4, 0.30: 5, 0.35: 6, 1.0: 6}
+    for dd, tranches in expected.items():
+        if abs(drawdown_release(dd) - tranches * TRANCHE) > 1e-12:
+            raise AssertionError(f"wrong release at drawdown {dd}")
+    # once-per-cycle: an executed tier no longer releases
+    if drawdown_release(0.12, executed={0.10}) != 0.0:
         raise AssertionError("executed tier must not re-authorize deployment")
-    if abs(drawdown_cash_floor(0.30, executed={0.10}) - 0.08) > 1e-12:
-        raise AssertionError("deeper tier must stay available after shallower executed")
+    if abs(drawdown_release(0.30, executed={0.10}) - 4 * TRANCHE) > 1e-12:
+        raise AssertionError("deeper tiers must stay available after shallower executed")
+    # the six tranches take cash from the 15% target exactly to the absolute floor
+    if abs(len(DRAWDOWN_TRIGGERS) * TRANCHE + ABSOLUTE_FLOOR - 0.15) > 1e-12:
+        raise AssertionError("ladder does not span the 15% target down to the 6% floor")
+    if ABSOLUTE_FLOOR >= NORMAL_CASH_FLOOR:
+        raise AssertionError("the crisis floor must sit below the normal floor")
     for invalid in (-0.01, 1.01, nan, inf, True):
         try:
-            drawdown_cash_floor(invalid)
+            drawdown_release(invalid)
         except ValueError:
             pass
         else:
             raise AssertionError(f"illegal drawdown accepted: {invalid}")
-    # tiers must be strictly monotone
-    triggers = [t for t, _ in DRAWDOWN_TIERS]
-    floors = [f for _, f in DRAWDOWN_TIERS]
-    if triggers != sorted(triggers) or floors != sorted(floors, reverse=True):
-        raise AssertionError("drawdown tiers must deepen monotonically")
+    if list(DRAWDOWN_TRIGGERS) != sorted(DRAWDOWN_TRIGGERS):
+        raise AssertionError("drawdown triggers must deepen monotonically")
 
 
 import re
@@ -305,7 +309,7 @@ def main() -> None:
         "永久硬上限为总组合 **6%**",
         "10% / 12.5% / 15% 治理阶段自 v4.0 起作废",
         "回撤部署（Drawdown Deployment）",
-        "`10%+U`", "`8%+U`", "`6%+U`",
+        "每档释放 **1.5pp of NAV**", "`6%+U`",
         "每一档在同一轮回撤周期内最多执行一次",
         "除 `DD` 达档外不引入任何其他判断项",
         "只用外部新增资金逐月重建",
@@ -340,8 +344,8 @@ def main() -> None:
         "indexes.nasdaq.com",
         "前三大权重上限分别为12%、10%、8%",
     )
-    require("README.md", "# Investment OS v4.3")
-    require("PRODUCTION.md", "# Investment OS v4.3 — Production Contract")
+    require("README.md", "# Investment OS v4.4")
+    require("PRODUCTION.md", "# Investment OS v4.4 — Production Contract")
     require("07-Releases/v4.0.md", "不授权任何订单", "10% / 12.5% / 15% 历史治理阶段作废")
     require("07-Releases/v4.1.md", "不授权任何订单", "利息不在月内复利")
     require("07-Releases/v4.2.md", "不授权任何订单", "系统不再持有任何估值判断")
@@ -358,7 +362,16 @@ def main() -> None:
         "反对证据",
         "证伪回路",
     )
-    require("01-Constitution/Target-Allocation.md", "T1 下调至 10% 的已知代价")
+    require("01-Constitution/Target-Allocation.md", "该区间现由 T2（15%）、T3（20%）、T4（25%）逐档覆盖")
+    require("07-Releases/v4.4.md", "不授权任何订单", "1.5pp", "不判断谷底")
+    require(
+        "Research/2026-08-01-drawdown-tranching.md",
+        "已批准",
+        "证伪回路",
+        "分批本身就是「不知道谷底在哪」的正确答案",
+    )
+    require("Decision-Log.md", "v4.4 回撤部署改为六档等额分批")
+    require("02-Operating-System/State-Reconstruction.md", "已执行档数")
     require(
         "Research/2026-08-01-benchmark-cash-model-simplification.md",
         "已批准",
@@ -372,7 +385,7 @@ def main() -> None:
         "不存储任何账户数据",
         "现金水位自证",
         "恰好一个",
-        "0.85×ATH收盘",
+        "T1 `0.90×`",
         "隐私边界",
     )
     require(
@@ -391,7 +404,10 @@ def main() -> None:
         "NEVER places or formats an executable order",
         "NEVER writes account figures to disk",
         # the calculator mirrors the rules; its constants must match this file
-        'TIERS = ((0.10, 0.10, "T1"), (0.25, 0.08, "T2"), (0.35, 0.06, "T3"))',
+        'TIERS = ((0.10, "T1"), (0.15, "T2"), (0.20, "T3"),',
+        '(0.25, "T4"), (0.30, "T5"), (0.35, "T6"))',
+        "TRANCHE = 0.015",
+        "ABSOLUTE_FLOOR = 0.06",
         "CASH_FLOOR = 0.12",
         "CASH_TARGET = 0.15",
         "QQQM_TARGET = 0.28",
@@ -405,7 +421,10 @@ def main() -> None:
         "never authorizes trades",
         # the drill's tiers must mirror DRAWDOWN_TIERS above, or the drill
         # would be validating a state machine the Constitution does not have
-        'TIERS = ((0.10, 0.10, "T1"), (0.25, 0.08, "T2"), (0.35, 0.06, "T3"))',
+        'TIERS = ((0.10, "T1"), (0.15, "T2"), (0.20, "T3"),',
+        '(0.25, "T4"), (0.30, "T5"), (0.35, "T6"))',
+        "TRANCHE = 0.015",
+        "ABSOLUTE_FLOOR = 0.06",
         "NORMAL_CASH_FLOOR = 0.12",
         "check_invariants",
     )
@@ -422,7 +441,8 @@ def main() -> None:
     require(
         "02-Operating-System/Deployment-Framework.md",
         "回撤部署（Drawdown Deployment）",
-        "`DD ≥ 10%`", "`DD ≥ 25%`", "`DD ≥ 35%`",
+        "`DD ≥ 10%`", "`DD ≥ 15%`", "`DD ≥ 20%`",
+        "`DD ≥ 25%`", "`DD ≥ 30%`", "`DD ≥ 35%`",
         "不引入任何其他判断项",
         "每档在同一回撤周期内最多执行一次",
     )

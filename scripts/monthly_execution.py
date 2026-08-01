@@ -53,7 +53,13 @@ QQQM_TARGET = 0.28
 SLEEVE_57 = 0.57
 A_STAGE = 0.06
 A_EXECUTION_CAP = 0.03
-TIERS = ((0.10, 0.10, "T1"), (0.25, 0.08, "T2"), (0.35, 0.06, "T3"))
+# v4.4: each tier releases a FIXED tranche of NAV rather than "all cash above a
+# floor" — that older shape dumped the whole 15%->floor band in the first tier,
+# which is what tranching is meant to prevent. ABSOLUTE_FLOOR is the hard stop.
+TIERS = ((0.10, "T1"), (0.15, "T2"), (0.20, "T3"),
+         (0.25, "T4"), (0.30, "T5"), (0.35, "T6"))
+TRANCHE = 0.015          # 1.5pp of NAV released per tier
+ABSOLUTE_FLOOR = 0.06    # cash never goes below this (+U) via drawdown deployment
 PLAN_END = (2028, 12)  # strategic baseline planned completion month
 
 
@@ -80,22 +86,18 @@ def fetch_drawdown(symbol: str = "spym") -> tuple[float, str, str]:
     return (ath - last_close) / ath, last_day, ath_date
 
 
-def authorized_cash_floor(dd: float, executed: set[str], reserve: float) -> tuple[float, list[str]]:
-    """Lowest floor the drawdown clause authorizes, and EVERY tier consumed to get there.
+def tier_release(dd: float, executed: set[str], reserve: float) -> tuple[float, float, list[str]]:
+    """Return (released weight, absolute floor weight, tiers consumed).
 
-    A single day may satisfy several tiers (a gap down straight through 25%).
-    The Constitution fires them shallow-to-deep, each once per cycle. Deploying to
-    the deepest floor subsumes the shallower ones numerically, but all of them are
-    consumed and must be recorded as EXECUTED — otherwise a later reconstruction
-    would show a shallow tier still available.
+    Each newly triggered tier releases TRANCHE of NAV — a fixed tranche, not
+    "everything above a floor". A single day may satisfy several tiers (a gap
+    down straight through 25%); they fire shallow-to-deep, each once per cycle,
+    and every one consumed must be recorded as EXECUTED or a later
+    reconstruction would show a shallow tier still available.
     """
-    floor = CASH_FLOOR
-    consumed = []
-    for trigger, tier_floor, name in TIERS:      # TIERS is shallow-to-deep
-        if dd >= trigger and name not in executed:
-            consumed.append(name)
-            floor = min(floor, tier_floor)
-    return floor + reserve, consumed
+    consumed = [name for trigger, name in TIERS
+                if dd >= trigger and name not in executed]
+    return len(consumed) * TRANCHE, ABSOLUTE_FLOOR + reserve, consumed
 
 
 def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed, today):
@@ -121,12 +123,14 @@ def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed, today):
     b = min(s / r, g) if r else 0.0                              # B
     b_spym, b_qqqm = allocate(b, gap_spym - d_spym, gap_qqqm - d_qqqm)
 
-    floor_w, consumed = authorized_cash_floor(dd, executed, reserve)
+    released_w, floor_w, consumed = tier_release(dd, executed, reserve)
     cash_after_db = cash_after_d - b
-    # drawdown deployment: only the amount above the temporarily lowered floor,
-    # capped by the Core gap left after D and B
+    # drawdown deployment: the released tranche(s), capped by cash above the
+    # absolute floor and by the Core gap left after D and B
     remaining_gap = g - b
-    dd_amount = min(max(cash_after_db - floor_w * nav, 0.0), remaining_gap) if consumed else 0.0
+    dd_amount = min(released_w * nav,
+                    max(cash_after_db - floor_w * nav, 0.0),
+                    remaining_gap) if consumed else 0.0
     dd_spym, dd_qqqm = allocate(dd_amount, gap_spym - d_spym - b_spym, gap_qqqm - d_qqqm - b_qqqm)
 
     final_cash = cash_after_db - dd_amount
@@ -137,7 +141,8 @@ def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed, today):
         "d": d, "d_spym": d_spym, "d_qqqm": d_qqqm,
         "cash_after_d": cash_after_d, "g": g, "r": r, "s": s,
         "b": b, "b_spym": b_spym, "b_qqqm": b_qqqm,
-        "consumed": consumed, "floor_w": floor_w, "dd_amount": dd_amount,
+        "consumed": consumed, "floor_w": floor_w, "released_w": released_w,
+        "dd_amount": dd_amount,
         "dd_spym": dd_spym, "dd_qqqm": dd_qqqm,
         "final_cash": final_cash, "final_cash_w": final_cash / nav,
         "min_floor_w": CASH_FLOOR + reserve,
@@ -200,11 +205,12 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known) -> list[str]
             print("  ** 未提供 --tiers-executed：无法确认本周期各档是否已执行 **")
             print("     按 State-Reconstruction 第 4 步用三信号交叉 + IBKR 警报重建后重跑")
             issues.append("回撤档位已执行状态未知")
-        for trigger, tier_floor, name in TIERS:
+        for trigger, name in TIERS:
             mark = "已执行" if name in executed else ("**达档可用**" if dd >= trigger else "未达档")
-            print(f"    {name}  触发 {trigger:.0%}  下限 {tier_floor:.0%}+U   {mark}")
+            print(f"    {name}  触发 {trigger:>3.0%}  释放 {TRANCHE:.1%} of NAV   {mark}")
         if res["consumed"]:
-            print(f"  → 本次消耗档位 {', '.join(res['consumed'])}，现金下限临时降至 {res['floor_w']:.2%}")
+            print(f"  → 本次消耗档位 {', '.join(res['consumed'])}，共释放 {res['released_w']:.1%} of NAV"
+                  f"（绝对下限 {res['floor_w']:.2%}）")
             print(f"     全部消耗档位必须在 Journal 记为本周期 EXECUTED，并更新 IBKR 警报指针")
 
     print(f"\n[4] 三条资金通道")
@@ -273,13 +279,21 @@ def self_test() -> None:
     r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.09, set(), d0)
     assert r["dd_amount"] == 0 and not r["consumed"], "deployed below the T1 trigger"
 
-    # 5. an already-executed tier must not re-authorize (once per cycle)
-    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.20, {"T1"}, d0)
+    # 5. an already-executed tier must not re-authorize (once per cycle).
+    # At DD 12% only T1 qualifies, and it already fired -> nothing releases.
+    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.12, {"T1"}, d0)
     assert r["dd_amount"] == 0 and not r["consumed"], "executed tier re-authorized deployment"
+    # but deeper tiers stay available: at DD 20%, T2 and T3 still release
+    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.20, {"T1"}, d0)
+    assert r["consumed"] == ["T2", "T3"], f"deeper tiers blocked: {r['consumed']}"
 
     # 6. a gap-down day consumes every tier it passes through, shallow-to-deep
     r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.28, set(), d0)
-    assert r["consumed"] == ["T1", "T2"], f"wrong tiers consumed: {r['consumed']}"
+    assert r["consumed"] == ["T1", "T2", "T3", "T4"], f"wrong tiers consumed: {r['consumed']}"
+
+    # 6b. even tranching: each tier releases exactly 1.5pp from the 15% target
+    assert len(TIERS) * TRANCHE + ABSOLUTE_FLOOR - 0.15 < 1e-12, \
+        "six tranches must take cash from the 15% target exactly to the 6% floor"
 
     # 7. cash never ends below the authorized floor
     for dd, ex in ((0.0, set()), (0.11, set()), (0.28, set()), (0.40, set()), (0.28, {"T1"})):
