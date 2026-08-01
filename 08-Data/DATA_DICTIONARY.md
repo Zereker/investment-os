@@ -84,62 +84,39 @@ Invesco QQQM 官方页的 `Forward Price/Earnings Ratio`。使用 QQQ 作为代�
 
 ## Policy Benchmark 字段
 
-### benchmark_month_start_nav_usd / benchmark_cash_principal_usd / benchmark_accrued_interest_usd / benchmark_cash_sleeve_value_usd
+> v4.1 起本模型为月频（依据见 `Research/2026-08-01-benchmark-cash-model-simplification.md`）。日频递推、已入账本金/未入账应计拆分与入账日科目转换已退役：它们服务的是一个只报告用的月度数字，却要求逐日利率序列，使该字段结构性恒为 `N/A`。
 
-政策基准的现金袖套拆成：
+### benchmark_month_start_nav_usd / benchmark_cash_sleeve_value_usd
 
-- \(P_{B,d}\)：已经入账、可按IBKR规则计息的假设USD现金本金；
-- \(A_{B,d}\)：尚未入账的假设应计利息；
-- \(C_{B,d}=P_{B,d}+A_{B,d}\)：现金袖套总价值。应计利息计入基准NAV，但在正式入账前不得进入计息本金。
-
-每个自然月首个估值时点只重置一次政策权重。月初再平衡转移额记为\(R_{B,m,0}\)，只调整已入账本金，使：
+每个自然月首个估值时点重置一次政策权重：
 
 \[
-P_{B,m,0}+A_{B,m,0}=15\%\times V_{B,m,0}
+C_{B,m,0}=15\%\times V_{B,m,0}
 \]
 
-月内不因SPYM / QQQM每日涨跌重新设定现金权重。若存在上月尚未入账应计利息，月初重置时必须保留该资产并相应调整\(P_{B,m,0}\)，不得把它再次确认为收益。
+\(C_{B,m,0}\) 同时是当月的计息本金基数。月内不因SPYM / QQQM涨跌重新设定现金权重。上月已计提但尚未入账的利息作为资产计入 \(V\)，因而经由下一次月初重置进入本金；它不得在当月内参与计息，也不得被重复确认为收益。
 
-### benchmark_interest_posting_usd / benchmark_eligible_cash_usd
+### ibkr_usd_full_rate / ibkr_nav_scale / benchmark_eligible_cash_usd
 
-\(J_{B,d}\)是按模型在当日正式入账的上一自然月应计利息；除IBKR规定的次月第三个工作日外为0。入账先做科目转换：
+- \(r_{B,m}\)：当月适用账户计划的官方USD信用利率；月内变动时按自然日天数加权。
+- \(k_{B,m}=\min(V_{B,m,0}/100000,1)\)：NAV比例缩放。
+- 免息门槛按IBKR当期公开官方规则取值（公式中记为10000），门槛以下部分不计息。
 
-\[
-P^*_{B,d}=P_{B,d-1}+R_{B,d}+J_{B,d},\qquad
-A^*_{B,d}=A_{B,d-1}-J_{B,d}
-\]
-
-其中\(R_{B,d}\)只允许出现在月初政策再平衡；月内为0。\(J_{B,d}\)必须等于被转出的同一批模型应计利息，转换本身不产生收益。USD低于IBKR官方免息门槛的部分不计息（门槛为公开官方规则，公式中记为10000）：
-
-\[
-E_{B,d}=\max(P^*_{B,d}-10000,0)
-\]
-
-### ibkr_usd_full_rate / ibkr_nav_scale
-
-\(r_{full,d}\)为当日适用账户计划的官方USD信用利率；\(k_d=\min(V_{B,d}/100000,1)\)。账户计划、币种、Segment、门槛、实际工作日日历和日计息基数必须按当日官方规则记录。
+账户计划、币种、Segment、门槛与日计息基数必须按当期官方规则记录并保留 `source_as_of`。
 
 ### benchmark_cash_interest_usd / benchmark_cash_period_return
 
-USD通常按360天；当日利息只基于已入账本金，不能基于昨日未入账应计利息：
+USD按360天基数，\(N_m\)为当月自然日数：
 
 \[
-i_{B,d}=E_{B,d}\times r_{full,d}\times k_d/360
+I_{B,m}=\max(C_{B,m,0}-10000,0)\times r_{B,m}\times k_{B,m}\times \frac{N_m}{360}
 \]
 
 \[
-P_{B,d}=P^*_{B,d},\qquad
-A_{B,d}=A^*_{B,d}+i_{B,d}
-\]
-
-因此日计提不会立即复利；只有上一月利息在规定入账日转为\(P\)后，才参与后续日计息。月度现金袖套收益为：
-
-\[
-I_{B,m}=\sum_{d\in m} i_{B,d},\qquad
 r^{model}_{cash,m}=I_{B,m}/C_{B,m,0}
 \]
 
-任一日输入、工作日日历或利率档位缺失则当月为N/A，不得使用实际账户利息、单位收益率或0%替代。外部现金流不进入基准收益分子；组合比较使用时间加权收益，基准只在下一个月首个估值时点重新设为15% / 57% / 28%。
+本金固定为月初值，因此利息不在月内复利。利率档位、门槛规则或月初净值缺失时当月为N/A，不得使用实际账户利息、单位收益率、上月值或0%替代。外部现金流不进入基准收益分子；组合比较使用时间加权收益，基准只在下一个月首个估值时点重新设为15% / 57% / 28%。
 
 ### spym_total_return / qqqm_total_return
 同一计量期间、含分红的基金总收益 \(r_{SPYM,t}\) 与 \(r_{QQQM,t}\)。价格收益不得冒充总收益。

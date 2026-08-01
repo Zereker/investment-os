@@ -77,7 +77,7 @@
 | BUG-013 | Policy Benchmark 用实际高现金账户的单位收益率代表假设 15% 现金基准 | 假设基准必须按经纪商规则重新计息；输入不全记 N/A，不用实际收益率或 0% 代理 |
 | BUG-014 | Data Dictionary 残留 v3.3 执行公式（`57%-A`、现金只扣固定 15%） | 权威字段表必须与主规则同批验收；CI 校验公式与配置边界 |
 | BUG-015 | SOXX 引用非现行指数方法（以 Nasdaq PHLX SOX 支持 NYSE 指数断言） | 未取得现行方法可审计副本前，研究状态保持 Incomplete；CI 禁止旧方法链接 |
-| BUG-016 | Policy Benchmark 同时暗示月度与每日再平衡 | 月初重置现金袖套；未入账应计利息不得提前进入计息本金（CI `benchmark_interest_tests` 守护） |
+| BUG-016 | Policy Benchmark 同时暗示月度与每日再平衡 | 月初重置现金袖套，利息不在月内复利（v4.1 起由月频模型天然保证，CI `benchmark_interest_tests` 守护） |
 | BUG-017 / 019–022 | v3.x 复合生命周期状态、Add Candidate Packet 时效机制、Look-through Evidence Bundle v1.4 / v1.5 验证器相关缺陷 | Registry 只保存持久状态；穿透数据必须记录来源与 `source_as_of`；仓库不维护中央证券数据库；未分类暴露不得静默丢弃 |
 | BUG-018 | SOXX 阶段检查点没有可执行上限，一次 IC 仍可能直接买到阶段上限 | 治理阶段与单笔执行上限必须分离；执行档逐档推进，同一次 IC 不得跳档（CI `next_execution_cap` 守护） |
 

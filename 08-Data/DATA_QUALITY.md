@@ -42,7 +42,7 @@ Red 数据不得进入依赖该字段的计算。影响按字段局部化：
 - 三只ETF估值等级为Red或N/A：只关闭战术加速 `T`；`D / B` 按公式继续，SOXX不得产生估值追加结论。
 - ETF穿透核查数据为Red：SOXX与任何自主倾斜保持禁止追加；已有仓位不自动卖出；SPYM / QQQM 例行路径不受阻断。
 - SPYM历史最高收盘序列为Red：当日不评估回撤部署分档，已执行档位记录不变。
-- Policy Benchmark现金模型任一日Red：当期Benchmark为`N/A / DATA INCOMPLETE`，不得静默使用0%。
+- Policy Benchmark现金模型的当月利率、门槛或月初净值为Red：当期Benchmark为`N/A / DATA INCOMPLETE`，不得静默使用0%。
 
 ## 每次快照必须包含
 

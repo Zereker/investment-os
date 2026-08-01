@@ -172,21 +172,54 @@ def privacy_gate() -> None:
         raise AssertionError("privacy gate failed:\n" + "\n".join(violations))
 
 
+INTEREST_THRESHOLD = 10_000.0
+
+
+def benchmark_month_interest(
+    month_start_nav: float | None,
+    rate: float | None,
+    days_in_month: int,
+) -> float | None:
+    """v4.1 monthly cash-sleeve interest. Returns None (N/A) on any missing input.
+
+    Principal is fixed at the month-start sleeve value, so interest never
+    compounds within the month (BUG-016 regression guard).
+    """
+    if month_start_nav is None or rate is None:
+        return None
+    sleeve = 0.15 * month_start_nav
+    eligible = max(sleeve - INTEREST_THRESHOLD, 0.0)
+    scale = min(month_start_nav / 100_000.0, 1.0)
+    return eligible * rate * scale * days_in_month / 360.0
+
+
 def benchmark_interest_tests() -> None:
-    principal = 20_000.0
-    accrued = 0.0
-    rate = 0.036
-    first = max(principal - 10_000.0, 0.0) * rate / 360.0
-    accrued += first
-    second = max(principal - 10_000.0, 0.0) * rate / 360.0
-    if abs(first - second) > 1e-12:
-        raise AssertionError("unposted accrual compounded")
-    nav_before_posting = principal + accrued
-    posting = accrued
-    principal += posting
-    accrued -= posting
-    if abs((principal + accrued) - nav_before_posting) > 1e-12:
-        raise AssertionError("posting conversion changed benchmark NAV")
+    # missing input must yield N/A, never a silent 0% (BUG-013 regression guard)
+    if benchmark_month_interest(None, 0.036, 31) is not None:
+        raise AssertionError("missing NAV must yield N/A, not a number")
+    if benchmark_month_interest(200_000.0, None, 31) is not None:
+        raise AssertionError("missing rate must yield N/A, not a number")
+
+    # below the interest-free threshold the sleeve earns nothing
+    if benchmark_month_interest(60_000.0, 0.036, 31) != 0.0:
+        raise AssertionError("sleeve under the threshold must earn no interest")
+
+    # no intra-month compounding: two half-length months must equal one full month
+    full = benchmark_month_interest(1_000_000.0, 0.036, 30)
+    half = benchmark_month_interest(1_000_000.0, 0.036, 15)
+    if full is None or half is None or abs(full - 2 * half) > 1e-9:
+        raise AssertionError("interest compounded within the month")
+
+    # NAV scale caps at 1.0 and shrinks small accounts proportionally
+    big = benchmark_month_interest(1_000_000.0, 0.036, 30)
+    capped = benchmark_month_interest(100_000.0, 0.036, 30)
+    if capped is None or big is None:
+        raise AssertionError("scale test inputs must produce values")
+    if abs(min(1_000_000.0 / 100_000.0, 1.0) - 1.0) > 1e-12:
+        raise AssertionError("NAV scale must cap at 1.0")
+    expected_capped = max(0.15 * 100_000.0 - INTEREST_THRESHOLD, 0.0) * 0.036 * 1.0 * 30 / 360.0
+    if abs(capped - expected_capped) > 1e-9:
+        raise AssertionError("NAV scale applied incorrectly")
 
 
 def valuation_tier(percentile: float) -> str:
@@ -255,10 +288,10 @@ def main() -> None:
         r"SPYM \(57\%-A_{basis}\)",
         r"\(D_{max}=\min(F,G_0)\)",
         r"\(S=\max(C-(15\%+U)\times V,0)\)",
-        r"P_{B,m,0}+A_{B,m,0}=15\%\times V_{B,m,0}",
-        r"E_{B,d}=\max(P^*_{B,d}-10000,0)",
-        r"A_{B,d}=A^*_{B,d}+i_{B,d}",
-        "应计利息计入基准NAV，但在正式入账前不得进入计息本金",
+        r"C_{B,m,0}=15\%\times V_{B,m,0}",
+        r"r^{model}_{cash,m}=I_{B,m}/C_{B,m,0}",
+        "本金固定为月初值，因此利息不在月内复利",
+        "它不得在当月内参与计息，也不得被重复确认为收益",
         "drawdown_from_ath",
         "drawdown_tier_state",
         "不被估值等级或估值数据缺失削减",
@@ -270,6 +303,10 @@ def main() -> None:
         r"C_{B,d}=15\%\times V_{B,d}",
         r"C_{B,m,d}=C^-_{B,m,d}+i_{B,m,d}",
         "合法集合为6%、10%、12.5%、15%",
+        # v4.1: the daily recursion and its posted/unposted split are retired
+        r"P^*_{B,d}",
+        r"i_{B,d}=E_{B,d}",
+        "次月第三个工作日",
     )
 
     active_files = [
@@ -345,9 +382,15 @@ def main() -> None:
         "indexes.nasdaq.com",
         "前三大权重上限分别为12%、10%、8%",
     )
-    require("README.md", "# Investment OS v4.0")
-    require("PRODUCTION.md", "# Investment OS v4.0 — Production Contract")
+    require("README.md", "# Investment OS v4.1")
+    require("PRODUCTION.md", "# Investment OS v4.1 — Production Contract")
     require("07-Releases/v4.0.md", "不授权任何订单", "10% / 12.5% / 15% 历史治理阶段作废")
+    require("07-Releases/v4.1.md", "不授权任何订单", "利息不在月内复利")
+    require(
+        "Research/2026-08-01-benchmark-cash-model-simplification.md",
+        "已批准",
+        "不得使用实际账户的单位现金收益率",
+    )
     require("CLAUDE.md", "永远不下单", "fetch_etf_data.py", "DATA INCOMPLETE",
             "公开安全写法", "State-Reconstruction.md", "永不落盘")
     require(

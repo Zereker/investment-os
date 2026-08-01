@@ -24,7 +24,7 @@
 | `A_basis` / `U` | Data Dictionary公式 | 无 | 每次巡检 | Green（Derived） | 失败则配置计算关闭 |
 | Routine Core Gap / Purchase \(G_0,D_{max},D\) | 实时IBKR数据 + Monthly Workflow | 无 | 每月 | Green（Derived） | \(D_{max}=\min(F,G_0)\)；v4.0 起 `D` 不被估值等级削减 |
 | SPYM 历史最高收盘与回撤 `DD` | IBKR 历史收盘 | State Street 官方净值序列 | 每次巡检 | Green | 驱动回撤部署分档；数据失败则当日不评估分档，不影响其他路径 |
-| Benchmark hypothetical 15% USD Cash / modeled interest | 月初基准净值 + IBKR官方利率与计息规则 | 无 | 每日计息、月度重置/报告 | Green（Derived） | 月内不得每日重置15%现金本金；任一输入缺失则当期Policy Benchmark为N/A |
+| Benchmark hypothetical 15% USD Cash / modeled interest | 月初基准净值 + IBKR当月官方利率、门槛与NAV比例规则 | 无 | 每月 | Green（Derived） | v4.1 起按月计息（日频递推已退役）；月内不得重置15%现金本金、利息不在月内复利；任一输入缺失则当期Policy Benchmark为N/A |
 | Shadow Benchmarks SB-1 / SB-2 | SPYM / QQQM 官方含分红总收益 | IBKR 市场数据与分红记录 | 每月 | Green（Derived） | 仅报告；缺失记 N/A，不触发任何交易路径 |
 | SPYM Price | IBKR | State Street SPYM 官方页 | 每次巡检 | Green | 标记价格时间戳 |
 | QQQM Price | IBKR | Invesco QQQM 官方页 | 每次巡检 | Green | 标记价格时间戳 |

@@ -1,4 +1,4 @@
-# Investment OS v4.0
+# Investment OS v4.1
 
 一套以资产配置为中心、以低决策复杂度长期运行的个人投资系统。
 
@@ -38,7 +38,7 @@ v4.0 以实测证据（`Research/2026-07-31-v4-Evidence-and-Proposal.md`）驱�
 - 每个PR由`Policy consistency`工作流检查关键公式、生命周期、输入域与文档一致性。
 - 仓库不维护重复的中央证券数据库；普通数据变化不更新项目。
 
-当前生产入口：[PRODUCTION.md](PRODUCTION.md)；版本说明：[v4.0](07-Releases/v4.0.md)
+当前生产入口：[PRODUCTION.md](PRODUCTION.md)；版本说明：[v4.1](07-Releases/v4.1.md)（结构性变化见 [v4.0](07-Releases/v4.0.md)）
 
 ## 如何使用
 
