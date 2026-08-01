@@ -19,3 +19,7 @@ jobs:
         env:
           PYTHONDONTWRITEBYTECODE: "1"
         run: python3 scripts/check_policy_consistency.py
+      - name: Validate Product contract and privacy boundary
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python3 scripts/check_product_contract.py
