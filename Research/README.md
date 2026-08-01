@@ -21,11 +21,4 @@
 6. 形成正式 Proposal，并由账户所有者明确批准。
 7. 通过新的版本发布进入 Production；不得静默修改。
 
-## 建议目录
-
-- `Valuation/`：PE、Forward PE、CAPE、ERP 等估值研究
-- `Allocation/`：Core 与 Alpha 配置研究
-- `Execution/`：订单类型、分批执行和交易成本研究
-- `Postmortems/`：重大决策复盘
-
 研究可以推翻假设；生产系统必须稳定执行。

@@ -283,7 +283,6 @@ def main() -> None:
         "02-Operating-System/Quarterly-Workflow.md",
         "02-Operating-System/Deployment-Framework.md",
         "02-Operating-System/ETF-Valuation-Framework.md",
-        "03-Transition/Transition-Dashboard.md",
         "03-Transition/Transition-Plan.md",
         "04-Alpha/Alpha-Framework.md",
         "04-Alpha/Position-Registry.md",
@@ -304,9 +303,9 @@ def main() -> None:
             "3%→4.5%→6%→10%",
             "Frozen — DATA GATE",
             "长期硬上限与最终治理阶段15%",
+            "Bundle v1.4",
+            "Bundle v1.5",
         )
-        if path != "README.md":  # README keeps a labeled historical footnote
-            forbid(path, "Bundle v1.4", "Bundle v1.5")
 
     require(
         "04-Alpha/Position-Registry.md",
@@ -404,12 +403,20 @@ def main() -> None:
         "02-Operating-System/Monthly-Workflow.md",
         "02-Operating-System/Deployment-Framework.md",
         "02-Operating-System/Weekly-Review.md",
-        "03-Transition/Transition-Dashboard.md",
+        "03-Transition/Transition-Plan.md",
     ):
         forbid(path, "Valuation Score", "Opportunity Score")
-    # historical audit anchors stay in history files
-    for path in ("BUGLOG.md", "Decision-Log.md", "README.md"):
+    # retired v3.x mechanisms survive only as one-line archive entries in the history files
+    for path in ("BUGLOG.md", "Decision-Log.md"):
         require(path, "Bundle v1.4")
+    require("Decision-Log.md", "v3.x 决策存档")
+    require("BUGLOG.md", "已退役机制缺陷存档")
+    # git history was rebuilt to a single commit: no document may send readers there
+    for path in ("README.md", "CLAUDE.md", "07-Releases/README.md"):
+        forbid(path, "查 git 历史")
+    # live account state must never be frozen into rule files (red line 2)
+    for path in ("07-Releases/v4.0.md", "04-Alpha/Position-Registry.md", "Decision-Log.md"):
+        forbid(path, "7.8%", "7.5%")
     require(
         "README.md",
         "仓库不维护重复的中央证券数据库",
@@ -448,9 +455,15 @@ def main() -> None:
         "scripts/check_lookthrough_history.py",
         "08-Data/LOOKTHROUGH_PACKET.md",
         "08-Data/LOOKTHROUGH_PACKET_TEMPLATE.json",
+        # retired in the v4.0 cleanup: every section duplicated another file, and its
+        # account fields could never be filled without failing the privacy gate
+        "03-Transition/Transition-Dashboard.md",
+        # retired in the v4.0 cleanup: single-stock research template, but stock
+        # authorization is 0% and the tilt framework allows exactly one vehicle
+        "04-Alpha/Research/README.md",
     ):
         if (ROOT / stale).exists():
-            raise AssertionError(f"retired v3.x lookthrough machinery resurfaced: {stale}")
+            raise AssertionError(f"retired file resurfaced: {stale}")
     forbid("03-Transition/Transition-Plan.md", r"现金、\(A\)、目标缺口")
 
     privacy_gate()

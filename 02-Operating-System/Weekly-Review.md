@@ -9,7 +9,7 @@
 - 最新有效的 `08-Data/SNAPSHOTS/` 数据
 - `04-Alpha/Position-Registry.md`
 - 本周成交、未完成订单和异常记录
-- 当前 Transition Dashboard
+- 当前 `03-Transition/Transition-Plan.md` 的阶段状态
 
 若实时 IBKR 数据未完整读取，周报标记为 `DATA INCOMPLETE`，不得给出新的 BUY / SELL 建议。
 
@@ -23,7 +23,7 @@
 
 ## C. 配置与转型
 
-- Cash / SPYM / QQQM / SOXX / Legacy的当前权重，以及`A_actual`、`A_stage`（固定6%）、`A_execution_cap`、`A_basis`、`U`
+- Cash / SPYM / QQQM / SOXX / Legacy 的当前权重，以及 `A_actual`、`A_stage`、`A_execution_cap`、`A_basis`、`U`（定义与阈值见 Constitution）
 - SOXX列示生命周期`Hold | Frozen | Exit Review`
 - 与Constitution的Cash、QQQM、`SPYM + SOXX + Stage Reserve`袖套和硬上限差异
 - SPYM回撤`DD`、回撤档位状态与本周期已执行的回撤部署

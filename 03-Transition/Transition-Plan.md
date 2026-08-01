@@ -8,9 +8,9 @@
 \text{Cash }(15\%+U) + \text{QQQM }28\% + \text{SPYM }(57\%-A_{basis}) + \text{SOXX }A_{actual}
 \]
 
-其中`A_stage=6%`为SOXX永久硬上限（v4.0 起固定），`A_execution_cap=3%`为当前执行上限，`A_basis=max(A_actual,A_stage)`，`U=max(A_stage-A_actual,0)`。QQQM 28%保持不变；U作为现金中的阶段储备，不先投入SPYM。迁移以纪律、税务效率和可执行性为先，计划基线使用 2028-12 作为完成月，并在每月重算。
+符号定义与阈值以 `01-Constitution/Target-Allocation.md` 为唯一权威（`A_stage` / `A_basis` / `U` / 执行档）。QQQM 28%保持不变；`U` 作为现金中的阶段储备，不先投入SPYM。迁移以纪律、税务效率和可执行性为先，计划基线使用 2028-12 作为完成月，并在每月重算。
 
-## 三条资金通道
+## 四条资金通道
 
 1. `Routine DCA`：每月固定外部入金（数额不入库）；只使用已到账的\(F\)，执行\(D=\min(F,G_0)\)，\(F-D\)留在现金；v4.0 起\(D\)不被估值等级削减。
 2. `Strategic Baseline`：在固定月度执行日，按 Deployment Framework 的 \(B=\min(S/R,G)\) 公式迁移历史超额现金；仅`VERY EXPENSIVE`暂停对应标的的\(B\)。
@@ -22,12 +22,12 @@ Red / N/A 估值只将战术加速降为 0，不阻塞 Routine DCA、Strategic B
 ## 原则
 
 1. Routine DCA \(D\) 和战略基线 \(B\) 只进入 SPYM / QQQM 正缺口。
-2. 每月根据实时净值、现金、\(A_{actual}\)、\(A_{stage}\)、\(A_{basis}\)、\(U\)、目标缺口和到 2028-12 的剩余执行次数重算。
+2. 每月根据实时净值、现金、SOXX 权重相关派生量、目标缺口和到 2028-12 的剩余执行次数重算。
 3. 交易后物理现金不得低于`12%+U`，不得使用融资。
 4. SOXX 板块倾斜的月度例行新增分配恒为 0。
 5. 所有倾斜新建、追加和卖出均走完整 Investment Committee。
 6. 非目标旧持仓和超上限倾斜采用税务感知的渐进退出；不因“高位/低位”单独卖出。
-7. 每月只更新一份 Transition Dashboard。
+7. 每月只产出一份月度输出（格式见 Deployment Framework 第 8 节），聊天呈交所有者，不写回仓库。
 
 ## 阶段
 

@@ -16,20 +16,20 @@
 ## 七步执行
 
 1. 通过 Data Gate，更新 Cash、SPYM、QQQM、SOXX 和 Legacy 的市值。
-2. 读取`A_stage`（固定6%）与`A_execution_cap`，计算`A_actual`、`A_basis=max(A_actual,A_stage)`、`U=max(A_stage-A_actual,0)`及SPYM动态目标`57%-A_basis`；检查执行上限不得高于6%。
+2. 读取 Registry 的 `A_stage` 与 `A_execution_cap`，按 Constitution 的定义计算 `A_actual`、`A_basis`、`U` 及 SPYM 动态目标；检查执行上限不得高于硬上限。
 3. 检查Cash、QQQM、`SPYM + SOXX + Stage Reserve`袖套及SOXX 6%硬上限。
 4. 确认实际外部净入金 \(F\)，计算入金后 Core 正缺口 \(G_0\)，执行 Routine DCA \(D=\min(F,G_0)\)（按正缺口分配）；未分配金额留在现金。
 5. 以 Routine DCA 后的预计现金和剩余 Core 正缺口，按 Deployment Framework 计算战略现金迁移基线 \(B\)；仅当某标的最终估值等级为`VERY EXPENSIVE`时暂停该标的的\(B\)。
 6. 评估回撤部署档位：`DD` 达档且该档在本周期未执行时，按 Deployment Framework 第 2 节执行部署。只有等级为`CHEAP`且数据合格时，才允许把基线之外的战术加速 \(T\) 提交完整 IC。
-7. 更新 Transition Dashboard 与影子基准记录；仅在非例行决定时写入 Journal。
+7. 按 Deployment Framework 第 8 节的月度输出格式向所有者报告（聊天输出，不落盘），并记录影子基准；仅在非例行决定时写入 Journal。
 
 ## 资金分配算法
 
 - \(F\) = 本月已到账的实际外部净入金，且 \(F\ge0\)；提款或未到账计划额不计入。
-- \(V\)=入金后、交易前净值；`A_actual`=SOXX市值÷V；`A_stage=6%`；`A_execution_cap≤A_stage`；`A_basis=max(A_actual,A_stage)`；`U=max(A_stage-A_actual,0)`。
-- QQQM 目标美元值 = \(V\times28\%\)。
-- SPYM目标美元值=\(V\times(57\%-A_{basis})\)。
-- \(G_0\) = Routine DCA 前两只 Core 的 `max(目标美元值 − 当前市值, 0)` 合计。
+- \(V\)=入金后、交易前净值；`A_actual`、`A_basis`、`U` 按 Constitution 定义计算。
+- QQQM 目标 = \(V\times28\%\)。
+- SPYM 目标 = \(V\times(57\%-A_{basis})\)。
+- \(G_0\) = Routine DCA 前两只 Core 的 `max(目标 − 当前市值, 0)` 合计。
 - \(D=\min(F,G_0)\)；v4.0 起 \(D\) 不被估值等级或估值数据缺失削减。
 - \(C=C_0-D\)，\(G\) = 分配 \(D\) 后两只 Core 的剩余正缺口合计。
 - \(S=\max(C-(15\%+U)\times V,0)\)，\(B=\min(S/R,G)\)。
@@ -68,7 +68,7 @@ Routine DCA \(D\)、\(B\) 与回撤部署无需完整四视角 Packet，但必�
 
 - 交易后现金仍在约束范围内（含回撤档临时下限），或按 Transition Plan 明确向范围靠拢。
 - 没有未经审核的新标的。
-- Dashboard 已更新。
+- 月度输出已按 Deployment Framework 第 8 节格式呈交所有者。
 - 估值`N/A`没有阻塞 \(D/B\)；`VERY EXPENSIVE`只暂停了对应标的的\(B\)。
 - 估值等级没有单独触发卖出。
 - SOXX 没有通过月度例行路径获得追加。

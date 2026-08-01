@@ -42,44 +42,14 @@
 - 防复发：任何未通过项均默认 `HOLD / STOP`。
 - 状态：Closed
 
-## BUG-005：Core 标的命名与运行入口不一致
-
-- 日期：2026-07-30
-- 事件：首次修复后仍在 Transition Plan、Quarterly Workflow、Alpha Research、Journal 与旧 Assistant 模板残留现行 SPY / QQQ 或冲突输出；v3.2 LTS 的一致性验收过早关闭。
-- 影响：可能在真实资金审查时选错交易载体，或使用非权威输出状态。
-- 根因：只检查已知文件，没有进行全仓角色化扫描并区分历史 / 代理引用与现行执行引用。
-- 修复：v3.3 统一现行交易载体为 SPYM / QQQM；旧 Assistant 模板降级为权威流程链接；历史 Release、Decision Log 和数据代理语境保留并显式标注。
-- 防复发：每次发布扫描裸 SPY / QQQ，并对历史、数据代理、防切换说明建立白名单；核对全部入口和模板。
-- 状态：Closed
-
-## BUG-006：Alpha 配置数学回归
-
-- 日期：2026-07-30
-- 事件：Constitution 同时规定 Alpha 10%–15%、固定 SPYM 42%，又允许 Alpha 不填满。
-- 影响：Alpha 为 0 时无法得到合计 100%的合法目标，可能诱发强制填满或错误再平衡。
-- 根因：v3.2 固定表格覆盖了 v3.1 已确定的机会预算语义。
-- 修复：Alpha 改为 \(A\in[0,15\%]\)，`SPYM + Alpha = 57%`，`SPYM = 57%−A`。
-- 防复发：发布测试必须覆盖 \(A=0\%、5\%、15\%\) 并验证合计 100%。
-- 状态：Closed
-
 ## BUG-007：估值数据死锁战略转型
 
 - 日期：2026-07-30
 - 事件：历史超额现金全部依赖 PE 历史百分位，但该字段在 Data Registry 中为 Red。
 - 影响：系统会安全地长期不部署现金，与 2026–2028 转型目标冲突。
 - 根因：战略迁移和战术择机共用同一评分闸门，Liquidity 同时被当成买入信号。
-- 修复：拆分固定投入、战略基线 \(B\) 和战术加速 \(T\)；估值 Red 只令 \(T=0\)，Liquidity 只限制金额。
-- 防复发：数据失败必须标明受影响路径，不允许局部 Red 关闭无关的例行流程。
-- 状态：Closed
-
-## BUG-008：Observation 与当前 Alpha 名单缺失
-
-- 日期：2026-07-30
-- 事件：SOXX 已是实际观察仓，但 Production 没有 Observation 生命周期，Alpha Framework 仍列已过时的 MU / TSM / GOOG 候选。
-- 影响：SOXX 会被误判为 Legacy / 异常，或绕过 Alpha 风险预算；旧候选可能误导未来资金。
-- 根因：没有独立的 Alpha 状态登记表，聊天确认未进入生产规则。
-- 修复：建立 Position Registry；SOXX 登记为 `Alpha / Observation / HOLD / ADD FROZEN`；删除旧候选基线。
-- 防复发：IBKR 出现未登记非 Core 持仓时先 REVIEW；所有生命周期变更同步更新 Registry。
+- 修复：拆分固定投入、战略基线 \(B\) 和战术加速 \(T\)；估值 Red 只令 \(T=0\)。v4.0 进一步降级估值职责，`D / B` 不再被估值数据缺失阻塞。
+- 防复发：数据失败必须标明受影响路径，不允许局部 Red 关闭无关的例行流程；CI 断言 `N/A` 不得关闭 `B`。
 - 状态：Closed
 
 ## BUG-009：例行月度路径与完整 IC 冲突
@@ -88,9 +58,28 @@
 - 事件：Production 要求所有真实资金交易走完整 IC，而 Checklist 又允许固定月度流程走简化检查。
 - 影响：同一笔 DCA 可能被同时视为允许与禁止，无法稳定执行。
 - 根因：没有按 Routine、Strategic、Tactical / Alpha 划分资金通道。
-- 修复：固定投入与公式化战略基线走月度 Data / Execution Gate；战术加速、全部 Alpha 动作、卖出与例外走完整 IC。
+- 修复：固定投入与公式化战略基线走月度 Data / Execution Gate；战术加速、全部倾斜动作、卖出与例外走完整 IC。
 - 防复发：每次发布交叉校验 Production、Monthly Workflow 和 Decision Checklist 的交易范围。
 - 状态：Closed
+
+## 已退役机制缺陷存档
+
+以下缺陷全部 Closed，但其修复所依附的机制已随 v3.x → v4.0 退役。完整正文随仓库历史重建已不可恢复，本节是唯一存档。仍然有效的教训已并入现行规则。
+
+| 编号 | 缺陷（一句话） | 仍然有效的教训 |
+|---|---|---|
+| BUG-005 | Core 标的命名与运行入口不一致，SPY / QQQ 残留在多份文件中 | 每次发布做全仓角色化扫描，区分历史引用与现行执行引用 |
+| BUG-006 | Alpha 配置数学回归：同时规定 Alpha 10%–15% 与固定 SPYM 42%，合计无法闭合 | 发布测试必须覆盖配置边界并验证合计 100%（现由 CI `allocation_tests` 承担） |
+| BUG-008 | Observation 生命周期与当前倾斜名单缺失，旧候选残留在框架文件中 | 非 Core 持仓必须有登记表；聊天确认不等于进入生产规则 |
+| BUG-010 | 聊天中的 SOXX 15% 决定未进入 Production，规则与决策分叉 | 战略决定必须先更新 Constitution、Registry、Decision Log 与 Release |
+| BUG-011 | SOXX 阶段路径依赖：按实际权重算 SPYM 目标会先把未来倾斜预算投入 SPYM | 区分 `A_actual` 与 `A_stage`，未完成额度作为现金用途标签 `U` 保留 |
+| BUG-012 | Dashboard 混淆 \(F\) 与 \(D\)，把入金额当作买入额 | \(F\) 是已到账入金，\(D=\min(F,G_0)\) 是实际买入；两者必须分别列示 |
+| BUG-013 | Policy Benchmark 用实际高现金账户的单位收益率代表假设 15% 现金基准 | 假设基准必须按经纪商规则重新计息；输入不全记 N/A，不用实际收益率或 0% 代理 |
+| BUG-014 | Data Dictionary 残留 v3.3 执行公式（`57%-A`、现金只扣固定 15%） | 权威字段表必须与主规则同批验收；CI 校验公式与配置边界 |
+| BUG-015 | SOXX 引用非现行指数方法（以 Nasdaq PHLX SOX 支持 NYSE 指数断言） | 未取得现行方法可审计副本前，研究状态保持 Incomplete；CI 禁止旧方法链接 |
+| BUG-016 | Policy Benchmark 同时暗示月度与每日再平衡 | 月初重置现金袖套；未入账应计利息不得提前进入计息本金（CI `benchmark_interest_tests` 守护） |
+| BUG-017 / 019–022 | v3.x 复合生命周期状态、Add Candidate Packet 时效机制、Look-through Evidence Bundle v1.4 / v1.5 验证器相关缺陷 | Registry 只保存持久状态；穿透数据必须记录来源与 `source_as_of`；仓库不维护中央证券数据库；未分类暴露不得静默丢弃 |
+| BUG-018 | SOXX 阶段检查点没有可执行上限，一次 IC 仍可能直接买到阶段上限 | 治理阶段与单笔执行上限必须分离；执行档逐档推进，同一次 IC 不得跳档（CI `next_execution_cap` 守护） |
 
 ## 新缺陷模板
 
@@ -105,90 +94,3 @@
 - 防复发：
 - 状态：Open / Monitoring / Closed
 ```
-
-## BUG-010：聊天中的SOXX 15%决定未进入Production
-
-- 日期：2026-07-30
-- 事件：用户已确认SOXX长期15%、当前6%执行上限，但Production仍把SOXX限定为一般Observation与永久6%上限。
-- 影响：聊天决策与生产规则分叉。
-- 根因：战略决定未经过正式版本发布。
-- 修复：v3.4建立SOXX唯一例外、阶段治理与Registry。
-- 防复发：阶段变化必须先更新Constitution、Registry、Decision Log与Release。
-- 状态：Closed
-
-## BUG-011：SOXX阶段路径依赖
-
-- 日期：2026-07-30
-- 事件：按实际Alpha权重计算SPYM目标，会先把未来SOXX阶段预算投入SPYM。
-- 影响：后续推进SOXX时可能被迫回转SPYM。
-- 根因：没有区分实际权重和批准阶段。
-- 修复：引入`A_actual`、`A_stage`、`A_basis`与阶段储备`U`。
-- 防复发：发布测试覆盖实际权重低于、等于和高于阶段三类边界。
-- 状态：Closed
-
-## BUG-012：Dashboard混淆F与D
-
-- 日期：2026-07-30
-- 事件：Dashboard把Routine DCA `D`写成默认计划入金额。
-- 影响：Core缺口小于入金时可能侵蚀现金目标。
-- 根因：展示层没有同步v3.3的字段拆分。
-- 修复：明确`F`为已到账入金，`D=min(F,G0)`为实际Core买入。
-- 防复发：Dashboard必须列示F、G0、D三个独立字段。
-- 状态：Closed
-
-## BUG-013：Policy Benchmark现金收益不可比
-
-- 日期：2026-07-30
-- 事件：使用实际高现金账户的单位收益率代表假设15%现金基准。
-- 影响：IBKR免息门槛、NAV比例和Segment使该收益率不可线性映射。
-- 根因：没有对假设现金袖套重新运行经纪商规则。
-- 修复：v3.4按每日假设15%现金、官方利率、NAV比例和门槛重算。
-- 防复发：模型输入不完整时Benchmark标记N/A，不允许实际收益率或0%代理。
-- 状态：Closed
-
-
-## BUG-014：Data Dictionary残留v3.3执行公式
-
-- 日期：2026-07-30
-- 事件：权威Data Dictionary仍用`57%-A`计算Core缺口，并从现金只扣固定15%。
-- 影响：可能把SOXX阶段储备错误部署到SPYM / QQQM。
-- 根因：v3.4发布只验收主规则，未自动核对实现字段。
-- 修复：统一为`57%-A_basis`与`S=max(C-(15%+U)×V,0)`。
-- 防复发：Policy consistency工作流校验公式与多组配置边界。
-- 状态：Closed
-
-## BUG-015：SOXX引用非现行指数方法
-
-- 日期：2026-07-30
-- 事件：SOXX跟踪NYSE Semiconductor Index，却用Nasdaq PHLX SOX方法支持具体权重上限。
-- 影响：研究状态与指数集中度结论缺乏现行来源支持。
-- 根因：基金历史名称与旧基准造成来源混淆。
-- 修复：删除未经现行来源支持的12% / 10% / 8%断言，将方法证据状态降为Incomplete。
-- 防复发：完整ICE/NYSE方法未进入可审计记录前，Registry保持Frozen；自动测试禁止旧Nasdaq方法链接。
-- 状态：Closed
-
-## BUG-016：Policy Benchmark同时暗示月度与每日再平衡
-
-- 日期：2026-07-30
-- 事件：规则称按月重置，却定义每日现金为每日基准净值的15%。
-- 影响：收益路径与真正月度再平衡基准不一致。
-- 根因：把计息余额计算误写为每日权重重置。
-- 修复：月初重置15%现金袖套；拆分已入账本金与未入账应计利息，次月第三个工作日只做科目转换，未入账应计额不得进入次日计息本金。
-- 防复发：自动测试禁止每日现金重置和应计利息提前复利，并测试入账转换不改变NAV。
-- 状态：Closed
-
-
-## BUG-018：SOXX阶段检查点没有执行上限
-
-- 日期：2026-07-30
-- 事件：Registry只记录\(A_{stage}=6\%\)，3%和4.5%仅是文字检查点，一次IC仍可能直接批准买到6%。
-- 影响：阶段内分档无法执行，集中度可能跳升。
-- 根因：治理阶段与单笔可执行上限被合并为同一变量。
-- 修复：新增当前\(A_{execution\_cap}=3\%\)，并规定3%→4.5%→6%→10%→12.5%→15%逐档更新、不得高于阶段、同一次IC不得跳档。
-- 防复发：CI验证合法集合、当前组合、非法跳档和交易后上限。
-- 状态：Closed
-
-
-## 已退役机制条目存档（v4.0清理）
-
-BUG-017、BUG-019、BUG-020、BUG-021、BUG-022 涉及 v3.x 的复合生命周期状态、Add Candidate Packet 时效机制与 Look-through Evidence Bundle v1.4/v1.5 验证器。该机制已于 v4.0 整体退役（见 `07-Releases/v4.0.md` 与 Decision Log），完整条目可查 git 历史。仍然有效的教训已并入现行规则：Registry 只保存持久状态；穿透核查数据必须记录来源与 `source_as_of`；仓库不维护中央证券数据库；未分类暴露不得静默丢弃。

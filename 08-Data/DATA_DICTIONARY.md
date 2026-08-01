@@ -11,6 +11,8 @@
 
 ## v4.0配置字段
 
+> 阈值本身以 `01-Constitution/Target-Allocation.md` 为唯一权威；本节定义字段口径与计算式，供实现与 CI 校验使用。两者冲突时以 Constitution 为准。
+
 - `alpha_actual_weight`：\(A_{actual}=\text{SOXX市值}/V\)。
 - `alpha_stage_cap`：\(A_{stage}\)，由Position Registry发布；v4.0 起固定为6%（永久硬上限）。
 - `alpha_execution_cap`：\(A_{execution\_cap}\)，当前3%；是下一笔SOXX交易后的最大允许实际权重，合法顺序为3%→4.5%→6%，必须满足\(A_{execution\_cap}\le A_{stage}\)。

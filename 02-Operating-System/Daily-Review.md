@@ -46,7 +46,7 @@
 
 同时列出各持仓数量、市值、组合占比、成本和未实现盈亏。
 
-SOXX按 Position Registry 当前生命周期列示。每日同时报告`A_actual`、`A_stage`（固定6%）、`A_execution_cap`、`A_basis=max(A_actual,A_stage)`、`U=max(A_stage-A_actual,0)`、SPYM 相对历史最高收盘回撤`DD`与回撤档位状态；阶段储备属于现金用途标签，不得重复计入。
+SOXX按 Position Registry 当前生命周期列示。每日同时报告 `A_actual`、`A_stage`、`A_execution_cap`、`A_basis`、`U`（定义与阈值见 Constitution）、SPYM 相对历史最高收盘回撤 `DD` 与回撤档位状态；阶段储备属于现金用途标签，不得重复计入。
 
 ### 3. Open Orders
 

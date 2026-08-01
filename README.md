@@ -52,7 +52,7 @@ v4.0 以实测证据（`Research/2026-07-31-v4-Evidence-and-Proposal.md`）驱�
 6. 只有估值为`CHEAP`且超出月度基线的战术加速才使用 [部署框架](02-Operating-System/Deployment-Framework.md) 并进入完整IC。
 7. 任何非例行真实资金候选先完成 [Investment Committee Packet](02-Operating-System/Decision-Checklist.md)。
 8. 每季度按 [Quarterly Workflow](02-Operating-System/Quarterly-Workflow.md) 完成 [穿透手工核查](08-Data/LOOKTHROUGH_CHECK.md) 并审核倾斜与集中度。
-9. 转型期维护 [Transition Dashboard](03-Transition/Transition-Dashboard.md)。
+9. 转型期按 [Transition Plan](03-Transition/Transition-Plan.md) 推进；月度输出用 Deployment Framework 的输出格式，只在聊天呈现，不写回仓库。
 10. 所有新假设进入 [Research Sandbox](Research/README.md)，不得直接影响生产交易。
 11. 每年审核系统规则、Policy Benchmark 与影子基准对比。
 
@@ -65,21 +65,17 @@ v4.0 以实测证据（`Research/2026-07-31-v4-Evidence-and-Proposal.md`）驱�
 - `00-IPS/`：使命、期限、风险与治理
 - `01-Constitution/`：不可随意改变的目标配置和边界
 - `02-Operating-System/`：每日、周度、月度、季度、年度流程及交易闸门
-- `03-Transition/`：2026–2028 转型计划与仪表盘
+- `03-Transition/`：2026–2028 转型计划
 - `04-Alpha/`：板块倾斜规则、生命周期和当前登记（目录名保留历史命名）
 - `05-Journal/`：重大投资决策记录
 - `06-Lessons/`：长期有效的经验
-- `07-Releases/`：现行版本说明（历史版本已清理,查 git 历史）
+- `07-Releases/`：现行版本说明（v1.x–v3.5 已移除，要点见 Decision-Log 存档节）
 - `08-Data/`：Production 数据注册表、字段定义、质量闸门、穿透核查和快照
 - `scripts/`：`check_policy_consistency.py`（CI 规则镜像）与 `fetch_etf_data.py`（ETF 穿透查询工具）
 - `CLAUDE.md`：AI 执行手册
 
 ## 优先级
 
-发生冲突时：投资政策声明 → Constitution → Operating System → Transition Dashboard → Journal。`PRODUCTION.md` 负责执行契约和入口，不覆盖以上策略优先级。聊天记录和 Research 不具有现行规则效力。
-
-## 历史脚注
-
-- v3.4.2 曾以 Look-through Evidence Bundle v1.4 / Bundle v1.5 把穿透数据门执行化；v4.0 以证据为依据将其简化为季度手工核查（见 BUGLOG 与 Decision Log 中 Bundle v1.4 相关条目）。
+发生冲突时：投资政策声明 → Constitution → Operating System → Transition Plan → Journal。`PRODUCTION.md` 负责执行契约和入口，不覆盖以上策略优先级。聊天记录和 Research 不具有现行规则效力。
 
 本仓库用于个人决策纪律与记录，不构成面向他人的投资建议。
