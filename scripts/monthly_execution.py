@@ -61,9 +61,10 @@ A_EXECUTION_CAP = 0.03
 # v4.4: each tier releases a FIXED tranche of NAV rather than "all cash above a
 # floor" — that older shape dumped the whole 15%->floor band in the first tier,
 # which is what tranching is meant to prevent. ABSOLUTE_FLOOR is the hard stop.
-TIERS = ((0.10, "T1"), (0.15, "T2"), (0.20, "T3"),
-         (0.25, "T4"), (0.30, "T5"), (0.35, "T6"))
-TRANCHE = 0.015          # 1.5pp of NAV released per tier
+# v4.6: four tiers ending at 25%, not six ending at 35%. The deepest two almost
+# never fired, so the ammunition sat idle; the ladder now spends out at 25%.
+TIERS = ((0.10, "T1"), (0.15, "T2"), (0.20, "T3"), (0.25, "T4"))
+TRANCHE = 0.0225         # 2.25pp of NAV released per tier
 ABSOLUTE_FLOOR = 0.06    # cash never goes below this (+U) via drawdown deployment
 PLAN_END = (2028, 12)  # strategic baseline planned completion month
 
@@ -350,9 +351,19 @@ def self_test() -> None:
     r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.28, set(), d0)
     assert r["consumed"] == ["T1", "T2", "T3", "T4"], f"wrong tiers consumed: {r['consumed']}"
 
-    # 6b. even tranching: each tier releases exactly 1.5pp from the 15% target
+    # 6b. even tranching: the tiers take cash from the 15% target exactly to 6%
     assert len(TIERS) * TRANCHE + ABSOLUTE_FLOOR - 0.15 < 1e-12, \
-        "six tranches must take cash from the 15% target exactly to the 6% floor"
+        "the tranches must take cash from the 15% target exactly to the 6% floor"
+
+    # 6c. v4.6: the ladder ends at 25%. Past T4 the ammunition is spent by design,
+    # so a deeper fall authorizes nothing — this is the decision, not an oversight.
+    deep = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.45, set(), d0)
+    assert deep["consumed"] == ["T1", "T2", "T3", "T4"], \
+        f"a 45% fall must consume the whole ladder and no more: {deep['consumed']}"
+    spent = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.45,
+                    {"T1", "T2", "T3", "T4"}, d0)
+    assert spent["dd_amount"] == 0 and not spent["consumed"], \
+        "a spent ladder must authorize nothing however deep the fall"
 
     # 7. cash never ends below the authorized floor
     for dd, ex in ((0.0, set()), (0.11, set()), (0.28, set()), (0.40, set()), (0.28, {"T1"})):
@@ -398,7 +409,7 @@ def self_test() -> None:
     assert with_restore["final_cash_w"] >= with_restore["floor_w"] - 1e-9, \
         "restore + deployment pierced the floor"
 
-    print("monthly_execution self-test passed (11 invariants)")
+    print("monthly_execution self-test passed (12 invariants)")
 
 
 def main() -> int:

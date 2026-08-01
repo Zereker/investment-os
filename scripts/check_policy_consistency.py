@@ -12,8 +12,10 @@ CURRENT_EXECUTION_CAP = 0.03
 # v4.4: each tier releases a FIXED tranche of NAV. The older "deploy everything
 # above a floor" shape dumped the whole 15%->floor band into the first tier,
 # which is exactly what tranching exists to prevent.
-DRAWDOWN_TRIGGERS = (0.10, 0.15, 0.20, 0.25, 0.30, 0.35)
-TRANCHE = 0.015          # released per tier, as a weight of NAV
+# v4.6: the ladder is four tiers ending at 25%, not six ending at 35% — the
+# deepest two almost never fired, leaving the ammunition idle.
+DRAWDOWN_TRIGGERS = (0.10, 0.15, 0.20, 0.25)
+TRANCHE = 0.0225         # released per tier, as a weight of NAV
 ABSOLUTE_FLOOR = 0.06    # drawdown deployment never takes cash below this (+U)
 NORMAL_CASH_FLOOR = 0.12
 
@@ -124,16 +126,21 @@ def drawdown_tests() -> None:
         raise AssertionError("no drawdown must release nothing")
     if drawdown_release(0.099999) != 0.0:
         raise AssertionError("below-tier drawdown must not unlock deployment")
-    expected = {0.10: 1, 0.1499: 1, 0.15: 2, 0.20: 3, 0.25: 4, 0.30: 5, 0.35: 6, 1.0: 6}
+    # v4.6: the ladder ends at 25% — 30%, 35% and 100% all release the same four
+    # tranches, because past T4 the ammunition is spent by design.
+    expected = {0.10: 1, 0.1499: 1, 0.15: 2, 0.20: 3, 0.25: 4, 0.30: 4, 0.35: 4, 1.0: 4}
     for dd, tranches in expected.items():
         if abs(drawdown_release(dd) - tranches * TRANCHE) > 1e-12:
             raise AssertionError(f"wrong release at drawdown {dd}")
+    # a fully spent ladder releases nothing however deep the fall goes
+    if drawdown_release(0.60, executed=set(DRAWDOWN_TRIGGERS)) != 0.0:
+        raise AssertionError("spent ladder must release nothing at any depth")
     # once-per-cycle: an executed tier no longer releases
     if drawdown_release(0.12, executed={0.10}) != 0.0:
         raise AssertionError("executed tier must not re-authorize deployment")
-    if abs(drawdown_release(0.30, executed={0.10}) - 4 * TRANCHE) > 1e-12:
+    if abs(drawdown_release(0.30, executed={0.10}) - 3 * TRANCHE) > 1e-12:
         raise AssertionError("deeper tiers must stay available after shallower executed")
-    # the six tranches take cash from the 15% target exactly to the absolute floor
+    # the four tranches take cash from the 15% target exactly to the absolute floor
     if abs(len(DRAWDOWN_TRIGGERS) * TRANCHE + ABSOLUTE_FLOOR - 0.15) > 1e-12:
         raise AssertionError("ladder does not span the 15% target down to the 6% floor")
     if ABSOLUTE_FLOOR >= NORMAL_CASH_FLOOR:
@@ -315,7 +322,10 @@ def main() -> None:
         "永久硬上限为总组合 **6%**",
         "10% / 12.5% / 15% 治理阶段自 v4.0 起作废",
         "回撤部署（Drawdown Deployment）",
-        "每档释放 **1.5pp of NAV**", "`6%+U`",
+        "每档释放 **2.25pp of NAV**", "`6%+U`",
+        # v4.6: the ladder ends at 25% and that must stay stated, not implied
+        "**`DD` 超过 25% 后不再解锁任何档位。**",
+        "为什么终点是 25% 而不是 35%",
         "每一档在同一轮回撤周期内最多执行一次",
         "除 `DD` 达档外不引入任何其他判断项",
         "只用外部新增资金逐月重建",
@@ -367,8 +377,8 @@ def main() -> None:
         "indexes.nasdaq.com",
         "前三大权重上限分别为12%、10%、8%",
     )
-    require("README.md", "# Investment OS v4.5")
-    require("PRODUCTION.md", "# Investment OS v4.5 — Production Contract")
+    require("README.md", "# Investment OS v4.6")
+    require("PRODUCTION.md", "# Investment OS v4.6 — Production Contract")
     require("07-Releases/v4.0.md", "不授权任何订单", "10% / 12.5% / 15% 历史治理阶段作废")
     require("07-Releases/v4.1.md", "不授权任何订单", "利息不在月内复利")
     require("07-Releases/v4.2.md", "不授权任何订单", "系统不再持有任何估值判断")
@@ -385,8 +395,25 @@ def main() -> None:
         "反对证据",
         "证伪回路",
     )
-    require("01-Constitution/Target-Allocation.md", "该区间现由 T2（15%）、T3（20%）、T4（25%）逐档覆盖")
+    require("01-Constitution/Target-Allocation.md", "由 T2（15%）、T3（20%）、T4（25%）逐档覆盖")
+    # the retired deep tiers must not survive anywhere in the active rules
+    for path in ("01-Constitution/Target-Allocation.md",
+                 "02-Operating-System/Deployment-Framework.md",
+                 "02-Operating-System/State-Reconstruction.md",
+                 "scripts/drawdown_drill.py", "scripts/monthly_execution.py"):
+        forbid(path, "`DD ≥ 30%`", "`DD ≥ 35%`", '"T5"', '"T6"')
     require("07-Releases/v4.4.md", "不授权任何订单", "1.5pp", "不判断谷底")
+    require("07-Releases/v4.6.md", "不授权任何订单", "2.25pp", "弹药在 T4 处打光", "证伪回路",
+            # the ladder's cost is a 2008-depth crash with no dry powder left;
+            # that disclosure must survive every future edit of this release note
+            "这份数据里没有 2008")
+    require(
+        "Research/2026-08-01-drawdown-four-tier.md",
+        "已批准", "证伪回路", "未采纳",
+        # the case against must stay on the page, not just the case for
+        "这份数据里没有 2008",
+    )
+    require("Decision-Log.md", "v4.6 回撤阶梯由六档改为四档")
     require(
         "Research/2026-08-01-drawdown-tranching.md",
         "已批准",
@@ -427,9 +454,8 @@ def main() -> None:
         "NEVER places or formats an executable order",
         "NEVER writes account figures to disk",
         # the calculator mirrors the rules; its constants must match this file
-        'TIERS = ((0.10, "T1"), (0.15, "T2"), (0.20, "T3"),',
-        '(0.25, "T4"), (0.30, "T5"), (0.35, "T6"))',
-        "TRANCHE = 0.015",
+        'TIERS = ((0.10, "T1"), (0.15, "T2"), (0.20, "T3"), (0.25, "T4"))',
+        "TRANCHE = 0.0225",
         "ABSOLUTE_FLOOR = 0.06",
         "CASH_FLOOR = 0.12",
         "CASH_TARGET = 0.15",
@@ -475,9 +501,8 @@ def main() -> None:
         "never authorizes trades",
         # the drill's tiers must mirror DRAWDOWN_TIERS above, or the drill
         # would be validating a state machine the Constitution does not have
-        'TIERS = ((0.10, "T1"), (0.15, "T2"), (0.20, "T3"),',
-        '(0.25, "T4"), (0.30, "T5"), (0.35, "T6"))',
-        "TRANCHE = 0.015",
+        'TIERS = ((0.10, "T1"), (0.15, "T2"), (0.20, "T3"), (0.25, "T4"))',
+        "TRANCHE = 0.0225",
         "ABSOLUTE_FLOOR = 0.06",
         "NORMAL_CASH_FLOOR = 0.12",
         "check_invariants",
@@ -495,8 +520,8 @@ def main() -> None:
     require(
         "02-Operating-System/Deployment-Framework.md",
         "回撤部署（Drawdown Deployment）",
-        "`DD ≥ 10%`", "`DD ≥ 15%`", "`DD ≥ 20%`",
-        "`DD ≥ 25%`", "`DD ≥ 30%`", "`DD ≥ 35%`",
+        "`DD ≥ 10%`", "`DD ≥ 15%`", "`DD ≥ 20%`", "`DD ≥ 25%`",
+        "没有任何可解锁的档位",
         "不引入任何其他判断项",
         "每档在同一回撤周期内最多执行一次",
     )

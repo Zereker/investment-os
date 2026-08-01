@@ -1,4 +1,4 @@
-# Investment OS v4.5 — Production Contract
+# Investment OS v4.6 — Production Contract
 
 本文件是当前生产系统的入口与执行契约。它不创造新的投资策略，只规定如何可靠地读取、验证和执行仓库中已经生效的规则。
 
