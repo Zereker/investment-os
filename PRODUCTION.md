@@ -1,4 +1,4 @@
-# Investment OS v4.4 — Production Contract
+# Investment OS v4.5 — Production Contract
 
 本文件是当前生产系统的入口与执行契约。它不创造新的投资策略，只规定如何可靠地读取、验证和执行仓库中已经生效的规则。
 
@@ -28,7 +28,9 @@ v4.x 期间：
 - SOXX是唯一自主板块倾斜载体（行业beta，不按alpha命名）；永久硬上限6%，`A_stage=6%`固定。
 - 定义\(A_{basis}=\max(A_{actual},A_{stage})\)、\(U=\max(A_{stage}-A_{actual},0)\)；SPYM目标为\(57\%-A_{basis}\)，物理现金目标为\(15\%+U\)。
 - 当前`A_execution_cap=3%`；执行上限按3%→4.5%→6%逐档推进，且不得高于6%。10%/12.5%/15%历史治理阶段已作废（依据见`Research/2026-07-31-v4-Evidence-and-Proposal.md`）。
-- 追加闸门：当季`08-Data/LOOKTHROUGH_CHECK.md`手工核查有效 + 实时账户读取 + 完整IC（当日有效）+ 人工下单。
+- v4.5 起「追加」拆为两条路径，判别只看`A_execution_cap`动没动：
+  - **提高倾斜**（推进`A_execution_cap`，风险预算扩大）：当季`08-Data/LOOKTHROUGH_CHECK.md`手工核查有效 + 实时账户读取 + 完整IC（当日有效）+ 人工下单。
+  - **回补至目标**（`A_execution_cap`不动，只买回被市场打下去的权重，风险预算不变）：走月度例行路径，五项约束见Constitution；资金只来自`U`，上限`min(A_execution_cap, A_stage)−A_actual`。
 - 每个PR必须通过`Policy consistency`检查；检查失败时不得合并为Production。
 
 ## 3. 每日巡检契约
@@ -63,14 +65,15 @@ v4.x 期间：
 - 每月固定新增投入 \(D=\min(F,G_0)\)；
 - 按已发布公式计算的战略现金迁移基线 \(B\)；
 - 按 Constitution 分档执行的回撤部署；
-- 资金只流向 SPYM / QQQM 的正缺口；
+- 按 Constitution 五项约束执行的 SOXX **回补至目标**（资金只来自 `U`，缺当季穿透核查即冻结）；
+- \(D\)、\(B\) 与回撤部署的资金只流向 SPYM / QQQM 的正缺口；回补的资金只来自 `U` 且只流向 SOXX；
 - 金额、方向和交易后权重完全符合 Constitution、Transition Plan 和实时 Data Gate。
 
 例行路径仍必须通过实时账户数据、目标缺口、现金下限、订单冲突和执行细节检查。任一条件不满足，升级为完整 IC 或 `HOLD / STOP`。
 
 ### 5.2 完整 Investment Committee 路径
 
-任何 SOXX 追加、新板块倾斜、卖出、换仓、规则例外或偏离月度公式的真实资金建议，都必须先完成 `02-Operating-System/Decision-Checklist.md`，并由 CIO、Risk、Data、Execution 四个视角形成 Verdict。
+任何 SOXX **提高倾斜**（推进 `A_execution_cap`）、新板块倾斜、卖出、换仓、规则例外或偏离月度公式的真实资金建议，都必须先完成 `02-Operating-System/Decision-Checklist.md`，并由 CIO、Risk、Data、Execution 四个视角形成 Verdict。
 
 #### 数据
 
