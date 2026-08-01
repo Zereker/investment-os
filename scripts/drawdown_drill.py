@@ -10,7 +10,7 @@ time to discover a state-machine bug.
 
 What it checks (per Constitution + 02-Operating-System/Deployment-Framework.md):
   - DD is measured against the running historical maximum CLOSE.
-  - Tiers: DD >= 15% / 25% / 35% temporarily lower the cash floor to
+  - Tiers: DD >= 10% / 25% / 35% temporarily lower the cash floor to
     10% / 8% / 6% (+U).
   - Each tier fires at most once per drawdown cycle.
   - A new all-time-high CLOSE resets the cycle: all tiers become AVAILABLE.
@@ -47,7 +47,7 @@ HISTORY_API = "https://stockanalysis.com/api/symbol/e/{sym}/history?range={rng}&
 
 # Constitution drawdown-deployment clause: (DD trigger, temporary cash floor).
 # U (the SOXX stage reserve) rides on top of every floor and is not modeled here.
-TIERS = ((0.15, 0.10, "T1"), (0.25, 0.08, "T2"), (0.35, 0.06, "T3"))
+TIERS = ((0.10, 0.10, "T1"), (0.25, 0.08, "T2"), (0.35, 0.06, "T3"))
 NORMAL_CASH_FLOOR = 0.12
 
 

@@ -53,7 +53,7 @@ QQQM_TARGET = 0.28
 SLEEVE_57 = 0.57
 A_STAGE = 0.06
 A_EXECUTION_CAP = 0.03
-TIERS = ((0.15, 0.10, "T1"), (0.25, 0.08, "T2"), (0.35, 0.06, "T3"))
+TIERS = ((0.10, 0.10, "T1"), (0.25, 0.08, "T2"), (0.35, 0.06, "T3"))
 PLAN_END = (2028, 12)  # strategic baseline planned completion month
 
 
@@ -270,7 +270,7 @@ def self_test() -> None:
     assert r["b"] <= r["g"] + 1e-9, "B exceeded G"
 
     # 4. no drawdown deployment below a tier trigger
-    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.14, set(), d0)
+    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.09, set(), d0)
     assert r["dd_amount"] == 0 and not r["consumed"], "deployed below the T1 trigger"
 
     # 5. an already-executed tier must not re-authorize (once per cycle)
@@ -282,7 +282,7 @@ def self_test() -> None:
     assert r["consumed"] == ["T1", "T2"], f"wrong tiers consumed: {r['consumed']}"
 
     # 7. cash never ends below the authorized floor
-    for dd, ex in ((0.0, set()), (0.16, set()), (0.28, set()), (0.40, set()), (0.28, {"T1"})):
+    for dd, ex in ((0.0, set()), (0.11, set()), (0.28, set()), (0.40, set()), (0.28, {"T1"})):
         r = compute(100_000, 30_000, 30_000, 15_000, 6_000, 3_000, dd, ex, d0)
         assert r["final_cash_w"] >= r["floor_w"] - 1e-9, f"cash pierced the floor at DD {dd}"
 

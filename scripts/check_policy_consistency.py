@@ -9,7 +9,7 @@ STAGES = (0.06,)  # v4.0: 6% is the permanent hard cap; 10/12.5/15% stages are v
 EXECUTION_CAPS = (0.03, 0.045, 0.06)
 CURRENT_STAGE = 0.06
 CURRENT_EXECUTION_CAP = 0.03
-DRAWDOWN_TIERS = ((0.15, 0.10), (0.25, 0.08), (0.35, 0.06))  # (dd trigger, cash floor)
+DRAWDOWN_TIERS = ((0.10, 0.10), (0.25, 0.08), (0.35, 0.06))  # (dd trigger, cash floor)
 NORMAL_CASH_FLOOR = 0.12
 
 
@@ -120,16 +120,16 @@ def drawdown_cash_floor(dd: float, executed: set[float] | None = None) -> float:
 def drawdown_tests() -> None:
     if drawdown_cash_floor(0.0) != NORMAL_CASH_FLOOR:
         raise AssertionError("no-drawdown floor must be the normal 12% floor")
-    if drawdown_cash_floor(0.149999) != NORMAL_CASH_FLOOR:
+    if drawdown_cash_floor(0.099999) != NORMAL_CASH_FLOOR:
         raise AssertionError("below-tier drawdown must not unlock deployment")
-    expected = {0.15: 0.10, 0.2499: 0.10, 0.25: 0.08, 0.3499: 0.08, 0.35: 0.06, 1.0: 0.06}
+    expected = {0.10: 0.10, 0.2499: 0.10, 0.25: 0.08, 0.3499: 0.08, 0.35: 0.06, 1.0: 0.06}
     for dd, floor in expected.items():
         if abs(drawdown_cash_floor(dd) - floor) > 1e-12:
             raise AssertionError(f"wrong cash floor at drawdown {dd}")
     # once-per-cycle: an executed tier no longer lowers the floor
-    if drawdown_cash_floor(0.20, executed={0.15}) != NORMAL_CASH_FLOOR:
+    if drawdown_cash_floor(0.20, executed={0.10}) != NORMAL_CASH_FLOOR:
         raise AssertionError("executed tier must not re-authorize deployment")
-    if abs(drawdown_cash_floor(0.30, executed={0.15}) - 0.08) > 1e-12:
+    if abs(drawdown_cash_floor(0.30, executed={0.10}) - 0.08) > 1e-12:
         raise AssertionError("deeper tier must stay available after shallower executed")
     for invalid in (-0.01, 1.01, nan, inf, True):
         try:
@@ -340,8 +340,8 @@ def main() -> None:
         "indexes.nasdaq.com",
         "前三大权重上限分别为12%、10%、8%",
     )
-    require("README.md", "# Investment OS v4.2")
-    require("PRODUCTION.md", "# Investment OS v4.2 — Production Contract")
+    require("README.md", "# Investment OS v4.3")
+    require("PRODUCTION.md", "# Investment OS v4.3 — Production Contract")
     require("07-Releases/v4.0.md", "不授权任何订单", "10% / 12.5% / 15% 历史治理阶段作废")
     require("07-Releases/v4.1.md", "不授权任何订单", "利息不在月内复利")
     require("07-Releases/v4.2.md", "不授权任何订单", "系统不再持有任何估值判断")
@@ -350,7 +350,15 @@ def main() -> None:
         "已批准",
         "历史百分位是真正的死结",
     )
-    require("Decision-Log.md", "v4.2 估值子系统整体退役")
+    require("Decision-Log.md", "v4.2 估值子系统整体退役", "v4.3 回撤部署 T1 触发线由 15% 下调至 10%")
+    require("07-Releases/v4.3.md", "不授权任何订单", "证伪回路", "10% 比 15% 贵")
+    require(
+        "Research/2026-08-01-t1-threshold-10pct.md",
+        "已批准",
+        "反对证据",
+        "证伪回路",
+    )
+    require("01-Constitution/Target-Allocation.md", "T1 下调至 10% 的已知代价")
     require(
         "Research/2026-08-01-benchmark-cash-model-simplification.md",
         "已批准",
@@ -383,7 +391,7 @@ def main() -> None:
         "NEVER places or formats an executable order",
         "NEVER writes account figures to disk",
         # the calculator mirrors the rules; its constants must match this file
-        'TIERS = ((0.15, 0.10, "T1"), (0.25, 0.08, "T2"), (0.35, 0.06, "T3"))',
+        'TIERS = ((0.10, 0.10, "T1"), (0.25, 0.08, "T2"), (0.35, 0.06, "T3"))',
         "CASH_FLOOR = 0.12",
         "CASH_TARGET = 0.15",
         "QQQM_TARGET = 0.28",
@@ -397,7 +405,7 @@ def main() -> None:
         "never authorizes trades",
         # the drill's tiers must mirror DRAWDOWN_TIERS above, or the drill
         # would be validating a state machine the Constitution does not have
-        'TIERS = ((0.15, 0.10, "T1"), (0.25, 0.08, "T2"), (0.35, 0.06, "T3"))',
+        'TIERS = ((0.10, 0.10, "T1"), (0.25, 0.08, "T2"), (0.35, 0.06, "T3"))',
         "NORMAL_CASH_FLOOR = 0.12",
         "check_invariants",
     )
@@ -414,7 +422,7 @@ def main() -> None:
     require(
         "02-Operating-System/Deployment-Framework.md",
         "回撤部署（Drawdown Deployment）",
-        "`DD ≥ 15%`", "`DD ≥ 25%`", "`DD ≥ 35%`",
+        "`DD ≥ 10%`", "`DD ≥ 25%`", "`DD ≥ 35%`",
         "不引入任何其他判断项",
         "每档在同一回撤周期内最多执行一次",
     )
@@ -443,9 +451,17 @@ def main() -> None:
     # git history was rebuilt to a single commit: no document may send readers there
     for path in ("README.md", "CLAUDE.md", "07-Releases/README.md"):
         forbid(path, "查 git 历史")
-    # live account state must never be frozen into rule files (red line 2)
-    for path in ("07-Releases/v4.0.md", "04-Alpha/Position-Registry.md", "Decision-Log.md"):
-        forbid(path, "7.8%", "7.5%")
+    # live account state must never be frozen into rule files (red line 2).
+    # Target the pattern "A_actual ... N%" specifically — a bare percentage is
+    # legitimate elsewhere (price premiums, drawdown depths, guardrail lines).
+    # "A_actual 约 7.8%" is a frozen observation; "A_actual 高于 6%" references the
+    # cap and is legitimate. The approximation marker is what distinguishes them.
+    frozen_state = re.compile(r"A_actual[^。\n]{0,12}?(?:约|≈|大约)\s*\d+(?:\.\d+)?\s*%")
+    for path in ("07-Releases/v4.0.md", "04-Alpha/Position-Registry.md",
+                 "Decision-Log.md", "01-Constitution/Target-Allocation.md"):
+        hit = frozen_state.search(read(path))
+        if hit:
+            raise AssertionError(f"{path}: frozen A_actual value: {hit.group()!r}")
     require(
         "README.md",
         "仓库不维护重复的中央证券数据库",
