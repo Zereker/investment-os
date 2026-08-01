@@ -37,6 +37,20 @@ python3 scripts/fetch_etf_data.py --scenario current --markdown
 3. **yfinance**：标准 Python 库答案(`yf.Ticker("SOXX").funds_data` 提供 sector_weightings/top_holdings),但**本沙箱网络层不可用**(curl_cffi TLS 与代理冲突);不要在此环境反复尝试。
 4. IT 行业合并值：脚本持仓表不含行业列,按 `08-Data/LOOKTHROUGH_CHECK.md` 第 2 步用官方行业表手工加权(SSGA/Invesco/iShares 产品页各一个数字)。
 
+## 如何算本月该买什么
+
+```bash
+# 数值从 IBKR 读,只走 argv 与 stdout,永不落盘:
+python3 scripts/monthly_execution.py --nav <NetLiq> --cash <TotalCash> \
+    --spym <市值> --qqqm <市值> --soxx <市值> --contribution <本月已到账F> \
+    --tiers-executed none          # 或 T1 / T1,T2,按本周期实际已执行档位填
+python3 scripts/monthly_execution.py --self-test   # 校验算术仍镜像规则
+```
+
+一条命令产出 `A_actual/A_basis/U`、各袖套动态目标与正缺口、`D=min(F,G0)`、`S`、`B=min(S/R,G)`、回撤档位、例行路径检查与 `HOLD / BUY CANDIDATE` 结论,格式即 Deployment-Framework 第 6 节的月度输出。
+
+**它是已发布规则的镜像,不是新规则**——与文档不一致即为脚本 BUG。它不下单、不生成订单指令;`--tiers-executed` 不填时拒绝授权回撤部署并报 `DATA INCOMPLETE`(档位已执行状态无法从价格推导)。
+
 ## 如何验证回撤部署状态机
 
 ```bash

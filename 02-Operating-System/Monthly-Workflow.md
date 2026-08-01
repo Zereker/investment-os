@@ -12,6 +12,8 @@
 - 到 2028-12 剩余的月度执行次数
 - SPYM 历史最高收盘回撤 `DD` 与回撤档位状态
 
+> 计算辅助：`python3 scripts/monthly_execution.py`（用法见 `CLAUDE.md`）一次产出第 2–6 步的全部数值与第 6 节输出格式。它是本文件与 Constitution 的可执行镜像，结果不一致时以文档为准并修脚本。数值只走命令行与终端，永不落盘。
+
 ## 七步执行
 
 1. 通过 Data Gate，更新 Cash、SPYM、QQQM、SOXX 和 Legacy 的市值。

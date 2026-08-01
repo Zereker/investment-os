@@ -379,6 +379,20 @@ def main() -> None:
         "fetch_etf_data.py",
     )
     require(
+        "scripts/monthly_execution.py",
+        "NEVER places or formats an executable order",
+        "NEVER writes account figures to disk",
+        # the calculator mirrors the rules; its constants must match this file
+        'TIERS = ((0.15, 0.10, "T1"), (0.25, 0.08, "T2"), (0.35, 0.06, "T3"))',
+        "CASH_FLOOR = 0.12",
+        "CASH_TARGET = 0.15",
+        "QQQM_TARGET = 0.28",
+        "A_STAGE = 0.06",
+        "def self_test",
+    )
+    require("CLAUDE.md", "monthly_execution.py")
+    require("02-Operating-System/Monthly-Workflow.md", "monthly_execution.py")
+    require(
         "scripts/drawdown_drill.py",
         "never authorizes trades",
         # the drill's tiers must mirror DRAWDOWN_TIERS above, or the drill
