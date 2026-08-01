@@ -78,7 +78,7 @@ python3 scripts/check_policy_consistency.py   # 提交前必须本地通过
 
 - Core 自身(51% SPYM + 28% QQQM)合并半导体暴露约 18%,**恒定高于 15% 护栏线**——这是指数结构事实,护栏因此只约束 SOXX 等自主倾斜的新增,不阻断 Core 例行路径。
 - SOXX 实际权重可能漂移超过 6% 上限:处理方式是冻结新增、不自动卖出、每日披露。
-- **只有 QQQM/SOXX 跌而 SPYM 没跌**时不触发回撤部署,由再平衡的正缺口吸收——`D/B` 每月自动流向缺口更大的标的。回撤部署只认 **SPYM** 的回撤(四档 ≥10/15/20/25%,等额分批,每档 2.25pp of NAV),从 15% 现金目标算起合计 9pp of NAV,**在 `DD` 25% 处打光,此后无论跌多深都不再解锁**(v4.6 决定,见 `Research/2026-08-01-drawdown-four-tier.md`)。实测:QQQM 近两年三次 11–14% 回撤发生时 SPYM 仅 3.9%–9.1%,均未达档。见 `Research/2026-08-01-drawdown-vs-rebalancing-scope.md` 与 `2026-08-01-t1-threshold-10pct.md`。
+- **只有 QQQM/SOXX 跌而 SPYM 没跌**时不触发回撤部署,由再平衡的正缺口吸收——`D/B` 每月自动流向缺口更大的标的。回撤部署只认 **SPYM** 的回撤(四档 ≥10/15/20/25%,梯度 1.5/3/4.5/6pp of NAV,合计 15pp),**在 `DD` 25% 处把现金全部投出至 `0+U`,此后无论跌多深都不再解锁、也不借款**(v4.6 决定,见 `Research/2026-08-01-drawdown-four-tier.md`)。实测:QQQM 近两年三次 11–14% 回撤发生时 SPYM 仅 3.9%–9.1%,均未达档。见 `Research/2026-08-01-drawdown-vs-rebalancing-scope.md` 与 `2026-08-01-t1-threshold-10pct.md`。
 - 估值子系统已于 v4.2 整体退役:四个输入字段全 Red 且无法转 Green(QQQM 官方页是 SPA、SOXX 只有 Trailing P/E、历史百分位需要拿不到的 5–10 年序列)。系统不再持有任何估值判断,三条资金通道全部由公式与价格驱动。依据见 `Research/2026-08-01-valuation-subsystem-retirement.md`。
 - 完整证据:`Research/2026-07-31-v4-Evidence-and-Proposal.md`。
 

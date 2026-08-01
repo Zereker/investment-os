@@ -11,10 +11,11 @@ time to discover a state-machine bug.
 What it checks (per Constitution + 02-Operating-System/Deployment-Framework.md):
   - DD is measured against the running historical maximum CLOSE.
   - Tiers: DD >= 10/15/20/25% lower the cash floor to
-    12.75/10.5/8.25/6% (+U) — an even 2.25pp tranche per tier from the
-    15% target, 9pp total. Deeper drawdown buys more; no bottom is called.
-  - v4.6: the ladder ENDS at 25%. Past that the ammunition is spent by design
-    and nothing further unlocks, however deep the drawdown goes.
+    13.5/10.5/6/0% (+U) — GRADED tranches of 1.5/3/4.5/6pp from the 15%
+    target, 15pp total. Deeper drawdown buys more; no bottom is called.
+  - v4.6: the ladder ENDS at 25% and spends the cash out entirely. Past 25%
+    the ammunition is gone by design and nothing further unlocks, however
+    deep the drawdown goes.
   - Each tier fires at most once per drawdown cycle.
   - A new all-time-high CLOSE resets the cycle: all tiers become AVAILABLE.
   - One day may satisfy several tiers (gap down); they fire shallow-to-deep,
@@ -50,9 +51,12 @@ HISTORY_API = "https://stockanalysis.com/api/symbol/e/{sym}/history?range={rng}&
 
 # Constitution drawdown-deployment clause: (DD trigger, temporary cash floor).
 # U (the SOXX stage reserve) rides on top of every floor and is not modeled here.
-TIERS = ((0.10, "T1"), (0.15, "T2"), (0.20, "T3"), (0.25, "T4"))
-TRANCHE = 0.0225         # each tier releases 2.25pp of NAV
-ABSOLUTE_FLOOR = 0.06    # cash never goes below this (+U)
+TIERS = ((0.10, "T1", 0.0150),
+         (0.15, "T2", 0.0300),
+         (0.20, "T3", 0.0450),
+         (0.25, "T4", 0.0600))
+ABSOLUTE_FLOOR = 0.0     # cash never goes below this (+U)
+LADDER = sum(t[2] for t in TIERS)   # 15pp: the whole cash position is ammunition
 NORMAL_CASH_FLOOR = 0.12
 
 
@@ -100,12 +104,12 @@ def replay(series: list[tuple[str, float]]) -> tuple[list[dict], list[dict]]:
         max_dd_in_cycle = max(max_dd_in_cycle, dd)
 
         # shallow-to-deep, once per cycle
-        for trigger, name in TIERS:
+        for trigger, name, tranche in TIERS:
             if dd >= trigger and name not in executed:
                 executed.add(name)
                 events.append({
                     "date": day, "tier": name, "dd": dd, "close": close,
-                    "ath": ath, "cycle_start": cycle_start, "tranche": TRANCHE,
+                    "ath": ath, "cycle_start": cycle_start, "tranche": tranche,
                 })
 
     cycles.append({
@@ -117,7 +121,7 @@ def replay(series: list[tuple[str, float]]) -> tuple[list[dict], list[dict]]:
 
 def current_release(dd: float, executed: set[str]) -> float:
     """Weight of NAV the clause releases right now, given tiers already fired."""
-    return sum(TRANCHE for trigger, name in TIERS
+    return sum(tranche for trigger, name, tranche in TIERS
                if dd >= trigger and name not in executed)
 
 
@@ -134,13 +138,13 @@ def check_invariants(series, events, cycles) -> list[str]:
         fired.add(e["tier"])
 
     # 2. every trigger genuinely met its threshold
-    thresholds = {name: t for t, name in TIERS}
+    thresholds = {name: t for t, name, _ in TIERS}
     for e in events:
         if e["dd"] < thresholds[e["tier"]] - 1e-12:
             failures.append(f"{e['tier']} fired at DD {e['dd']:.4f}, below its {thresholds[e['tier']]:.0%} trigger")
 
     # 3. shallow-to-deep ordering within a cycle
-    order = {name: i for i, (_, name) in enumerate(TIERS)}
+    order = {name: i for i, (_, name, _t) in enumerate(TIERS)}
     per_cycle: dict[str, list[str]] = {}
     for e in events:
         per_cycle.setdefault(e["cycle_start"], []).append(e["tier"])
@@ -171,20 +175,23 @@ def check_invariants(series, events, cycles) -> list[str]:
         failures.append("no drawdown must release nothing")
     if abs(current_release(0.099, set())) > 1e-12:
         failures.append("below T1 must release nothing")
-    if abs(current_release(0.10, set()) - TRANCHE) > 1e-12:
-        failures.append("T1 alone must release exactly one tranche")
-    if abs(current_release(0.28, set()) - 4 * TRANCHE) > 1e-12:
-        failures.append("a gap down to 28% must release four tranches")
+    if abs(current_release(0.10, set()) - TIERS[0][2]) > 1e-12:
+        failures.append("T1 alone must release exactly its own tranche")
+    if abs(current_release(0.28, set()) - LADDER) > 1e-12:
+        failures.append("a gap down to 28% must release the whole ladder")
+    # graded, not equal: every tier must be strictly larger than the one above it
+    if any(b[2] <= a[2] for a, b in zip(TIERS, TIERS[1:])):
+        failures.append("tranches must grow strictly with depth")
     # v4.6: past the deepest tier nothing further unlocks — the ladder ends at 25%
-    if abs(current_release(0.50, set()) - 4 * TRANCHE) > 1e-12:
+    if abs(current_release(0.50, set()) - LADDER) > 1e-12:
         failures.append("a 50% drawdown must release no more than the whole ladder")
     if abs(current_release(0.50, {"T1", "T2", "T3", "T4"})) > 1e-12:
         failures.append("a spent ladder must release nothing however deep the fall")
-    if abs(current_release(0.28, {"T1", "T2"}) - 2 * TRANCHE) > 1e-12:
+    if abs(current_release(0.28, {"T1", "T2"}) - (TIERS[2][2] + TIERS[3][2])) > 1e-12:
         failures.append("already-executed tiers must not release again")
-    # the four tranches must take cash from the 15% target exactly to the floor
-    if abs(len(TIERS) * TRANCHE + ABSOLUTE_FLOOR - 0.15) > 1e-12:
-        failures.append("ladder does not span 15% -> 6%")
+    # the tranches must take cash from the 15% target exactly to the floor
+    if abs(LADDER + ABSOLUTE_FLOOR - 0.15) > 1e-12:
+        failures.append("ladder does not span 15% -> the absolute floor")
 
     return failures
 
