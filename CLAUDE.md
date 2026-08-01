@@ -37,6 +37,15 @@ python3 scripts/fetch_etf_data.py --scenario current --markdown
 3. **yfinance**：标准 Python 库答案(`yf.Ticker("SOXX").funds_data` 提供 sector_weightings/top_holdings),但**本沙箱网络层不可用**(curl_cffi TLS 与代理冲突);不要在此环境反复尝试。
 4. IT 行业合并值：脚本持仓表不含行业列,按 `08-Data/LOOKTHROUGH_CHECK.md` 第 2 步用官方行业表手工加权(SSGA/Invesco/iShares 产品页各一个数字)。
 
+## 如何验证回撤部署状态机
+
+```bash
+python3 scripts/drawdown_drill.py                 # SPYM 十年重放 + 七项不变量检查
+python3 scripts/drawdown_drill.py --symbol spy    # 指数交叉验证(定档结果应完全一致)
+```
+
+日收盘序列同样走 `stockanalysis.com` JSON API（`range=10Y` 是该源上限,更长窗口拿不到）。已验证的是**价格→档位**这一半;「本周期各档是否已执行」的三信号重建仍未验证——首次真实触发时必须把重建过程记进 Journal。结论见 `Research/2026-08-01-drawdown-deployment-drill.md`。
+
 依赖:`pip install openpyxl`(requests 标准环境已有;脚本其余为标准库)。
 
 解读规则:脚本输出「已知下界 + 未覆盖尾部」;若已知值未越线但加上尾部可能越线,倾斜新增结论必须为 `WAIT / DATA INCOMPLETE`(定义见 `08-Data/DATA_DICTIONARY.md`)。

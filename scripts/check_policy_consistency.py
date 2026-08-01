@@ -414,6 +414,25 @@ def main() -> None:
         "fetch_etf_data.py",
     )
     require(
+        "scripts/drawdown_drill.py",
+        "never authorizes trades",
+        # the drill's tiers must mirror DRAWDOWN_TIERS above, or the drill
+        # would be validating a state machine the Constitution does not have
+        'TIERS = ((0.15, 0.10, "T1"), (0.25, 0.08, "T2"), (0.35, 0.06, "T3"))',
+        "NORMAL_CASH_FLOOR = 0.12",
+        "check_invariants",
+    )
+    require(
+        "Research/2026-08-01-drawdown-deployment-drill.md",
+        "七项不变量全部成立",
+        "在真实周期跑过之前仍属未验证状态",
+    )
+    require(
+        "02-Operating-System/Deployment-Framework.md",
+        "drawdown_drill.py",
+        "未验证",
+    )
+    require(
         "02-Operating-System/ETF-Valuation-Framework.md",
         "本框架只覆盖 `SPYM / QQQM / SOXX`",
         "`p < 20`",
