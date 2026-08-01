@@ -64,6 +64,15 @@ python3 scripts/check_policy_consistency.py   # 提交前必须本地通过
 4. 数据拿不到就写 `N/A` 并标 `DATA INCOMPLETE`,不估算、不沿用旧值。
 5. 改规则必须走 `Research/` 提案 → 所有者批准 → 版本发布 → 同步 CI,并在 `Decision-Log.md` 留痕。
 
+## 代码变更走 PR,不直接推 master
+
+**你不合并 master。** 任何仓库改动一律:开分支 → 本地跑通 `check_policy_consistency.py` → 提交并推分支 → 开 PR → **由所有者审阅合并**。
+
+- master 是受保护的现行规则;直接推 master 会让规则在无人审阅的情况下生效。
+- PR 描述必须写清:改了什么、为什么、是否触及任何阈值/公式语义。触及规则语义的 PR 必须先有 `Research/` 提案与所有者批准(红线 5),PR 里引用该提案路径。
+- CI(`Policy consistency`)必须绿;红灯的 PR 不提交给所有者审阅。
+- 合并后删除该分支,不留已合并的残枝。
+
 ## 冷启动:先重建状态
 
 本仓库**不存储任何账户数据**。每个新会话第一件事:按 `02-Operating-System/State-Reconstruction.md` 的确定性程序,从 IBKR + 规则重建全部状态(派生权重、SOXX 生命周期、回撤周期档位、实际入金 F)。回撤档位指针存在 IBKR 警报里(`get_alerts` 读取),不在仓库里。
