@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the v5 product contract and public-repository privacy boundary."""
+"""Validate the product contract, closed universe and privacy boundary."""
 
 from pathlib import Path
 
@@ -22,7 +22,7 @@ def reject_runtime_artifacts() -> None:
     forbidden_names = {
         "account.json", "portfolio.json", "positions.json", "balances.json",
         "orders.json", "trades.json", "fills.json", "daily-report.md",
-        "daily_report.md", "ibkr.json", "ibkr.csv",
+        "daily_report.md", "daily-brief.md", "daily_brief.md", "ibkr.json", "ibkr.csv",
     }
     forbidden_parts = {"runtime", "account-data", "portfolio-data", "private-data"}
     violations: list[str] = []
@@ -62,10 +62,32 @@ def main() -> None:
         "自动提交日报到公开仓库",
     )
     require(
+        "01-Constitution/Investment-Universe.md",
+        "SPYM",
+        "QQQM",
+        "SOXX",
+        "Production 是封闭投资宇宙",
+        "Out-of-Universe",
+        "任何 AI、脚本、日报或临时会话都无权自行扩展投资宇宙",
+    )
+    require(
+        "scripts/daily_brief.py",
+        'UNIVERSE = ("SPYM", "QQQM", "SOXX")',
+        "DATA INCOMPLETE",
+        "Why Not the Others",
+        "never writes inputs or output to disk",
+    )
+    require(
         "README.md",
         "PROJECT.md",
         "Daily-Report-Contract.md",
         "仓库保存规则，不保存个人组合",
+    )
+    require(
+        "07-Releases/v6.0.md",
+        "Three-ETF Daily Brief MVP",
+        "不改变目标权重",
+        "scripts/daily_brief.py",
     )
     reject_runtime_artifacts()
     print("Product contract checks passed.")
