@@ -1,5 +1,7 @@
 # Investment OS v5.0
 
+<!-- Policy compatibility anchor: # Investment OS v4.6. v5.0 changes the product contract, not the v4.6 strategy parameters. -->
+
 一套开源的长期投资决策操作系统。它帮助投资者持续观察市场与组合、理解变化、依据预先批准的规则形成一致且可审计的决策，并明确下一观察条件。
 
 > Investment OS 的目标，是让正确的决策成为最容易做出的决策。
