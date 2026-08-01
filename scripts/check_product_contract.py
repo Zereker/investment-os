@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Validate the product contract, closed universe and privacy boundary."""
+"""Validate the product contract, closed universe, agent controls and privacy boundary."""
 
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -41,6 +42,24 @@ def reject_runtime_artifacts() -> None:
         raise AssertionError(
             "runtime portfolio artifacts must not live in the public repository:\n"
             + "\n".join(sorted(violations))
+        )
+
+
+def validate_agent_contract_is_parameter_free() -> None:
+    """AGENTS.md may carry procedure and gates, never investment policy values."""
+    text = read("AGENTS.md")
+    forbidden = {
+        "percentages": re.compile(r"(?<![A-Za-z0-9])\d+(?:\.\d+)?\s*%"),
+        "allocation formulas": re.compile(r"\b(?:A_basis|A_stage|A_execution_cap|D_max|G_0)\b"),
+        "drawdown tiers": re.compile(r"\bT[1-9]\b"),
+        "production tickers": re.compile(r"\b(?:SPYM|QQQM|SOXX)\b"),
+        "hard-coded money": re.compile(r"\$\s*\d|\b\d[\d,]*(?:\.\d+)?\s*(?:USD|美元)\b", re.I),
+    }
+    violations = [name for name, pattern in forbidden.items() if pattern.search(text)]
+    if violations:
+        raise AssertionError(
+            "AGENTS.md must contain procedure, never policy parameters: "
+            + ", ".join(violations)
         )
 
 
@@ -89,6 +108,28 @@ def main() -> None:
         "不改变目标权重",
         "scripts/daily_brief.py",
     )
+    require(
+        "AGENTS.md",
+        "This contract contains procedure, never investment policy parameters",
+        "Fresh Rule Source",
+        "Fresh Runtime State",
+        "Source and Authority Declaration",
+        "No Inherited Approval",
+        "Behavioral and Procedural Control Gate",
+        "Independent Second Opinion",
+        "Order and Position Verification",
+        "Journal Single-Writer Rule",
+        "Manual figures, screenshots, pasted tables and prior reports",
+        "Agents must not push directly to the protected default branch",
+    )
+    require(
+        "07-Releases/v6.1.md",
+        "Agent Control Gate",
+        "control replication, not convenience",
+        "does not store personal trading incidents",
+        "does not change",
+    )
+    validate_agent_contract_is_parameter_free()
     reject_runtime_artifacts()
     print("Product contract checks passed.")
 
