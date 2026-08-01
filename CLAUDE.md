@@ -33,7 +33,7 @@ python3 scripts/fetch_etf_data.py --scenario current --markdown
 数据层次（本沙箱 2026-07-31 实测）：
 
 1. **SPYM**：SSGA 官方 xlsx 直接下载,全量持仓,Green。脚本自动处理。
-2. **QQQM / SOXX**：`stockanalysis.com` 聚合页,前 25 大,Yellow。iShares/Invesco 官方页拦截无头抓取(403/406)——需要 Green 质量时,用你的网页抓取工具访问官方页交叉核对,或让所有者浏览器确认。
+2. **QQQM / SOXX**：`stockanalysis.com` 聚合页,前 25 大,Yellow。官方页现状(2026-08-01 复测):iShares SOXX 页返回 200 且内嵌 JSON 可提取(含行业表与 Trailing P/E);Invesco QQQM 页返回 200 但是纯 SPA 外壳,HTML 里没有数值。需要 Green 质量时,SOXX 可解析官方页,QQQM 须用你的网页抓取工具或让所有者浏览器确认。
 3. **yfinance**：标准 Python 库答案(`yf.Ticker("SOXX").funds_data` 提供 sector_weightings/top_holdings),但**本沙箱网络层不可用**(curl_cffi TLS 与代理冲突);不要在此环境反复尝试。
 4. IT 行业合并值：脚本持仓表不含行业列,按 `08-Data/LOOKTHROUGH_CHECK.md` 第 2 步用官方行业表手工加权(SSGA/Invesco/iShares 产品页各一个数字)。
 
@@ -62,6 +62,7 @@ python3 scripts/check_policy_consistency.py   # 提交前必须本地通过
 
 - Core 自身(51% SPYM + 28% QQQM)合并半导体暴露约 18%,**恒定高于 15% 护栏线**——这是指数结构事实,护栏因此只约束 SOXX 等自主倾斜的新增,不阻断 Core 例行路径。
 - SOXX 实际权重可能漂移超过 6% 上限:处理方式是冻结新增、不自动卖出、每日披露。
+- 单一 Core 的中度回撤(10–14%)**不触发**回撤部署,由再平衡的正缺口吸收——`D/B` 每月自动流向缺口更大的标的。回撤部署只认 SPYM 广谱深跌(≥15/25/35%),动用的是常态下限以下的危机弹药(共 6pp of NAV)。实测:QQQM 近两年三次 11–14% 回撤,换成 QQQM 口径也都不达档。见 `Research/2026-08-01-drawdown-vs-rebalancing-scope.md`。
 - 估值子系统已于 v4.2 整体退役:四个输入字段全 Red 且无法转 Green(QQQM 官方页是 SPA、SOXX 只有 Trailing P/E、历史百分位需要拿不到的 5–10 年序列)。系统不再持有任何估值判断,三条资金通道全部由公式与价格驱动。依据见 `Research/2026-08-01-valuation-subsystem-retirement.md`。
 - 完整证据:`Research/2026-07-31-v4-Evidence-and-Proposal.md`。
 

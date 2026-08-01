@@ -311,6 +311,17 @@ def main() -> None:
         "只用外部新增资金逐月重建",
         "18% 半导体",
         "SPYM / QQQM 例行路径不受此项单独阻断",
+        "广谱市场信号",
+    )
+    require(
+        "02-Operating-System/Deployment-Framework.md",
+        "与再平衡的分工",
+        "由再平衡吸收",
+    )
+    require(
+        "Research/2026-08-01-drawdown-vs-rebalancing-scope.md",
+        "由再平衡吸收",
+        "未采纳",
     )
     require(
         "00-IPS/Investment-Policy-Statement.md",
