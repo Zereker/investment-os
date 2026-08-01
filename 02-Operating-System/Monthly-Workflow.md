@@ -12,17 +12,18 @@
 - 到 2028-12 剩余的月度执行次数
 - SPYM 历史最高收盘回撤 `DD` 与回撤档位状态
 
-> 计算辅助：`python3 scripts/monthly_execution.py`（用法见 `CLAUDE.md`）一次产出第 2–6 步的全部数值与第 6 节输出格式。它是本文件与 Constitution 的可执行镜像，结果不一致时以文档为准并修脚本。数值只走命令行与终端，永不落盘。
+> 计算辅助：`python3 scripts/monthly_execution.py`（用法见 `CLAUDE.md`）一次产出第 2–7 步的全部数值与 Deployment Framework 第 6 节输出格式；回补判定须传 `--lookthrough-current`，不传即视为无当季有效核查。它是本文件与 Constitution 的可执行镜像，结果不一致时以文档为准并修脚本。数值只走命令行与终端，永不落盘。
 
-## 七步执行
+## 八步执行
 
 1. 通过 Data Gate，更新 Cash、SPYM、QQQM、SOXX 和 Legacy 的市值。
 2. 读取 Registry 的 `A_stage` 与 `A_execution_cap`，按 Constitution 的定义计算 `A_actual`、`A_basis`、`U` 及 SPYM 动态目标；检查执行上限不得高于硬上限。
 3. 检查Cash、QQQM、`SPYM + SOXX + Stage Reserve`袖套及SOXX 6%硬上限。
-4. 确认实际外部净入金 \(F\)，计算入金后 Core 正缺口 \(G_0\)，执行 Routine DCA \(D=\min(F,G_0)\)（按正缺口分配）；未分配金额留在现金。
-5. 以 Routine DCA 后的预计现金和剩余 Core 正缺口，按 Deployment Framework 计算战略现金迁移基线 \(B\)。
-6. 评估回撤部署档位：`DD` 达档且该档在本周期未执行时，按 Deployment Framework 第 2 节执行部署。
-7. 按 Deployment Framework 第 6 节的月度输出格式向所有者报告（聊天输出，不落盘），并记录影子基准；仅在非例行决定时写入 Journal。
+4. 评估 SOXX 回补至目标：`U>0` 时，回补候选 = \(\min\bigl(U\times V,\ (\min(A_{execution\_cap},A_{stage})-A_{actual})\times V\bigr)\)；五项约束（Constitution）任一不成立即输出 `0`。`A_execution_cap` 不得在本步推进——那是提高倾斜，须完整 IC。
+5. 确认实际外部净入金 \(F\)，计算入金后 Core 正缺口 \(G_0\)，执行 Routine DCA \(D=\min(F,G_0)\)（按正缺口分配）；未分配金额留在现金。
+6. 以 Routine DCA 后的预计现金和剩余 Core 正缺口，按 Deployment Framework 计算战略现金迁移基线 \(B\)。
+7. 评估回撤部署档位：`DD` 达档且该档在本周期未执行时，按 Deployment Framework 第 2 节执行部署。
+8. 按 Deployment Framework 第 6 节的月度输出格式向所有者报告（聊天输出，不落盘），并记录影子基准；仅在非例行决定时写入 Journal。
 
 ## 资金分配算法
 
@@ -36,21 +37,30 @@
 - \(S=\max(C-(15\%+U)\times V,0)\)，\(B=\min(S/R,G)\)。
 - \(B\) 按剩余正缺口在两只 Core 之间分配；为减少碎片交易，可只购买缺口最大的1–2项。
 - 已发布SOXX额度差额`U`作为现金用途标签保留，不先投入SPYM。
-- SOXX / 板块倾斜追加不属于月度例行路径。
+- SOXX 回补候选 \(= \min\bigl(U\times V,\ (\min(A_{execution\_cap},A_{stage})-A_{actual})\times V\bigr)\)，只消耗 `U`，不进入 \(D\)、\(B\) 或回撤 tranche 的分配。
+- **提高倾斜**（推进 `A_execution_cap`）不属于月度例行路径，须完整 IC。
 
 ## 例行路径检查
 
-Routine DCA \(D\)、\(B\) 与回撤部署无需完整四视角 Packet，但必须全部满足：
+Routine DCA \(D\)、\(B\)、回撤部署与 SOXX 回补无需完整四视角 Packet，但必须全部满足：
 
 - 四项 IBKR 数据实时读取成功；
-- 只买 SPYM / QQQM；
-- 金额完全由已发布公式产生（回撤部署按其分档公式）；
+- 只买 SPYM / QQQM，或走回补路径的 SOXX；
+- 金额完全由已发布公式产生（回撤部署按其分档公式；回补按其上限公式）；
 - 交易后物理现金不低于现行下限（常态`12%+U`；回撤档生效时按其临时下限），且不使用融资；
 - 没有重复或冲突订单；
 - 没有突破 Constitution；
 - 订单类型、数量、限价和有效期明确。
 
-任一项不满足时，升级为完整 IC 或 `HOLD / STOP`。
+回补另须全部满足（Constitution「回补至目标 vs 提高倾斜」节）：
+
+- 交易后 `A_actual ≤ min(A_execution_cap, A_stage)`；
+- 当季 `08-Data/LOOKTHROUGH_CHECK.md` 核查有效——过期或 `DATA INCOMPLETE` 即冻结回补；
+- 资金只来自 `U`，未占用回撤 tranche、未挤占 SPYM / QQQM 正缺口；
+- 信息技术 50% 与单一发行人 10% 冻结线不失守；
+- `A_execution_cap` 未在本次变动（变动即属提高倾斜）。
+
+任一项不满足时，升级为完整 IC 或 `HOLD / STOP`；回补项不满足时回补额为 `0`，不得部分执行。
 
 ## 非例行部署记录
 
@@ -70,7 +80,7 @@ Routine DCA \(D\)、\(B\) 与回撤部署无需完整四视角 Packet，但必�
 - 没有未经审核的新标的。
 - 月度输出已按 Deployment Framework 第 6 节格式呈交所有者。
 - \(D\) 与 \(B\) 完全由公式产生，没有被任何判断性闸门削减。
-- SOXX 没有通过月度例行路径获得追加。
+- SOXX 没有通过月度例行路径提高倾斜；本月若发生回补，五项约束均已逐条确认。
 - 无操作也是有效结果。
 
 ## Maintenance Mode

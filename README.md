@@ -1,4 +1,4 @@
-# Investment OS v4.2
+# Investment OS v4.5
 
 一套以资产配置为中心、以低决策复杂度长期运行的个人投资系统。
 
@@ -16,12 +16,14 @@
 
 其中`A_basis=max(A_actual,A_stage)`，`A_stage`固定为6%，`U=max(A_stage-A_actual,0)`；未完成的SOXX额度作为现金中的用途标签保留，不先投入SPYM。风险护栏和数据门优先于执行档目标。QQQM 28%保持不变。
 
+v4.5 起 SOXX 的「追加」拆为两条路径，判别只看`A_execution_cap`动没动：**回补至目标**（执行档不动，买回被市场打下去的权重）走月度例行路径，资金只来自`U`；**提高倾斜**（推进执行档）仍须完整IC。
+
 ## v4.0核心变化
 
 v4.0 以实测证据（`Research/2026-07-31-v4-Evidence-and-Proposal.md`）驱动四项结构性修正：
 
 1. **SOXX 封顶 6%**：合并穿透实测显示，目标 Core 自身即含约 18% 半导体暴露；SOXX=15% 时组合半导体约 32%、信息技术进入护栏 WARN 区。10%/12.5%/15% 历史治理阶段作废。
-2. **回撤部署**：SPYM 相对历史最高收盘回撤 ≥15%/25%/35% 时，现金下限分档降至 `10/8/6%+U` 并部署至 Core 正缺口；不依赖任何估值数据，每档每轮回撤周期一次。15% 现金的成本（约 0.45–0.75pp/年）与职能自此对得上账。
+2. **回撤部署**：SPYM 相对历史最高收盘回撤达档时，按档释放现金部署至 Core 正缺口；不依赖任何估值数据，每档每轮回撤周期一次。15% 现金的成本（约 0.45–0.75pp/年）与职能自此对得上账。（v4.0 为三档 ≥15/25/35%、一次部署到下限；v4.3 首档下调至 ≥10%；v4.4 改为六档定额分批，每档释放 1.5pp of NAV，绝对下限 `6%+U`。）
 3. **估值框架降级**：估值等级的闸门作用被大幅削减，例行 DCA 与基线不再被估值数据缺失阻塞（BUG-007 类死锁根除）。该框架其后于 v4.2 整体退役。
 4. **穿透子系统简化**：删除约 3,300 行 Look-through Bundle 验证器与 JSON 契约，改为 `08-Data/LOOKTHROUGH_CHECK.md` 季度 15 分钟手工核查；护栏阈值保留，护栏语义修正为约束自主倾斜新增、不阻断 Core 例行路径。
 
@@ -38,7 +40,7 @@ v4.0 以实测证据（`Research/2026-07-31-v4-Evidence-and-Proposal.md`）驱�
 - 每个PR由`Policy consistency`工作流检查关键公式、生命周期、输入域与文档一致性。
 - 仓库不维护重复的中央证券数据库；普通数据变化不更新项目。
 
-当前生产入口：[PRODUCTION.md](PRODUCTION.md)；版本说明：[v4.2](07-Releases/v4.2.md)（结构性变化见 [v4.0](07-Releases/v4.0.md)）
+当前生产入口：[PRODUCTION.md](PRODUCTION.md)；版本说明：[v4.5](07-Releases/v4.5.md)（结构性变化见 [v4.0](07-Releases/v4.0.md)）
 
 ## 如何使用
 
@@ -49,7 +51,7 @@ v4.0 以实测证据（`Research/2026-07-31-v4-Evidence-and-Proposal.md`）驱�
 3. 每日按 [Daily Review Workflow](02-Operating-System/Daily-Review.md) 读取 IBKR、检查账户并记录回撤档位。
 4. 每周按 [Weekly Review Workflow](02-Operating-System/Weekly-Review.md) 汇总运行质量与待处理项。
 5. 每月按 [月度流程](02-Operating-System/Monthly-Workflow.md) 执行固定投入、战略现金迁移与达档的回撤部署。
-6. 超出月度基线的部署只有回撤档位一条机械路径，见 [部署框架](02-Operating-System/Deployment-Framework.md)；主动加速属于规则例外，须进入完整IC。
+6. 超出月度基线的部署只有回撤档位一条机械路径，见 [部署框架](02-Operating-System/Deployment-Framework.md)；主动加速属于规则例外，须进入完整IC。SOXX 被打到执行档以下时的**回补至目标**同属例行路径（v4.5），**提高倾斜**仍须完整IC。
 7. 任何非例行真实资金候选先完成 [Investment Committee Packet](02-Operating-System/Decision-Checklist.md)。
 8. 每季度按 [Quarterly Workflow](02-Operating-System/Quarterly-Workflow.md) 完成 [穿透手工核查](08-Data/LOOKTHROUGH_CHECK.md) 并审核倾斜与集中度。
 9. 转型期按 [Transition Plan](03-Transition/Transition-Plan.md) 推进；月度输出用 Deployment Framework 的输出格式，只在聊天呈现，不写回仓库。

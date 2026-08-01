@@ -22,6 +22,8 @@ Hard boundaries this script will not cross:
     input yields DATA INCOMPLETE, not a guess.
   - Which drawdown tiers already fired this cycle cannot be derived from price.
     Pass --tiers-executed; omitting it makes the script say so rather than assume.
+  - Whether a current-quarter look-through check exists cannot be derived either.
+    Pass --lookthrough-current; omitting it freezes the SOXX restore, same principle.
 
 Usage (figures come from IBKR, in account currency; they are never persisted):
   python3 scripts/monthly_execution.py --nav 100000 --cash 18000 \\
@@ -29,6 +31,9 @@ Usage (figures come from IBKR, in account currency; they are never persisted):
 
   # already deployed T1 earlier in this drawdown cycle:
   python3 scripts/monthly_execution.py ... --tiers-executed T1
+
+  # a current-quarter look-through check exists -> the SOXX restore may compute:
+  python3 scripts/monthly_execution.py ... --lookthrough-current
 
   # skip the network call for the drawdown check (offline / IBKR series preferred):
   python3 scripts/monthly_execution.py ... --dd 0.0
@@ -53,7 +58,13 @@ QQQM_TARGET = 0.28
 SLEEVE_57 = 0.57
 A_STAGE = 0.06
 A_EXECUTION_CAP = 0.03
-TIERS = ((0.15, 0.10, "T1"), (0.25, 0.08, "T2"), (0.35, 0.06, "T3"))
+# v4.4: each tier releases a FIXED tranche of NAV rather than "all cash above a
+# floor" — that older shape dumped the whole 15%->floor band in the first tier,
+# which is what tranching is meant to prevent. ABSOLUTE_FLOOR is the hard stop.
+TIERS = ((0.10, "T1"), (0.15, "T2"), (0.20, "T3"),
+         (0.25, "T4"), (0.30, "T5"), (0.35, "T6"))
+TRANCHE = 0.015          # 1.5pp of NAV released per tier
+ABSOLUTE_FLOOR = 0.06    # cash never goes below this (+U) via drawdown deployment
 PLAN_END = (2028, 12)  # strategic baseline planned completion month
 
 
@@ -80,29 +91,44 @@ def fetch_drawdown(symbol: str = "spym") -> tuple[float, str, str]:
     return (ath - last_close) / ath, last_day, ath_date
 
 
-def authorized_cash_floor(dd: float, executed: set[str], reserve: float) -> tuple[float, list[str]]:
-    """Lowest floor the drawdown clause authorizes, and EVERY tier consumed to get there.
+def tier_release(dd: float, executed: set[str], reserve: float) -> tuple[float, float, list[str]]:
+    """Return (released weight, absolute floor weight, tiers consumed).
 
-    A single day may satisfy several tiers (a gap down straight through 25%).
-    The Constitution fires them shallow-to-deep, each once per cycle. Deploying to
-    the deepest floor subsumes the shallower ones numerically, but all of them are
-    consumed and must be recorded as EXECUTED — otherwise a later reconstruction
-    would show a shallow tier still available.
+    Each newly triggered tier releases TRANCHE of NAV — a fixed tranche, not
+    "everything above a floor". A single day may satisfy several tiers (a gap
+    down straight through 25%); they fire shallow-to-deep, each once per cycle,
+    and every one consumed must be recorded as EXECUTED or a later
+    reconstruction would show a shallow tier still available.
     """
-    floor = CASH_FLOOR
-    consumed = []
-    for trigger, tier_floor, name in TIERS:      # TIERS is shallow-to-deep
-        if dd >= trigger and name not in executed:
-            consumed.append(name)
-            floor = min(floor, tier_floor)
-    return floor + reserve, consumed
+    consumed = [name for trigger, name in TIERS
+                if dd >= trigger and name not in executed]
+    return len(consumed) * TRANCHE, ABSOLUTE_FLOOR + reserve, consumed
 
 
-def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed, today):
+def restore_candidate(a_actual: float, reserve: float, nav: float,
+                      lookthrough_current: bool) -> float:
+    """v4.5 SOXX restore-to-target: buy back weight the market knocked below the
+    execution cap, WITHOUT raising the cap (that would be a tilt increase and
+    needs a full IC).
+
+    Funded only out of U, which the rules already carve out of deployable cash —
+    the drawdown floor is 6%+U and S subtracts (15%+U) — so this never competes
+    with D, B or a drawdown tranche. Fails closed: no current-quarter
+    look-through check means no restore, not a smaller one.
+    """
+    if not lookthrough_current:
+        return 0.0
+    headroom = min(A_EXECUTION_CAP, A_STAGE) - a_actual
+    return max(min(reserve, headroom), 0.0) * nav
+
+
+def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed, today,
+            lookthrough_current=False):
     """Everything the monthly workflow needs. Pure function of its inputs."""
     a_actual = soxx / nav
     a_basis = max(a_actual, A_STAGE)
     reserve = max(A_STAGE - a_actual, 0.0)          # U
+    restore = restore_candidate(a_actual, reserve, nav, lookthrough_current)
 
     spym_target = nav * (SLEEVE_57 - a_basis)
     qqqm_target = nav * QQQM_TARGET
@@ -121,15 +147,22 @@ def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed, today):
     b = min(s / r, g) if r else 0.0                              # B
     b_spym, b_qqqm = allocate(b, gap_spym - d_spym, gap_qqqm - d_qqqm)
 
-    floor_w, consumed = authorized_cash_floor(dd, executed, reserve)
+    released_w, floor_w, consumed = tier_release(dd, executed, reserve)
     cash_after_db = cash_after_d - b
-    # drawdown deployment: only the amount above the temporarily lowered floor,
-    # capped by the Core gap left after D and B
+    # drawdown deployment: the released tranche(s), capped by cash above the
+    # absolute floor and by the Core gap left after D and B
     remaining_gap = g - b
-    dd_amount = min(max(cash_after_db - floor_w * nav, 0.0), remaining_gap) if consumed else 0.0
+    dd_amount = min(released_w * nav,
+                    max(cash_after_db - floor_w * nav, 0.0),
+                    remaining_gap) if consumed else 0.0
     dd_spym, dd_qqqm = allocate(dd_amount, gap_spym - d_spym - b_spym, gap_qqqm - d_qqqm - b_qqqm)
 
-    final_cash = cash_after_db - dd_amount
+    # The restore spends U and shrinks U by the same amount, so both the cash
+    # balance and the U-indexed floor move together — the constraint is
+    # evaluated on the post-restore basis to keep the two sides consistent.
+    final_cash = cash_after_db - dd_amount - restore
+    reserve_after = reserve - restore / nav
+    floor_after = (ABSOLUTE_FLOOR if consumed else CASH_FLOOR) + reserve_after
     return {
         "a_actual": a_actual, "a_basis": a_basis, "reserve": reserve,
         "spym_target": spym_target, "qqqm_target": qqqm_target,
@@ -137,10 +170,15 @@ def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed, today):
         "d": d, "d_spym": d_spym, "d_qqqm": d_qqqm,
         "cash_after_d": cash_after_d, "g": g, "r": r, "s": s,
         "b": b, "b_spym": b_spym, "b_qqqm": b_qqqm,
-        "consumed": consumed, "floor_w": floor_w, "dd_amount": dd_amount,
+        "consumed": consumed, "released_w": released_w,
+        "dd_amount": dd_amount,
         "dd_spym": dd_spym, "dd_qqqm": dd_qqqm,
+        "restore": restore, "reserve_after": reserve_after,
+        "a_actual_after": a_actual + restore / nav,
         "final_cash": final_cash, "final_cash_w": final_cash / nav,
-        "min_floor_w": CASH_FLOOR + reserve,
+        # the floor in force this month: the crisis floor only when a tier fired
+        "floor_w": floor_after,
+        "crisis_floor_w": ABSOLUTE_FLOOR + reserve_after,
     }
 
 
@@ -159,7 +197,8 @@ def money(x: float) -> str:
     return f"{x:,.0f}"
 
 
-def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known) -> list[str]:
+def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
+           lookthrough_current) -> list[str]:
     """Build the monthly report. Returns the list of blocking issues (empty = clean)."""
     nav = inp["nav"]
     issues = []
@@ -200,12 +239,32 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known) -> list[str]
             print("  ** 未提供 --tiers-executed：无法确认本周期各档是否已执行 **")
             print("     按 State-Reconstruction 第 4 步用三信号交叉 + IBKR 警报重建后重跑")
             issues.append("回撤档位已执行状态未知")
-        for trigger, tier_floor, name in TIERS:
+        for trigger, name in TIERS:
             mark = "已执行" if name in executed else ("**达档可用**" if dd >= trigger else "未达档")
-            print(f"    {name}  触发 {trigger:.0%}  下限 {tier_floor:.0%}+U   {mark}")
+            print(f"    {name}  触发 {trigger:>3.0%}  释放 {TRANCHE:.1%} of NAV   {mark}")
         if res["consumed"]:
-            print(f"  → 本次消耗档位 {', '.join(res['consumed'])}，现金下限临时降至 {res['floor_w']:.2%}")
+            print(f"  → 本次消耗档位 {', '.join(res['consumed'])}，共释放 {res['released_w']:.1%} of NAV"
+                  f"（绝对下限 {res['crisis_floor_w']:.2%}）")
             print(f"     全部消耗档位必须在 Journal 记为本周期 EXECUTED，并更新 IBKR 警报指针")
+
+    print(f"\n[3b] SOXX 回补至目标（v4.5）")
+    headroom_w = min(A_EXECUTION_CAP, A_STAGE) - res["a_actual"]
+    if res["reserve"] <= 0:
+        print(f"  U = 0（A_actual {res['a_actual']:.2%} ≥ A_stage {A_STAGE:.0%}）→ 回补上限为 0")
+    elif headroom_w <= 0:
+        print(f"  A_actual {res['a_actual']:.2%} 已达执行上限 {A_EXECUTION_CAP:.0%} → 回补上限为 0"
+              f"（提高执行档属提高倾斜，须完整 IC）")
+    elif not lookthrough_current:
+        print(f"  ** 未提供 --lookthrough-current：无当季有效穿透核查 → 回补冻结 **")
+        print(f"     完成 08-Data/LOOKTHROUGH_CHECK.md 当季核查后重跑")
+        issues.append("DATA INCOMPLETE — 缺当季穿透核查，SOXX 回补冻结")
+    else:
+        print(f"  回补候选 = min(U×V={money(res['reserve']*nav)}, "
+              f"上限余量={money(headroom_w*nav)}) = {money(res['restore'])}")
+        print(f"    资金只来自 U，不占用回撤 tranche，不挤占 SPYM / QQQM 正缺口")
+        print(f"    交易后 A_actual {res['a_actual_after']:.2%} ≤ 执行上限 {A_EXECUTION_CAP:.0%}，"
+              f"U 降至 {res['reserve_after']:.2%}")
+        print(f"    护栏（IT 50% / 发行人 10%）须由当季核查表逐项确认——本脚本不持有该数据")
 
     print(f"\n[4] 三条资金通道")
     print(f"  Routine DCA   D = min(F={money(inp['contribution'])}, G_0={money(res['g0'])}) = {money(res['d'])}")
@@ -219,16 +278,21 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known) -> list[str]
         print(f"                  → SPYM {money(res['dd_spym'])} ｜ QQQM {money(res['dd_qqqm'])}")
     else:
         print(f"  Drawdown      0（未达档或该档本周期已执行）")
+    if res["restore"] >= 1.0:
+        print(f"  Restore       SOXX 回补 = {money(res['restore'])}（资金来自 U，与上三条互不占用）")
 
-    total = res["d"] + res["b"] + res["dd_amount"]
+    total = res["d"] + res["b"] + res["dd_amount"] + res["restore"]
     print(f"\n[5] 例行路径检查")
     checks = [
-        ("只买 SPYM / QQQM", True),
+        ("D / B / 回撤部署只买 SPYM / QQQM；回补只买 SOXX 且只花 U", True),
         ("金额完全由已发布公式产生", True),
         (f"交易后现金 {res['final_cash_w']:.2%} ≥ 现行下限 {res['floor_w']:.2%}",
          res["final_cash_w"] >= res["floor_w"] - 1e-9),
         ("不使用融资", res["final_cash"] >= -1e-9),
-        ("SOXX 未通过例行路径获得追加", True),
+        (f"回补后 A_actual {res['a_actual_after']:.2%} ≤ min(执行上限, 硬上限) "
+         f"{min(A_EXECUTION_CAP, A_STAGE):.0%}",
+         res["a_actual_after"] <= min(A_EXECUTION_CAP, A_STAGE) + 1e-9 or res["restore"] == 0),
+        ("A_execution_cap 未变动（变动即属提高倾斜，须完整 IC）", True),
     ]
     for label, ok in checks:
         print(f"  [{'x' if ok else ' '}] {label}")
@@ -245,7 +309,8 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known) -> list[str]
     else:
         print(f"  BUY CANDIDATE —— 合计 {money(total)}（{total/nav*100:.2f} pp of NAV）")
         for name, amt in (("SPYM", res["d_spym"] + res["b_spym"] + res["dd_spym"]),
-                          ("QQQM", res["d_qqqm"] + res["b_qqqm"] + res["dd_qqqm"])):
+                          ("QQQM", res["d_qqqm"] + res["b_qqqm"] + res["dd_qqqm"]),
+                          ("SOXX（回补）", res["restore"])):
             if amt >= 1.0:   # below 1 unit is float residue, not a real candidate
                 print(f"    {name}  {money(amt)}")
         print(f"  交易后现金 {res['final_cash_w']:.2%}（下限 {res['floor_w']:.2%}）")
@@ -270,19 +335,27 @@ def self_test() -> None:
     assert r["b"] <= r["g"] + 1e-9, "B exceeded G"
 
     # 4. no drawdown deployment below a tier trigger
-    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.14, set(), d0)
+    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.09, set(), d0)
     assert r["dd_amount"] == 0 and not r["consumed"], "deployed below the T1 trigger"
 
-    # 5. an already-executed tier must not re-authorize (once per cycle)
-    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.20, {"T1"}, d0)
+    # 5. an already-executed tier must not re-authorize (once per cycle).
+    # At DD 12% only T1 qualifies, and it already fired -> nothing releases.
+    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.12, {"T1"}, d0)
     assert r["dd_amount"] == 0 and not r["consumed"], "executed tier re-authorized deployment"
+    # but deeper tiers stay available: at DD 20%, T2 and T3 still release
+    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.20, {"T1"}, d0)
+    assert r["consumed"] == ["T2", "T3"], f"deeper tiers blocked: {r['consumed']}"
 
     # 6. a gap-down day consumes every tier it passes through, shallow-to-deep
     r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.28, set(), d0)
-    assert r["consumed"] == ["T1", "T2"], f"wrong tiers consumed: {r['consumed']}"
+    assert r["consumed"] == ["T1", "T2", "T3", "T4"], f"wrong tiers consumed: {r['consumed']}"
+
+    # 6b. even tranching: each tier releases exactly 1.5pp from the 15% target
+    assert len(TIERS) * TRANCHE + ABSOLUTE_FLOOR - 0.15 < 1e-12, \
+        "six tranches must take cash from the 15% target exactly to the 6% floor"
 
     # 7. cash never ends below the authorized floor
-    for dd, ex in ((0.0, set()), (0.16, set()), (0.28, set()), (0.40, set()), (0.28, {"T1"})):
+    for dd, ex in ((0.0, set()), (0.11, set()), (0.28, set()), (0.40, set()), (0.28, {"T1"})):
         r = compute(100_000, 30_000, 30_000, 15_000, 6_000, 3_000, dd, ex, d0)
         assert r["final_cash_w"] >= r["floor_w"] - 1e-9, f"cash pierced the floor at DD {dd}"
 
@@ -297,7 +370,35 @@ def self_test() -> None:
     assert months_remaining(date(2029, 6, 1)) == 1, "R must floor at 1 past the plan end"
     assert months_remaining(date(2026, 8, 1)) == 29, "R miscounted"
 
-    print("monthly_execution self-test passed (9 invariants)")
+    # 10. v4.5 restore-to-target. SOXX at 2% of a 100k NAV, execution cap 3%:
+    # U is 4pp but the cap only leaves 1pp of headroom, so the restore is 1pp.
+    r = compute(100_000, 19_000, 45_000, 28_000, 2_000, 0, 0.0, set(), d0,
+                lookthrough_current=True)
+    assert abs(r["restore"] - 1_000) < 1e-6, f"restore ignored the execution cap: {r['restore']}"
+    assert abs(r["a_actual_after"] - A_EXECUTION_CAP) < 1e-9, "restore must land on the cap"
+    # fails closed without a current-quarter look-through check
+    r_closed = compute(100_000, 19_000, 45_000, 28_000, 2_000, 0, 0.0, set(), d0)
+    assert r_closed["restore"] == 0.0, "restore ran without a current look-through check"
+    # never exceeds U even when the cap would allow more
+    r = compute(100_000, 16_000, 50_000, 28_000, 2_900, 0, 0.0, set(), d0,
+                lookthrough_current=True)
+    assert r["restore"] <= r["reserve"] * 100_000 + 1e-6, "restore spent more than U"
+    # above the hard cap (current real state) there is nothing to restore
+    r = compute(100_000, 15_000, 49_000, 28_000, 7_800, 0, 0.0, set(), d0,
+                lookthrough_current=True)
+    assert r["restore"] == 0.0, "restore fired while SOXX sits above the hard cap"
+
+    # 11. the restore never competes with the Core channels: with U carved out of
+    # both S and the drawdown floor, adding a restore must leave D/B/tranche alone
+    args = (100_000, 30_000, 30_000, 15_000, 3_000, 3_000, 0.28, set(), d0)
+    plain, with_restore = compute(*args), compute(*args, lookthrough_current=True)
+    for key in ("d", "b", "dd_amount"):
+        assert abs(plain[key] - with_restore[key]) < 1e-9, f"restore displaced {key}"
+    # and cash still clears the floor once both are paid out of the same balance
+    assert with_restore["final_cash_w"] >= with_restore["floor_w"] - 1e-9, \
+        "restore + deployment pierced the floor"
+
+    print("monthly_execution self-test passed (11 invariants)")
 
 
 def main() -> int:
@@ -313,6 +414,8 @@ def main() -> int:
                     help="SPYM 相对历史最高收盘的回撤（小数）。省略则联网自取")
     ap.add_argument("--tiers-executed", default=None,
                     help="本回撤周期内已执行的档位，逗号分隔，如 T1 或 T1,T2；无则填 none")
+    ap.add_argument("--lookthrough-current", action="store_true",
+                    help="当季 LOOKTHROUGH_CHECK 核查有效。不传即视为无效，SOXX 回补冻结")
     ap.add_argument("--today", default=None, help="计算 R 用的日期 YYYY-MM-DD（默认今天）")
     ap.add_argument("--self-test", action="store_true", help="校验算术是否镜像规则")
     args, _ = ap.parse_known_args()
@@ -346,7 +449,7 @@ def main() -> int:
     executed = set()
     if tiers_known and args.tiers_executed.strip().lower() not in ("none", ""):
         executed = {t.strip().upper() for t in args.tiers_executed.split(",")}
-        bad = executed - {n for _, _, n in TIERS}
+        bad = executed - {name for _, name in TIERS}
         if bad:
             print(f"DATA INCOMPLETE: 未知档位 {bad}", file=sys.stderr)
             return 2
@@ -356,8 +459,9 @@ def main() -> int:
     inp = vars(args) | {"nav": args.nav}
     res = compute(args.nav, args.cash, args.spym, args.qqqm, args.soxx,
                   args.contribution, effective_dd if effective_dd is not None else 0.0,
-                  executed, today)
-    issues = report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known)
+                  executed, today, args.lookthrough_current)
+    issues = report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
+                    args.lookthrough_current)
     return 1 if issues else 0
 
 

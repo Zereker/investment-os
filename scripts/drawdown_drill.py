@@ -10,8 +10,9 @@ time to discover a state-machine bug.
 
 What it checks (per Constitution + 02-Operating-System/Deployment-Framework.md):
   - DD is measured against the running historical maximum CLOSE.
-  - Tiers: DD >= 15% / 25% / 35% temporarily lower the cash floor to
-    10% / 8% / 6% (+U).
+  - Tiers: DD >= 10/15/20/25/30/35% lower the cash floor to
+    13.5/12/10.5/9/7.5/6% (+U) — an even 1.5pp tranche per tier from the
+    15% target, 9pp total. Deeper drawdown buys more; no bottom is called.
   - Each tier fires at most once per drawdown cycle.
   - A new all-time-high CLOSE resets the cycle: all tiers become AVAILABLE.
   - One day may satisfy several tiers (gap down); they fire shallow-to-deep,
@@ -47,7 +48,10 @@ HISTORY_API = "https://stockanalysis.com/api/symbol/e/{sym}/history?range={rng}&
 
 # Constitution drawdown-deployment clause: (DD trigger, temporary cash floor).
 # U (the SOXX stage reserve) rides on top of every floor and is not modeled here.
-TIERS = ((0.15, 0.10, "T1"), (0.25, 0.08, "T2"), (0.35, 0.06, "T3"))
+TIERS = ((0.10, "T1"), (0.15, "T2"), (0.20, "T3"),
+         (0.25, "T4"), (0.30, "T5"), (0.35, "T6"))
+TRANCHE = 0.015          # each tier releases 1.5pp of NAV
+ABSOLUTE_FLOOR = 0.06    # cash never goes below this (+U)
 NORMAL_CASH_FLOOR = 0.12
 
 
@@ -95,12 +99,12 @@ def replay(series: list[tuple[str, float]]) -> tuple[list[dict], list[dict]]:
         max_dd_in_cycle = max(max_dd_in_cycle, dd)
 
         # shallow-to-deep, once per cycle
-        for trigger, floor, name in TIERS:
+        for trigger, name in TIERS:
             if dd >= trigger and name not in executed:
                 executed.add(name)
                 events.append({
                     "date": day, "tier": name, "dd": dd, "close": close,
-                    "ath": ath, "cycle_start": cycle_start, "cash_floor": floor,
+                    "ath": ath, "cycle_start": cycle_start, "tranche": TRANCHE,
                 })
 
     cycles.append({
@@ -110,13 +114,10 @@ def replay(series: list[tuple[str, float]]) -> tuple[list[dict], list[dict]]:
     return events, cycles
 
 
-def current_floor(dd: float, executed: set[str]) -> float:
-    """Authorized cash floor right now, given which tiers this cycle already fired."""
-    floor = NORMAL_CASH_FLOOR
-    for trigger, tier_floor, name in TIERS:
-        if dd >= trigger and name not in executed:
-            floor = min(floor, tier_floor)
-    return floor
+def current_release(dd: float, executed: set[str]) -> float:
+    """Weight of NAV the clause releases right now, given tiers already fired."""
+    return sum(TRANCHE for trigger, name in TIERS
+               if dd >= trigger and name not in executed)
 
 
 def check_invariants(series, events, cycles) -> list[str]:
@@ -132,13 +133,13 @@ def check_invariants(series, events, cycles) -> list[str]:
         fired.add(e["tier"])
 
     # 2. every trigger genuinely met its threshold
-    thresholds = {name: t for t, _, name in TIERS}
+    thresholds = {name: t for t, name in TIERS}
     for e in events:
         if e["dd"] < thresholds[e["tier"]] - 1e-12:
             failures.append(f"{e['tier']} fired at DD {e['dd']:.4f}, below its {thresholds[e['tier']]:.0%} trigger")
 
     # 3. shallow-to-deep ordering within a cycle
-    order = {name: i for i, (_, _, name) in enumerate(TIERS)}
+    order = {name: i for i, (_, name) in enumerate(TIERS)}
     per_cycle: dict[str, list[str]] = {}
     for e in events:
         per_cycle.setdefault(e["cycle_start"], []).append(e["tier"])
@@ -164,17 +165,20 @@ def check_invariants(series, events, cycles) -> list[str]:
     if again != events:
         failures.append("replay is not deterministic")
 
-    # 7. floor helper agrees with the events it authorized
-    for e in events:
-        floor = current_floor(e["dd"], set())
-        if floor > e["cash_floor"] + 1e-12:
-            failures.append(f"{e['date']} {e['tier']}: floor helper says {floor:.0%}, event authorized {e['cash_floor']:.0%}")
-    if current_floor(0.0, set()) != NORMAL_CASH_FLOOR:
-        failures.append("no-drawdown floor must be the normal 12% floor")
-    if current_floor(0.30, {"T1"}) != 0.08:
-        failures.append("executed T1 must not block T2 at DD 30%")
-    if current_floor(0.20, {"T1"}) != NORMAL_CASH_FLOOR:
-        failures.append("executed T1 must not re-authorize deployment at DD 20%")
+    # 7. release helper is consistent with the ladder
+    if current_release(0.0, set()) != 0.0:
+        failures.append("no drawdown must release nothing")
+    if abs(current_release(0.099, set())) > 1e-12:
+        failures.append("below T1 must release nothing")
+    if abs(current_release(0.10, set()) - TRANCHE) > 1e-12:
+        failures.append("T1 alone must release exactly one tranche")
+    if abs(current_release(0.28, set()) - 4 * TRANCHE) > 1e-12:
+        failures.append("a gap down to 28% must release four tranches")
+    if abs(current_release(0.28, {"T1", "T2"}) - 2 * TRANCHE) > 1e-12:
+        failures.append("already-executed tiers must not release again")
+    # the six tranches must take cash from the 15% target exactly to the floor
+    if abs(len(TIERS) * TRANCHE + ABSOLUTE_FLOOR - 0.15) > 1e-12:
+        failures.append("ladder does not span 15% -> 6%")
 
     return failures
 
@@ -191,7 +195,7 @@ def report(symbol, rng, series, events, cycles, failures, markdown: bool) -> Non
         print("| 触发日 | 档位 | DD | 周期起点(ATH日) | 现金下限临时降至 |")
         print("|---|---|---:|---|---:|")
         for e in events:
-            print(f"| {e['date']} | {e['tier']} | {e['dd']:.1%} | {e['cycle_start']} | {e['cash_floor']:.0%}+U |")
+            print(f"| {e['date']} | {e['tier']} | {e['dd']:.1%} | {e['cycle_start']} | {e['tranche']:.1%} of NAV |")
         print(f"\n不变量检查：{'全部通过' if not failures else '**失败 ' + str(len(failures)) + ' 项**'}")
         for f in failures:
             print(f"- {f}")
@@ -203,10 +207,10 @@ def report(symbol, rng, series, events, cycles, failures, markdown: bool) -> Non
     if not events:
         print("no tier ever triggered in this window")
     else:
-        print(f"{'date':12} {'tier':5} {'DD':>7} {'close':>10} {'ATH':>10}  {'cycle start':12} {'floor':>6}")
+        print(f"{'date':12} {'tier':5} {'DD':>7} {'close':>10} {'ATH':>10}  {'cycle start':12} {'释放':>8}")
         for e in events:
             print(f"{e['date']:12} {e['tier']:5} {e['dd']:>6.1%} {e['close']:>10.2f} {e['ath']:>10.2f}  "
-                  f"{e['cycle_start']:12} {e['cash_floor']:>5.0%}+U")
+                  f"{e['cycle_start']:12} {e['tranche']:>7.1%}")
 
     print(f"\ncycles: {len(closed)} completed, {len(deep)} of them deep enough to fire a tier")
     for c in deep:
@@ -222,7 +226,7 @@ def report(symbol, rng, series, events, cycles, failures, markdown: bool) -> Non
             print(f"  - {f}")
     else:
         print("all invariants hold: once-per-cycle, threshold respected, shallow-to-deep,")
-        print("no gaps, ATH reset, deterministic replay, floor helper consistent")
+        print("no gaps, ATH reset, deterministic replay, release helper consistent")
     print("\nscope: validates price->tier logic only. The 'which tiers already executed'")
     print("reconstruction (IBKR alerts + journal + cash-level self-proof) stays unproven")
     print("until a live cycle exercises it. See 02-Operating-System/State-Reconstruction.md.")

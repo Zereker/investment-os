@@ -16,18 +16,26 @@ SOXX 是唯一自主倾斜载体；永久硬上限 6%，当前 `A_execution_cap=
 
 封顶依据（2026-07 实测）：SOXX=6% 时组合合并半导体暴露已约 24%、SOXX=15% 时约 32%，后者在系统自身护栏下不可达。证据见 `Research/2026-07-31-v4-Evidence-and-Proposal.md`。
 
-## 追加标准
+## 提高倾斜标准
 
-SOXX 追加必须同时满足：
+v4.5 起「追加」拆为**提高倾斜**（推进 `A_execution_cap`，风险预算扩大）与**回补至目标**（`A_execution_cap` 不动，只买回被市场打下去的权重，风险预算不变）。本节只管前者。
+
+提高倾斜必须同时满足：
 
 - 完成季度手工穿透核查（`08-Data/LOOKTHROUGH_CHECK.md`），且核查记录在当季有效；
 - 半导体护栏已触发的事实在 IC 中显式确认（当前 Core 结构性半导体暴露约 18%）；
-- 追加后 `A_actual` 不超过当前执行档；
+- 交易后 `A_actual` 不超过当前执行档；
 - 与 QQQM / SPYM 的重复暴露有明确书面补偿理由；
 - 实时四项 IBKR 数据读取成功、无冲突订单；
 - 在下单前完成 `02-Operating-System/Decision-Checklist.md` 并获得 `APPROVE` Verdict。
 
 不再要求机器验证的 Look-through Evidence Bundle；季度核查表 + 完整 IC 是现行闸门。
+
+## 回补至目标标准
+
+回补走月度例行路径，不需要完整 IC，但受五项约束同时限制（权威表述见 Constitution「回补至目标 vs 提高倾斜」节，执行细则见 `04-Alpha/Position-Registry.md`）：交易后不超 `min(A_execution_cap, A_stage)`、当季核查有效、资金只来自 `U`、科技/发行人护栏不失守、实时账户读取成功。
+
+关键边界：**回补不是把 `U` 的存在当成买入义务**。它只是在上述条件全部成立时，允许已经贴好 SOXX 标签的现金按公式回到 SOXX；条件缺一即输出 `0`，不得部分执行。
 
 ## 持仓生命周期
 

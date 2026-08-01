@@ -9,7 +9,12 @@ STAGES = (0.06,)  # v4.0: 6% is the permanent hard cap; 10/12.5/15% stages are v
 EXECUTION_CAPS = (0.03, 0.045, 0.06)
 CURRENT_STAGE = 0.06
 CURRENT_EXECUTION_CAP = 0.03
-DRAWDOWN_TIERS = ((0.15, 0.10), (0.25, 0.08), (0.35, 0.06))  # (dd trigger, cash floor)
+# v4.4: each tier releases a FIXED tranche of NAV. The older "deploy everything
+# above a floor" shape dumped the whole 15%->floor band into the first tier,
+# which is exactly what tranching exists to prevent.
+DRAWDOWN_TRIGGERS = (0.10, 0.15, 0.20, 0.25, 0.30, 0.35)
+TRANCHE = 0.015          # released per tier, as a weight of NAV
+ABSOLUTE_FLOOR = 0.06    # drawdown deployment never takes cash below this (+U)
 NORMAL_CASH_FLOOR = 0.12
 
 
@@ -103,46 +108,45 @@ def allocation_tests() -> None:
             raise AssertionError(f"illegal checkpoint transition accepted: 3% -> {proposed}")
 
 
-def drawdown_cash_floor(dd: float, executed: set[float] | None = None) -> float:
-    """Return the currently authorized cash floor for a drawdown level."""
+def drawdown_release(dd: float, executed: set[float] | None = None) -> float:
+    """Weight of NAV the drawdown clause releases at this level, given fired tiers."""
     if not isinstance(dd, (int, float)) or isinstance(dd, bool) or not isfinite(dd):
         raise ValueError("drawdown must be a finite number")
     if not 0 <= dd <= 1:
         raise ValueError("drawdown outside [0, 100%]")
     executed = executed or set()
-    floor = NORMAL_CASH_FLOOR
-    for trigger, tier_floor in DRAWDOWN_TIERS:
-        if dd >= trigger and trigger not in executed:
-            floor = min(floor, tier_floor)
-    return floor
+    return sum(TRANCHE for trigger in DRAWDOWN_TRIGGERS
+               if dd >= trigger and trigger not in executed)
 
 
 def drawdown_tests() -> None:
-    if drawdown_cash_floor(0.0) != NORMAL_CASH_FLOOR:
-        raise AssertionError("no-drawdown floor must be the normal 12% floor")
-    if drawdown_cash_floor(0.149999) != NORMAL_CASH_FLOOR:
+    if drawdown_release(0.0) != 0.0:
+        raise AssertionError("no drawdown must release nothing")
+    if drawdown_release(0.099999) != 0.0:
         raise AssertionError("below-tier drawdown must not unlock deployment")
-    expected = {0.15: 0.10, 0.2499: 0.10, 0.25: 0.08, 0.3499: 0.08, 0.35: 0.06, 1.0: 0.06}
-    for dd, floor in expected.items():
-        if abs(drawdown_cash_floor(dd) - floor) > 1e-12:
-            raise AssertionError(f"wrong cash floor at drawdown {dd}")
-    # once-per-cycle: an executed tier no longer lowers the floor
-    if drawdown_cash_floor(0.20, executed={0.15}) != NORMAL_CASH_FLOOR:
+    expected = {0.10: 1, 0.1499: 1, 0.15: 2, 0.20: 3, 0.25: 4, 0.30: 5, 0.35: 6, 1.0: 6}
+    for dd, tranches in expected.items():
+        if abs(drawdown_release(dd) - tranches * TRANCHE) > 1e-12:
+            raise AssertionError(f"wrong release at drawdown {dd}")
+    # once-per-cycle: an executed tier no longer releases
+    if drawdown_release(0.12, executed={0.10}) != 0.0:
         raise AssertionError("executed tier must not re-authorize deployment")
-    if abs(drawdown_cash_floor(0.30, executed={0.15}) - 0.08) > 1e-12:
-        raise AssertionError("deeper tier must stay available after shallower executed")
+    if abs(drawdown_release(0.30, executed={0.10}) - 4 * TRANCHE) > 1e-12:
+        raise AssertionError("deeper tiers must stay available after shallower executed")
+    # the six tranches take cash from the 15% target exactly to the absolute floor
+    if abs(len(DRAWDOWN_TRIGGERS) * TRANCHE + ABSOLUTE_FLOOR - 0.15) > 1e-12:
+        raise AssertionError("ladder does not span the 15% target down to the 6% floor")
+    if ABSOLUTE_FLOOR >= NORMAL_CASH_FLOOR:
+        raise AssertionError("the crisis floor must sit below the normal floor")
     for invalid in (-0.01, 1.01, nan, inf, True):
         try:
-            drawdown_cash_floor(invalid)
+            drawdown_release(invalid)
         except ValueError:
             pass
         else:
             raise AssertionError(f"illegal drawdown accepted: {invalid}")
-    # tiers must be strictly monotone
-    triggers = [t for t, _ in DRAWDOWN_TIERS]
-    floors = [f for _, f in DRAWDOWN_TIERS]
-    if triggers != sorted(triggers) or floors != sorted(floors, reverse=True):
-        raise AssertionError("drawdown tiers must deepen monotonically")
+    if list(DRAWDOWN_TRIGGERS) != sorted(DRAWDOWN_TRIGGERS):
+        raise AssertionError("drawdown triggers must deepen monotonically")
 
 
 import re
@@ -299,19 +303,42 @@ def main() -> None:
         "同一次IC不得既推进执行档又执行交易",
         "LOOKTHROUGH_CHECK.md",
         "不自动卖出",
+        # v4.5: the two paths must stay named and separately gated
+        "提高倾斜闸门",
+        "回补至目标",
+        "完整 IC",
+        "`min(A_execution_cap, A_stage) − A_actual`",
+        "不传该标志即视为无当季有效核查",
     )
     require(
         "01-Constitution/Target-Allocation.md",
         "永久硬上限为总组合 **6%**",
         "10% / 12.5% / 15% 治理阶段自 v4.0 起作废",
         "回撤部署（Drawdown Deployment）",
-        "`10%+U`", "`8%+U`", "`6%+U`",
+        "每档释放 **1.5pp of NAV**", "`6%+U`",
         "每一档在同一轮回撤周期内最多执行一次",
         "除 `DD` 达档外不引入任何其他判断项",
         "只用外部新增资金逐月重建",
         "18% 半导体",
         "SPYM / QQQM 例行路径不受此项单独阻断",
         "广谱市场信号",
+        # v4.5: "追加" split into restore (routine path) and tilt increase (full IC).
+        # Both definitions and the restore's five constraints live here.
+        "回补至目标 vs 提高倾斜",
+        "**回补至目标（Restore-to-target）**",
+        "**提高倾斜（Tilt increase）**",
+        "回补走月度例行路径",
+        "**提高倾斜仍须完整 IC**",
+        "资金只来自 `U`",
+        "不得降级为「先买一部分」",
+        r"交易后 `A_actual ≤ min(A_execution_cap, A_stage)`",
+    )
+    # the restore must never be describable as raising the cap — that is the one
+    # thing it is defined not to do, and the whole split collapses if it drifts
+    forbid(
+        "01-Constitution/Target-Allocation.md",
+        "回补可提高 `A_execution_cap`",
+        "回补时推进执行档",
     )
     require(
         "02-Operating-System/Deployment-Framework.md",
@@ -340,8 +367,8 @@ def main() -> None:
         "indexes.nasdaq.com",
         "前三大权重上限分别为12%、10%、8%",
     )
-    require("README.md", "# Investment OS v4.2")
-    require("PRODUCTION.md", "# Investment OS v4.2 — Production Contract")
+    require("README.md", "# Investment OS v4.5")
+    require("PRODUCTION.md", "# Investment OS v4.5 — Production Contract")
     require("07-Releases/v4.0.md", "不授权任何订单", "10% / 12.5% / 15% 历史治理阶段作废")
     require("07-Releases/v4.1.md", "不授权任何订单", "利息不在月内复利")
     require("07-Releases/v4.2.md", "不授权任何订单", "系统不再持有任何估值判断")
@@ -350,7 +377,24 @@ def main() -> None:
         "已批准",
         "历史百分位是真正的死结",
     )
-    require("Decision-Log.md", "v4.2 估值子系统整体退役")
+    require("Decision-Log.md", "v4.2 估值子系统整体退役", "v4.3 回撤部署 T1 触发线由 15% 下调至 10%")
+    require("07-Releases/v4.3.md", "不授权任何订单", "证伪回路", "10% 比 15% 贵")
+    require(
+        "Research/2026-08-01-t1-threshold-10pct.md",
+        "已批准",
+        "反对证据",
+        "证伪回路",
+    )
+    require("01-Constitution/Target-Allocation.md", "该区间现由 T2（15%）、T3（20%）、T4（25%）逐档覆盖")
+    require("07-Releases/v4.4.md", "不授权任何订单", "1.5pp", "不判断谷底")
+    require(
+        "Research/2026-08-01-drawdown-tranching.md",
+        "已批准",
+        "证伪回路",
+        "分批本身就是「不知道谷底在哪」的正确答案",
+    )
+    require("Decision-Log.md", "v4.4 回撤部署改为六档等额分批")
+    require("02-Operating-System/State-Reconstruction.md", "已执行档数")
     require(
         "Research/2026-08-01-benchmark-cash-model-simplification.md",
         "已批准",
@@ -364,7 +408,7 @@ def main() -> None:
         "不存储任何账户数据",
         "现金水位自证",
         "恰好一个",
-        "0.85×ATH收盘",
+        "T1 `0.90×`",
         "隐私边界",
     )
     require(
@@ -383,12 +427,46 @@ def main() -> None:
         "NEVER places or formats an executable order",
         "NEVER writes account figures to disk",
         # the calculator mirrors the rules; its constants must match this file
-        'TIERS = ((0.15, 0.10, "T1"), (0.25, 0.08, "T2"), (0.35, 0.06, "T3"))',
+        'TIERS = ((0.10, "T1"), (0.15, "T2"), (0.20, "T3"),',
+        '(0.25, "T4"), (0.30, "T5"), (0.35, "T6"))',
+        "TRANCHE = 0.015",
+        "ABSOLUTE_FLOOR = 0.06",
         "CASH_FLOOR = 0.12",
         "CASH_TARGET = 0.15",
         "QQQM_TARGET = 0.28",
         "A_STAGE = 0.06",
+        "A_EXECUTION_CAP = 0.03",
         "def self_test",
+        # v4.5: the restore is capped by the execution cap and fails closed
+        "def restore_candidate",
+        "if not lookthrough_current:",
+        "headroom = min(A_EXECUTION_CAP, A_STAGE) - a_actual",
+    )
+    require(
+        "01-Constitution/Target-Allocation.md",
+        "Research/2026-08-01-soxx-restore-vs-increase.md",
+    )
+    require(
+        "Research/2026-08-01-soxx-restore-vs-increase.md",
+        "已批准",
+        "反对论据",
+        "证伪回路",
+        "未采纳",
+        "看 `A_execution_cap` 动没动",
+    )
+    require("07-Releases/v4.5.md", "不授权任何订单", "回补至目标", "提高倾斜", "证伪回路")
+    require("Decision-Log.md", "v4.5 「回补至目标」与「提高倾斜」拆分")
+    require(
+        "02-Operating-System/Monthly-Workflow.md",
+        "lookthrough-current",
+        "回补",
+        "提高倾斜",
+    )
+    require("PRODUCTION.md", "回补至目标", "提高倾斜")
+    require("04-Alpha/Alpha-Framework.md", "提高倾斜标准", "回补至目标标准")
+    require(
+        "02-Operating-System/Deployment-Framework.md",
+        "本框架的三条通道只买 SPYM / QQQM",
     )
     require("CLAUDE.md", "monthly_execution.py")
     require("02-Operating-System/Monthly-Workflow.md", "monthly_execution.py")
@@ -397,7 +475,10 @@ def main() -> None:
         "never authorizes trades",
         # the drill's tiers must mirror DRAWDOWN_TIERS above, or the drill
         # would be validating a state machine the Constitution does not have
-        'TIERS = ((0.15, 0.10, "T1"), (0.25, 0.08, "T2"), (0.35, 0.06, "T3"))',
+        'TIERS = ((0.10, "T1"), (0.15, "T2"), (0.20, "T3"),',
+        '(0.25, "T4"), (0.30, "T5"), (0.35, "T6"))',
+        "TRANCHE = 0.015",
+        "ABSOLUTE_FLOOR = 0.06",
         "NORMAL_CASH_FLOOR = 0.12",
         "check_invariants",
     )
@@ -414,7 +495,8 @@ def main() -> None:
     require(
         "02-Operating-System/Deployment-Framework.md",
         "回撤部署（Drawdown Deployment）",
-        "`DD ≥ 15%`", "`DD ≥ 25%`", "`DD ≥ 35%`",
+        "`DD ≥ 10%`", "`DD ≥ 15%`", "`DD ≥ 20%`",
+        "`DD ≥ 25%`", "`DD ≥ 30%`", "`DD ≥ 35%`",
         "不引入任何其他判断项",
         "每档在同一回撤周期内最多执行一次",
     )
@@ -443,9 +525,17 @@ def main() -> None:
     # git history was rebuilt to a single commit: no document may send readers there
     for path in ("README.md", "CLAUDE.md", "07-Releases/README.md"):
         forbid(path, "查 git 历史")
-    # live account state must never be frozen into rule files (red line 2)
-    for path in ("07-Releases/v4.0.md", "04-Alpha/Position-Registry.md", "Decision-Log.md"):
-        forbid(path, "7.8%", "7.5%")
+    # live account state must never be frozen into rule files (red line 2).
+    # Target the pattern "A_actual ... N%" specifically — a bare percentage is
+    # legitimate elsewhere (price premiums, drawdown depths, guardrail lines).
+    # "A_actual 约 7.8%" is a frozen observation; "A_actual 高于 6%" references the
+    # cap and is legitimate. The approximation marker is what distinguishes them.
+    frozen_state = re.compile(r"A_actual[^。\n]{0,12}?(?:约|≈|大约)\s*\d+(?:\.\d+)?\s*%")
+    for path in ("07-Releases/v4.0.md", "04-Alpha/Position-Registry.md",
+                 "Decision-Log.md", "01-Constitution/Target-Allocation.md"):
+        hit = frozen_state.search(read(path))
+        if hit:
+            raise AssertionError(f"{path}: frozen A_actual value: {hit.group()!r}")
     require(
         "README.md",
         "仓库不维护重复的中央证券数据库",
