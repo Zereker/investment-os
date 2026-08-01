@@ -61,11 +61,17 @@ A_EXECUTION_CAP = 0.03
 # v4.4: each tier releases a FIXED tranche of NAV rather than "all cash above a
 # floor" — that older shape dumped the whole 15%->floor band in the first tier,
 # which is what tranching is meant to prevent. ABSOLUTE_FLOOR is the hard stop.
-# v4.6: four tiers ending at 25%, not six ending at 35%. The deepest two almost
-# never fired, so the ammunition sat idle; the ladder now spends out at 25%.
-TIERS = ((0.10, "T1"), (0.15, "T2"), (0.20, "T3"), (0.25, "T4"))
-TRANCHE = 0.0225         # 2.25pp of NAV released per tier
-ABSOLUTE_FLOOR = 0.06    # cash never goes below this (+U) via drawdown deployment
+# v4.6: four tiers ending at 25%, and the tranches are GRADED 1:2:3:4 rather than
+# equal. Graded keeps the first shot small (1.5pp, the size v4.4 wanted) while
+# putting most of the money at the deepest, best-priced entries. The ladder now
+# spends the cash out entirely — the old 6% floor was never independently
+# justified, it was just the tail of v4.0's 10/8/6 sequence.
+TIERS = ((0.10, "T1", 0.0150),
+         (0.15, "T2", 0.0300),
+         (0.20, "T3", 0.0450),
+         (0.25, "T4", 0.0600))
+ABSOLUTE_FLOOR = 0.0     # cash never goes below this (+U) via drawdown deployment
+LADDER = sum(t[2] for t in TIERS)   # 15pp: the whole cash position is ammunition
 PLAN_END = (2028, 12)  # strategic baseline planned completion month
 
 
@@ -95,15 +101,16 @@ def fetch_drawdown(symbol: str = "spym") -> tuple[float, str, str]:
 def tier_release(dd: float, executed: set[str], reserve: float) -> tuple[float, float, list[str]]:
     """Return (released weight, absolute floor weight, tiers consumed).
 
-    Each newly triggered tier releases TRANCHE of NAV — a fixed tranche, not
-    "everything above a floor". A single day may satisfy several tiers (a gap
-    down straight through 25%); they fire shallow-to-deep, each once per cycle,
-    and every one consumed must be recorded as EXECUTED or a later
-    reconstruction would show a shallow tier still available.
+    Each newly triggered tier releases its own graded tranche of NAV — a fixed
+    amount, not "everything above a floor". A single day may satisfy several
+    tiers (a gap down straight through 25%); they fire shallow-to-deep, each
+    once per cycle, and every one consumed must be recorded as EXECUTED or a
+    later reconstruction would show a shallow tier still available.
     """
-    consumed = [name for trigger, name in TIERS
-                if dd >= trigger and name not in executed]
-    return len(consumed) * TRANCHE, ABSOLUTE_FLOOR + reserve, consumed
+    fresh = [(name, tranche) for trigger, name, tranche in TIERS
+             if dd >= trigger and name not in executed]
+    released = sum(tranche for _, tranche in fresh)
+    return released, ABSOLUTE_FLOOR + reserve, [name for name, _ in fresh]
 
 
 def restore_candidate(a_actual: float, reserve: float, nav: float,
@@ -113,7 +120,7 @@ def restore_candidate(a_actual: float, reserve: float, nav: float,
     needs a full IC).
 
     Funded only out of U, which the rules already carve out of deployable cash —
-    the drawdown floor is 6%+U and S subtracts (15%+U) — so this never competes
+    the drawdown floor is 0+U and S subtracts (15%+U) — so this never competes
     with D, B or a drawdown tranche. Fails closed: no current-quarter
     look-through check means no restore, not a smaller one.
     """
@@ -240,9 +247,9 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
             print("  ** 未提供 --tiers-executed：无法确认本周期各档是否已执行 **")
             print("     按 State-Reconstruction 第 4 步用三信号交叉 + IBKR 警报重建后重跑")
             issues.append("回撤档位已执行状态未知")
-        for trigger, name in TIERS:
+        for trigger, name, tranche in TIERS:
             mark = "已执行" if name in executed else ("**达档可用**" if dd >= trigger else "未达档")
-            print(f"    {name}  触发 {trigger:>3.0%}  释放 {TRANCHE:.1%} of NAV   {mark}")
+            print(f"    {name}  触发 {trigger:>3.0%}  释放 {tranche:>5.2%} of NAV   {mark}")
         if res["consumed"]:
             print(f"  → 本次消耗档位 {', '.join(res['consumed'])}，共释放 {res['released_w']:.1%} of NAV"
                   f"（绝对下限 {res['crisis_floor_w']:.2%}）")
@@ -352,8 +359,11 @@ def self_test() -> None:
     assert r["consumed"] == ["T1", "T2", "T3", "T4"], f"wrong tiers consumed: {r['consumed']}"
 
     # 6b. even tranching: the tiers take cash from the 15% target exactly to 6%
-    assert len(TIERS) * TRANCHE + ABSOLUTE_FLOOR - 0.15 < 1e-12, \
-        "the tranches must take cash from the 15% target exactly to the 6% floor"
+    assert abs(LADDER + ABSOLUTE_FLOOR - 0.15) < 1e-12, \
+        "the tranches must take cash from the 15% target exactly to the absolute floor"
+    # graded, not equal: each tier must be strictly larger than the one above it
+    assert all(b[2] > a[2] for a, b in zip(TIERS, TIERS[1:])), \
+        "tranches must grow strictly with depth"
 
     # 6c. v4.6: the ladder ends at 25%. Past T4 the ammunition is spent by design,
     # so a deeper fall authorizes nothing — this is the decision, not an oversight.
@@ -460,7 +470,7 @@ def main() -> int:
     executed = set()
     if tiers_known and args.tiers_executed.strip().lower() not in ("none", ""):
         executed = {t.strip().upper() for t in args.tiers_executed.split(",")}
-        bad = executed - {name for _, name in TIERS}
+        bad = executed - {name for _, name, _t in TIERS}
         if bad:
             print(f"DATA INCOMPLETE: 未知档位 {bad}", file=sys.stderr)
             return 2

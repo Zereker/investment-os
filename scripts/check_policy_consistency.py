@@ -12,11 +12,14 @@ CURRENT_EXECUTION_CAP = 0.03
 # v4.4: each tier releases a FIXED tranche of NAV. The older "deploy everything
 # above a floor" shape dumped the whole 15%->floor band into the first tier,
 # which is exactly what tranching exists to prevent.
-# v4.6: the ladder is four tiers ending at 25%, not six ending at 35% — the
-# deepest two almost never fired, leaving the ammunition idle.
-DRAWDOWN_TRIGGERS = (0.10, 0.15, 0.20, 0.25)
-TRANCHE = 0.0225         # released per tier, as a weight of NAV
-ABSOLUTE_FLOOR = 0.06    # drawdown deployment never takes cash below this (+U)
+# v4.6: four tiers ending at 25% (the deepest two of the old six almost never
+# fired), GRADED 1:2:3:4 so the first shot stays small while the money lands at
+# the deepest entries, and spending the cash out entirely — the old 6% floor was
+# never independently justified, just the tail of v4.0's 10/8/6 sequence.
+DRAWDOWN_TIERS = ((0.10, 0.0150), (0.15, 0.0300), (0.20, 0.0450), (0.25, 0.0600))
+DRAWDOWN_TRIGGERS = tuple(t for t, _ in DRAWDOWN_TIERS)
+LADDER = sum(w for _, w in DRAWDOWN_TIERS)   # 15pp: all of the cash is ammunition
+ABSOLUTE_FLOOR = 0.0     # drawdown deployment never takes cash below this (+U)
 NORMAL_CASH_FLOOR = 0.12
 
 
@@ -117,7 +120,7 @@ def drawdown_release(dd: float, executed: set[float] | None = None) -> float:
     if not 0 <= dd <= 1:
         raise ValueError("drawdown outside [0, 100%]")
     executed = executed or set()
-    return sum(TRANCHE for trigger in DRAWDOWN_TRIGGERS
+    return sum(weight for trigger, weight in DRAWDOWN_TIERS
                if dd >= trigger and trigger not in executed)
 
 
@@ -126,25 +129,33 @@ def drawdown_tests() -> None:
         raise AssertionError("no drawdown must release nothing")
     if drawdown_release(0.099999) != 0.0:
         raise AssertionError("below-tier drawdown must not unlock deployment")
-    # v4.6: the ladder ends at 25% — 30%, 35% and 100% all release the same four
-    # tranches, because past T4 the ammunition is spent by design.
-    expected = {0.10: 1, 0.1499: 1, 0.15: 2, 0.20: 3, 0.25: 4, 0.30: 4, 0.35: 4, 1.0: 4}
-    for dd, tranches in expected.items():
-        if abs(drawdown_release(dd) - tranches * TRANCHE) > 1e-12:
+    # v4.6: graded ladder ending at 25% — 30%, 35% and 100% all release the same
+    # 15pp, because past T4 the ammunition is spent by design.
+    expected = {0.10: 0.0150, 0.1499: 0.0150, 0.15: 0.0450, 0.20: 0.0900,
+                0.25: 0.1500, 0.30: 0.1500, 0.35: 0.1500, 1.0: 0.1500}
+    for dd, weight in expected.items():
+        if abs(drawdown_release(dd) - weight) > 1e-12:
             raise AssertionError(f"wrong release at drawdown {dd}")
+    # graded, not equal: each tier must be strictly larger than the one above it
+    if any(b[1] <= a[1] for a, b in zip(DRAWDOWN_TIERS, DRAWDOWN_TIERS[1:])):
+        raise AssertionError("tranches must grow strictly with depth")
     # a fully spent ladder releases nothing however deep the fall goes
     if drawdown_release(0.60, executed=set(DRAWDOWN_TRIGGERS)) != 0.0:
         raise AssertionError("spent ladder must release nothing at any depth")
     # once-per-cycle: an executed tier no longer releases
     if drawdown_release(0.12, executed={0.10}) != 0.0:
         raise AssertionError("executed tier must not re-authorize deployment")
-    if abs(drawdown_release(0.30, executed={0.10}) - 3 * TRANCHE) > 1e-12:
+    if abs(drawdown_release(0.30, executed={0.10}) - 0.1350) > 1e-12:
         raise AssertionError("deeper tiers must stay available after shallower executed")
-    # the four tranches take cash from the 15% target exactly to the absolute floor
-    if abs(len(DRAWDOWN_TRIGGERS) * TRANCHE + ABSOLUTE_FLOOR - 0.15) > 1e-12:
-        raise AssertionError("ladder does not span the 15% target down to the 6% floor")
+    # the tranches take cash from the 15% target exactly to the absolute floor
+    if abs(LADDER + ABSOLUTE_FLOOR - 0.15) > 1e-12:
+        raise AssertionError("ladder does not span the 15% target down to the floor")
     if ABSOLUTE_FLOOR >= NORMAL_CASH_FLOOR:
         raise AssertionError("the crisis floor must sit below the normal floor")
+    # the floor may be zero but never negative: that would be borrowing, which
+    # the IPS forbids outright (owner reaffirmed no leverage on 2026-08-01)
+    if ABSOLUTE_FLOOR < 0:
+        raise AssertionError("a negative floor is margin borrowing — forbidden by the IPS")
     for invalid in (-0.01, 1.01, nan, inf, True):
         try:
             drawdown_release(invalid)
@@ -322,7 +333,8 @@ def main() -> None:
         "永久硬上限为总组合 **6%**",
         "10% / 12.5% / 15% 治理阶段自 v4.0 起作废",
         "回撤部署（Drawdown Deployment）",
-        "每档释放 **2.25pp of NAV**", "`6%+U`",
+        "T1 | `DD ≥ 10%` | 1.50pp", "T4 | `DD ≥ 25%` | 6.00pp",
+        "`0+U`", "梯度", "行为缓冲",
         # v4.6: the ladder ends at 25% and that must stay stated, not implied
         "**`DD` 超过 25% 后不再解锁任何档位。**",
         "为什么终点是 25% 而不是 35%",
@@ -403,17 +415,28 @@ def main() -> None:
                  "scripts/drawdown_drill.py", "scripts/monthly_execution.py"):
         forbid(path, "`DD ≥ 30%`", "`DD ≥ 35%`", '"T5"', '"T6"')
     require("07-Releases/v4.4.md", "不授权任何订单", "1.5pp", "不判断谷底")
-    require("07-Releases/v4.6.md", "不授权任何订单", "2.25pp", "弹药在 T4 处打光", "证伪回路",
-            # the ladder's cost is a 2008-depth crash with no dry powder left;
-            # that disclosure must survive every future edit of this release note
-            "这份数据里没有 2008")
+    require("07-Releases/v4.6.md", "不授权任何订单", "1.50pp", "6.00pp",
+            "证伪回路", "梯度", "`0+U`",
+            # the ladder ends at 25% with nothing left and no borrowing — both
+            # halves of that decision must stay stated in the release note
+            "弹药在 T4 打光", "也不借款",
+            # the ladder's cost is a 2008-depth crash with no dry powder left, and
+            # zeroing out drops the IPS's second cash function. Both disclosures
+            # must survive every future edit of this release note.
+            "2008 型深跌无弹药", "行为缓冲在最深档消失")
     require(
         "Research/2026-08-01-drawdown-four-tier.md",
         "已批准", "证伪回路", "未采纳",
         # the case against must stay on the page, not just the case for
-        "这份数据里没有 2008",
+        "2008 型深跌无弹药", "行为缓冲在最深档消失",
+        # 6% was never justified — that finding is why the floor moved to zero
+        "6% 从未被单独论证过",
+        # leverage was raised and declined; the analysis must stay retrievable
+        "关于杠杆：明确不做", "强制平仓不是现实风险",
     )
-    require("Decision-Log.md", "v4.6 回撤阶梯由六档改为四档")
+    # the IPS's no-leverage principle must survive this release untouched
+    require("00-IPS/Investment-Policy-Statement.md", "不接受无上限的行业、杠杆或流动性风险")
+    require("Decision-Log.md", "v4.6 回撤阶梯改为四档梯度，25% 处把现金全部投出")
     require(
         "Research/2026-08-01-drawdown-tranching.md",
         "已批准",
@@ -454,9 +477,9 @@ def main() -> None:
         "NEVER places or formats an executable order",
         "NEVER writes account figures to disk",
         # the calculator mirrors the rules; its constants must match this file
-        'TIERS = ((0.10, "T1"), (0.15, "T2"), (0.20, "T3"), (0.25, "T4"))',
-        "TRANCHE = 0.0225",
-        "ABSOLUTE_FLOOR = 0.06",
+        'TIERS = ((0.10, "T1", 0.0150),',
+        '(0.25, "T4", 0.0600))',
+        "ABSOLUTE_FLOOR = 0.0     # cash never goes below",
         "CASH_FLOOR = 0.12",
         "CASH_TARGET = 0.15",
         "QQQM_TARGET = 0.28",
@@ -501,10 +524,9 @@ def main() -> None:
         "never authorizes trades",
         # the drill's tiers must mirror DRAWDOWN_TIERS above, or the drill
         # would be validating a state machine the Constitution does not have
-        'TIERS = ((0.10, "T1"), (0.15, "T2"), (0.20, "T3"), (0.25, "T4"))',
-        "TRANCHE = 0.0225",
-        "ABSOLUTE_FLOOR = 0.06",
-        "NORMAL_CASH_FLOOR = 0.12",
+        'TIERS = ((0.10, "T1", 0.0150),',
+        '(0.25, "T4", 0.0600))',
+        "ABSOLUTE_FLOOR = 0.0     # cash never goes below",
         "check_invariants",
     )
     require(
