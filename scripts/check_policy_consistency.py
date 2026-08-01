@@ -222,65 +222,6 @@ def benchmark_interest_tests() -> None:
         raise AssertionError("NAV scale applied incorrectly")
 
 
-def valuation_tier(percentile: float) -> str:
-    if not isinstance(percentile, (int, float)) or isinstance(percentile, bool) or not isfinite(percentile):
-        raise ValueError("valuation percentile must be finite")
-    if not 0 <= percentile <= 100:
-        raise ValueError("valuation percentile outside [0, 100]")
-    if percentile < 20:
-        return "CHEAP"
-    if percentile < 70:
-        return "FAIR"
-    if percentile < 90:
-        return "EXPENSIVE"
-    return "VERY EXPENSIVE"
-
-
-def valuation_action(tier: str) -> tuple[bool, bool, bool]:
-    """v4.0 mapping: (D allowed, B allowed, T allowed).
-
-    D is never valuation-gated; B pauses only at VERY EXPENSIVE; T requires CHEAP.
-    """
-    actions = {
-        "CHEAP": (True, True, True),
-        "FAIR": (True, True, False),
-        "EXPENSIVE": (True, True, False),
-        "VERY EXPENSIVE": (True, False, False),
-        "N/A": (True, True, False),
-    }
-    if tier not in actions:
-        raise ValueError("unknown valuation tier")
-    return actions[tier]
-
-
-def valuation_policy_tests() -> None:
-    expected = {
-        0: "CHEAP", 19.999: "CHEAP", 20: "FAIR", 69.999: "FAIR",
-        70: "EXPENSIVE", 89.999: "EXPENSIVE", 90: "VERY EXPENSIVE",
-        100: "VERY EXPENSIVE",
-    }
-    for percentile, tier in expected.items():
-        if valuation_tier(percentile) != tier:
-            raise AssertionError(f"wrong valuation tier at {percentile}")
-    for invalid in (-0.01, 100.01, nan, inf, True):
-        try:
-            valuation_tier(invalid)
-        except ValueError:
-            pass
-        else:
-            raise AssertionError(f"illegal valuation percentile accepted: {invalid}")
-    for tier in ("CHEAP", "FAIR", "EXPENSIVE", "VERY EXPENSIVE", "N/A"):
-        d, b, t = valuation_action(tier)
-        if not d:
-            raise AssertionError(f"{tier}: D must never be valuation-gated in v4.0")
-        if t and tier != "CHEAP":
-            raise AssertionError(f"{tier}: T requires CHEAP")
-    if valuation_action("VERY EXPENSIVE")[1]:
-        raise AssertionError("VERY EXPENSIVE must pause B")
-    if not valuation_action("N/A")[1]:
-        raise AssertionError("N/A must not block B (BUG-007 regression)")
-
-
 def main() -> None:
     dictionary = "08-Data/DATA_DICTIONARY.md"
     require(
@@ -294,7 +235,6 @@ def main() -> None:
         "它不得在当月内参与计息，也不得被重复确认为收益",
         "drawdown_from_ath",
         "drawdown_tier_state",
-        "不被估值等级或估值数据缺失削减",
     )
     forbid(
         dictionary,
@@ -319,7 +259,6 @@ def main() -> None:
         "02-Operating-System/Weekly-Review.md",
         "02-Operating-System/Quarterly-Workflow.md",
         "02-Operating-System/Deployment-Framework.md",
-        "02-Operating-System/ETF-Valuation-Framework.md",
         "03-Transition/Transition-Plan.md",
         "04-Alpha/Alpha-Framework.md",
         "04-Alpha/Position-Registry.md",
@@ -342,6 +281,14 @@ def main() -> None:
             "长期硬上限与最终治理阶段15%",
             "Bundle v1.4",
             "Bundle v1.5",
+            # v4.2 retired the valuation subsystem. The old BUG-007 guard asserted
+            # "N/A must not block B"; with no valuation gate at all that holds by
+            # construction, so the guard becomes: the vocabulary must not return.
+            "CHEAP",
+            "VERY EXPENSIVE",
+            "Forward P/E",
+            "战术加速",
+            "ETF-Valuation-Framework",
         )
 
     require(
@@ -360,7 +307,7 @@ def main() -> None:
         "回撤部署（Drawdown Deployment）",
         "`10%+U`", "`8%+U`", "`6%+U`",
         "每一档在同一轮回撤周期内最多执行一次",
-        "不受估值等级与估值数据可得性约束",
+        "除 `DD` 达档外不引入任何其他判断项",
         "只用外部新增资金逐月重建",
         "18% 半导体",
         "SPYM / QQQM 例行路径不受此项单独阻断",
@@ -382,10 +329,17 @@ def main() -> None:
         "indexes.nasdaq.com",
         "前三大权重上限分别为12%、10%、8%",
     )
-    require("README.md", "# Investment OS v4.1")
-    require("PRODUCTION.md", "# Investment OS v4.1 — Production Contract")
+    require("README.md", "# Investment OS v4.2")
+    require("PRODUCTION.md", "# Investment OS v4.2 — Production Contract")
     require("07-Releases/v4.0.md", "不授权任何订单", "10% / 12.5% / 15% 历史治理阶段作废")
     require("07-Releases/v4.1.md", "不授权任何订单", "利息不在月内复利")
+    require("07-Releases/v4.2.md", "不授权任何订单", "系统不再持有任何估值判断")
+    require(
+        "Research/2026-08-01-valuation-subsystem-retirement.md",
+        "已批准",
+        "历史百分位是真正的死结",
+    )
+    require("Decision-Log.md", "v4.2 估值子系统整体退役")
     require(
         "Research/2026-08-01-benchmark-cash-model-simplification.md",
         "已批准",
@@ -433,23 +387,10 @@ def main() -> None:
         "未验证",
     )
     require(
-        "02-Operating-System/ETF-Valuation-Framework.md",
-        "本框架只覆盖 `SPYM / QQQM / SOXX`",
-        "`p < 20`",
-        "`20 ≤ p < 70`",
-        "`70 ≤ p < 90`",
-        "`p ≥ 90`",
-        "估值贵本身不能触发卖出",
-        "至少需要连续 5 年、60 个互不重复的月末观察值",
-        "Trailing P/E 时不得判定为便宜",
-        "`CHEAP` 是战术加速 `T` 的必要条件",
-        "`VERY EXPENSIVE` 暂停对应标的的战略基线 `B`",
-    )
-    require(
         "02-Operating-System/Deployment-Framework.md",
         "回撤部署（Drawdown Deployment）",
         "`DD ≥ 15%`", "`DD ≥ 25%`", "`DD ≥ 35%`",
-        "估值等级与估值数据可得性不是检查项",
+        "不引入任何其他判断项",
         "每档在同一回撤周期内最多执行一次",
     )
     require(
@@ -524,6 +465,9 @@ def main() -> None:
         # retired in the v4.0 cleanup: single-stock research template, but stock
         # authorization is 0% and the tilt framework allows exactly one vehicle
         "04-Alpha/Research/README.md",
+        # retired in v4.2: four Red inputs that cannot go Green, and a
+        # historical-percentile requirement no source can satisfy
+        "02-Operating-System/ETF-Valuation-Framework.md",
     ):
         if (ROOT / stale).exists():
             raise AssertionError(f"retired file resurfaced: {stale}")
@@ -536,7 +480,6 @@ def main() -> None:
     allocation_tests()
     drawdown_tests()
     benchmark_interest_tests()
-    valuation_policy_tests()
     print("Policy consistency checks passed.")
 
 

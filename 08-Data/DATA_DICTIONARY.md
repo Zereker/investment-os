@@ -39,7 +39,7 @@ IBKR Positions 返回的单项市值。持仓真相以 Positions 为准。
 月度符号 \(G_0\)。在 \(F\) 到账后，按 QQQM 28% 与 SPYM \(57\%-A_{basis}\) 动态目标计算的 Routine DCA 前正缺口合计。
 
 ### routine_core_purchase_limit_usd / routine_core_purchase_usd
-月度符号\(D_{max}\)与\(D\)。\(D_{max}=\min(F,G_0)\)是Routine DCA上限；\(D\le D_{max}\)是实际买入额，v4.0 起不被估值等级或估值数据缺失削减，只受正缺口、现金下限与执行检查约束。\(F-D\)必须保留为现金，不得因计划额而强制买入。
+月度符号\(D_{max}\)与\(D\)。\(D_{max}=\min(F,G_0)\)是Routine DCA上限；\(D\le D_{max}\)是实际买入额，只受正缺口、现金下限与执行检查约束。\(F-D\)必须保留为现金，不得因计划额而强制买入。
 
 ### strategic_excess_cash_usd / strategic_core_gap_after_usd / strategic_baseline_usd
 分别对应 \(S\)、\(G\) 与 \(B\)。其中 \(S=\max(C-(15\%+U)\times V,0)\)，\(G\) 是执行 \(D\) 后 Core 剩余正缺口，\(B=\min(S/R,G)\)。
@@ -47,37 +47,10 @@ IBKR Positions 返回的单项市值。持仓真相以 Positions 为准。
 ### open_order_status
 IBKR Orders 返回的订单状态。存在 `NEW`、`SUBMITTED` 或 `PARTIALLY_FILLED` 时，Trade Gate 必须检查重复交易。
 
-## 市场与估值字段
+## 市场字段
 
 ### spym_last_price_usd / qqqm_last_price_usd
 IBKR 返回的最新可用市场价格。必须同时记录读取时间和市场是否开盘。
-
-### sp500_pe
-State Street SPYM 官方页 `Index Characteristics` 中的 `Price/Earnings`。保留官方标签，不擅自改称 TTM PE，除非来源明确如此定义。
-
-### sp500_pe_fy1
-State Street SPYM 官方页 `Price/Earnings Ratio FY1`：按持仓加权调和平均计算的当前价格除以未来一年预测 EPS；预测数据由官方页面披露的数据供应商提供。
-
-### nasdaq100_pe
-Invesco QQQM 官方页的 `Price/Earnings Ratio`，要求页面可稳定提取数值、日期和 Weighted Harmonic Average 口径。未满足时为缺失，不得估算。
-
-### nasdaq100_forward_pe
-Invesco QQQM 官方页的 `Forward Price/Earnings Ratio`。使用 QQQ 作为代理时，必须为同一日期、同一指数并标记 `proxy=true`。
-
-### forward_pe_percentile
-当前Forward P/E在同一ETF/指数、同一P/E定义和同一来源历史序列中的百分位。历史窗口优先10年；最低为连续5年、60个互不重复的历史月末观察值。当前值不得放入历史分布，不得混接Trailing P/E或不同供应商定义。
-
-### forward_eps_growth / forward_eps_revision_3m
-未来12个月EPS增长率，以及相同预测口径在过去三个月的变化率。`forward_eps_growth > 0`且`forward_eps_revision_3m ≥ 0`才构成盈利支持；缺失不能假定为零或正值。
-
-### us10y_yield / earnings_yield_spread
-`us10y_yield`使用FRED DGS10或已登记美国财政部官方序列。`earnings_yield_spread = 1 / forward_pe − us10y_yield`，两项均以小数计算并保留`source_as_of`。该利差只确认相对无风险收益的补偿，不单独定义贵便宜。
-
-### valuation_tier / valuation_confidence
-`valuation_tier`只允许`CHEAP / FAIR / EXPENSIVE / VERY EXPENSIVE / N/A`，基础等级由Forward P/E自身历史百分位按`<20 / 20–70 / 70–90 / ≥90`确定。盈利和利率确认只能维持或保守上调一级，不能把等级改得更便宜。`valuation_confidence`记录`HIGH / LOW / MIXED / DATA INCOMPLETE`。
-
-### valuation_action
-只允许`ADD / HOLD / PAUSE / REVIEW`。它按最终等级、正缺口、现金、订单和生命周期共同生成；估值等级本身不得生成卖出。v4.0 起估值等级只影响`B / T`（`VERY EXPENSIVE`暂停`B`，`CHEAP`是`T`必要条件），不影响`D`与回撤部署。
 
 ### drawdown_from_ath / drawdown_tier_state
 `drawdown_from_ath`是SPYM收盘价相对历史最高收盘价的回撤，以小数记录并注明收盘序列来源。`drawdown_tier_state`记录当前回撤周期内 T1(≥15%) / T2(≥25%) / T3(≥35%) 各档的`AVAILABLE / EXECUTED`状态；SPYM创历史新高收盘后全部重置为`AVAILABLE`。
@@ -88,7 +61,7 @@ Invesco QQQM 官方页的 `Forward Price/Earnings Ratio`。使用 QQQ 作为代�
 
 ### benchmark_month_start_nav_usd / benchmark_cash_sleeve_value_usd
 
-每个自然月首个估值时点重置一次政策权重：
+每个自然月首个计价时点重置一次政策权重：
 
 \[
 C_{B,m,0}=15\%\times V_{B,m,0}
@@ -116,7 +89,7 @@ I_{B,m}=\max(C_{B,m,0}-10000,0)\times r_{B,m}\times k_{B,m}\times \frac{N_m}{360
 r^{model}_{cash,m}=I_{B,m}/C_{B,m,0}
 \]
 
-本金固定为月初值，因此利息不在月内复利。利率档位、门槛规则或月初净值缺失时当月为N/A，不得使用实际账户利息、单位收益率、上月值或0%替代。外部现金流不进入基准收益分子；组合比较使用时间加权收益，基准只在下一个月首个估值时点重新设为15% / 57% / 28%。
+本金固定为月初值，因此利息不在月内复利。利率档位、门槛规则或月初净值缺失时当月为N/A，不得使用实际账户利息、单位收益率、上月值或0%替代。外部现金流不进入基准收益分子；组合比较使用时间加权收益，基准只在下一个月首个计价时点重新设为15% / 57% / 28%。
 
 ### spym_total_return / qqqm_total_return
 同一计量期间、含分红的基金总收益 \(r_{SPYM,t}\) 与 \(r_{QQQM,t}\)。价格收益不得冒充总收益。
@@ -175,6 +148,5 @@ W_{semi}=\sum_{i:\ normalized\_industry(i)=\text{Semiconductors \& Semiconductor
 ## 缺失值规则
 
 - Markdown 快照使用 `N/A`，不得写 `0`。
-- 缺失或Red估值字段不得猜测等级；v4.0 起估值`N/A`只关闭`T`，`D / B`按公式继续。SOXX继续受倾斜治理约束。
 - 缺失或 Red 穿透字段不得被当作零暴露；冻结自主倾斜新增，不阻断 Core 例行路径。
-- 旧快照可用于审计，不可冒充当前估值或穿透暴露。
+- 旧快照可用于审计，不可冒充当前价格或穿透暴露。
