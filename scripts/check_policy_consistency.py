@@ -392,7 +392,8 @@ def main() -> None:
         "不得使用实际账户的单位现金收益率",
     )
     require("CLAUDE.md", "永远不下单", "fetch_etf_data.py", "DATA INCOMPLETE",
-            "公开安全写法", "State-Reconstruction.md", "永不落盘")
+            "公开安全写法", "State-Reconstruction.md", "永不落盘",
+            "你不合并 master", "由所有者审阅合并")
     require(
         "02-Operating-System/State-Reconstruction.md",
         "不存储任何账户数据",
