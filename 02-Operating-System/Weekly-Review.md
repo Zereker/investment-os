@@ -27,7 +27,7 @@
 - SOXX列示生命周期`Hold | Frozen | Exit Review`
 - 与Constitution的Cash、QQQM、`SPYM + SOXX + Stage Reserve`袖套和硬上限差异
 - SPYM回撤`DD`、回撤档位状态与本周期已执行的回撤部署
-- 本月累计固定投入、战略基线 \(B\)、回撤部署与战术加速 \(T\)
+- 本月累计固定投入、战略基线 \(B\) 与回撤部署
 - 是否出现只能靠季度/年度治理处理的结构性偏差
 
 周度复盘只标记偏差，不因一周波动临时再平衡。SOXX持有状态本身不产生`IC REVIEW`；追加候选只有满足 Position Registry 追加闸门（当季手工核查 + 实时账户 + 完整IC）才可进入`IC REVIEW`。
@@ -35,19 +35,19 @@
 ## D. 数据质量
 
 - IBKR 账户数据是否保持 Green
-- SPYM、QQQM、SOXX价格和估值数据的来源、`source_as_of`、自身历史百分位与刷新状态
+- SPYM、QQQM、SOXX 价格的来源、`source_as_of` 与刷新状态
 - 穿透持仓与行业数据是否足够支持新增 Alpha 审查
 - Yellow / Red 字段及其影响范围
 - 是否需要新增数据快照、修复解析或更新 Data Registry
 
-Red / N/A估值不得猜测等级；v4.0 起估值缺失只关闭\(T\)，\(D/B\)按公式继续，SOXX不得产生估值追加结论。缺失值不得用旧值或估算值填补。
+缺失值不得用旧值或估算值填补，也不得据此产生任何新增结论。
 
 ## E. 行为与执行
 
 - 本周是否有未经过相应交易路径的账户操作
 - 是否出现追涨、接飞刀、盘中临时起意或规则漂移
 - 固定投入与 \(B\) 是否完全符合月度公式和简化 Gate
-- \(T\)、Alpha、卖出及例外是否在下单前完成完整 Investment Committee Packet
+- 倾斜动作、卖出及规则例外是否在下单前完成完整 Investment Committee Packet
 - SOXX 是否出现未批准追加；回撤部署是否严格按档执行
 - 实际执行是否与批准的方向、数量、限价和有效期一致
 - 多数日子的 `HOLD` 是否被当作有效结果

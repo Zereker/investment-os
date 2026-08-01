@@ -10,14 +10,13 @@
 
 符号定义与阈值以 `01-Constitution/Target-Allocation.md` 为唯一权威（`A_stage` / `A_basis` / `U` / 执行档）。QQQM 28%保持不变；`U` 作为现金中的阶段储备，不先投入SPYM。迁移以纪律、税务效率和可执行性为先，计划基线使用 2028-12 作为完成月，并在每月重算。
 
-## 四条资金通道
+## 三条资金通道
 
-1. `Routine DCA`：每月固定外部入金（数额不入库）；只使用已到账的\(F\)，执行\(D=\min(F,G_0)\)，\(F-D\)留在现金；v4.0 起\(D\)不被估值等级削减。
-2. `Strategic Baseline`：在固定月度执行日，按 Deployment Framework 的 \(B=\min(S/R,G)\) 公式迁移历史超额现金；仅`VERY EXPENSIVE`暂停对应标的的\(B\)。
-3. `Drawdown Deployment`：SPYM 相对历史最高收盘回撤达档时，按 Constitution 分档条款部署现金；不依赖估值数据。
-4. `Tactical Acceleration`：只有估值为`CHEAP`、数据合格并通过完整 IC 时，才允许在 \(B\) 之上加速。
+1. `Routine DCA`：每月固定外部入金（数额不入库）；只使用已到账的\(F\)，执行\(D=\min(F,G_0)\)，\(F-D\)留在现金。
+2. `Strategic Baseline`：在固定月度执行日，按 Deployment Framework 的 \(B=\min(S/R,G)\) 公式迁移历史超额现金；没有任何判断性闸门可以暂停它。
+3. `Drawdown Deployment`：SPYM 相对历史最高收盘回撤达档时，按 Constitution 分档条款部署现金。
 
-Red / N/A 估值只将战术加速降为 0，不阻塞 Routine DCA、Strategic Baseline 与回撤部署。
+三条通道全部由公式与价格驱动，没有一条依赖判断性数据。超出 \(B\) 的加速部署只有回撤档位这一条机械路径；主动加速属于规则例外，须走完整 IC。
 
 ## 原则
 
@@ -27,7 +26,7 @@ Red / N/A 估值只将战术加速降为 0，不阻塞 Routine DCA、Strategic B
 4. SOXX 板块倾斜的月度例行新增分配恒为 0。
 5. 所有倾斜新建、追加和卖出均走完整 Investment Committee。
 6. 非目标旧持仓和超上限倾斜采用税务感知的渐进退出；不因“高位/低位”单独卖出。
-7. 每月只产出一份月度输出（格式见 Deployment Framework 第 8 节），聊天呈交所有者，不写回仓库。
+7. 每月只产出一份月度输出（格式见 Deployment Framework 第 6 节），聊天呈交所有者，不写回仓库。
 
 ## 阶段
 
@@ -35,7 +34,7 @@ Red / N/A 估值只将战术加速降为 0，不阻塞 Routine DCA、Strategic B
 
 - Routine DCA \(D\) 与 Strategic Baseline \(B\) 进入 SPYM / QQQM。
 - 按正缺口分配；为减少交易，可只买缺口更大的一个。
-- 战术加速不得替代或追认例行基线。
+- 回撤部署不得替代或追认例行基线。
 
 ### 阶段 B：处理板块倾斜与 Legacy
 
@@ -50,4 +49,4 @@ Red / N/A 估值只将战术加速降为 0，不阻塞 Routine DCA、Strategic B
 
 ## 时间判断
 
-2028-12 是战略基线的计划完成月，不是收益承诺或强制清仓日。市场涨跌、税务、入金和 Legacy 处理会改变结果；每季度可重估预计完成月，但延长计划必须明确记录，不能靠估值 Red 静默拖延。
+2028-12 是战略基线的计划完成月，不是收益承诺或强制清仓日。市场涨跌、税务、入金和 Legacy 处理会改变结果；每季度可重估预计完成月，但延长计划必须明确记录，不得静默拖延。

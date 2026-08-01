@@ -1,13 +1,13 @@
 # AI 执行手册（CLAUDE.md）
 
-本仓库是一套**由 AI 执行的个人投资操作系统**（当前 v4.1）。你（AI）的职责是按已发布规则读取数据、计算、报告和把关——**永远不下单**；下单只能由账户所有者在 IBKR 人工完成。
+本仓库是一套**由 AI 执行的个人投资操作系统**（当前 v4.2）。你（AI）的职责是按已发布规则读取数据、计算、报告和把关——**永远不下单**；下单只能由账户所有者在 IBKR 人工完成。
 
 ## 30 秒理解系统
 
 - 目标配置：现金 15% ｜ QQQM 28% ｜ SPYM `57%−A_basis` ｜ SOXX（半导体板块倾斜）硬上限 6%。
 - `A_basis=max(A_actual, 6%)`，`U=max(6%−A_actual, 0)` 是现金里的 SOXX 用途标签。
 - 规则优先级：`00-IPS` → `01-Constitution` → `02-Operating-System` → `03-Transition` → `05-Journal`。冲突时高层覆盖低层;聊天记录与 `Research/` 无规则效力。
-- 三条铁律：数据缺失 = `DATA INCOMPLETE`（停止建议,不猜);估值贵不卖出;护栏触发只冻结新增、不自动卖出。
+- 三条铁律：数据缺失 = `DATA INCOMPLETE`（停止建议,不猜);价格涨跌不构成卖出理由;护栏触发只冻结新增、不自动卖出。
 
 ## 例行任务入口
 
@@ -15,7 +15,7 @@
 |---|---|---|
 | 每日巡检 | `02-Operating-System/Daily-Review.md` | 先实时读 IBKR 四项(Account Summary/Balances/Positions/Open Orders);记录 SPYM 相对历史高点回撤 `DD` 与档位状态 |
 | 周度复盘 | `02-Operating-System/Weekly-Review.md` | 只产出 `NO ACTION / MONTHLY INPUT / IC REVIEW / DATA FIX` |
-| 月度执行 | `02-Operating-System/Monthly-Workflow.md` | `D=min(F,G0)`;`B=min(S/R,G)`;回撤达档执行部署;估值只影响 `B/T` |
+| 月度执行 | `02-Operating-System/Monthly-Workflow.md` | `D=min(F,G0)`;`B=min(S/R,G)`;回撤达档执行部署 |
 | 季度审核 | `02-Operating-System/Quarterly-Workflow.md` | 第一步做穿透核查(见下),再审 SOXX 与护栏 |
 | 非例行交易 | `02-Operating-System/Decision-Checklist.md` | 完整 IC 四视角;任一失败 = `HOLD / STOP` |
 
@@ -62,7 +62,7 @@ python3 scripts/check_policy_consistency.py   # 提交前必须本地通过
 
 - Core 自身(51% SPYM + 28% QQQM)合并半导体暴露约 18%,**恒定高于 15% 护栏线**——这是指数结构事实,护栏因此只约束 SOXX 等自主倾斜的新增,不阻断 Core 例行路径。
 - SOXX 实际权重可能漂移超过 6% 上限:处理方式是冻结新增、不自动卖出、每日披露。
-- QQQM Forward P/E 等估值字段长期 Red:这**不阻塞** `D/B`,只关闭战术加速 `T`。
+- 估值子系统已于 v4.2 整体退役:四个输入字段全 Red 且无法转 Green(QQQM 官方页是 SPA、SOXX 只有 Trailing P/E、历史百分位需要拿不到的 5–10 年序列)。系统不再持有任何估值判断,三条资金通道全部由公式与价格驱动。依据见 `Research/2026-08-01-valuation-subsystem-retirement.md`。
 - 完整证据:`Research/2026-07-31-v4-Evidence-and-Proposal.md`。
 
 ## 红线（违反即 BUG）
