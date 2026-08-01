@@ -1,11 +1,12 @@
 # AI 执行手册（CLAUDE.md）
 
-本仓库是一套**由 AI 执行的个人投资操作系统**（当前 v4.4）。你（AI）的职责是按已发布规则读取数据、计算、报告和把关——**永远不下单**；下单只能由账户所有者在 IBKR 人工完成。
+本仓库是一套**由 AI 执行的个人投资操作系统**（当前 v4.5）。你（AI）的职责是按已发布规则读取数据、计算、报告和把关——**永远不下单**；下单只能由账户所有者在 IBKR 人工完成。
 
 ## 30 秒理解系统
 
 - 目标配置：现金 15% ｜ QQQM 28% ｜ SPYM `57%−A_basis` ｜ SOXX（半导体板块倾斜）硬上限 6%。
 - `A_basis=max(A_actual, 6%)`，`U=max(6%−A_actual, 0)` 是现金里的 SOXX 用途标签。
+- SOXX 买入分两类，判别只看 `A_execution_cap` 动没动：**回补至目标**（执行档不动，买回被市场打下去的权重）走月度例行路径，资金只来自 `U`；**提高倾斜**（推进执行档 3%→4.5%→6%）须完整 IC。别把二者混称「追加」。
 - 规则优先级：`00-IPS` → `01-Constitution` → `02-Operating-System` → `03-Transition` → `05-Journal`。冲突时高层覆盖低层;聊天记录与 `Research/` 无规则效力。
 - 三条铁律：数据缺失 = `DATA INCOMPLETE`（停止建议,不猜);价格涨跌不构成卖出理由;护栏触发只冻结新增、不自动卖出。
 
@@ -43,13 +44,14 @@ python3 scripts/fetch_etf_data.py --scenario current --markdown
 # 数值从 IBKR 读,只走 argv 与 stdout,永不落盘:
 python3 scripts/monthly_execution.py --nav <NetLiq> --cash <TotalCash> \
     --spym <市值> --qqqm <市值> --soxx <市值> --contribution <本月已到账F> \
-    --tiers-executed none          # 或 T1 / T1,T2,按本周期实际已执行档位填
+    --tiers-executed none \         # 或 T1 / T1,T2,按本周期实际已执行档位填
+    --lookthrough-current           # 仅当季穿透核查有效时传;不传则回补冻结
 python3 scripts/monthly_execution.py --self-test   # 校验算术仍镜像规则
 ```
 
-一条命令产出 `A_actual/A_basis/U`、各袖套动态目标与正缺口、`D=min(F,G0)`、`S`、`B=min(S/R,G)`、回撤档位、例行路径检查与 `HOLD / BUY CANDIDATE` 结论,格式即 Deployment-Framework 第 6 节的月度输出。
+一条命令产出 `A_actual/A_basis/U`、各袖套动态目标与正缺口、`D=min(F,G0)`、`S`、`B=min(S/R,G)`、回撤档位、SOXX 回补候选、例行路径检查与 `HOLD / BUY CANDIDATE` 结论,格式即 Deployment-Framework 第 6 节的月度输出。
 
-**它是已发布规则的镜像,不是新规则**——与文档不一致即为脚本 BUG。它不下单、不生成订单指令;`--tiers-executed` 不填时拒绝授权回撤部署并报 `DATA INCOMPLETE`(档位已执行状态无法从价格推导)。
+**它是已发布规则的镜像,不是新规则**——与文档不一致即为脚本 BUG。它不下单、不生成订单指令。两个「不许静默假设」的标志都是 fail-closed:`--tiers-executed` 不填时拒绝授权回撤部署并报 `DATA INCOMPLETE`(档位已执行状态无法从价格推导);`--lookthrough-current` 不传时回补输出 `0` 并报 `DATA INCOMPLETE`(当季穿透核查是否有效无法从账户推导)。
 
 ## 如何验证回撤部署状态机
 

@@ -3,7 +3,7 @@
 - Production classification: `板块倾斜（Sector Tilt）`
 - Role: 唯一半导体倾斜 ETF，替代 MU、TSM 等分散的单股主动预算
 - Policy research status: `Incomplete — INDEX METHODOLOGY EVIDENCE`
-- Production lifecycle: 见 `04-Alpha/Position-Registry.md`（当前 `Hold`，追加受闸门约束）
+- Production lifecycle: 见 `04-Alpha/Position-Registry.md`（当前 `Hold`，买入受闸门约束）
 - Permanent hard cap: 6%（v4.0；10%/12.5%/15%历史阶段作废）
 - Current execution cap: 3%
 - Research date: 2026-07-30；v4.0 更新：2026-07-31
@@ -50,7 +50,7 @@
 
 - `A_stage=6%`为永久硬上限，当前`A_execution_cap=3%`；执行上限只能按3%→4.5%→6%逐档推进。
 - 10%、12.5%、15%历史阶段已作废：2026-07实测合并穿透显示这些端点在系统自身护栏下不可达（见`Research/2026-07-31-v4-Evidence-and-Proposal.md`）。
-- 任何追加前必须通过当季`LOOKTHROUGH_CHECK.md`手工核查、实时IBKR、执行上限和完整IC。
+- 任何买入前必须通过当季`LOOKTHROUGH_CHECK.md`手工核查、实时IBKR与执行上限；**提高倾斜**另须完整IC，**回补至目标**走例行路径（v4.5，见 Position Registry）。
 - 价格档位仅触发研究复核，不写入Production自动规则。
 
 ## 官方来源

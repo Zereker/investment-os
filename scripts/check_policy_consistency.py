@@ -303,6 +303,12 @@ def main() -> None:
         "同一次IC不得既推进执行档又执行交易",
         "LOOKTHROUGH_CHECK.md",
         "不自动卖出",
+        # v4.5: the two paths must stay named and separately gated
+        "提高倾斜闸门",
+        "回补至目标",
+        "完整 IC",
+        "`min(A_execution_cap, A_stage) − A_actual`",
+        "不传该标志即视为无当季有效核查",
     )
     require(
         "01-Constitution/Target-Allocation.md",
@@ -316,6 +322,23 @@ def main() -> None:
         "18% 半导体",
         "SPYM / QQQM 例行路径不受此项单独阻断",
         "广谱市场信号",
+        # v4.5: "追加" split into restore (routine path) and tilt increase (full IC).
+        # Both definitions and the restore's five constraints live here.
+        "回补至目标 vs 提高倾斜",
+        "**回补至目标（Restore-to-target）**",
+        "**提高倾斜（Tilt increase）**",
+        "回补走月度例行路径",
+        "**提高倾斜仍须完整 IC**",
+        "资金只来自 `U`",
+        "不得降级为「先买一部分」",
+        r"交易后 `A_actual ≤ min(A_execution_cap, A_stage)`",
+    )
+    # the restore must never be describable as raising the cap — that is the one
+    # thing it is defined not to do, and the whole split collapses if it drifts
+    forbid(
+        "01-Constitution/Target-Allocation.md",
+        "回补可提高 `A_execution_cap`",
+        "回补时推进执行档",
     )
     require(
         "02-Operating-System/Deployment-Framework.md",
@@ -344,8 +367,8 @@ def main() -> None:
         "indexes.nasdaq.com",
         "前三大权重上限分别为12%、10%、8%",
     )
-    require("README.md", "# Investment OS v4.4")
-    require("PRODUCTION.md", "# Investment OS v4.4 — Production Contract")
+    require("README.md", "# Investment OS v4.5")
+    require("PRODUCTION.md", "# Investment OS v4.5 — Production Contract")
     require("07-Releases/v4.0.md", "不授权任何订单", "10% / 12.5% / 15% 历史治理阶段作废")
     require("07-Releases/v4.1.md", "不授权任何订单", "利息不在月内复利")
     require("07-Releases/v4.2.md", "不授权任何订单", "系统不再持有任何估值判断")
@@ -412,7 +435,38 @@ def main() -> None:
         "CASH_TARGET = 0.15",
         "QQQM_TARGET = 0.28",
         "A_STAGE = 0.06",
+        "A_EXECUTION_CAP = 0.03",
         "def self_test",
+        # v4.5: the restore is capped by the execution cap and fails closed
+        "def restore_candidate",
+        "if not lookthrough_current:",
+        "headroom = min(A_EXECUTION_CAP, A_STAGE) - a_actual",
+    )
+    require(
+        "01-Constitution/Target-Allocation.md",
+        "Research/2026-08-01-soxx-restore-vs-increase.md",
+    )
+    require(
+        "Research/2026-08-01-soxx-restore-vs-increase.md",
+        "已批准",
+        "反对论据",
+        "证伪回路",
+        "未采纳",
+        "看 `A_execution_cap` 动没动",
+    )
+    require("07-Releases/v4.5.md", "不授权任何订单", "回补至目标", "提高倾斜", "证伪回路")
+    require("Decision-Log.md", "v4.5 「回补至目标」与「提高倾斜」拆分")
+    require(
+        "02-Operating-System/Monthly-Workflow.md",
+        "lookthrough-current",
+        "回补",
+        "提高倾斜",
+    )
+    require("PRODUCTION.md", "回补至目标", "提高倾斜")
+    require("04-Alpha/Alpha-Framework.md", "提高倾斜标准", "回补至目标标准")
+    require(
+        "02-Operating-System/Deployment-Framework.md",
+        "本框架的三条通道只买 SPYM / QQQM",
     )
     require("CLAUDE.md", "monthly_execution.py")
     require("02-Operating-System/Monthly-Workflow.md", "monthly_execution.py")
