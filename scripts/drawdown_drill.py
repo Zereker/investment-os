@@ -10,9 +10,11 @@ time to discover a state-machine bug.
 
 What it checks (per Constitution + 02-Operating-System/Deployment-Framework.md):
   - DD is measured against the running historical maximum CLOSE.
-  - Tiers: DD >= 10/15/20/25/30/35% lower the cash floor to
-    13.5/12/10.5/9/7.5/6% (+U) — an even 1.5pp tranche per tier from the
+  - Tiers: DD >= 10/15/20/25% lower the cash floor to
+    12.75/10.5/8.25/6% (+U) — an even 2.25pp tranche per tier from the
     15% target, 9pp total. Deeper drawdown buys more; no bottom is called.
+  - v4.6: the ladder ENDS at 25%. Past that the ammunition is spent by design
+    and nothing further unlocks, however deep the drawdown goes.
   - Each tier fires at most once per drawdown cycle.
   - A new all-time-high CLOSE resets the cycle: all tiers become AVAILABLE.
   - One day may satisfy several tiers (gap down); they fire shallow-to-deep,
@@ -48,9 +50,8 @@ HISTORY_API = "https://stockanalysis.com/api/symbol/e/{sym}/history?range={rng}&
 
 # Constitution drawdown-deployment clause: (DD trigger, temporary cash floor).
 # U (the SOXX stage reserve) rides on top of every floor and is not modeled here.
-TIERS = ((0.10, "T1"), (0.15, "T2"), (0.20, "T3"),
-         (0.25, "T4"), (0.30, "T5"), (0.35, "T6"))
-TRANCHE = 0.015          # each tier releases 1.5pp of NAV
+TIERS = ((0.10, "T1"), (0.15, "T2"), (0.20, "T3"), (0.25, "T4"))
+TRANCHE = 0.0225         # each tier releases 2.25pp of NAV
 ABSOLUTE_FLOOR = 0.06    # cash never goes below this (+U)
 NORMAL_CASH_FLOOR = 0.12
 
@@ -174,9 +175,14 @@ def check_invariants(series, events, cycles) -> list[str]:
         failures.append("T1 alone must release exactly one tranche")
     if abs(current_release(0.28, set()) - 4 * TRANCHE) > 1e-12:
         failures.append("a gap down to 28% must release four tranches")
+    # v4.6: past the deepest tier nothing further unlocks — the ladder ends at 25%
+    if abs(current_release(0.50, set()) - 4 * TRANCHE) > 1e-12:
+        failures.append("a 50% drawdown must release no more than the whole ladder")
+    if abs(current_release(0.50, {"T1", "T2", "T3", "T4"})) > 1e-12:
+        failures.append("a spent ladder must release nothing however deep the fall")
     if abs(current_release(0.28, {"T1", "T2"}) - 2 * TRANCHE) > 1e-12:
         failures.append("already-executed tiers must not release again")
-    # the six tranches must take cash from the 15% target exactly to the floor
+    # the four tranches must take cash from the 15% target exactly to the floor
     if abs(len(TIERS) * TRANCHE + ABSOLUTE_FLOOR - 0.15) > 1e-12:
         failures.append("ladder does not span 15% -> 6%")
 

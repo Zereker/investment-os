@@ -53,7 +53,7 @@ IBKR Orders 返回的订单状态。存在 `NEW`、`SUBMITTED` 或 `PARTIALLY_FI
 IBKR 返回的最新可用市场价格。必须同时记录读取时间和市场是否开盘。
 
 ### drawdown_from_ath / drawdown_tier_state
-`drawdown_from_ath`是SPYM收盘价相对历史最高收盘价的回撤，以小数记录并注明收盘序列来源。`drawdown_tier_state`记录当前回撤周期内 T1(≥10%) / T2(≥15%) / T3(≥20%) / T4(≥25%) / T5(≥30%) / T6(≥35%) 六档的`AVAILABLE / EXECUTED`状态；SPYM创历史新高收盘后全部重置为`AVAILABLE`。各档临时现金下限依次为 13.5 / 12 / 10.5 / 9 / 7.5 / 6 %（均叠加`U`），等额 1.5pp 步进。
+`drawdown_from_ath`是SPYM收盘价相对历史最高收盘价的回撤，以小数记录并注明收盘序列来源。`drawdown_tier_state`记录当前回撤周期内 T1(≥10%) / T2(≥15%) / T3(≥20%) / T4(≥25%) 四档的`AVAILABLE / EXECUTED`状态；SPYM创历史新高收盘后全部重置为`AVAILABLE`。各档临时现金下限依次为 12.75 / 10.5 / 8.25 / 6 %（均叠加`U`），等额 2.25pp 步进。T4 之后没有更深的档位：`DD`超过25%时该字段不新增取值，弹药已尽。
 
 ## Policy Benchmark 字段
 
