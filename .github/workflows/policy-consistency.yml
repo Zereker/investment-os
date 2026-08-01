@@ -23,3 +23,7 @@ jobs:
         env:
           PYTHONDONTWRITEBYTECODE: "1"
         run: python3 scripts/check_product_contract.py
+      - name: Validate three-ETF Daily Brief
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python3 scripts/daily_brief.py --self-test
