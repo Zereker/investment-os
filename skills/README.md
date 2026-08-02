@@ -1,50 +1,40 @@
 # Investment OS Skills
 
-## Available Skill
+Investment OS is a composable skill system, not one monolithic skill.
 
-- [`investment-os`](investment-os/SKILL.md) — platform-neutral execution and enforcement layer for the current repository policy.
+## Skill library
 
-## Distribution Architecture
+- `using-investment-os` — bootstrap and task router.
+- `reconstructing-portfolio-state` — rebuild current broker and market state.
+- `enforcing-behavioral-controls` — apply cross-agent and procedural control gates.
+- `running-daily-review` — render the current daily decision product.
+- `running-monthly-review` — evaluate routine funding and deployment paths.
+- `evaluating-transaction-candidates` — evaluate a specific real-money action.
+- `routing-investment-research` — keep new ideas outside Production until promoted.
+- `auditing-investment-os` — inspect policy, implementation, privacy, CI, and readiness.
+
+## Architecture
 
 ```text
-skills/investment-os/       shared skill source
-.claude-plugin/             Claude Code distribution metadata
-.codex-plugin/              Codex distribution metadata
-repository HEAD             current policy and executable mirrors
-broker runtime              current private account state
+skills/*/SKILL.md          platform-neutral composable skills
+.claude-plugin/            Claude Code distribution metadata
+.codex-plugin/             Codex distribution metadata
+repository HEAD            current policy and executable mirrors
+broker runtime             current private account state
 ```
 
-The skill directory is shared verbatim across supported harnesses. Platform-specific manifests discover and distribute it; they do not copy or rewrite the skill body.
+Skills define when and how to perform a reusable capability. They never contain current investment parameters or portfolio state. Policy values remain in authoritative repository files, deterministic calculations remain in `scripts/`, and live state remains ephemeral.
 
-The skill is intentionally parameter-free. It contains procedure, routing, controls, and failure behavior. Current policy values remain only in the authoritative repository files and executable mirrors.
+## Testing
 
-## References
+- `tests/` validates manifests, package shape, routing, privacy, parameter isolation, and deterministic tools.
+- `evals/` defines synthetic pressure scenarios that verify actual agent behavior in clean sessions.
 
-The main `SKILL.md` stays concise. Detailed reusable guidance lives in:
-
-- `references/authority-and-runtime.md`
-- `references/task-routing.md`
-- `references/control-gates.md`
-
-## Runtime Requirements
-
-A production run requires capabilities that can:
-
-- resolve the authoritative repository default branch and current commit;
-- read the broker sources required by the current Production contract;
-- obtain required market inputs;
-- keep real account state ephemeral and private.
-
-Missing repository, broker, or market access is a fail-closed condition. Memory, old reports, screenshots, or manually pasted figures are not substitutes.
-
-## Installation and Validation
-
-See [`docs/SKILL-DISTRIBUTION.md`](../docs/SKILL-DISTRIBUTION.md) for Claude Code and Codex distribution details and clean-session acceptance tests.
-
-Run:
+Run the static suite:
 
 ```bash
 python3 scripts/check_skill_distribution.py
+python3 scripts/check_skill_evals.py
 ```
 
-The validator checks frontmatter, trigger-oriented description, references, manifest versions, platform neutrality, and the absence of embedded policy parameters.
+See [`docs/SKILL-DISTRIBUTION.md`](../docs/SKILL-DISTRIBUTION.md) for harness installation and behavior acceptance testing.
