@@ -14,7 +14,10 @@ Session discipline (the eval contract depends on it):
 Isolation (why this cannot touch the real account):
   - --strict-mcp-config with an empty --mcp-config gives the actor NO MCP
     servers at all, so no broker connector is reachable even in principle.
-  - Only read-only tools are allowed; writes and shell are denied.
+  - The plugin is copied to a disposable, git-less distribution. The actor may
+    run only the distribution's deterministic Python scripts, and any writes
+    they make land in that disposable copy rather than the source checkout.
+  - Direct write tools, network tools and unrestricted shell are denied.
   Scenarios are synthetic by construction; this makes that structural.
 
 The Investment OS plugin itself IS the system under test, so it is loaded via
@@ -33,8 +36,10 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
+import tempfile
 import uuid
 from pathlib import Path
 
@@ -42,7 +47,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 MODEL = os.environ.get("EVAL_ACTOR_MODEL", "claude-sonnet-5")
 TIMEOUT = int(os.environ.get("EVAL_ACTOR_TIMEOUT", "300"))
-PLUGIN_DIR = os.environ.get("EVAL_PLUGIN_DIR", str(REPO_ROOT))
+SOURCE_PLUGIN_DIR = Path(os.environ.get("EVAL_PLUGIN_DIR", str(REPO_ROOT))).resolve()
 
 # The agent may consult the published rules and RUN the deterministic engine,
 # never mutate anything and never reach a broker.
@@ -55,15 +60,38 @@ PLUGIN_DIR = os.environ.get("EVAL_PLUGIN_DIR", str(REPO_ROOT))
 ALLOWED_TOOLS = [
     "Read", "Grep", "Glob", "Skill",
     "Bash(python3 scripts/*)",
-    # Read-only git: the rules make repository HEAD the policy authority, so an
-    # agent that cannot resolve it fails a grounding requirement for harness
-    # reasons. Production sessions have git; these forms cannot mutate history.
-    "Bash(git rev-parse*)", "Bash(git log*)", "Bash(git status*)", "Bash(git show*)",
 ]
 DENIED_TOOLS = ["Write", "Edit", "NotebookEdit", "WebFetch", "WebSearch", "Task"]
 
 
-def claude_turn(prompt: str, session_id: str, first: bool) -> tuple[str, dict]:
+def copy_distribution(source: Path, destination: Path) -> None:
+    """Copy the shipped plugin without repository or prior-run state."""
+    if not source.is_dir():
+        raise RuntimeError(f"EVAL_PLUGIN_DIR is not a directory: {source}")
+
+    source = source.resolve()
+
+    def ignored(directory: str, names: list[str]) -> set[str]:
+        omitted = {
+            name for name in names
+            if name == ".git" or name == "__pycache__" or name.endswith((".pyc", ".pyo"))
+        }
+        relative = Path(directory).resolve().relative_to(source)
+        if relative == Path("evals") and "results" in names:
+            omitted.add("results")
+        return omitted
+
+    shutil.copytree(source, destination, ignore=ignored)
+    if any(destination.rglob(".git")):
+        raise RuntimeError("disposable actor distribution unexpectedly contains git metadata")
+
+
+def claude_turn(
+    prompt: str,
+    session_id: str,
+    first: bool,
+    runtime_root: Path,
+) -> tuple[str, dict]:
     """Run one turn; return the assistant's final text and observability metadata.
 
     The transcript carries final text only, so a behavior that shows up as tool
@@ -80,7 +108,7 @@ def claude_turn(prompt: str, session_id: str, first: bool) -> tuple[str, dict]:
         # no MCP servers whatsoever -> the real broker is unreachable
         "--mcp-config", '{"mcpServers":{}}',
         "--strict-mcp-config",
-        "--plugin-dir", PLUGIN_DIR,
+        "--plugin-dir", str(runtime_root),
         "--allowedTools", *ALLOWED_TOOLS,
         "--disallowedTools", *DENIED_TOOLS,
     ]
@@ -88,7 +116,7 @@ def claude_turn(prompt: str, session_id: str, first: bool) -> tuple[str, dict]:
     cmd += ["--session-id", session_id] if first else ["--resume", session_id]
 
     result = subprocess.run(
-        cmd, cwd=REPO_ROOT, text=True, capture_output=True,
+        cmd, cwd=runtime_root, text=True, capture_output=True,
         timeout=TIMEOUT, check=False,
     )
     if result.returncode != 0:
@@ -128,12 +156,23 @@ def main() -> int:
 
     transcript: list[dict[str, str]] = []
     turn_meta: list[dict] = []
-    for index, turn in enumerate(turns):
-        prompt = turn["prompt"]
-        reply, meta = claude_turn(prompt, session_id, first=(index == 0))
-        transcript.append({"role": "user", "content": prompt})
-        transcript.append({"role": "assistant", "content": reply})
-        turn_meta.append(meta)
+    with tempfile.TemporaryDirectory(prefix="eval-actor-") as temp_root:
+        runtime_root = Path(temp_root) / "investment-os"
+        copy_distribution(SOURCE_PLUGIN_DIR, runtime_root)
+        git_metadata_present = any(runtime_root.rglob(".git"))
+        prior_results_present = (runtime_root / "evals" / "results").exists()
+
+        for index, turn in enumerate(turns):
+            prompt = turn["prompt"]
+            reply, meta = claude_turn(
+                prompt,
+                session_id,
+                first=(index == 0),
+                runtime_root=runtime_root,
+            )
+            transcript.append({"role": "user", "content": prompt})
+            transcript.append({"role": "assistant", "content": reply})
+            turn_meta.append(meta)
 
     # Every turn must have run in the one session; a resumed turn that reported
     # a different id would mean the transcript is not a single conversation.
@@ -150,6 +189,9 @@ def main() -> int:
                 "plugin": "investment-os",
                 "mcp_servers": "none (--strict-mcp-config with empty config)",
                 "tools": {"allowed": ALLOWED_TOOLS, "denied": DENIED_TOOLS},
+                "disposable_distribution": True,
+                "git_metadata_present": git_metadata_present,
+                "prior_eval_results_present": prior_results_present,
                 "persistent_session": len(turns) > 1,
                 "session_identity_verified": True,
                 # Not judged by the verifier; kept so a reader can tell whether
