@@ -10,8 +10,9 @@
 2. IBKR Balances
 3. IBKR Positions
 4. IBKR Open Orders
+5. IBKR 当前启用的 SPYM 回撤警报
 
-若任一接口失败，账户报告状态为 `DATA INCOMPLETE`。不得用上次快照填充“今日”账户数据。
+若任一账户接口失败，账户报告状态为 `DATA INCOMPLETE`。不得用上次快照填充“今日”账户数据。
 
 ## B. 一致性检查
 
@@ -21,6 +22,31 @@
 - Positions 与 Open Orders 是否存在数量冲突
 - 是否出现零数量持仓、碎股、异常价格或重复合约
 - Leverage 是否来自真实借款，还是仅表示投资比例
+- 回撤警报数量、标的、字段、运算符、档位和价格是否与当前周期状态一致
+
+### B.1 回撤警报指针不变量
+
+每日必须从当前历史最高收盘和本周期已执行档位重建 `expected alert pointer`，不得把券商警报本身当成已执行状态的唯一证据。
+
+1. 从足够长的 SPYM 日线窗口确认当前历史最高收盘；窗口不足以排除更早高点时继续向前扩展。
+2. 按 `State-Reconstruction.md` 的三信号程序重建本周期已执行档位。
+3. 使用 `python3 scripts/alert_pointer_check.py`，比较重建出的 expected pointer 与 IBKR actual alert。
+4. 未耗尽阶梯时，账户内必须恰好有一个启用警报，且满足：
+   - 标的是 SPYM；
+   - 字段是 `LAST`；
+   - 运算符是小于等于；
+   - 档位是下一个可用档；
+   - 价格等于该档触发线乘以当前 ATH，允许最小报价单位误差。
+5. 新 ATH 收盘意味着新周期开始：全部档位恢复可用，expected pointer 必须退回首档并按新 ATH 重算价格。
+6. 阶梯全部执行后，不应存在新的启用回撤警报。
+
+任何不一致均视为状态同步缺陷：
+
+- `Account Health = WARN`；
+- `drawdown deployment state = DATA INCOMPLETE`；
+- 停止新的回撤部署候选；
+- 其他独立例行资金路径是否继续，仍按其自身 Data Gate 判断；
+- 报告 expected、actual、差异与人工修复条件，但不得由 agent 自动修改券商警报。
 
 ## C. 标准输出
 
@@ -33,6 +59,7 @@
 - Cash Ratio
 - Available Funds
 - Margin Loan 状态
+- Drawdown Alert Pointer：`PASS / WARN / DATA INCOMPLETE`
 
 ### 2. Portfolio Allocation
 
@@ -75,6 +102,7 @@ SOXX按 Position Registry 当前生命周期列示。每日同时报告 `A_actua
 - Cash、QQQM、`SPYM + SOXX + Stage Reserve`袖套
 - SOXX检查当前执行上限3%与6%永久硬上限；漂移超限时确认冻结状态
 - 回撤部署档位是否达标触发（`DD≥10/15/20/25%`，释放 1.5/3/4.5/6pp，四档中本周期未执行者）；`DD` 超过 25% 后无档位可解锁，输出「弹药已尽，无动作」
+- 回撤警报指针是否与 expected pointer 一致；新 ATH 后是否明确退回首档
 - 未完成或重复订单
 - 碎股与零数量残留
 - 真正未经登记的新标的
@@ -96,12 +124,13 @@ v4.2 起系统不持有估值判断：价格只用于计量、执行与回撤定
 - `REVIEW`：存在异常，需要人工确认，但不直接交易
 - `BUY CANDIDATE`：现行规则触发，仍需相应月度路径或完整 Trade Gate
 - `SELL CANDIDATE`：现行卖出规则触发，仍需完整 Trade Gate
+- `DATA INCOMPLETE`：关键账户状态或回撤部署状态无法可靠重建
 
 每日复盘本身不等于下单授权。
 
 ### 7. Next Watch
 
-只记录下一次需要观察的客观条件，不新增阈值或指标。
+只记录下一次需要观察的客观条件，不新增阈值或指标。警报指针异常时，下一观察条件必须包含：IBKR 中唯一启用警报与 expected pointer 完全一致。
 
 ## D. 报告纪律
 
@@ -110,3 +139,4 @@ v4.2 起系统不持有估值判断：价格只用于计量、执行与回撤定
 - 研究指标只能放在独立的 Research Note，不得混入 Production Decision。
 - 价格涨跌本身不产生 `SELL CANDIDATE`。
 - 无操作是有效结果。
+- agent 只报告警报修复要求，不自动创建、修改或删除 IBKR 警报。
