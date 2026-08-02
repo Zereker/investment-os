@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+REFERENCES = "plugins/investment-os/skills/using-investment-os/references"
 
 
 def text(path: str) -> str:
@@ -33,11 +34,16 @@ def versionless_title(path: str) -> None:
 
 
 def main() -> None:
-    for path in ("README.md", "PROJECT.md", "PRODUCTION.md"):
+    project = f"{REFERENCES}/project-contract.md"
+    production = f"{REFERENCES}/production-contract.md"
+    claude_entry = f"{REFERENCES}/claude-code-entry.md"
+    monthly = f"{REFERENCES}/02-monthly-workflow.md"
+
+    for path in ("README.md", project, production):
         versionless_title(path)
 
     require(
-        "PRODUCTION.md",
+        production,
         "Broker Adapter",
         "DecisionPacket",
         "execution-runtime",
@@ -49,14 +55,14 @@ def main() -> None:
         "IC 批准只表示该候选可以进入执行授权阶段",
     )
     forbid(
-        "PRODUCTION.md",
+        production,
         "批准只允许进入人工下单",
         "账户所有者仍需在 IBKR 中亲手确认",
         "v4.x 期间",
     )
 
     require(
-        "CLAUDE.md",
+        claude_entry,
         "using-investment-os",
         "broker-runtime",
         "DecisionPacket",
@@ -66,10 +72,10 @@ def main() -> None:
         "Real Harness behavior: NOT YET VERIFIED",
         "bash tests/run-all.sh",
     )
-    forbid("CLAUDE.md", "永远不下单", "当前 v4.6")
+    forbid(claude_entry, "永远不下单", "当前 v4.6")
 
     require(
-        "02-Operating-System/Monthly-Workflow.md",
+        monthly,
         "Account Reconciliation",
         "--open-orders-status clear|conflicting|unknown",
         "默认 `unknown`",
@@ -90,7 +96,7 @@ def main() -> None:
     forbid("README.md", "Policy compatibility anchor", "系统永不下单")
 
     require(
-        "PROJECT.md",
+        project,
         "Observe → Understand → Decide → Monitor → Repeat",
         "Repository Stores Knowledge, Never Portfolio",
         "Owner-Authorized Broker Execution",

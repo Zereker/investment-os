@@ -29,7 +29,7 @@ python3 scripts/check_product_contract.py
 python3 scripts/check_document_governance.py
 python3 scripts/check_release_governance.py
 python3 scripts/check_policy_consistency.py
-python3 scripts/daily_brief.py --self-test
-python3 scripts/alert_pointer_check.py --self-test
+python3 plugins/investment-os/skills/running-daily-review/scripts/daily_brief.py --self-test
+python3 plugins/investment-os/skills/validating-drawdown-state/scripts/alert_pointer_check.py --self-test
 
 echo "All non-LLM, Behavior Runtime, and eval-harness integrity tests passed. Real Harness behavior remains NOT YET VERIFIED."

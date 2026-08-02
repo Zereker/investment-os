@@ -6,10 +6,11 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from scripts.broker_runtime import validate_runtime
+from runtime_paths import SCRIPT_DIRS
+from broker_runtime import validate_runtime
 
 ROOT = Path(__file__).resolve().parents[1]
-MONTHLY = ROOT / "scripts/monthly_execution.py"
+MONTHLY = SCRIPT_DIRS["monthly"] / "monthly_execution.py"
 
 
 def monthly(*args: str) -> subprocess.CompletedProcess[str]:

@@ -3,14 +3,15 @@
 Investment OS is distributed as a composable skill library with one router, reusable domain Skills, deterministic repository tools, and thin harness adapters.
 
 ```text
-skills/using-investment-os/        bootstrap and router
-skills/*/                           reusable domain capabilities
-scripts/claude-session-start        Claude Code session bootstrap
+plugins/investment-os/              complete installable product
+  .claude-plugin/                   Claude Code plugin manifest
+  .codex-plugin/                    Codex plugin manifest
+  .plugin-version                   plugin distribution SemVer only
+  skills/using-investment-os/       bootstrap, router, policy references
+  skills/*/scripts/                 skill-owned deterministic tools
 .agents/plugins/                    Codex repository marketplace
-.claude-plugin/                     Claude Code distribution metadata
-.codex-plugin/                      Codex distribution metadata
-.plugin-version                     plugin distribution SemVer only
-repository root                     authoritative policy and executable mirrors
+.claude-plugin/marketplace.json     Claude Code repository marketplace
+tests/, evals/, Research/           source-only validation and evidence
 broker runtime                      current private account state
 ```
 
@@ -44,19 +45,19 @@ The plugin distribution has a separate SemVer read from `.plugin-version` and co
 
 ## Claude Code
 
-Claude Code installs the repository marketplace entry, discovers `skills/`, and loads the inline SessionStart definition from `.claude-plugin/plugin.json`. The hook runs `scripts/claude-session-start` and injects the full `using-investment-os` router at startup, clear, and compaction events.
+Claude Code installs `plugins/investment-os`, discovers its `skills/`, and loads the inline SessionStart definition from the nested `.claude-plugin/plugin.json`. The hook runs `skills/using-investment-os/scripts/claude-session-start` and injects the full router at startup, clear, and compaction events.
 
-See [`INSTALL-CLAUDE-CODE.md`](INSTALL-CLAUDE-CODE.md) and `skills/using-investment-os/references/claude-code-tools.md`.
+See [`INSTALL-CLAUDE-CODE.md`](INSTALL-CLAUDE-CODE.md) and `plugins/investment-os/skills/using-investment-os/references/claude-code-tools.md`.
 
 ## Codex
 
-Codex installs the `.agents/plugins/marketplace.json` entry and uses `.codex-plugin/plugin.json`, which declares `./skills/`. The Codex distribution has no hook field and no default hook path, so native Skill discovery is the only bootstrap. It must be proven with a clean-session acceptance test.
+Codex installs the `.agents/plugins/marketplace.json` entry, whose source is `./plugins/investment-os`, and uses the nested `.codex-plugin/plugin.json`, which declares `./skills/`. The Codex distribution has no hook field and no default hook path, so native Skill discovery is the only bootstrap. It must be proven with a clean-session acceptance test.
 
 ## Installed-runtime boundary
 
 Marketplace installation copies the plugin package into the harness cache. At runtime, `using-investment-os` resolves the plugin root from its own installed path and reads policy files and scripts from that immutable copy. The user's current working directory may be any unrelated project; it is never treated as the Investment OS policy root. Runtime sessions do not clone or update this repository.
 
-See [`INSTALL-CODEX.md`](INSTALL-CODEX.md) and `skills/using-investment-os/references/codex-tools.md`.
+See [`INSTALL-CODEX.md`](INSTALL-CODEX.md) and `plugins/investment-os/skills/using-investment-os/references/codex-tools.md`.
 
 ## Testing model
 

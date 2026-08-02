@@ -12,6 +12,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+PLUGIN_ROOT = ROOT / "plugins" / "investment-os"
 
 
 def load_json(path: Path) -> dict:
@@ -44,33 +45,34 @@ def verify_marketplaces() -> None:
     assert len(codex["plugins"]) == 1
     codex_entry = codex["plugins"][0]
     assert codex_entry["name"] == "investment-os"
-    assert codex_entry["source"] == {"source": "local", "path": "./"}
+    assert codex_entry["source"] == {"source": "local", "path": "./plugins/investment-os"}
     assert codex_entry["policy"] == {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL",
     }
-    assert (ROOT / codex_entry["source"]["path"]).resolve() == ROOT
+    assert (ROOT / codex_entry["source"]["path"]).resolve() == PLUGIN_ROOT
 
     claude = load_json(ROOT / ".claude-plugin" / "marketplace.json")
     assert claude["name"] == "investment-os"
     assert len(claude["plugins"]) == 1
     claude_entry = claude["plugins"][0]
     assert claude_entry["name"] == "investment-os"
-    assert claude_entry["source"] == "./"
-    assert (ROOT / claude_entry["source"]).resolve() == ROOT
-    version = (ROOT / ".plugin-version").read_text(encoding="utf-8").strip()
+    assert claude_entry["source"] == "./plugins/investment-os"
+    assert (ROOT / claude_entry["source"]).resolve() == PLUGIN_ROOT
+    version = (PLUGIN_ROOT / ".plugin-version").read_text(encoding="utf-8").strip()
     assert claude_entry["version"] == version
 
 
 def main() -> None:
     verify_marketplaces()
-    source_skills = skill_names(ROOT)
+    source_skills = skill_names(PLUGIN_ROOT)
 
     with tempfile.TemporaryDirectory(prefix="investment-os-install-test-") as temp:
         temp_root = Path(temp)
-        installed = temp_root / "cache" / "investment-os" / "0.3.0"
+        version = (PLUGIN_ROOT / ".plugin-version").read_text(encoding="utf-8").strip()
+        installed = temp_root / "cache" / "investment-os" / version
         shutil.copytree(
-            ROOT,
+            PLUGIN_ROOT,
             installed,
             ignore=shutil.ignore_patterns(".git", "__pycache__", "artifacts"),
         )
@@ -80,13 +82,16 @@ def main() -> None:
         assert installed != ROOT
         assert not (installed / ".git").exists()
         assert skill_names(installed) == source_skills
+        for source_only in ("tests", "evals", "Research", "docs"):
+            assert not (installed / source_only).exists(), f"source-only tree leaked into plugin: {source_only}"
+        assert not (installed / "scripts").exists(), "runtime scripts must be owned by skills"
         for relative in (
             ".plugin-version",
-            "AGENTS.md",
-            "PROJECT.md",
-            "PRODUCTION.md",
-            "scripts/broker_runtime.py",
-            "scripts/decision_packet.py",
+            "skills/using-investment-os/references/agent-execution-contract.md",
+            "skills/using-investment-os/references/project-contract.md",
+            "skills/using-investment-os/references/production-contract.md",
+            "skills/broker-runtime/scripts/broker_runtime.py",
+            "skills/running-daily-review/scripts/decision_packet.py",
         ):
             assert (installed / relative).is_file(), f"installed file missing: {relative}"
 
@@ -97,12 +102,12 @@ def main() -> None:
 
         claude_manifest = load_json(installed / ".claude-plugin" / "plugin.json")
         hook = claude_manifest["hooks"]["SessionStart"][0]["hooks"][0]
-        assert hook["command"] == 'bash "${CLAUDE_PLUGIN_ROOT}/scripts/claude-session-start"'
+        assert hook["command"] == 'bash "${CLAUDE_PLUGIN_ROOT}/skills/using-investment-os/scripts/claude-session-start"'
 
         env = os.environ.copy()
         env["CLAUDE_PLUGIN_ROOT"] = str(installed)
         result = subprocess.run(
-            ["bash", str(installed / "scripts" / "claude-session-start")],
+            ["bash", str(installed / "skills" / "using-investment-os" / "scripts" / "claude-session-start")],
             cwd=neutral_cwd,
             env=env,
             text=True,
@@ -118,7 +123,12 @@ def main() -> None:
         assert str(ROOT) not in context
 
         router_dir = installed / "skills" / "using-investment-os"
-        for relative in ("../../.plugin-version", "../../PROJECT.md", "../../PRODUCTION.md"):
+        for relative in (
+            "../../.plugin-version",
+            "references/agent-execution-contract.md",
+            "references/project-contract.md",
+            "references/production-contract.md",
+        ):
             assert (router_dir / relative).resolve().is_file(), relative
 
     print("Native plugin installation and cache-isolation tests passed.")

@@ -8,8 +8,9 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SKILLS = ROOT / "skills"
-VERSION = (ROOT / ".plugin-version").read_text(encoding="utf-8").strip()
+PLUGIN_ROOT = ROOT / "plugins" / "investment-os"
+SKILLS = PLUGIN_ROOT / "skills"
+VERSION = (PLUGIN_ROOT / ".plugin-version").read_text(encoding="utf-8").strip()
 REQUIRED_SKILLS = {
     "using-investment-os",
     "reconstructing-portfolio-state",
@@ -94,8 +95,8 @@ def main() -> None:
         if mapping not in router or not (router_path.parent / mapping).is_file():
             raise AssertionError(f"router mapping missing: {mapping}")
 
-    claude = load_json(ROOT / ".claude-plugin" / "plugin.json")
-    codex = load_json(ROOT / ".codex-plugin" / "plugin.json")
+    claude = load_json(PLUGIN_ROOT / ".claude-plugin" / "plugin.json")
+    codex = load_json(PLUGIN_ROOT / ".codex-plugin" / "plugin.json")
     for label, manifest in (("Claude", claude), ("Codex", codex)):
         if manifest.get("name") != "investment-os":
             raise AssertionError(f"{label} manifest has wrong name")
@@ -111,28 +112,31 @@ def main() -> None:
         raise AssertionError("Codex must not auto-discover the Claude SessionStart hook")
 
     command = claude["hooks"]["SessionStart"][0]["hooks"][0]["command"]
-    if "scripts/claude-session-start" not in command or not (ROOT / "scripts" / "claude-session-start").is_file():
+    bootstrap = PLUGIN_ROOT / "skills" / "using-investment-os" / "scripts" / "claude-session-start"
+    if "skills/using-investment-os/scripts/claude-session-start" not in command or not bootstrap.is_file():
         raise AssertionError("Claude inline SessionStart bootstrap is not wired")
 
     codex_marketplace = load_json(ROOT / ".agents" / "plugins" / "marketplace.json")
     codex_entry = codex_marketplace["plugins"][0]
     if codex_entry.get("name") != "investment-os":
         raise AssertionError("Codex marketplace must expose investment-os")
-    if codex_entry.get("source") != {"source": "local", "path": "./"}:
-        raise AssertionError("Codex marketplace must install the repository-root plugin")
+    if codex_entry.get("source") != {"source": "local", "path": "./plugins/investment-os"}:
+        raise AssertionError("Codex marketplace must install the nested plugin")
     if codex_entry.get("policy") != {"installation": "AVAILABLE", "authentication": "ON_INSTALL"}:
         raise AssertionError("Codex marketplace must declare complete install policy")
 
     claude_marketplace = load_json(ROOT / ".claude-plugin" / "marketplace.json")
     claude_entry = claude_marketplace["plugins"][0]
-    if claude_entry.get("name") != "investment-os" or claude_entry.get("source") != "./":
-        raise AssertionError("Claude marketplace must install the repository-root plugin")
+    if claude_entry.get("name") != "investment-os" or claude_entry.get("source") != "./plugins/investment-os":
+        raise AssertionError("Claude marketplace must install the nested plugin")
     if claude_entry.get("version") != VERSION:
         raise AssertionError("Claude marketplace version must match .plugin-version")
 
     for needle in (
         "Installed distribution root",
         "../../.plugin-version",
+        "references/project-contract.md",
+        "references/production-contract.md",
         "current working directory",
         "Do not clone, fetch",
     ):

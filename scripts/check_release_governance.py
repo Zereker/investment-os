@@ -8,6 +8,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+PLUGIN_ROOT = ROOT / "plugins" / "investment-os"
 
 
 def main() -> None:
@@ -29,11 +30,11 @@ def main() -> None:
             "and distribution releases belong in Git tags/GitHub Releases:\n" + detail
         )
 
-    version = (ROOT / ".plugin-version").read_text(encoding="utf-8").strip()
+    version = (PLUGIN_ROOT / ".plugin-version").read_text(encoding="utf-8").strip()
     if not re.fullmatch(r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)", version):
         raise AssertionError(".plugin-version must contain plain SemVer")
 
-    for path in (ROOT / ".claude-plugin/plugin.json", ROOT / ".codex-plugin/plugin.json"):
+    for path in (PLUGIN_ROOT / ".claude-plugin/plugin.json", PLUGIN_ROOT / ".codex-plugin/plugin.json"):
         manifest = json.loads(path.read_text(encoding="utf-8"))
         if manifest.get("version") != version:
             raise AssertionError(f"{path.relative_to(ROOT)} version must match .plugin-version")

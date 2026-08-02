@@ -7,8 +7,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+from runtime_paths import SCRIPT_DIRS
+
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "scripts" / "monthly_execution.py"
+SCRIPT = SCRIPT_DIRS["monthly"] / "monthly_execution.py"
 BASE_ARGS = [
     sys.executable,
     str(SCRIPT),

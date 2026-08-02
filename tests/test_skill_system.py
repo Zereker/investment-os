@@ -8,7 +8,8 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SKILLS = ROOT / "skills"
+PLUGIN_ROOT = ROOT / "plugins" / "investment-os"
+SKILLS = PLUGIN_ROOT / "skills"
 
 
 def frontmatter(path: Path) -> dict[str, str]:
@@ -66,22 +67,23 @@ def assert_acyclic(graph: dict[str, set[str]]) -> None:
 
 
 def test_manifests() -> None:
-    claude = json.loads((ROOT / ".claude-plugin/plugin.json").read_text())
-    codex = json.loads((ROOT / ".codex-plugin/plugin.json").read_text())
-    version = (ROOT / ".plugin-version").read_text(encoding="utf-8").strip()
+    claude = json.loads((PLUGIN_ROOT / ".claude-plugin/plugin.json").read_text())
+    codex = json.loads((PLUGIN_ROOT / ".codex-plugin/plugin.json").read_text())
+    version = (PLUGIN_ROOT / ".plugin-version").read_text(encoding="utf-8").strip()
     assert claude["name"] == codex["name"] == "investment-os"
     assert claude["version"] == codex["version"] == version
     assert codex["skills"] == "./skills/"
     assert "hooks" not in codex
     assert not (ROOT / "hooks/hooks.json").exists()
     command = claude["hooks"]["SessionStart"][0]["hooks"][0]["command"]
-    assert "scripts/claude-session-start" in command
+    assert "skills/using-investment-os/scripts/claude-session-start" in command
 
 
 def test_bootstrap() -> None:
     env = os.environ.copy()
-    env["CLAUDE_PLUGIN_ROOT"] = str(ROOT)
-    result = subprocess.run(["bash", str(ROOT / "scripts/claude-session-start")], check=True, capture_output=True, text=True, env=env)
+    env["CLAUDE_PLUGIN_ROOT"] = str(PLUGIN_ROOT)
+    bootstrap = SKILLS / "using-investment-os" / "scripts" / "claude-session-start"
+    result = subprocess.run(["bash", str(bootstrap)], check=True, capture_output=True, text=True, env=env)
     payload = json.loads(result.stdout)
     context = payload["hookSpecificOutput"]["additionalContext"]
     assert "INVESTMENT_OS_BOOTSTRAP" in context

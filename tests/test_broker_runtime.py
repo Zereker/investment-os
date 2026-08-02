@@ -7,8 +7,10 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from runtime_paths import SCRIPT_DIRS
+
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "scripts/broker_runtime.py"
+SCRIPT = SCRIPT_DIRS["broker"] / "broker_runtime.py"
 NOW = datetime(2026, 8, 2, 8, 0, tzinfo=timezone.utc)
 
 
@@ -40,7 +42,7 @@ def runtime() -> dict:
 
 
 def check_case(payload: dict, required: list[str], expected_status: str, needle: str | None = None) -> None:
-    from scripts.broker_runtime import validate_runtime
+    from broker_runtime import validate_runtime
 
     result = validate_runtime(payload, required, now=NOW, max_age_seconds=300)
     assert result.status == expected_status, result

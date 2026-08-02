@@ -3,9 +3,11 @@ from pathlib import Path
 import copy
 import yaml
 
-from scripts.behavior_packet import BehaviorPacket, DIMENSIONS
+from runtime_paths import SCRIPT_DIRS  # noqa: F401
+from behavior_packet import BehaviorPacket, DIMENSIONS
 
 ROOT = Path(__file__).resolve().parents[1]
+CONTRACT = "plugins/investment-os/skills/enforcing-behavioral-controls/references/behavior-contract.yaml"
 
 
 def load(path: str):
@@ -35,15 +37,15 @@ def expect_error(packet: BehaviorPacket, needle: str) -> None:
 
 
 def main() -> None:
-    contract = load("behavior/contract/behavior-contract.yaml")
-    corpus = load("behavior/corpus/intent-continuity.yaml")
-    replay = load("behavior/replay/known-failure-patterns.yaml")
+    contract = load(CONTRACT)
+    corpus = load("evals/behavior/corpus/intent-continuity.yaml")
+    replay = load("evals/behavior/replay/known-failure-patterns.yaml")
 
     assert contract["schema_version"] == 1
     assert contract["verifier"]["semantic_judgment_required"] is True
     assert contract["verifier"]["keyword_matching_is_sufficient"] is False
-    assert corpus["contract"] == "behavior/contract/behavior-contract.yaml"
-    assert replay["contract"] == "behavior/contract/behavior-contract.yaml"
+    assert corpus["contract"] == CONTRACT
+    assert replay["contract"] == CONTRACT
     assert corpus["synthetic"] is True and replay["synthetic"] is True
     assert replay["immutable_expectations"] is True
     assert len(corpus["cases"]) >= 6
