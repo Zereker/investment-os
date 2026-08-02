@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+"""Structured decision boundary between deterministic engines and presentation.
+
+A DecisionPacket contains the complete machine decision. Renderers may explain or
+format it, but must not recompute or mutate decision status, amounts, blockers, or
+execution authority.
+"""
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass
+from typing import Any
+
+VALID_DECISIONS = {
+    "HOLD", "WAIT", "BUY CANDIDATE", "SELL CANDIDATE",
+    "REVIEW", "REJECT", "DATA INCOMPLETE",
+}
+VALID_RUNTIME = {"PASS", "DATA INCOMPLETE"}
+VALID_EXECUTION_AUTHORITY = {"NONE", "OWNER AUTHORIZATION REQUIRED", "AUTHORIZED OPERATION ONLY"}
+
+
+@dataclass(frozen=True)
+class DecisionPacket:
+    schema_version: int
+    workflow: str
+    as_of: str
+    runtime_status: str
+    decision: str
+    facts: dict[str, Any]
+    calculations: dict[str, Any]
+    eligible_channels: tuple[dict[str, Any], ...]
+    blocking_issues: tuple[str, ...]
+    attention_items: tuple[str, ...]
+    next_conditions: tuple[str, ...]
+    execution_authority: str
+
+    def validate(self) -> None:
+        if self.schema_version != 1:
+            raise ValueError("unsupported DecisionPacket schema_version")
+        if not self.workflow.strip() or not self.as_of.strip():
+            raise ValueError("workflow and as_of are required")
+        if self.runtime_status not in VALID_RUNTIME:
+            raise ValueError("invalid runtime_status")
+        if self.decision not in VALID_DECISIONS:
+            raise ValueError("invalid decision")
+        if self.execution_authority not in VALID_EXECUTION_AUTHORITY:
+            raise ValueError("invalid execution_authority")
+        if self.runtime_status == "DATA INCOMPLETE" and self.decision != "DATA INCOMPLETE":
+            raise ValueError("incomplete runtime must produce DATA INCOMPLETE")
+        if self.decision == "DATA INCOMPLETE" and not self.blocking_issues:
+            raise ValueError("DATA INCOMPLETE requires blocking_issues")
+        if self.decision != "DATA INCOMPLETE" and self.blocking_issues:
+            raise ValueError("complete decision cannot retain blocking_issues")
+        for channel in self.eligible_channels:
+            if not isinstance(channel, dict) or not isinstance(channel.get("name"), str):
+                raise ValueError("eligible channel must contain name")
+            amount = channel.get("amount")
+            if not isinstance(amount, (int, float)) or isinstance(amount, bool) or amount < 0:
+                raise ValueError("eligible channel amount must be nonnegative")
+
+    def as_dict(self) -> dict[str, Any]:
+        self.validate()
+        return asdict(self)
+
+
+def assert_renderer_preserves(packet: DecisionPacket, rendered_metadata: dict[str, Any]) -> None:
+    """Reject a renderer that changes machine-authoritative fields."""
+    expected = {
+        "schema_version": packet.schema_version,
+        "workflow": packet.workflow,
+        "as_of": packet.as_of,
+        "runtime_status": packet.runtime_status,
+        "decision": packet.decision,
+        "execution_authority": packet.execution_authority,
+    }
+    for key, value in expected.items():
+        if rendered_metadata.get(key) != value:
+            raise ValueError(f"renderer changed authoritative field: {key}")
