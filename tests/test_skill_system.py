@@ -68,8 +68,9 @@ def assert_acyclic(graph: dict[str, set[str]]) -> None:
 def test_manifests() -> None:
     claude = json.loads((ROOT / ".claude-plugin/plugin.json").read_text())
     codex = json.loads((ROOT / ".codex-plugin/plugin.json").read_text())
+    version = (ROOT / ".plugin-version").read_text(encoding="utf-8").strip()
     assert claude["name"] == codex["name"] == "investment-os"
-    assert claude["version"] == codex["version"]
+    assert claude["version"] == codex["version"] == version
     assert codex["skills"] == "./skills/"
     hooks = json.loads((ROOT / "hooks/hooks.json").read_text())
     command = hooks["hooks"]["SessionStart"][0]["hooks"][0]["command"]
@@ -91,7 +92,7 @@ def test_bootstrap() -> None:
     assert "INVESTMENT_OS_BOOTSTRAP" in context
     assert "using-investment-os" in context
     assert "only policy authority" in context
-    assert "DATA INCOMPLETE" not in context  # bootstrap teaches behavior, not a fake runtime result
+    assert "DATA INCOMPLETE" not in context
 
 
 def main() -> None:
