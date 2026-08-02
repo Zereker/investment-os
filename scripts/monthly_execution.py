@@ -24,6 +24,9 @@ Hard boundaries this script will not cross:
     Pass --tiers-executed; omitting it makes the script say so rather than assume.
   - Whether a current-quarter look-through check exists cannot be derived either.
     Pass --lookthrough-current; omitting it freezes the SOXX restore, same principle.
+  - This month's actual external contribution F cannot be derived from positions.
+    Pass --contribution (0 for a no-deposit month); omitting it makes the Routine
+    DCA path say DATA INCOMPLETE rather than silently deploying on an assumed F=0.
 
 Usage (figures come from IBKR, in account currency; they are never persisted):
   python3 scripts/monthly_execution.py --nav 100000 --cash 18000 \\
@@ -206,7 +209,7 @@ def money(x: float) -> str:
 
 
 def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
-           lookthrough_current) -> list[str]:
+           lookthrough_current, contribution_known=True) -> list[str]:
     """Build the monthly report. Returns the list of blocking issues (empty = clean)."""
     nav = inp["nav"]
     issues = []
@@ -275,8 +278,15 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
         print(f"    护栏（IT 50% / 发行人 10%）须由当季核查表逐项确认——本脚本不持有该数据")
 
     print(f"\n[4] 三条资金通道")
-    print(f"  Routine DCA   D = min(F={money(inp['contribution'])}, G_0={money(res['g0'])}) = {money(res['d'])}")
-    print(f"                  → SPYM {money(res['d_spym'])} ｜ QQQM {money(res['d_qqqm'])}")
+    if not contribution_known:
+        print(f"  Routine DCA   ** 未提供 --contribution：本月已到账外部净入金 F 未知 **")
+        print(f"                  按 State-Reconstruction 第 6 步读 IBKR Cash Transactions 后重跑；")
+        print(f"                  无入金的月份也须显式传 --contribution 0")
+        print(f"                  → D = DATA INCOMPLETE（不静默按 F=0 部署）")
+        issues.append("本月实际入金 F 未知：Routine DCA 无法确认（补 --contribution 后重跑）")
+    else:
+        print(f"  Routine DCA   D = min(F={money(inp['contribution'])}, G_0={money(res['g0'])}) = {money(res['d'])}")
+        print(f"                  → SPYM {money(res['d_spym'])} ｜ QQQM {money(res['d_qqqm'])}")
     print(f"  Strategic     R = {res['r']} 期至 2028-12")
     print(f"                  S = max(C − (15%+U)×V, 0) = {money(res['s'])}")
     print(f"                  B = min(S/R={money(res['s']/res['r'])}, G={money(res['g'])}) = {money(res['b'])}")
@@ -430,7 +440,8 @@ def main() -> int:
     ap.add_argument("--spym", type=float, help="SPYM 市值")
     ap.add_argument("--qqqm", type=float, help="QQQM 市值")
     ap.add_argument("--soxx", type=float, default=0.0, help="SOXX 市值")
-    ap.add_argument("--contribution", type=float, default=0.0, help="F：本月已到账外部净入金")
+    ap.add_argument("--contribution", type=float, default=None,
+                    help="F：本月已到账外部净入金；无入金也须显式传 0（省略即 DATA INCOMPLETE，不静默按 F=0）")
     ap.add_argument("--dd", type=float, default=None,
                     help="SPYM 相对历史最高收盘的回撤（小数）。省略则联网自取")
     ap.add_argument("--tiers-executed", default=None,
@@ -447,10 +458,15 @@ def main() -> int:
     missing = [f for f in ("nav", "cash", "spym", "qqqm") if getattr(args, f) is None]
     if missing:
         ap.error(f"缺少必填输入 {', '.join('--' + m for m in missing)}（或用 --self-test）")
-    for name in ("nav", "cash", "spym", "qqqm", "soxx", "contribution"):
+    for name in ("nav", "cash", "spym", "qqqm", "soxx"):
         if getattr(args, name) < 0:
             print(f"DATA INCOMPLETE: {name} 不能为负", file=sys.stderr)
             return 2
+    # F is fail-closed: omitting it must not silently deploy the DCA path on F=0.
+    contribution_known = args.contribution is not None
+    if contribution_known and args.contribution < 0:
+        print("DATA INCOMPLETE: contribution 不能为负", file=sys.stderr)
+        return 2
     if args.nav <= 0:
         print("DATA INCOMPLETE: NAV 必须为正", file=sys.stderr)
         return 2
@@ -479,10 +495,11 @@ def main() -> int:
 
     inp = vars(args) | {"nav": args.nav}
     res = compute(args.nav, args.cash, args.spym, args.qqqm, args.soxx,
-                  args.contribution, effective_dd if effective_dd is not None else 0.0,
+                  args.contribution if contribution_known else 0.0,
+                  effective_dd if effective_dd is not None else 0.0,
                   executed, today, args.lookthrough_current)
     issues = report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
-                    args.lookthrough_current)
+                    args.lookthrough_current, contribution_known)
     return 1 if issues else 0
 
 
