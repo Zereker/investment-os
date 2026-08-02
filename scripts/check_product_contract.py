@@ -101,7 +101,6 @@ def main() -> None:
         "PROJECT.md",
         "Daily-Report-Contract.md",
         "仓库保存规则，不保存个人组合",
-        "skills/investment-os/SKILL.md",
     )
     require(
         "07-Releases/v6.0.md",
@@ -129,6 +128,14 @@ def main() -> None:
         "control replication, not convenience",
         "does not store personal trading incidents",
         "does not change",
+    )
+    require(
+        "skills/README.md",
+        "investment-os",
+        "Skill: procedure, routing, controls, failure behavior",
+        "Repository HEAD: current policy and executable mirrors",
+        "Broker runtime: current private account state",
+        "parameter-free",
     )
     require(
         "skills/investment-os/SKILL.md",
