@@ -61,12 +61,12 @@ DIRECT.write_text(cleaned, encoding="utf-8")
 LEGACY.unlink()
 
 text = GOVERNANCE.read_text(encoding="utf-8")
-anchor = '    release_dir = ROOT / "07-Releases"\n'
-checks = '''    legacy_checker = ROOT / "scripts" / "check_policy_consistency_legacy.py"\n    if legacy_checker.exists():\n        raise AssertionError("legacy policy checker must not exist")\n\n    checker = (ROOT / "scripts" / "check_policy_consistency.py").read_text(encoding="utf-8")\n    for forbidden in ("ast.NodeTransformer", "exec(compile", "check_policy_consistency_legacy.py"):\n        if forbidden in checker:\n            raise AssertionError(f"policy checker must execute directly; found {forbidden!r}")\n\n'''
-if checks not in text:
+anchor = "def main() -> None:\n"
+checks = '''def main() -> None:\n    legacy_checker = ROOT / "scripts" / "check_policy_consistency_legacy.py"\n    if legacy_checker.exists():\n        raise AssertionError("legacy policy checker must not exist")\n\n    checker = (ROOT / "scripts" / "check_policy_consistency.py").read_text(encoding="utf-8")\n    for forbidden in ("ast.NodeTransformer", "exec(compile", "check_policy_consistency_legacy.py"):\n        if forbidden in checker:\n            raise AssertionError(f"policy checker must execute directly; found {forbidden!r}")\n\n'''
+if "legacy policy checker must not exist" not in text:
     if anchor not in text:
         raise SystemExit("release governance insertion anchor not found")
-    text = text.replace(anchor, checks + anchor, 1)
+    text = text.replace(anchor, checks, 1)
     GOVERNANCE.write_text(text, encoding="utf-8")
 
 print("Flattened policy checker: removed 7 calls and 2 tuple items (9 total).")
