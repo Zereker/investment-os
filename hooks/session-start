@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+SKILL_PATH="${PLUGIN_ROOT}/skills/using-investment-os/SKILL.md"
+
+if [ ! -f "$SKILL_PATH" ]; then
+  printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"Investment OS bootstrap unavailable: using-investment-os skill is missing. Do not perform formal Investment OS work."}}\n'
+  exit 0
+fi
+
+content=$(cat "$SKILL_PATH")
+escape_json() {
+  local s="$1"
+  s="${s//\\/\\\\}"
+  s="${s//\"/\\\"}"
+  s="${s//$'\n'/\\n}"
+  s="${s//$'\r'/\\r}"
+  s="${s//$'\t'/\\t}"
+  printf '%s' "$s"
+}
+
+escaped=$(escape_json "$content")
+context="<INVESTMENT_OS_BOOTSTRAP>\nInvestment OS is installed. Before portfolio, transaction, research, or system-governance work, follow the using-investment-os router below and load every required sub-skill. Current repository HEAD is the only policy authority. Missing broker or market capability must fail closed.\n\n${escaped}\n</INVESTMENT_OS_BOOTSTRAP>"
+printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' "$context"
