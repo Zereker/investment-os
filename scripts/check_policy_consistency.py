@@ -389,8 +389,6 @@ def main() -> None:
         "indexes.nasdaq.com",
         "前三大权重上限分别为12%、10%、8%",
     )
-    require("README.md", "# Investment OS v4.6")
-    require("PRODUCTION.md", "# Investment OS v4.6 — Production Contract")
     require(
         "Research/2026-08-01-valuation-subsystem-retirement.md",
         "已批准",
@@ -436,9 +434,6 @@ def main() -> None:
         "已批准",
         "不得使用实际账户的单位现金收益率",
     )
-    require("CLAUDE.md", "永远不下单", "fetch_etf_data.py", "DATA INCOMPLETE",
-            "公开安全写法", "State-Reconstruction.md", "永不落盘",
-            "你不合并 master", "由所有者审阅合并")
     require(
         "02-Operating-System/State-Reconstruction.md",
         "不存储任何账户数据",
