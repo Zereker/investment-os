@@ -1,0 +1,60 @@
+name: Temporary DD guard migration
+
+on:
+  push:
+    branches:
+      - agent/dd-input-guard
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/dd-input-guard
+      - name: Apply focused source edits
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          monthly = Path('scripts/monthly_execution.py')
+          text = monthly.read_text(encoding='utf-8')
+          old = '''    if args.nav <= 0:\n        print("DATA INCOMPLETE: NAV 必须为正", file=sys.stderr)\n        return 2\n\n    today = date.fromisoformat(args.today) if args.today else date.today()\n'''
+          new = '''    if args.nav <= 0:\n        print("DATA INCOMPLETE: NAV 必须为正", file=sys.stderr)\n        return 2\n    if args.dd is not None and not (0.0 <= args.dd < 1.0):\n        print(\n            "DATA INCOMPLETE: --dd 必须使用小数且范围为 [0, 1)；例如 1.68% 应传 0.0168",\n            file=sys.stderr,\n        )\n        return 2\n\n    today = date.fromisoformat(args.today) if args.today else date.today()\n'''
+          if old not in text:
+              raise SystemExit('monthly_execution validation insertion point not found')
+          monthly.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          test = Path('tests/test_monthly_dd_cli.py')
+          test.write_text('''#!/usr/bin/env python3\nfrom __future__ import annotations\n\nimport subprocess\nimport sys\nfrom pathlib import Path\n\nROOT = Path(__file__).resolve().parents[1]\nSCRIPT = ROOT / "scripts/monthly_execution.py"\nBASE = [\n    sys.executable, str(SCRIPT),\n    "--nav", "100000", "--cash", "20000",\n    "--spym", "40000", "--qqqm", "20000", "--soxx", "6000",\n    "--contribution", "0", "--tiers-executed", "none",\n    "--today", "2026-08-02",\n]\n\ndef run(dd: str) -> subprocess.CompletedProcess[str]:\n    return subprocess.run(BASE + ["--dd", dd], capture_output=True, text=True)\n\ndef main() -> None:\n    percent_mistake = run("1.68")\n    assert percent_mistake.returncode != 0\n    assert "--dd 必须使用小数" in percent_mistake.stderr\n    assert "0.0168" in percent_mistake.stderr\n\n    valid_decimal = run("0.0168")\n    assert valid_decimal.returncode == 0, valid_decimal.stderr + valid_decimal.stdout\n    assert "SPYM DD = 1.68%" in valid_decimal.stdout\n    assert "T1" in valid_decimal.stdout and "未达档" in valid_decimal.stdout\n\n    for invalid in ("-0.01", "1", "nan", "inf"):\n        result = run(invalid)\n        assert result.returncode != 0, invalid\n        assert "范围为 [0, 1)" in result.stderr, invalid\n\n    print("Monthly drawdown CLI unit-guard tests passed.")\n\nif __name__ == "__main__":\n    main()\n''', encoding='utf-8')
+
+          run_all = Path('tests/run-all.sh')
+          text = run_all.read_text(encoding='utf-8')
+          marker = 'python3 tests/test_monthly_contribution_cli.py\n'
+          if marker not in text:
+              raise SystemExit('run-all insertion point not found')
+          run_all.write_text(text.replace(marker, marker + 'python3 tests/test_monthly_dd_cli.py\n', 1), encoding='utf-8')
+
+          log = Path('Decision-Log.md')
+          entry = '''\n\n## 2026-08-01 — 一次性券商警报修复授权\n\n- 账户所有者在当前会话明确授权 Agent 修复券商中的回撤警报，使其重新符合“恰好一个警报并指向下一可用档”的状态不变量。\n- 操作范围仅限修复该警报；未授权下单、修改持仓或执行其他券商写操作。\n- 操作后通过权威 read-back 验证警报唯一、启用且与当期下一可用档一致。\n- 本次授权不跨操作、不跨会话继承，也不构成未来的常设权限。后续券商写操作适用 Execution Runtime 的单次操作授权与 read-back 契约。\n- 本记录只保存治理理由，不保存账户标识、警报 ID 或其他私人运行时状态。\n'''
+          current = log.read_text(encoding='utf-8')
+          if '一次性券商警报修复授权' not in current:
+              log.write_text(current.rstrip() + entry, encoding='utf-8')
+          PY
+      - name: Validate focused and canonical suites
+        run: |
+          python3 -m pip install --disable-pip-version-check pyyaml
+          export PYTHONPATH="$GITHUB_WORKSPACE${PYTHONPATH:+:$PYTHONPATH}"
+          python3 tests/test_monthly_dd_cli.py
+          bash tests/run-all.sh
+      - name: Commit branch-only migration
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add scripts/monthly_execution.py tests/test_monthly_dd_cli.py tests/run-all.sh Decision-Log.md
+          git commit -m "fix: reject drawdown unit mismatch" || exit 0
+          git push origin HEAD:agent/dd-input-guard
