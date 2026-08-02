@@ -1,10 +1,10 @@
-# Investment OS v4.6 — Production Contract
+# Investment OS — Production Contract
 
-本文件是当前生产系统的入口与执行契约。它不创造新的投资策略，只规定如何可靠地读取、验证和执行仓库中已经生效的规则。
+本文件定义 Production 的运行、控制和执行边界。它不创造投资参数；现行参数始终来自默认分支 HEAD 中的 IPS、Constitution、Operating System、Transition Plan 与 Journal。
 
-## 1. 唯一事实来源
+## 1. 权威与优先级
 
-规则优先级保持不变：
+投资规则发生冲突时，依次适用：
 
 1. `00-IPS/`
 2. `01-Constitution/`
@@ -12,120 +12,111 @@
 4. `03-Transition/`
 5. `05-Journal/`
 
-发生冲突时，高优先级文件覆盖低优先级文件。聊天记录、临时分析、截图和 `Research/` 均不具有生产规则效力。当前板块倾斜分类与生命周期状态记录在 `04-Alpha/Position-Registry.md`；它不得覆盖 Constitution 的上限。
+聊天记录、旧报告、截图、人工贴数和 `Research/` 不具有 Production 规则效力。`PROJECT.md` 定义产品边界，`AGENTS.md` 定义 Agent 运行程序；二者不得覆盖上述投资规则。
 
-## 2. 生产冻结
+## 2. 运行时架构
 
-v4.x 期间：
+Production 必须使用以下分层，不允许由自然语言回答替代确定性运行时：
 
-- 允许修复数据读取、计算、文档歧义和流程遗漏等缺陷。
-- 不允许在交易执行过程中临时增加指标、改变阈值或更换口径。
-- 策略变更必须进入 `Research/`，经过独立研究、书面提案和明确批准后，才能作为新版本发布。
-- 常规规则只在年度审核窗口审议；紧急修复仅限于防止明显错误或违反 IPS。
+```text
+Broker Adapter
+→ broker-runtime
+→ account reconciliation
+→ deterministic decision engine / DecisionPacket
+→ behavioral and procedural controls
+→ presentation
+→ execution-runtime（仅在存在单次授权时）
+```
 
-## 2.1 SOXX v4.0规则
+职责边界：
 
-- SOXX是唯一自主板块倾斜载体（行业beta，不按alpha命名）；永久硬上限6%，`A_stage=6%`固定。
-- 定义\(A_{basis}=\max(A_{actual},A_{stage})\)、\(U=\max(A_{stage}-A_{actual},0)\)；SPYM目标为\(57\%-A_{basis}\)，物理现金目标为\(15\%+U\)。
-- 当前`A_execution_cap=3%`；执行上限按3%→4.5%→6%逐档推进，且不得高于6%。10%/12.5%/15%历史治理阶段已作废（依据见`Research/2026-07-31-v4-Evidence-and-Proposal.md`）。
-- v4.5 起「追加」拆为两条路径，判别只看`A_execution_cap`动没动：
-  - **提高倾斜**（推进`A_execution_cap`，风险预算扩大）：当季`08-Data/LOOKTHROUGH_CHECK.md`手工核查有效 + 实时账户读取 + 完整IC（当日有效）+ 人工下单。
-  - **回补至目标**（`A_execution_cap`不动，只买回被市场打下去的权重，风险预算不变）：走月度例行路径，五项约束见Constitution；资金只来自`U`，上限`min(A_execution_cap, A_stage)−A_actual`。
-- 每个PR必须通过`Policy consistency`检查；检查失败时不得合并为Production。
+- `broker-runtime`：验证来源、能力、新鲜度、币种、账户合计和任务所需数据；
+- `account_reconciliation.py`：独立核对 NAV、现金和持仓市值；
+- `DecisionPacket`：保存机器权威的事实、计算、阻塞项、结论和执行权限；
+- renderer 或 LLM：只解释和格式化，不得重算或改写机器权威字段；
+- `execution-runtime`：验证单次授权、能力、提交、权威回读和终态。
 
-## 3. 每日巡检契约
+任一必要层缺失、过期、冲突或无法验证，相关任务必须失败关闭。
 
-每日巡检必须按以下顺序执行：
+## 3. 每日巡检
 
-1. 从 IBKR 读取 Account Summary。
-2. 从 IBKR 读取 Balances。
-3. 从 IBKR 读取 Positions；持仓接口是仓位数量的权威来源。
-4. 从 IBKR 读取 Open Orders。
-5. 检查数据时间、币种、合计差异和异常值。
-6. 计算 Cash、Core、SOXX 和 Legacy 的市值与权重。
-7. 记录 SPYM 相对历史最高收盘的回撤 `DD` 与回撤档位状态；达档且本周期未执行时按 Deployment Framework 输出部署动作。
-8. 检查融资、越界、未完成订单、重复订单和真正无法分类的异常持仓。
-9. 读取SPYM / QQQM / SOXX价格与正缺口；系统不产生估值判断。
-10. 仅依据当前生产规则输出事实、风险和动作。
+每日巡检必须从受信任 Broker Adapter 获取并验证：
 
-若账户读取或核对失败，巡检必须标记为`DATA INCOMPLETE`，不得使用历史数据冒充实时数据，也不得给出新的BUY或SELL建议。回撤序列失败只暂停当日档位评估。完整格式见`02-Operating-System/Daily-Review.md`。
+- Account Summary；
+- Balances；
+- Positions；
+- Open Orders；
+- 任务所需市场输入与警报状态。
 
-## 4. 周度与季度契约
+巡检必须完成账户对账、融资与负现金检查、异常持仓分类、订单冲突检查、配置与回撤状态计算，并先生成有效 `DecisionPacket`，再形成日报。
 
-周度复盘按 `02-Operating-System/Weekly-Review.md` 汇总本周运行质量、配置偏差、订单、数据质量和行为纪律。它只生成 `NO ACTION`、`MONTHLY INPUT`、`IC REVIEW` 或 `DATA FIX`，不得因为一周行情临时创造交易信号或修改阈值。
+关键数据缺失时输出 `DATA INCOMPLETE`，停止新的买卖候选。不得用历史报告、旧快照或人工数字替代实时状态。
 
-季度复盘按 `02-Operating-System/Quarterly-Workflow.md` 执行：先完成 `08-Data/LOOKTHROUGH_CHECK.md` 手工穿透核查并存档，再审核 SOXX 倾斜的必要性、相对 Policy Benchmark 与影子基准的表现和护栏状态。超过护栏只冻结相应新增风险或进入 IC 复核，不自动卖出。
+## 4. 月度执行
 
-## 5. 交易闸门
+月度流程必须在任何部署公式之前完成：
 
-### 5.1 例行月度路径
+1. Broker Runtime 能力与时间有效性检查；
+2. NAV、现金与持仓市值的物理对账；
+3. Open Orders 权威检查，且状态必须明确为 `clear`；
+4. 本月实际外部净入金 `F` 的权威来源确认；
+5. 回撤值、已执行档位和其他任务输入的完整性检查。
 
-以下操作可以使用 `02-Operating-System/Monthly-Workflow.md` 的例行路径，无需重复填写完整四视角 Packet：
+以下情况均为 `DATA INCOMPLETE`：
 
-- 每月固定新增投入 \(D=\min(F,G_0)\)；
-- 按已发布公式计算的战略现金迁移基线 \(B\)；
-- 按 Constitution 分档执行的回撤部署；
-- 按 Constitution 五项约束执行的 SOXX **回补至目标**（资金只来自 `U`，缺当季穿透核查即冻结）；
-- \(D\)、\(B\) 与回撤部署的资金只流向 SPYM / QQQM 的正缺口；回补的资金只来自 `U` 且只流向 SOXX；
-- 金额、方向和交易后权重完全符合 Constitution、Transition Plan 和实时 Data Gate。
+- `F` 未知或其数据能力不可用；
+- Open Orders 状态为 `unknown` 或 `conflicting`；
+- 账户对账超出允许容差；
+- 回撤单位、档位状态或其他输入无法验证。
 
-例行路径仍必须通过实时账户数据、目标缺口、现金下限、订单冲突和执行细节检查。任一条件不满足，升级为完整 IC 或 `HOLD / STOP`。
+缺失 `F` 时不得默认为零；没有入金的月份也必须由权威来源明确确认零。若当前 Adapter 不支持 `cash_transactions`，必须如实声明能力缺口，不得倒推或估算。
 
-### 5.2 完整 Investment Committee 路径
+## 5. 候选、批准与执行权限
 
-任何 SOXX **提高倾斜**（推进 `A_execution_cap`）、新板块倾斜、卖出、换仓、规则例外或偏离月度公式的真实资金建议，都必须先完成 `02-Operating-System/Decision-Checklist.md`，并由 CIO、Risk、Data、Execution 四个视角形成 Verdict。
+`HOLD`、`WAIT`、`BUY CANDIDATE`、`SELL CANDIDATE`、IC Verdict 或历史批准均不自动形成 Broker 执行权限。
 
-#### 数据
+Agent 可以执行当前 Adapter 支持的 Broker 操作，但必须同时满足：
 
-- [ ] Account Summary 读取成功
-- [ ] Balances 读取成功
-- [ ] Positions 读取成功
-- [ ] Open Orders 读取成功
-- [ ] 标的价格和数量已确认
-- [ ] 数据不存在未解释冲突
+1. 当前会话存在账户所有者明确授权；
+2. 授权绑定一个完整、规范化的单次操作摘要；
+3. 所需 Broker capability 可用；
+4. 数据门、政策门和行为控制门全部通过；
+5. 只提交一次，不进行静默重试；
+6. 执行后读取权威 Broker 状态；
+7. read-back 与授权操作逐项匹配；
+8. 结果形成临时执行回执并向所有者报告；
+9. 授权不跨操作、不跨会话、不从其他 Agent 或既往批准继承。
 
-#### 规则
+不满足任一条件时，终态必须是 `NOT EXECUTED`、`EXECUTION UNKNOWN`、`VERIFICATION FAILED` 或 `DATA INCOMPLETE`，不得声称成功。
 
-- [ ] 符合 IPS
-- [ ] 符合 Constitution 的目标与上限
-- [ ] 符合当前 Operating System
-- [ ] 未使用 Research 中的实验性指标
+## 6. Investment Committee
 
-#### 风险
+非例行资金建议、卖出、换仓、规则例外、提高自主倾斜或偏离已发布公式的操作，必须经过仓库定义的完整 IC 流程。
 
-- [ ] 无重复或冲突订单
-- [ ] 交易后现金和仓位可接受
-- [ ] 未引入未经审核的新标的
-- [ ] 已陈述不交易的最强理由
-- [ ] 已引用当季穿透核查记录
-- [ ] 已检查订单类型、价格、有效期和碎股影响
-- [ ] 已记录明确的 `APPROVE / WAIT / REJECT / DATA INCOMPLETE` Verdict
+IC 批准只表示该候选可以进入执行授权阶段。它不是 Broker 授权，也不能替代当前会话中针对具体操作的所有者明确授权。
 
-任何一项未通过，默认结论为 `HOLD / STOP`，并明确列出失败项。Investment Committee 的批准只允许进入人工下单；账户所有者仍需在 IBKR 中亲手确认。
+## 7. 研究与规则变更
 
-## 6. 数据权威顺序
+执行过程中不得临时引入指标、改变阈值或更换口径。新策略语义必须进入 `Research/`，经过独立研究、书面提案、所有者批准和 Production 文档同步后方可生效。
 
-- 仓位数量：IBKR Positions
-- 活跃订单：IBKR Open Orders
-- 现金和净值：IBKR Account Summary 与 Balances 交叉核对
-- 成交记录：用于解释变化，不用于替代当前持仓
-- 板块倾斜状态：`04-Alpha/Position-Registry.md`
-- 市场数据：必须符合 `08-Data/DATA_REGISTRY.md`、`08-Data/DATA_DICTIONARY.md` 与 `08-Data/DATA_QUALITY.md`
-- 穿透集中度：`08-Data/LOOKTHROUGH_CHECK.md` 季度手工核查记录
-- 回撤部署：Constitution 回撤部署条款 + `02-Operating-System/Deployment-Framework.md`
+`.plugin-version` 仅表示 Skill / Plugin 分发版本，不表示投资政策版本。现行政策始终以默认分支 HEAD 为准。
 
-外部金融数据在运行时从分别登记的专业来源读取，仓库不维护行情、ETF成分、issuer或GICS中央数据库。普通巡检不写仓库；季度核查记录按只增不改原则存档。来源缺失或冲突时失败关闭，不得回退到陈旧副本冒充当前数据。
+## 8. 隐私与留痕
 
-## 7. 输出标准
+仓库保存知识，不保存个人组合。真实账户数据、订单、成交、执行回执和授权状态仅存在于受信任运行时或当前私有会话，不得进入公开仓库。
 
-每日复盘只包含：
+`Decision-Log.md` 只记录长期治理事实和规则理由，不记录账户号、订单号、警报 ID、真实金额、股数或其他私人运行时状态。
 
-- Account Health
-- Portfolio Allocation
-- Open Orders
-- Daily P&L 与持仓变化
-- Risk Check（含 `DD` 与回撤档位状态）
-- Production Decision
-- 下一观察条件
+## 9. 验证要求
 
-事实、推断和建议必须明确分开。无法验证的内容必须标记为未知。
+所有 PR 必须通过 canonical suite：
+
+```bash
+bash tests/run-all.sh
+```
+
+非 LLM 测试通过不等于真实 Agent 行为已验证。只要 clean-session behavior eval 尚未通过，仓库必须继续如实声明：
+
+```text
+Real Harness behavior: NOT YET VERIFIED
+```
