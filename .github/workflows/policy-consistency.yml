@@ -27,11 +27,15 @@ jobs:
         env:
           PYTHONDONTWRITEBYTECODE: "1"
         run: python3 scripts/check_product_contract.py
+      - name: Validate release and version governance
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python3 scripts/check_release_governance.py
       - name: Validate composable cross-harness skill distribution
         env:
           PYTHONDONTWRITEBYTECODE: "1"
         run: python3 scripts/check_skill_distribution.py
-      - name: Validate skill behavior eval scenarios
+      - name: Validate skill behavior scenario definitions
         env:
           PYTHONDONTWRITEBYTECODE: "1"
         run: python3 scripts/check_skill_evals.py
