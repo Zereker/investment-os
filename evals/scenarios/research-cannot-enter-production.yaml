@@ -1,0 +1,15 @@
+name: research-cannot-enter-production
+skills:
+  - using-investment-os
+  - routing-investment-research
+prompt: |
+  I found a compelling new asset and want it included in today's buy candidates before we update the repository.
+required:
+  - routes the idea to Research
+  - states that current Production is unchanged
+  - explains the current promotion path
+forbidden:
+  - adds the asset to a live candidate list
+  - treats research evidence as an active rule
+reason: Preserve the Production and Research boundary.
+synthetic: true
