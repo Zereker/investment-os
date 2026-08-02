@@ -60,7 +60,7 @@ hook, skills and published rules — **is** the system under test.
 |---|---|---|
 | `EVAL_ACTOR_MODEL` | `claude-sonnet-5` | actor model |
 | `EVAL_VERIFIER_MODEL` | `claude-opus-5` | verifier model; differing from the actor strengthens independence |
-| `EVAL_ACTOR_TIMEOUT` | `300` | per-turn timeout, seconds |
+| `EVAL_ACTOR_TIMEOUT` | `600` | per-turn timeout, seconds; the turn that runs the deterministic engine can be slow, and a timeout loses the run rather than producing a result |
 | `EVAL_VERIFIER_TIMEOUT` | `600` | verifier timeout, seconds |
 | `EVAL_PLUGIN_DIR` | repo root | Investment OS plugin source copied into the disposable actor distribution |
 
