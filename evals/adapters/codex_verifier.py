@@ -2,11 +2,13 @@
 """Independent Codex verifier adapter for the Investment OS eval harness.
 
 The verifier runs in a separate, ephemeral Codex CLI process and receives only
-the immutable scenario rubric and actor transcript. It starts in a neutral
-temporary directory with no project instructions, user config, rules, MCP
-servers, or writable workspace. The CLI-reported thread id is the verifier
-session identity; the adapter rejects tool use and recomputes the verdict from
-strict, evidence-bearing item judgments before returning protocol JSON.
+the immutable scenario rubric and actor transcript. Each invocation gets a
+throwaway HOME. Authentication is either a scoped OPENAI_API_KEY or a validated,
+mode-0600 copy of the host's ChatGPT subscription auth; host config, plugins,
+skills, sessions and user rules are never inherited. The CLI-reported thread id
+is the verifier session identity; the adapter rejects tool use and recomputes
+the verdict from strict, evidence-bearing item judgments before returning
+protocol JSON.
 
 Usage (from evals/run.py):
   --verifier-command 'python3 evals/adapters/codex_verifier.py'
@@ -16,12 +18,16 @@ Environment:
   EVAL_CODEX_VERIFIER_MODEL             verifier model      (default: gpt-5.6-sol)
   EVAL_CODEX_VERIFIER_REASONING_EFFORT  reasoning effort    (default: medium)
   EVAL_CODEX_VERIFIER_TIMEOUT           timeout in seconds  (default: 600)
+  EVAL_CODEX_AUTH_MODE                  auto|subscription|api-key (default: auto)
+  EVAL_CODEX_AUTH_FILE                  subscription auth source (default: CODEX_HOME/auth.json or ~/.codex/auth.json)
+  EVAL_EVIDENCE_DIR                     optional directory for raw, synthetic run evidence
 """
 
 from __future__ import annotations
 
 import json
 import os
+import stat
 import subprocess
 import sys
 import tempfile
@@ -33,6 +39,7 @@ CODEX_BIN = os.environ.get("EVAL_CODEX_BIN", "codex")
 MODEL = os.environ.get("EVAL_CODEX_VERIFIER_MODEL", "gpt-5.6-sol")
 REASONING_EFFORT = os.environ.get("EVAL_CODEX_VERIFIER_REASONING_EFFORT", "medium")
 TIMEOUT = int(os.environ.get("EVAL_CODEX_VERIFIER_TIMEOUT", "600"))
+AUTH_MODE = os.environ.get("EVAL_CODEX_AUTH_MODE", "auto")
 
 PROMPT = """\
 Role: independent behavior verifier.
@@ -178,6 +185,149 @@ def checked_items(
     return checked
 
 
+def write_private_copy(source: Path, destination: Path) -> None:
+    """Copy one credential file without following source or destination links."""
+    try:
+        source_stat = source.lstat()
+    except OSError as exc:
+        raise SystemExit(f"Codex subscription auth is unavailable at {source}: {exc}") from exc
+    if not stat.S_ISREG(source_stat.st_mode):
+        raise SystemExit("Codex subscription auth source must be a regular file, not a link")
+    if source_stat.st_mode & 0o022:
+        raise SystemExit("Codex subscription auth source must not be group- or world-writable")
+
+    nofollow = getattr(os, "O_NOFOLLOW", 0)
+    try:
+        source_fd = os.open(source, os.O_RDONLY | nofollow)
+    except OSError as exc:
+        raise SystemExit(f"Could not open Codex subscription auth safely: {exc}") from exc
+    try:
+        opened_stat = os.fstat(source_fd)
+        if (opened_stat.st_dev, opened_stat.st_ino) != (source_stat.st_dev, source_stat.st_ino):
+            raise SystemExit("Codex subscription auth changed while it was being opened")
+        destination.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        os.chmod(destination.parent, 0o700)
+        destination_fd = os.open(
+            destination,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | nofollow,
+            0o600,
+        )
+        try:
+            while True:
+                chunk = os.read(source_fd, 64 * 1024)
+                if not chunk:
+                    break
+                view = memoryview(chunk)
+                while view:
+                    written = os.write(destination_fd, view)
+                    view = view[written:]
+            os.fsync(destination_fd)
+            os.fchmod(destination_fd, 0o600)
+        finally:
+            os.close(destination_fd)
+    finally:
+        os.close(source_fd)
+
+
+def subscription_auth_source() -> Path:
+    explicit = os.environ.get("EVAL_CODEX_AUTH_FILE")
+    if explicit:
+        return Path(explicit).expanduser()
+    codex_home = os.environ.get("CODEX_HOME")
+    if codex_home:
+        return Path(codex_home).expanduser() / "auth.json"
+    return Path.home() / ".codex" / "auth.json"
+
+
+def validate_subscription_auth(path: Path) -> None:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SystemExit(f"Copied Codex subscription auth is not valid JSON: {exc}") from exc
+    if not isinstance(payload, dict) or payload.get("auth_mode") != "chatgpt":
+        raise SystemExit("Codex subscription auth must use auth_mode=chatgpt")
+    if payload.get("OPENAI_API_KEY") not in (None, ""):
+        raise SystemExit("Codex subscription mode refuses auth files containing an API key")
+    tokens = payload.get("tokens")
+    if not isinstance(tokens, dict) or not isinstance(tokens.get("refresh_token"), str) or not tokens["refresh_token"]:
+        raise SystemExit("Codex subscription auth is missing a refresh token; run `codex login` again")
+
+
+def isolated_codex_env(home: Path) -> tuple[dict[str, str], str]:
+    """Return an allowlisted environment rooted entirely in a throwaway HOME."""
+    mode = AUTH_MODE
+    if mode == "auto":
+        mode = "api-key" if os.environ.get("OPENAI_API_KEY") else "subscription"
+    if mode not in {"subscription", "api-key"}:
+        raise SystemExit("EVAL_CODEX_AUTH_MODE must be auto, subscription, or api-key")
+
+    runtime = home / "runtime"
+    paths = {
+        "HOME": home,
+        "TMPDIR": runtime / "tmp",
+        "XDG_CONFIG_HOME": runtime / "config",
+        "XDG_CACHE_HOME": runtime / "cache",
+        "XDG_DATA_HOME": runtime / "data",
+        "XDG_STATE_HOME": runtime / "state",
+        "CODEX_SQLITE_HOME": runtime / "sqlite",
+    }
+    home.mkdir(mode=0o700, parents=True, exist_ok=True)
+    os.chmod(home, 0o700)
+    for path in paths.values():
+        path.mkdir(mode=0o700, parents=True, exist_ok=True)
+
+    env = {
+        "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
+        "TERM": os.environ.get("TERM", "dumb"),
+        "LANG": os.environ.get("LANG", "C.UTF-8"),
+        "HOME": str(paths["HOME"]),
+        "TMPDIR": str(paths["TMPDIR"]),
+        "XDG_CONFIG_HOME": str(paths["XDG_CONFIG_HOME"]),
+        "XDG_CACHE_HOME": str(paths["XDG_CACHE_HOME"]),
+        "XDG_DATA_HOME": str(paths["XDG_DATA_HOME"]),
+        "XDG_STATE_HOME": str(paths["XDG_STATE_HOME"]),
+        "CODEX_SQLITE_HOME": str(paths["CODEX_SQLITE_HOME"]),
+    }
+    if mode == "api-key":
+        key = os.environ.get("OPENAI_API_KEY")
+        if not key:
+            raise SystemExit("OPENAI_API_KEY is required for EVAL_CODEX_AUTH_MODE=api-key")
+        env["OPENAI_API_KEY"] = key
+    else:
+        destination = home / ".codex" / "auth.json"
+        write_private_copy(subscription_auth_source(), destination)
+        validate_subscription_auth(destination)
+    return env, mode
+
+
+def evidence_directory(scenario_name: str) -> Path | None:
+    root = os.environ.get("EVAL_EVIDENCE_DIR")
+    if not root:
+        return None
+    destination = Path(root) / "codex-verifier"
+    destination.mkdir(mode=0o700, parents=True, exist_ok=True)
+    return destination
+
+
+def persist_raw_evidence(
+    destination: Path | None,
+    result: subprocess.CompletedProcess[str],
+    output_path: Path,
+    metadata: dict[str, Any],
+) -> None:
+    if destination is None:
+        return
+    (destination / "events.jsonl").write_text(result.stdout, encoding="utf-8")
+    (destination / "stderr.log").write_text(result.stderr, encoding="utf-8")
+    if output_path.is_file():
+        (destination / "structured-output.json").write_text(
+            output_path.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+    (destination / "metadata.json").write_text(
+        json.dumps(metadata, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+
+
 def main() -> int:
     request = json.load(sys.stdin)
     scenario = request["scenario"]
@@ -199,10 +349,13 @@ def main() -> int:
     if version.returncode != 0 or not version.stdout.strip():
         raise SystemExit(f"codex version check failed: {version.stderr.strip()[:400]}")
 
-    with tempfile.TemporaryDirectory(prefix="eval-codex-verifier-") as neutral_cwd:
-        neutral = Path(neutral_cwd)
-        sqlite_home = neutral / "sqlite"
-        sqlite_home.mkdir()
+    raw_evidence = evidence_directory(scenario["name"])
+    with tempfile.TemporaryDirectory(prefix="eval-codex-verifier-") as temp_root:
+        root = Path(temp_root)
+        neutral = root / "workdir"
+        neutral.mkdir(mode=0o700)
+        codex_home = root / "home"
+        codex_env, auth_mode = isolated_codex_env(codex_home)
         schema_path = neutral / "verifier-schema.json"
         output_path = neutral / "verifier-output.json"
         schema_path.write_text(
@@ -228,10 +381,6 @@ def main() -> int:
             "--output-last-message", str(output_path),
             "-",
         ]
-        codex_env = os.environ.copy()
-        # Work Mode may provide authenticated CODEX_HOME as read-only. Keep
-        # authentication there and redirect only disposable runtime state.
-        codex_env["CODEX_SQLITE_HOME"] = str(sqlite_home)
         result = subprocess.run(
             cmd,
             input=prompt,
@@ -242,9 +391,22 @@ def main() -> int:
             timeout=TIMEOUT,
             check=False,
         )
+        evidence_meta: dict[str, Any] = {
+            "scenario": scenario["name"],
+            "command": cmd,
+            "returncode": result.returncode,
+            "cli_version": version.stdout.strip(),
+            "auth_mode": auth_mode,
+            "isolated_home": True,
+            "host_config_inherited": False,
+        }
         if result.returncode != 0:
+            persist_raw_evidence(raw_evidence, result, output_path, evidence_meta)
             raise SystemExit(f"codex verifier exited {result.returncode}: {result.stderr.strip()[:1200]}")
         verifier_session_id, used_tools = parse_events(result.stdout)
+        evidence_meta["verifier_session_id"] = verifier_session_id
+        evidence_meta["tools_used"] = used_tools
+        persist_raw_evidence(raw_evidence, result, output_path, evidence_meta)
         if used_tools:
             raise SystemExit(f"codex verifier used forbidden tools: {used_tools}")
         try:
@@ -286,14 +448,17 @@ def main() -> int:
                 "reasoning_effort": REASONING_EFFORT,
                 "cli_version": version.stdout.strip(),
                 "neutral_working_directory": True,
+                "isolated_home": True,
+                "auth_mode": auth_mode,
+                "host_config_inherited": False,
                 "project_context_loaded": False,
                 "user_config_loaded": False,
                 "rules_loaded": False,
                 "mcp_servers": "none",
-                "disposable_sqlite_state": True,
+                "disposable_runtime_state": True,
                 "tools_used": used_tools,
                 "note": "Codex CLI verifier: separate process, CLI-reported ephemeral thread, "
-                        "neutral cwd, read-only sandbox, no project/user context, no tools.",
+                        "throwaway HOME, neutral cwd, read-only sandbox, no project/user context, no tools.",
             },
         },
         sys.stdout,

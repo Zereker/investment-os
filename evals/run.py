@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shlex
 import subprocess
 import sys
@@ -37,6 +38,20 @@ def run_command(command: str, stdin: str, timeout: int) -> subprocess.CompletedP
         capture_output=True,
         timeout=timeout,
         check=False,
+    )
+
+
+def persist_process_evidence(label: str, result: subprocess.CompletedProcess[str]) -> None:
+    """Preserve exact adapter I/O when a trusted local run requests evidence."""
+    root = os.environ.get("EVAL_EVIDENCE_DIR")
+    if not root:
+        return
+    destination = Path(root)
+    destination.mkdir(mode=0o700, parents=True, exist_ok=True)
+    (destination / f"{label}.stdout.json").write_text(result.stdout, encoding="utf-8")
+    (destination / f"{label}.stderr.log").write_text(result.stderr, encoding="utf-8")
+    (destination / f"{label}.process.json").write_text(
+        json.dumps({"returncode": result.returncode}, indent=2), encoding="utf-8"
     )
 
 
@@ -161,6 +176,7 @@ def main() -> None:
     }
     try:
         actor_process = run_command(args.actor_command, json.dumps(actor_input), args.timeout)
+        persist_process_evidence("actor-adapter", actor_process)
         actor_result = parse_json_output("actor", actor_process)
         validate_actor_result(actor_result, len(turns))
     except (RuntimeError, ValueError) as exc:
@@ -189,6 +205,7 @@ def main() -> None:
     }
     try:
         verifier_process = run_command(args.verifier_command, json.dumps(verifier_input), args.timeout)
+        persist_process_evidence("verifier-adapter", verifier_process)
         verifier_result = parse_json_output("verifier", verifier_process)
         validate_verifier_result(verifier_result, scenario, actor_result["session_id"])
     except (RuntimeError, ValueError) as exc:

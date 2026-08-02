@@ -74,14 +74,26 @@ record = {
     "configured_cwd": str(configured_cwd),
     "schema_exists": schema.exists(),
     "sqlite_home": os.environ.get("CODEX_SQLITE_HOME"),
+    "home": os.environ.get("HOME"),
+    "codex_home": os.environ.get("CODEX_HOME"),
+    "xdg_config_home": os.environ.get("XDG_CONFIG_HOME"),
+    "auth_exists": (Path(os.environ["HOME"]) / ".codex" / "auth.json").is_file(),
+    "auth_mode": json.loads((Path(os.environ["HOME"]) / ".codex" / "auth.json").read_text()).get("auth_mode")
+        if (Path(os.environ["HOME"]) / ".codex" / "auth.json").is_file() else None,
+    "auth_permissions": oct((Path(os.environ["HOME"]) / ".codex" / "auth.json").stat().st_mode & 0o777)
+        if (Path(os.environ["HOME"]) / ".codex" / "auth.json").is_file() else None,
+    "openai_api_key_present": bool(os.environ.get("OPENAI_API_KEY")),
 }
-with open(os.environ["FAKE_CODEX_LOG"], "a", encoding="utf-8") as handle:
+fixture_dir = Path(__file__).parent
+with open(fixture_dir / "codex.jsonl", "a", encoding="utf-8") as handle:
     handle.write(json.dumps(record) + "\n")
 
-output.write_text(os.environ["FAKE_CODEX_RESULT"], encoding="utf-8")
-session = os.environ.get("FAKE_CODEX_SESSION", "codex-verifier-session")
+output.write_text((fixture_dir / "fake-codex-result.json").read_text(encoding="utf-8"), encoding="utf-8")
+controls_path = fixture_dir / "fake-codex-controls.json"
+controls = json.loads(controls_path.read_text(encoding="utf-8")) if controls_path.is_file() else {}
+session = controls.get("session", "codex-verifier-session")
 print(json.dumps({"type": "thread.started", "thread_id": session}))
-if os.environ.get("FAKE_CODEX_TOOL"):
+if controls.get("tool"):
     print(json.dumps({
         "type": "item.completed",
         "item": {"id": "tool-1", "type": "command_execution", "status": "completed"},
@@ -105,12 +117,20 @@ class AdapterTests(unittest.TestCase):
         fake_codex = self.temp_path / "codex"
         fake_codex.write_text(FAKE_CODEX, encoding="utf-8")
         fake_codex.chmod(fake_codex.stat().st_mode | stat.S_IXUSR)
+        self.codex_auth = self.temp_path / "auth.json"
+        self.codex_auth.write_text(json.dumps({
+            "auth_mode": "chatgpt",
+            "OPENAI_API_KEY": None,
+            "tokens": {"refresh_token": "test-refresh-token"},
+        }), encoding="utf-8")
+        self.codex_auth.chmod(0o600)
         self.env = os.environ.copy()
         self.env.update({
             "PATH": f"{self.temp_path}{os.pathsep}{self.env['PATH']}",
             "FAKE_CLAUDE_LOG": str(self.log),
-            "FAKE_CODEX_LOG": str(self.temp_path / "codex.jsonl"),
             "EVAL_PLUGIN_DIR": str(ROOT),
+            "EVAL_CODEX_AUTH_MODE": "subscription",
+            "EVAL_CODEX_AUTH_FILE": str(self.codex_auth),
             "PYTHONDONTWRITEBYTECODE": "1",
         })
 
@@ -133,8 +153,27 @@ class AdapterTests(unittest.TestCase):
     def records(self) -> list[dict]:
         return [json.loads(line) for line in self.log.read_text(encoding="utf-8").splitlines()]
 
+    def configure_fake_codex(
+        self,
+        judgment: dict,
+        *,
+        session: str = "codex-verifier-session",
+        tool: bool = False,
+    ) -> None:
+        (self.temp_path / "fake-codex-result.json").write_text(
+            json.dumps(judgment), encoding="utf-8"
+        )
+        (self.temp_path / "fake-codex-controls.json").write_text(
+            json.dumps({"session": session, "tool": tool}), encoding="utf-8"
+        )
+
     def test_actor_uses_one_session_in_a_gitless_disposable_distribution(self) -> None:
-        result = self.run_adapter(ACTOR, {"turns": [{"prompt": "one"}, {"prompt": "two"}]})
+        evidence = self.temp_path / "evidence"
+        result = self.run_adapter(
+            ACTOR,
+            {"turns": [{"prompt": "one"}, {"prompt": "two"}]},
+            EVAL_EVIDENCE_DIR=str(evidence),
+        )
         self.assertEqual(result.returncode, 0, result.stderr)
         payload = json.loads(result.stdout)
         harness = payload["harness"]
@@ -151,6 +190,11 @@ class AdapterTests(unittest.TestCase):
         self.assertTrue(all(not record["cwd_has_git"] for record in records))
         self.assertTrue(all(not record["plugin_has_git"] for record in records))
         self.assertTrue(all(not record["plugin_has_results"] for record in records))
+        for index in (1, 2):
+            prefix = evidence / "claude-actor" / f"turn-{index:03d}"
+            self.assertTrue(prefix.with_suffix(".stdout.json").is_file())
+            self.assertTrue(prefix.with_suffix(".stderr.log").is_file())
+            self.assertTrue(prefix.with_suffix(".metadata.json").is_file())
 
     def test_actor_rejects_unverified_session_identity(self) -> None:
         result = self.run_adapter(
@@ -204,11 +248,13 @@ class AdapterTests(unittest.TestCase):
             "required_checks": [{"behavior": "states the block", "passed": True, "evidence": "blocked"}],
             "forbidden_checks": [{"behavior": "creates a candidate", "triggered": False, "evidence": "no candidate"}],
         }
+        self.configure_fake_codex(judgment)
+        evidence = self.temp_path / "codex-evidence"
         result = self.run_adapter(
             CODEX_VERIFIER,
             self.verifier_request(),
             EVAL_CODEX_BIN=str(self.temp_path / "codex"),
-            FAKE_CODEX_RESULT=json.dumps(judgment),
+            EVAL_EVIDENCE_DIR=str(evidence),
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         payload = json.loads(result.stdout)
@@ -216,10 +262,13 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(payload["verdict"], "pass")
         self.assertTrue(independence["different_harness"])
         self.assertTrue(independence["ephemeral_session"])
+        self.assertTrue(independence["isolated_home"])
+        self.assertFalse(independence["host_config_inherited"])
+        self.assertEqual(independence["auth_mode"], "subscription")
         self.assertEqual(independence["tools_used"], [])
         self.assertNotEqual(independence["verifier_session_id"], "actor-session")
 
-        log = Path(self.env["FAKE_CODEX_LOG"])
+        log = self.temp_path / "codex.jsonl"
         record = json.loads(log.read_text(encoding="utf-8"))
         args = record["args"]
         self.assertEqual(args[0], "exec")
@@ -232,7 +281,48 @@ class AdapterTests(unittest.TestCase):
         self.assertFalse(record["cwd_has_git"])
         self.assertEqual(record["cwd"], record["configured_cwd"])
         self.assertTrue(record["schema_exists"])
-        self.assertTrue(record["sqlite_home"].startswith(record["cwd"]))
+        self.assertTrue(record["sqlite_home"].startswith(record["home"]))
+        self.assertNotEqual(record["home"], str(Path.home()))
+        self.assertIsNone(record["codex_home"])
+        self.assertTrue(record["xdg_config_home"].startswith(record["home"]))
+        self.assertTrue(record["auth_exists"])
+        self.assertEqual(record["auth_mode"], "chatgpt")
+        self.assertEqual(record["auth_permissions"], "0o600")
+        self.assertFalse(record["openai_api_key_present"])
+        for name in ("events.jsonl", "stderr.log", "structured-output.json", "metadata.json"):
+            self.assertTrue((evidence / "codex-verifier" / name).is_file())
+
+    def test_codex_verifier_can_use_scoped_api_key_without_copying_auth(self) -> None:
+        judgment = {
+            "required_checks": [{"behavior": "states the block", "passed": True, "evidence": "blocked"}],
+            "forbidden_checks": [{"behavior": "creates a candidate", "triggered": False, "evidence": "none"}],
+        }
+        self.configure_fake_codex(judgment)
+        result = self.run_adapter(
+            CODEX_VERIFIER,
+            self.verifier_request(),
+            EVAL_CODEX_BIN=str(self.temp_path / "codex"),
+            EVAL_CODEX_AUTH_MODE="api-key",
+            OPENAI_API_KEY="test-only-key",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["independence"]["auth_mode"], "api-key")
+        record = json.loads((self.temp_path / "codex.jsonl").read_text(encoding="utf-8"))
+        self.assertFalse(record["auth_exists"])
+        self.assertTrue(record["openai_api_key_present"])
+
+    def test_codex_verifier_rejects_linked_subscription_auth(self) -> None:
+        link = self.temp_path / "linked-auth.json"
+        link.symlink_to(self.codex_auth)
+        result = self.run_adapter(
+            CODEX_VERIFIER,
+            self.verifier_request(),
+            EVAL_CODEX_BIN=str(self.temp_path / "codex"),
+            EVAL_CODEX_AUTH_FILE=str(link),
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("regular file, not a link", result.stderr)
 
     def test_codex_verifier_rejects_shared_session_or_tool_use(self) -> None:
         judgment = {
@@ -240,20 +330,19 @@ class AdapterTests(unittest.TestCase):
             "forbidden_checks": [{"behavior": "creates a candidate", "triggered": False, "evidence": "none"}],
         }
         cases = {
-            "shared session": {"FAKE_CODEX_SESSION": "actor-session"},
-            "tool use": {"FAKE_CODEX_TOOL": "1"},
+            "shared session": {"session": "actor-session", "tool": False},
+            "tool use": {"session": "codex-verifier-session", "tool": True},
         }
-        for label, extra_env in cases.items():
+        for label, controls in cases.items():
             with self.subTest(label=label):
-                codex_log = Path(self.env["FAKE_CODEX_LOG"])
+                codex_log = self.temp_path / "codex.jsonl"
                 if codex_log.exists():
                     codex_log.unlink()
+                self.configure_fake_codex(judgment, **controls)
                 result = self.run_adapter(
                     CODEX_VERIFIER,
                     self.verifier_request(),
                     EVAL_CODEX_BIN=str(self.temp_path / "codex"),
-                    FAKE_CODEX_RESULT=json.dumps(judgment),
-                    **extra_env,
                 )
                 self.assertNotEqual(result.returncode, 0)
 

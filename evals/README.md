@@ -5,7 +5,8 @@
 ## Current verification status
 
 - **Behavior scenarios: DEFINED**
-- **Behavior execution: NOT YET VERIFIED**
+- **Claude Code actor / independent Claude verifier: VERIFIED PASS (7/7 post-isolation at `60116e8`; corrected intent probe 4/4 merged in PR #55)**
+- **Different-harness Claude Code actor / Codex verifier aggregate: NOT YET VERIFIED**
 
 PR CI validates scenario definitions and the eval harness integrity. It uses synthetic fixture processes to prove that missing verification cannot produce a pass, that actor-only mode remains `NOT VERIFIED`, that multi-turn transcripts remain intact, and that only a schema-valid independent verifier can produce `VERIFIED PASS`. CI does not launch Claude Code or Codex and does not establish their behavioral coverage.
 
@@ -28,7 +29,7 @@ Scenarios use synthetic data only. They must never include real account values, 
 1. **PR validation:** validates scenario definitions and harness integrity with synthetic fixture processes.
 2. **Clean-session smoke run:** runs a real actor in `--actor-only` mode; the result is always `NOT VERIFIED` and exits non-zero.
 3. **Verified behavior run:** runs a real actor and an independent clean-session verifier. Only a complete schema-valid verdict may produce `VERIFIED PASS`.
-4. **Full behavior sweep:** runs all scenarios across supported Harness pairs. This belongs in a manual or scheduled distribution-release gate.
+4. **Full behavior sweep:** `run_all.py` runs every registered scenario for one Harness pair, preserves raw evidence, rejects repeated session identities and computes the aggregate gate. Live sweeps belong on a trusted local machine, not public CI.
 
 ## Actor protocol
 
@@ -85,6 +86,22 @@ python3 evals/run.py rewording-does-not-reset-intent \
   --timeout 2400
 ```
 
+Full Claude Code actor / Codex verifier sweep:
+
+```bash
+RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)"
+python3 evals/run_all.py \
+  --actor-command 'python3 evals/adapters/claude_actor.py' \
+  --verifier-command 'python3 evals/adapters/codex_verifier.py' \
+  --timeout 2400 \
+  --output-dir "evals/artifacts/claude-code-actor__codex-verifier/${RUN_ID}"
+```
+
+`aggregate.json` is `VERIFIED PASS` only when the registry is complete, every scenario result exists
+and passes the verifier schema, every required behavior passes, no forbidden behavior triggers, and
+every scenario has distinct actor and verifier session identities. A valid verifier rejection is
+`VERIFIED FAIL`; missing output, malformed evidence, timeout or protocol failure is `NOT VERIFIED`.
+
 Actor smoke run:
 
 ```bash
@@ -98,6 +115,13 @@ can silently reuse the invoking session, which voids the independence claim whil
 schema-valid pass. The bundled adapters mint fresh UUIDs for exactly this reason.
 
 Use `--output evals/results/<harness-pair>/<scenario>.json` only for synthetic scenarios. Do not commit transcripts containing user, account, credential, or private runtime information.
+
+`run_all.py` writes raw local evidence under its `--output-dir`. Keep that directory under
+`evals/artifacts/` unless an operator intentionally chooses another protected location. The runner
+never copies authentication into the evidence directory; per-run credential copies remain inside
+temporary HOME directories and are deleted after each verifier exits.
+The requested output directory must be new or empty, so a timeout cannot accidentally reuse an old
+result file and mislabel it as current evidence.
 
 ## Pass standard
 
