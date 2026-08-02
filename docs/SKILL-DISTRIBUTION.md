@@ -1,54 +1,63 @@
 # Investment OS Skill Distribution
 
-Investment OS follows a cross-harness plugin architecture with one shared composable skill library:
+Investment OS is distributed as a composable Skill library with one router, reusable domain Skills, deterministic repository tools, and thin harness adapters.
 
 ```text
-skills/*/SKILL.md          platform-neutral skill source
-.claude-plugin/            Claude Code distribution metadata
-.codex-plugin/             Codex distribution metadata
-repository root            authoritative policy and executable mirrors
-broker runtime             current private account state
+skills/using-investment-os/        bootstrap and router
+skills/*/                           reusable domain capabilities
+hooks/                              Claude Code session bootstrap
+.claude-plugin/                     Claude Code distribution metadata
+.codex-plugin/                      Codex distribution metadata
+repository root                     authoritative policy and executable mirrors
+broker runtime                      current private account state
 ```
-
-## Skill composition
-
-`using-investment-os` is the bootstrap and router. It selects only the domain skills required for the task. Daily, monthly, transaction, research, audit, state-reconstruction, and behavioral-control capabilities remain independently discoverable and testable.
-
-The skills name actions and boundaries rather than vendor-specific tools. Harness manifests distribute the same `skills/` tree without copying or rewriting policy.
 
 ## Invariants
 
 1. The repository default-branch HEAD is the only policy authority.
-2. Skills contain procedure, never current investment parameters or portfolio state.
-3. Deterministic calculations stay in repository scripts.
-4. Runtime account state stays private and ephemeral.
-5. Another agent or prior output never creates inherited approval.
-6. Missing repository, broker, market, or execution-state capabilities fail closed.
+2. Skill prose describes actions and controls, not broker values or investment parameters.
+3. Harness adapters map abstract actions to available tools without rewriting domain Skills.
+4. Runtime account state remains private and ephemeral.
+5. Missing repository, broker, market, or independent-review capabilities fail closed.
+6. Skills declare required sub-skills explicitly; dependency cycles are forbidden.
 
-## Harness distribution
+## Claude Code
 
-Claude Code discovers the shared `skills/` directory through `.claude-plugin/plugin.json`. Codex reads `.codex-plugin/plugin.json`, which declares `./skills/` as the skill source. Installation does not grant broker access; missing runtime capabilities must produce a blocking result rather than a simulated account review.
+Claude Code uses `.claude-plugin/plugin.json`, discovers `skills/`, and loads `hooks/hooks.json`. The `SessionStart` hook injects the full `using-investment-os` router at startup, clear, and compaction events.
+
+See [`INSTALL-CLAUDE-CODE.md`](INSTALL-CLAUDE-CODE.md) and `skills/using-investment-os/references/claude-code-tools.md`.
+
+## Codex
+
+Codex uses `.codex-plugin/plugin.json`, which declares `./skills/` and intentionally disables repository hooks. Native Skill discovery must be proven with a clean-session acceptance test.
+
+See [`INSTALL-CODEX.md`](INSTALL-CODEX.md) and `skills/using-investment-os/references/codex-tools.md`.
 
 ## Testing model
 
-Investment OS uses the same two-layer distinction as mature skill projects:
+### Non-LLM tests
 
-- `tests/`: non-LLM package, manifest, privacy, routing, and deterministic integration checks.
-- `evals/`: synthetic pressure scenarios executed in clean agent sessions to verify actual behavior.
-
-Static PR checks:
+Run:
 
 ```bash
-python3 scripts/check_skill_distribution.py
-python3 scripts/check_skill_evals.py
+bash tests/run-all.sh
 ```
 
-Behavior acceptance tests should run selected scenarios in each supported harness. A full sweep should use an actor agent and an independent verifier before a skill release or on a scheduled basis. Real account values must never appear in prompts, fixtures, transcripts, or results.
+The suite executes the Claude bootstrap hook, parses its JSON, discovers Skills, validates frontmatter and manifests, verifies the dependency graph, enforces parameter/privacy isolation, and runs deterministic policy tools.
 
-Required behavioral coverage includes:
+### Agent behavior evals
 
-- pasted figures are not treated as authoritative broker state;
-- missing open orders fails closed;
-- another agent's output is not inherited approval;
-- rewording does not reset an unchanged transaction intent;
-- Research cannot enter Production without the current promotion process.
+`evals/scenarios/` contains synthetic pressure scenarios. `evals/run.py` can drive a real clean-session Agent command and an independent verifier. Full behavior sweeps are a manual or scheduled release gate rather than a normal PR requirement.
+
+## Release acceptance
+
+Before claiming support for a harness:
+
+1. install from a clean environment through that harness's own mechanism;
+2. prove Skill discovery;
+3. prove bootstrap or native automatic selection;
+4. run the missing-broker fail-closed scenario;
+5. run the inherited-approval and Research-isolation scenarios;
+6. record only synthetic, redacted compliance results.
+
+Installing the plugin does not grant broker or market access and never authorizes trading.
