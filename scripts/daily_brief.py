@@ -14,6 +14,7 @@ import sys
 from datetime import date
 from typing import Any
 
+from account_reconciliation import reconcile_nav
 from decision_packet import DecisionPacket, assert_renderer_preserves
 from monthly_execution import TIERS, compute
 
@@ -89,11 +90,12 @@ def build_packet(payload: dict[str, Any]) -> DecisionPacket:
     positions = p["positions"]
     spym, qqqm, soxx = (positions.get(symbol, 0.0) for symbol in UNIVERSE)
     other = tuple(sorted(symbol for symbol in positions if symbol not in UNIVERSE))
-    reconciliation = abs((p["cash"] + sum(positions.values())) - nav) / nav
+    reconciliation_result = reconcile_nav(nav, p["cash"], positions.values())
+    reconciliation = reconciliation_result.relative_difference
 
     blockers = [name for name, ok in p["account_inputs"].items() if not ok]
-    if reconciliation > 0.005:
-        blockers.append("account reconciliation exceeds 0.5% of NAV")
+    if not reconciliation_result.passed:
+        blockers.append(reconciliation_result.issue or "account reconciliation failed")
 
     result = compute(
         nav, p["cash"], spym, qqqm, soxx, p["contribution"],

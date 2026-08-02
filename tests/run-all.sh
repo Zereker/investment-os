@@ -18,6 +18,7 @@ python3 tests/test_decision_packet.py
 python3 tests/test_eval_integrity.py
 python3 tests/test_monthly_contribution_cli.py
 python3 tests/test_monthly_dd_cli.py
+python3 tests/test_reconciliation_gates.py
 python3 scripts/check_skill_distribution.py
 python3 scripts/check_skill_evals.py
 python3 scripts/check_product_contract.py

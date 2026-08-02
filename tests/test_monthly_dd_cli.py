@@ -11,7 +11,7 @@ BASE = [
     sys.executable, str(SCRIPT),
     "--nav", "100000", "--cash", "20000",
     "--spym", "40000", "--qqqm", "20000", "--soxx", "6000",
-    "--contribution", "0", "--tiers-executed", "none",
+    "--contribution", "0", "--tiers-executed", "none", "--open-orders-status", "clear",
     "--today", "2026-08-02",
 ]
 

@@ -31,7 +31,7 @@ def runtime() -> dict:
         },
         "account_summary": {"net_liquidation": 100000},
         "balances": {"cash": 15000},
-        "positions": [],
+        "positions": [{"symbol": "SYNTHETIC", "market_value": 85000}],
         "open_orders": [],
         "cash_transactions": [],
         "market_inputs": {},
