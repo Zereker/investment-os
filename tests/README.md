@@ -1,18 +1,15 @@
 # Investment OS Tests
 
-`tests/` verifies non-LLM infrastructure: skill package shape, frontmatter, manifests, references, policy-parameter isolation, privacy boundaries, routing declarations, and deterministic repository tools.
+`tests/` verifies non-LLM infrastructure: skill discovery, frontmatter, manifests, references, policy-parameter isolation, privacy boundaries, dependency routing, Claude bootstrap output, and deterministic repository tools.
 
-These tests answer: **does the plugin and repository wiring work?**
+These tests answer: **does the plugin and repository wiring actually work?**
 
-Run the current deterministic suite with:
+Run the complete non-LLM suite with:
 
 ```bash
-python3 scripts/check_policy_consistency.py
-python3 scripts/check_product_contract.py
-python3 scripts/check_skill_distribution.py
-python3 scripts/check_skill_evals.py
-python3 scripts/daily_brief.py --self-test
-python3 scripts/alert_pointer_check.py --self-test
+bash tests/run-all.sh
 ```
 
-Behavioral compliance belongs in `evals/`, not in static package tests.
+`tests/test_skill_system.py` executes the Claude session-start hook, parses its JSON output, discovers every Skill, verifies dependency references, rejects cycles, and confirms Claude/Codex manifests distribute one shared Skill tree.
+
+Behavioral compliance belongs in `evals/`, where clean real-agent sessions are tested against synthetic pressure scenarios.
