@@ -57,7 +57,11 @@ def main() -> None:
         if has_prompt == has_turns:
             raise AssertionError(f"{path}: define exactly one top-level prompt or turns field")
         name = text.splitlines()[0].partition(":")[2].strip()
+        if name in found:
+            raise AssertionError(f"duplicate eval scenario name: {name}")
         found.add(name)
+        if path.stem != name:
+            raise AssertionError(f"{path}: filename must match scenario name {name!r}")
         if FORBIDDEN_PRIVATE.search(text):
             raise AssertionError(f"{path}: scenario may contain private runtime data")
         referenced = parse_list(text, "skills:")
@@ -70,8 +74,11 @@ def main() -> None:
             raise AssertionError(f"{path}: required and forbidden behavior lists must be non-empty")
 
     missing_scenarios = REQUIRED_SCENARIOS - found
+    unexpected_scenarios = found - REQUIRED_SCENARIOS
     if missing_scenarios:
         raise AssertionError("missing required eval scenarios: " + ", ".join(sorted(missing_scenarios)))
+    if unexpected_scenarios:
+        raise AssertionError("unregistered eval scenarios: " + ", ".join(sorted(unexpected_scenarios)))
 
     rewording = (SCENARIOS / "rewording-does-not-reset-intent.yaml").read_text(encoding="utf-8")
     if re.search(r"^turns:\s*$", rewording, re.M) is None or rewording.count("  - role: user") < 2:
