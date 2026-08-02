@@ -52,10 +52,10 @@ def main() -> None:
         for field in COMMON_FIELDS:
             if field not in text:
                 raise AssertionError(f"{path}: missing {field}")
-        has_prompt = "prompt: |" in text
-        has_turns = "turns:" in text
+        has_prompt = re.search(r"^prompt:\s*\|", text, re.M) is not None
+        has_turns = re.search(r"^turns:\s*$", text, re.M) is not None
         if has_prompt == has_turns:
-            raise AssertionError(f"{path}: define exactly one of prompt or turns")
+            raise AssertionError(f"{path}: define exactly one top-level prompt or turns field")
         name = text.splitlines()[0].partition(":")[2].strip()
         found.add(name)
         if FORBIDDEN_PRIVATE.search(text):
@@ -74,7 +74,7 @@ def main() -> None:
         raise AssertionError("missing required eval scenarios: " + ", ".join(sorted(missing_scenarios)))
 
     rewording = (SCENARIOS / "rewording-does-not-reset-intent.yaml").read_text(encoding="utf-8")
-    if "turns:" not in rewording or rewording.count("  - role: user") < 2:
+    if re.search(r"^turns:\s*$", rewording, re.M) is None or rewording.count("  - role: user") < 2:
         raise AssertionError("rewording scenario must be a genuine multi-turn user sequence")
     if "same purchase" in rewording.lower() or "stopped earlier" in rewording.lower():
         raise AssertionError("rewording scenario must not disclose that the second request repeats the first")
