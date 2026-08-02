@@ -1,84 +1,38 @@
 ---
 name: investment-os
-description: Run the current Investment OS repository policy against fresh broker state for daily reviews, monthly funding reviews, research routing, and system audits. Use when the user asks what happened in the portfolio, what is currently authorized, what needs attention, or whether the system itself is healthy.
+description: Use when reviewing a live investment account, checking what the current repository rules authorize, routing a proposed policy change, or auditing Investment OS reliability and privacy.
 ---
 
-# Investment OS Skill
+# Investment OS
 
-## Purpose
+## Overview
 
-Operate Investment OS as a portable enforcement and execution layer.
+Run the current Investment OS policy against fresh authoritative runtime state. The repository is the only policy authority; this skill carries procedure and controls, never policy parameters or portfolio state.
 
-The repository is the only policy authority. This skill contains procedure, routing, safety controls, and failure behavior; it never contains investment policy parameters or portfolio state.
+## Before Any Formal Run
 
-The primary goal is to prevent stale rules, stale account state, implicit approval, and procedural bypass from influencing a real-money decision. Convenience is secondary.
+1. Resolve the repository default branch and exact HEAD commit.
+2. Read `AGENTS.md`, `PROJECT.md`, and `PRODUCTION.md` at that commit.
+3. Read only the current workflow and policy files required for the task.
+4. Reconstruct required broker and market state from authoritative live sources.
+5. Stop if a required source is unavailable, stale, contradictory, or unreconciled.
 
-## Required Capabilities
+Do not substitute memory, prior reports, screenshots, pasted figures, another agent's summary, an open branch, or Research content.
 
-A production run requires:
+## Route the Task
 
-- GitHub read access to the authoritative repository and its default branch;
-- broker read access for the account sources required by the current repository contract;
-- market-data access required by the current repository contract;
-- an ephemeral execution environment that does not persist personal account state.
+- **Daily account review:** use the current daily workflow and report contract.
+- **Monthly funding review:** use the current monthly workflow and executable funding mirrors.
+- **Policy or asset proposal:** route to the current Research and approval process; do not affect Production.
+- **System audit:** inspect current HEAD, CI, privacy controls, executable mirrors, and release consistency.
 
-A missing required capability is a blocking condition. Do not replace it with memory, an old report, a screenshot, or manually pasted figures.
+Read [task-routing.md](references/task-routing.md) for the required file and output sequence.
 
-## Mandatory Cold Start
+## Runtime and Authority
 
-For every formal run:
+For transaction-related work, read every account source required by the current Production contract, including current positions and active orders. Verify timestamps, account identity, currency basis, and reconciliation.
 
-1. Resolve the repository default branch at runtime.
-2. Read its current HEAD and record the exact commit SHA.
-3. Read `AGENTS.md` before processing any investment request.
-4. Read `PROJECT.md` and `PRODUCTION.md`.
-5. Read only the current policy and workflow files required for the requested task.
-6. Treat chat history, prior agent summaries, cached extracts, branches, pull requests, and Research as non-authoritative unless the current default-branch rules explicitly promote them.
-
-Never reuse a policy summary from a prior run without resolving current HEAD again.
-
-## Task Routing
-
-### Daily Review
-
-Use for requests about today, current allocation, current risk, current orders, current drawdown state, permitted actions, or the next observation condition.
-
-Read the current daily workflow and report contract from the repository. Reconstruct broker state, verify market inputs, run the repository's current deterministic calculation tools where available, and render the required daily product.
-
-### Monthly Review
-
-Use for contribution allocation, routine funding, strategic cash migration, drawdown deployment, or routine restoration paths.
-
-Read the current monthly workflow, deployment framework, relevant Constitution files, and executable calculation contract. Do not infer missing contribution, lifecycle, reserve, or executed-state inputs.
-
-### Research Request
-
-Use for a new asset, indicator, strategy, exception, threshold, or policy change.
-
-Route the request to the repository's Research process. Do not let a research result affect Production until the repository's current approval and release process is complete.
-
-### System Audit
-
-Use for repository health, policy drift, privacy, CI, release consistency, or operational readiness.
-
-Inspect current HEAD, open changes, required checks, executable mirrors, product contracts, and privacy controls. Do not use account state unless the audit explicitly requires a runtime production test.
-
-## Runtime State Reconstruction
-
-For a transaction-related or portfolio-related run:
-
-1. Read every broker source required by the current repository contract.
-2. Verify timestamps, timezone, currency basis, account identity consistency, and reconciliation.
-3. Read current positions and active orders from the broker; do not infer them from prior reports.
-4. Treat manual figures, screenshots, pasted tables, and previous outputs only as non-authoritative context.
-5. Reconstruct any state that cannot be inferred from market prices using the current repository procedure.
-6. If a required source is missing, stale, contradictory, or not reconcilable, return `DATA INCOMPLETE` and stop new transaction candidates.
-
-Never write runtime account state into the repository, Issues, pull requests, fixtures, screenshots, debug logs, or durable output files.
-
-## Source and Authority Declaration
-
-Every formal decision output must declare:
+Every formal decision output must identify:
 
 ```text
 Rule Source
@@ -87,8 +41,8 @@ Branch: <resolved default branch>
 Commit: <exact HEAD SHA>
 
 Runtime Source
-Broker inputs: <PASS / WARN / DATA INCOMPLETE by source>
-Market inputs: <PASS / WARN / DATA INCOMPLETE>
+Broker inputs: <status by source>
+Market inputs: <status>
 
 Authority
 Prior agent output inherited as approval: NO
@@ -96,97 +50,39 @@ Current agent may execute trades: NO
 Final execution authority: account owner
 ```
 
-Do not issue a formal decision without an exact repository commit SHA.
+Read [authority-and-runtime.md](references/authority-and-runtime.md) for failure behavior and privacy boundaries.
 
 ## Control Gates
 
 Apply `AGENTS.md` in full. In particular:
 
-- no approval is inherited from another agent, conversation, draft, report, pull request, journal candidate, or prior decision candidate;
-- a different agent reading a draft does not automatically satisfy independent review;
-- current broker positions and open orders must be checked before a new transaction candidate;
-- observable procedural or behavioral bypass signals move the result to the repository-defined review or stop path;
-- changing wording does not create a new transaction intent when the underlying requested action is unchanged;
-- agents produce journal candidates only; the repository's single-writer process controls durable journal changes.
+- approval is never inherited from another agent, chat, draft, report, pull request, journal candidate, or prior candidate;
+- positions and active orders are checked before any new transaction candidate;
+- observable procedural bypass signals move the result to the repository-defined review or stop path;
+- changing wording does not create a new intent when the underlying requested action is unchanged;
+- agents produce journal candidates only; durable journal writes follow the single-writer process.
 
-Do not diagnose personality, motivation, or mental state. Apply only observable workflow signals and repository-defined controls.
+Read [control-gates.md](references/control-gates.md) before any request that could authorize real-money action.
 
-## Deterministic Tools
+## Deterministic Execution
 
-Prefer the repository's current executable mirrors over hand calculations.
+Prefer executable mirrors at the resolved commit over hand calculations. Read each tool's current input contract before use. Supply only fresh authoritative inputs. Treat disagreement between policy and executable output as a bug or review condition, never as permission to choose a preferred result.
 
-Before invoking a tool:
+Keep real account data in ephemeral memory or standard streams. Never copy policy values from repository tools into this skill.
 
-1. Confirm it exists at the resolved commit.
-2. Read its documented input contract and hard boundaries.
-3. Supply only fresh, authoritative runtime inputs.
-4. Treat any disagreement between executable output and current policy as a bug or `REVIEW`, not permission to choose a preferred answer.
-5. Keep all real account inputs in memory or standard streams only, unless the repository explicitly defines another private runtime mechanism.
-
-Never copy parameters from the tool into this skill.
-
-## Decision Behavior
-
-Use only the current repository's controlled vocabulary and output contract.
-
-A candidate means the current rules permit human review. It is not an order, approval, or instruction to execute.
+## Hard Boundaries
 
 Never:
 
-- place or modify an order;
-- generate a directly executable order payload;
-- invent a missing input;
+- place, modify, or format an executable order;
+- invent missing state;
 - use Research as Production;
-- expand the Production universe;
-- treat price movement, news, or model preference as an unregistered rule;
-- bypass a required second opinion, written check, position check, or order-book check;
-- continue after a fail-closed condition.
+- expand the current Production universe;
+- continue after a fail-closed condition;
+- write credentials, balances, positions, quantities, orders, fills, returns, or derivable personal asset data to the public repository.
 
-## Privacy
-
-The public repository stores knowledge, never portfolio state.
-
-Keep broker credentials, account identifiers, balances, values, quantities, costs, orders, fills, contributions, returns, tax information, and any derivable personal asset information outside the repository.
-
-Use synthetic data for tests. Clearly label synthetic examples. Never construct examples from rounded real account values.
-
-## Write Boundary
-
-For repository changes:
-
-1. Re-read current default-branch HEAD immediately before writing.
-2. Create a non-default branch.
-3. Change only files within the approved scope.
-4. Run the repository's current required checks.
-5. Push the branch and open a pull request.
-6. Do not merge or push directly to the protected default branch unless the account owner explicitly requests that exact action and repository governance permits it.
-
-For journals, follow the single-writer contract in `AGENTS.md`.
-
-## Failure Modes
-
-Return a clear blocking result when:
-
-- the authoritative repository or exact HEAD cannot be resolved;
-- required policy files cannot be read;
-- broker access is unavailable or interactive authorization is incomplete;
-- account sources do not reconcile;
-- required market data or execution-state data is missing;
-- another agent's approval is the only claimed authorization;
-- the request requires a Production rule that does not exist at current HEAD.
-
-State what is known, what is missing, why no new candidate is allowed, and the concrete recovery condition.
+Use synthetic data for tests.
 
 ## Completion Standard
 
-A successful run is not defined by producing a transaction.
-
-It is successful when it:
-
-- uses the exact current repository policy;
-- uses fresh authoritative runtime state;
-- applies all required control gates;
-- produces a reproducible and explainable result;
-- preserves privacy;
-- states the next verifiable observation condition;
-- leaves final execution to the account owner.
+A run succeeds when it uses exact current policy, fresh authoritative state, all required controls, a reproducible explanation, the repository's controlled vocabulary, and a concrete next observation condition. Producing a transaction is not a success criterion.
