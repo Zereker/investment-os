@@ -555,6 +555,7 @@ def main() -> None:
     require("Decision-Log.md", "v3.x 决策存档")
     require("BUGLOG.md", "已退役机制缺陷存档")
     # git history was rebuilt to a single commit: no document may send readers there
+    for path in ("README.md", "CLAUDE.md"):
         forbid(path, "查 git 历史")
     # live account state must never be frozen into rule files (red line 2).
     # Target the pattern "A_actual ... N%" specifically — a bare percentage is
@@ -562,6 +563,7 @@ def main() -> None:
     # "A_actual 约 7.8%" is a frozen observation; "A_actual 高于 6%" references the
     # cap and is legitimate. The approximation marker is what distinguishes them.
     frozen_state = re.compile(r"A_actual[^。\n]{0,12}?(?:约|≈|大约)\s*\d+(?:\.\d+)?\s*%")
+    for path in ("04-Alpha/Position-Registry.md",
                  "Decision-Log.md", "01-Constitution/Target-Allocation.md"):
         hit = frozen_state.search(read(path))
         if hit:
