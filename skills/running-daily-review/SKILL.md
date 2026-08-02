@@ -9,6 +9,8 @@ description: Use when the user asks what happened in the live portfolio today, w
 
 Read the current daily workflow and report contract from repository HEAD. Use only fresh authoritative runtime inputs and current executable mirrors.
 
-Produce the repository-defined daily sections, clearly separating facts, rule interpretation, candidates, blockers, and next observation conditions. A candidate is eligible for human review only; it is not approval or an order.
+The deterministic daily engine must produce a validated `DecisionPacket` before any Markdown or LLM presentation. The packet is authoritative for runtime status, decision, calculations, eligible channels, blockers, next conditions, and execution authority. A renderer may explain or format those fields; it must not recompute, upgrade, downgrade, omit, or replace them.
 
-If any required state, market input, execution state, or control gate is incomplete, return the current fail-closed status and stop new transaction candidates. Never substitute an old report or manual figures.
+Produce the repository-defined daily sections from that packet, clearly separating facts, rule interpretation, candidates, blockers, and next observation conditions. A candidate requires operation-specific owner authorization before execution; it is not standing approval or an order.
+
+If any required state, market input, execution state, or control gate is incomplete, the packet must carry the current fail-closed status and stop new transaction candidates. Never substitute an old report, manual figures, or renderer judgment for the machine decision.
