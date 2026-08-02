@@ -1,7 +1,7 @@
 {
   "name": "investment-os",
   "description": "A policy-driven investment decision skill that reads current repository rules and fresh broker state while preserving privacy and human execution authority.",
-  "version": "6.4.0",
+  "version": "0.1.0",
   "author": {
     "name": "Zereker"
   },
