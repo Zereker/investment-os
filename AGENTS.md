@@ -12,7 +12,7 @@ No target, threshold, formula, investment-universe member, lifecycle state or da
 
 ## 1. Fresh Rule Source
 
-Before any portfolio interpretation, trading discussion, Daily Brief, review or repository change, the agent must:
+Before any portfolio interpretation, trading discussion, Daily Brief, review, broker operation or repository change, the agent must:
 
 1. read the current default-branch `HEAD` of `Zereker/investment-os`;
 2. record the exact commit SHA used;
@@ -24,7 +24,7 @@ The agent must never silently use remembered policy values.
 
 ## 2. Fresh Runtime State
 
-Personal portfolio state is not stored in the repository. Before producing a current account decision, the agent must reconstruct state from the broker runtime sources required by the current Production contract.
+Personal portfolio state is not stored in the repository. Before producing a current account decision or executing a broker operation, the agent must reconstruct state from the broker runtime sources required by the current Production contract.
 
 Manual figures, screenshots, pasted tables and prior reports may be used only as leads or context. They are never authoritative account state and cannot independently authorize a transaction.
 
@@ -32,7 +32,7 @@ If authoritative runtime state cannot be obtained or reconciled, the result is `
 
 ## 3. Source and Authority Declaration
 
-Every formal Daily Brief, transaction-related review, second opinion or decision packet must declare:
+Every formal Daily Brief, transaction-related review, second opinion, decision packet or execution result must declare:
 
 ```text
 Rule Source
@@ -51,7 +51,7 @@ Prior Agent Material
 Decision Authority
 - current agent role
 - owner approval status
-- human execution boundary
+- execution capability and verification status
 ```
 
 Missing source declarations make the output incomplete.
@@ -60,20 +60,13 @@ Missing source declarations make the output incomplete.
 
 No approval is inherited from another agent, conversation, draft, report, pull request, Journal candidate, research note or prior `BUY CANDIDATE`.
 
-Another agent's output may be used only as:
+Another agent's output may be used only as context, evidence, a draft or an independent opinion. It is never approval.
 
-- context;
-- evidence;
-- a draft;
-- an independent opinion.
-
-It is never approval.
-
-Agent A drafting and Agent B reading the draft does not satisfy separation of duties. Only the account owner, or an approval mechanism explicitly defined by the current repository rules, can approve a real-money exception or progression.
+Only the account owner, or an approval mechanism explicitly defined by current repository rules, can authorize a real-money operation. Owner authorization is valid only for the exact normalized operation in the current session. It never persists to another operation or session.
 
 ## 5. Behavioral and Procedural Control Gate
 
-Before producing any new purchase authorization, the agent must check observable process signals. It must not diagnose personality, motivation or mental state.
+Before producing any new purchase authorization or executing any broker operation, the agent must check observable process signals. It must not diagnose personality, motivation or mental state.
 
 Gate signals include:
 
@@ -88,51 +81,43 @@ Gate signals include:
 
 A changed description does not create a new transaction intent. The agent must link materially identical requests within the available context.
 
-When a signal is present, the agent must switch from ordinary candidate evaluation to a control response:
-
-```text
-CONTROL GATE TRIGGERED
-Decision: HOLD / REVIEW / REJECT / DATA INCOMPLETE
-Required recovery steps:
-- reread current repository HEAD
-- rebuild broker state
-- verify positions, orders and recent activity
-- complete the applicable written checklist
-- obtain an independent second opinion when required
-- obtain explicit owner approval when required
-```
-
-The gate does not create permanent prohibitions. It requires the correct process before reconsideration.
+When a signal is present, the agent must switch from ordinary candidate evaluation to a control response and stop execution until the required recovery steps are complete.
 
 ## 6. Independent Second Opinion
 
-A second opinion is independent only when the reviewing agent:
+A second opinion is independent only when the reviewing agent resolves the same current repository `HEAD`, verifies authoritative runtime state independently, forms analysis before reading the first conclusion, declares later received material, and does not treat agreement as transaction approval.
 
-1. resolves the same current repository `HEAD` independently;
-2. obtains or verifies the same authoritative runtime state independently;
-3. forms its factual and rule analysis before reading the first agent's conclusion;
-4. declares any material it later received from the first agent;
-5. does not treat agreement as transaction approval.
-
-A coordinator may compare conclusions and surface differences. The coordinator does not convert agreement into approval.
+A coordinator may compare conclusions and surface differences. Agreement does not itself authorize execution.
 
 ## 7. Order and Position Verification
 
-For every transaction-related review, the agent must inspect the authoritative positions and open-order sources required by Production before considering a new candidate.
+For every transaction-related review or execution, the agent must inspect the authoritative positions and open-order sources required by Production.
 
-The agent must identify:
+The agent must identify duplicate orders, conflicting directions, partial fills, unexplained position changes, out-of-scope holdings, cash or financing conflicts, and activity after the last valid review.
 
-- duplicate orders;
-- conflicting directions;
-- partial fills;
-- unexplained position changes;
-- out-of-scope holdings;
-- cash or financing conflicts;
-- activity that occurred after the last valid review.
+Failure to inspect the required order and position sources blocks new authorization and execution.
 
-Failure to inspect the required order and position sources blocks new authorization.
+## 8. Broker Execution Runtime
 
-## 8. Journal Single-Writer Rule
+An agent may execute a broker capability only when all of the following are true:
+
+1. current repository rules permit the proposed operation;
+2. current Broker Runtime before-state is complete and fresh;
+3. the running adapter explicitly supports the required capability;
+4. the account owner explicitly authorizes the exact normalized operation in the current session;
+5. authorization is bound to an operation digest containing all material parameters;
+6. the operation is submitted at most once;
+7. authoritative broker state is read back after submission;
+8. the observed state is compared with the expected state transition;
+9. the result is reported as verified, failed, rejected, pending or unknown without embellishment.
+
+A write response or HTTP success is not verification. The agent must not silently retry an operation whose broker outcome is uncertain. It must first prove whether the original operation reached the broker.
+
+Broad standing authorization, such as permission to trade freely for a session, is insufficient. Authorization does not persist in Git, Skill files, logs or future sessions.
+
+Execution receipts are ephemeral. Real account data, order details, broker identifiers, fills and authorization records must not be committed to the public repository.
+
+## 9. Journal Single-Writer Rule
 
 Agents do not directly treat concurrent Journal edits as authoritative.
 
@@ -140,26 +125,19 @@ Agents do not directly treat concurrent Journal edits as authoritative.
 - A candidate has no Production authority until reviewed and committed through the repository workflow.
 - Only one coordinating writer may prepare a Journal commit at a time.
 - The writer must reread `HEAD` immediately before writing.
-- Conflicting candidates require human resolution; agents must not silently merge factual claims or decisions.
-- Personal account state remains excluded from the public Journal.
+- Conflicting candidates require human resolution.
+- Personal account state and execution receipts remain excluded from the public Journal.
 
-## 9. Repository Changes
+## 10. Repository Changes
 
 Agents must not push directly to the protected default branch.
 
-For a repository change, the agent must:
-
-1. reread current `HEAD`;
-2. create a branch;
-3. declare whether the change affects product behavior, process controls or investment-policy semantics;
-4. run the applicable checks;
-5. push the branch and open a pull request;
-6. leave merge approval to the owner.
+For a repository change, the agent must reread current `HEAD`, create a branch, declare impact, run applicable checks, push the branch, open a pull request and leave merge approval to the owner.
 
 A process-control change must not silently modify investment policy.
 
-## 10. Output Boundary
+## 11. Output Boundary
 
-Agents analyze, calculate, explain and enforce gates. They do not place orders, expose broker credentials, persist personal account state or generate an unattended execution chain.
+Agents may analyze, calculate, explain, enforce gates and execute broker operations under Section 8. They must not expose broker credentials, persist personal account state, invent missing parameters, expand authorization, or create an unattended execution chain.
 
-Every actionable output must preserve the human execution boundary defined by the current repository rules.
+Every broker operation preserves an explicit owner authorization boundary and authoritative read-back verification. Every non-executed recommendation remains a recommendation, not implied standing permission.
