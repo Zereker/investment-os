@@ -30,6 +30,7 @@ Environment:
   EVAL_ACTOR_MODEL       model alias/id for the actor   (default claude-sonnet-5)
   EVAL_ACTOR_TIMEOUT     per-turn timeout in seconds    (default 600)
   EVAL_PLUGIN_DIR        Investment OS plugin root      (default: repo root)
+  EVAL_EVIDENCE_DIR      optional raw per-turn evidence directory
 """
 
 from __future__ import annotations
@@ -94,6 +95,7 @@ def claude_turn(
     session_id: str,
     first: bool,
     runtime_root: Path,
+    turn_index: int,
 ) -> tuple[str, dict]:
     """Run one turn; return the assistant's final text and observability metadata.
 
@@ -122,6 +124,21 @@ def claude_turn(
         cmd, cwd=runtime_root, text=True, capture_output=True,
         timeout=TIMEOUT, check=False,
     )
+    evidence_root = os.environ.get("EVAL_EVIDENCE_DIR")
+    if evidence_root:
+        evidence = Path(evidence_root) / "claude-actor"
+        evidence.mkdir(mode=0o700, parents=True, exist_ok=True)
+        prefix = f"turn-{turn_index + 1:03d}"
+        (evidence / f"{prefix}.stdout.json").write_text(result.stdout, encoding="utf-8")
+        (evidence / f"{prefix}.stderr.log").write_text(result.stderr, encoding="utf-8")
+        (evidence / f"{prefix}.metadata.json").write_text(
+            json.dumps({
+                "returncode": result.returncode,
+                "requested_session_id": session_id,
+                "session_operation": "create" if first else "resume",
+            }, indent=2),
+            encoding="utf-8",
+        )
     if result.returncode != 0:
         raise RuntimeError(f"claude exited {result.returncode}: {result.stderr.strip()[:800]}")
     try:
@@ -172,6 +189,7 @@ def main() -> int:
                 session_id,
                 first=(index == 0),
                 runtime_root=runtime_root,
+                turn_index=index,
             )
             transcript.append({"role": "user", "content": prompt})
             transcript.append({"role": "assistant", "content": reply})

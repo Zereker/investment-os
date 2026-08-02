@@ -73,6 +73,12 @@ The suite executes the Claude bootstrap hook, parses its JSON, discovers Skills,
 
 `check_skill_evals.py` validates scenario structure, Skill references, coverage, and privacy. It does not run Claude Code or Codex. `evals/run.py` requires an external clean-session actor command and an independent verifier command. Until a harness sweep has actually run and its synthetic result has been reviewed, CI green must not be described as behavior coverage.
 
+The stored Claude Code actor / independent Claude verifier post-isolation sweep is 7/7 at repository
+head `60116e8`, with the corrected intent-continuity probe resampled 4/4 and merged through PR #55.
+That evidence does not verify the different-harness Claude Code actor / Codex verifier pair. The
+cross-harness claim remains `NOT YET VERIFIED` until `evals/run_all.py` produces a schema-valid
+aggregate `VERIFIED PASS` from a trusted local run.
+
 ## Release acceptance
 
 Before claiming behavior support for a harness:
