@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the product contract, closed universe, agent controls and privacy boundary."""
+"""Validate product, skill, agent-control and public-repository privacy contracts."""
 
 import re
 from pathlib import Path
@@ -45,9 +45,9 @@ def reject_runtime_artifacts() -> None:
         )
 
 
-def validate_agent_contract_is_parameter_free() -> None:
-    """AGENTS.md may carry procedure and gates, never investment policy values."""
-    text = read("AGENTS.md")
+def reject_policy_parameters(path: str) -> None:
+    """Portable procedure contracts may never become a second policy source."""
+    text = read(path)
     forbidden = {
         "percentages": re.compile(r"(?<![A-Za-z0-9])\d+(?:\.\d+)?\s*%"),
         "allocation formulas": re.compile(r"\b(?:A_basis|A_stage|A_execution_cap|D_max|G_0)\b"),
@@ -58,7 +58,7 @@ def validate_agent_contract_is_parameter_free() -> None:
     violations = [name for name, pattern in forbidden.items() if pattern.search(text)]
     if violations:
         raise AssertionError(
-            "AGENTS.md must contain procedure, never policy parameters: "
+            f"{path} must contain procedure, never policy parameters: "
             + ", ".join(violations)
         )
 
@@ -101,6 +101,7 @@ def main() -> None:
         "PROJECT.md",
         "Daily-Report-Contract.md",
         "仓库保存规则，不保存个人组合",
+        "skills/investment-os/SKILL.md",
     )
     require(
         "07-Releases/v6.0.md",
@@ -129,7 +130,35 @@ def main() -> None:
         "does not store personal trading incidents",
         "does not change",
     )
-    validate_agent_contract_is_parameter_free()
+    require(
+        "skills/investment-os/SKILL.md",
+        "name: investment-os",
+        "The repository is the only policy authority",
+        "Mandatory Cold Start",
+        "Daily Review",
+        "Monthly Review",
+        "Research Request",
+        "System Audit",
+        "Runtime State Reconstruction",
+        "Source and Authority Declaration",
+        "Prior agent output inherited as approval: NO",
+        "Apply `AGENTS.md` in full",
+        "Prefer the repository's current executable mirrors",
+        "Never copy parameters from the tool into this skill",
+        "The public repository stores knowledge, never portfolio state",
+        "Failure Modes",
+        "Completion Standard",
+    )
+    require(
+        "07-Releases/v6.2.md",
+        "Portable Investment OS Skill",
+        "thin skill + authoritative repository + fresh broker state",
+        "The skill is an execution and enforcement layer, not a second policy source",
+        "No personal trading history",
+        "Strategy Impact",
+    )
+    reject_policy_parameters("AGENTS.md")
+    reject_policy_parameters("skills/investment-os/SKILL.md")
     reject_runtime_artifacts()
     print("Product contract checks passed.")
 
