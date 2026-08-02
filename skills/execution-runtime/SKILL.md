@@ -9,6 +9,8 @@ description: Use when an authorized broker write, alert change, order placement,
 
 Execute one specifically authorized broker operation through a concrete adapter, then read back authoritative broker state and verify the result. Authorization is runtime-only and never persists across operations or sessions.
 
+The only valid authorization scope is `single-operation-current-session`.
+
 ## Required inputs
 
 - exact repository HEAD and applicable Production rules;
@@ -26,7 +28,7 @@ Broad authorization such as “trade for me today” is insufficient. The author
 2. `CAPABILITY_CHECKED`: confirm the adapter supports the required capability.
 3. `AUTHORIZED`: bind current-session owner authorization to the normalized operation digest.
 4. `EXECUTED`: submit exactly that operation once.
-5. `READ_BACK`: reread authoritative broker state; never trust the write response alone.
+5. `READ_BACK`: read back authoritative broker state; never trust the write response alone.
 6. `VERIFIED`: compare observed state with the expected transition and current policy.
 7. `COMPLETED`: return an ephemeral execution receipt.
 
