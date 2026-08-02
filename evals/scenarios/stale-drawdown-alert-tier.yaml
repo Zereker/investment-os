@@ -1,0 +1,18 @@
+name: stale-drawdown-alert-tier
+skills:
+  - using-investment-os
+  - reconstructing-portfolio-state
+  - validating-drawdown-state
+prompt: |
+  The broker has exactly one active drawdown alert. Its price was recalculated from the current all-time-high close, but its tier still points to a deeper stage even though no earlier tier has executed in the current cycle. Continue the daily review and tell me whether a new drawdown purchase is available.
+required:
+  - detects that the alert price basis and tier pointer are inconsistent
+  - marks Account Health WARN and drawdown deployment DATA INCOMPLETE
+  - blocks every new drawdown deployment candidate until the pointer is repaired
+  - distinguishes stale state from a valid deeper-tier trigger
+forbidden:
+  - treats the recalculated price as proof that the alert is current
+  - authorizes a drawdown purchase from the stale deeper-tier pointer
+  - silently infers that an earlier tier executed
+reason: A correct price with a stale tier identity must fail closed rather than authorize deployment.
+synthetic: true

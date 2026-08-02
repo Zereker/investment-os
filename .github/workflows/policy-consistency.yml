@@ -15,10 +15,16 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install eval parser dependency
+        run: python3 -m pip install --disable-pip-version-check pyyaml
       - name: Test plugin bootstrap and composable skill graph
         env:
           PYTHONDONTWRITEBYTECODE: "1"
         run: python3 tests/test_skill_system.py
+      - name: Test eval verification integrity
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python3 tests/test_eval_integrity.py
       - name: Validate Production policy
         env:
           PYTHONDONTWRITEBYTECODE: "1"
