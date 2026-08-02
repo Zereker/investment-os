@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate product, skill, agent-control and public-repository privacy contracts."""
+"""Validate product, agent-control, skill and public-repository privacy contracts."""
 
 import re
 from pathlib import Path
@@ -30,14 +30,10 @@ def reject_runtime_artifacts() -> None:
         if not path.is_file() or ".git" in path.parts:
             continue
         rel = path.relative_to(ROOT)
-        lowered_parts = {part.lower() for part in rel.parts[:-1]}
-        if rel.name.lower() in forbidden_names or lowered_parts & forbidden_parts:
+        if rel.name.lower() in forbidden_names or ({p.lower() for p in rel.parts[:-1]} & forbidden_parts):
             violations.append(str(rel))
     if violations:
-        raise AssertionError(
-            "runtime portfolio artifacts must not live in the public repository:\n"
-            + "\n".join(sorted(violations))
-        )
+        raise AssertionError("runtime portfolio artifacts must not live in the public repository:\n" + "\n".join(sorted(violations)))
 
 
 def reject_policy_parameters(path: str) -> None:
@@ -55,67 +51,24 @@ def reject_policy_parameters(path: str) -> None:
 
 
 def main() -> None:
-    require(
-        "PROJECT.md",
-        "Observe → Understand → Decide → Monitor → Repeat",
-        "Repository Stores Knowledge, Never Portfolio",
-        "Runtime Data Is Ephemeral",
-        "Human Executes Trades",
-        "相同的有效输入和相同的生产规则，应得到相同、可解释、可复核的结论",
-    )
-    require(
-        "02-Operating-System/Daily-Report-Contract.md",
-        "Investment Daily Report",
-        "Fact: 可验证数据或计算结果",
-        "Production Decision",
-        "Next Observation Conditions",
-        "自动提交日报到公开仓库",
-    )
-    require(
-        "01-Constitution/Investment-Universe.md",
-        "SPYM", "QQQM", "SOXX", "Production 是封闭投资宇宙", "Out-of-Universe",
-        "任何 AI、脚本、日报或临时会话都无权自行扩展投资宇宙",
-    )
-    require(
-        "scripts/daily_brief.py",
-        'UNIVERSE = ("SPYM", "QQQM", "SOXX")', "DATA INCOMPLETE",
-        "Why Not the Others", "never writes inputs or output to disk",
-    )
+    require("PROJECT.md", "Observe → Understand → Decide → Monitor → Repeat", "Repository Stores Knowledge, Never Portfolio", "Runtime Data Is Ephemeral", "Human Executes Trades", "相同的有效输入和相同的生产规则，应得到相同、可解释、可复核的结论")
+    require("02-Operating-System/Daily-Report-Contract.md", "Investment Daily Report", "Fact: 可验证数据或计算结果", "Production Decision", "Next Observation Conditions", "自动提交日报到公开仓库")
+    require("01-Constitution/Investment-Universe.md", "SPYM", "QQQM", "SOXX", "Production 是封闭投资宇宙", "Out-of-Universe", "任何 AI、脚本、日报或临时会话都无权自行扩展投资宇宙")
+    require("scripts/daily_brief.py", 'UNIVERSE = ("SPYM", "QQQM", "SOXX")', "DATA INCOMPLETE", "Why Not the Others", "never writes inputs or output to disk")
     require("README.md", "PROJECT.md", "Daily-Report-Contract.md", "仓库保存规则，不保存个人组合")
-    require("07-Releases/v6.0.md", "Three-ETF Daily Brief MVP", "不改变目标权重", "scripts/daily_brief.py")
-    require(
-        "AGENTS.md",
-        "This contract contains procedure, never investment policy parameters",
-        "Fresh Rule Source", "Fresh Runtime State", "Source and Authority Declaration",
-        "No Inherited Approval", "Behavioral and Procedural Control Gate",
-        "Independent Second Opinion", "Order and Position Verification",
-        "Journal Single-Writer Rule", "Manual figures, screenshots, pasted tables and prior reports",
-        "Agents must not push directly to the protected default branch",
-    )
-    require("07-Releases/v6.1.md", "Agent Control Gate", "control replication, not convenience", "does not store personal trading incidents", "does not change")
-    require(
-        "skills/README.md",
-        "platform-neutral execution and enforcement layer",
-        ".claude-plugin/", ".codex-plugin/", "references/authority-and-runtime.md",
-        "parameter-free", "check_skill_distribution.py",
-    )
-    require(
-        "skills/investment-os/SKILL.md",
-        "name: investment-os", "description: Use when", "Before Any Formal Run",
-        "Route the Task", "Runtime and Authority", "Control Gates",
-        "Deterministic Execution", "Hard Boundaries", "Completion Standard",
-        "references/authority-and-runtime.md", "references/task-routing.md",
-        "references/control-gates.md",
-    )
-    require(
-        "07-Releases/v6.2.md",
-        "Portable Investment OS Skill",
-        "thin skill + authoritative repository + fresh broker state",
-        "The skill is an execution and enforcement layer, not a second policy source",
-        "No personal trading history", "Strategy Impact",
-    )
+    require("AGENTS.md", "This contract contains procedure, never investment policy parameters", "Fresh Rule Source", "Fresh Runtime State", "Source and Authority Declaration", "No Inherited Approval", "Behavioral and Procedural Control Gate", "Independent Second Opinion", "Order and Position Verification", "Journal Single-Writer Rule", "Manual figures, screenshots, pasted tables and prior reports", "Agents must not push directly to the protected default branch")
+    require("skills/README.md", "composable skill system", "using-investment-os", "reconstructing-portfolio-state", "enforcing-behavioral-controls", "running-daily-review", "running-monthly-review", "evaluating-transaction-candidates", "routing-investment-research", "auditing-investment-os", "tests/", "evals/")
+    require("skills/using-investment-os/SKILL.md", "name: using-investment-os", "Investment OS is a composable skill system", "Mandatory start", "Never inherit approval")
+    require("skills/reconstructing-portfolio-state/SKILL.md", "name: reconstructing-portfolio-state", "Manual figures", "DATA INCOMPLETE")
+    require("skills/enforcing-behavioral-controls/SKILL.md", "name: enforcing-behavioral-controls", "underlying transaction intent", "never approval")
+    require("skills/running-daily-review/SKILL.md", "name: running-daily-review", "REQUIRED SUB-SKILLS", "fail-closed")
+    require("skills/running-monthly-review/SKILL.md", "name: running-monthly-review", "REQUIRED SUB-SKILLS", "Never generate an executable order")
+    require("skills/evaluating-transaction-candidates/SKILL.md", "name: evaluating-transaction-candidates", "Research, prior candidates", "Never place an order")
+    require("skills/routing-investment-research/SKILL.md", "name: routing-investment-research", "never an active rule")
+    require("skills/auditing-investment-os/SKILL.md", "name: auditing-investment-os", "does not itself change policy")
     reject_policy_parameters("AGENTS.md")
-    reject_policy_parameters("skills/investment-os/SKILL.md")
+    for skill in (ROOT / "skills").glob("*/SKILL.md"):
+        reject_policy_parameters(str(skill.relative_to(ROOT)))
     reject_runtime_artifacts()
     print("Product contract checks passed.")
 
