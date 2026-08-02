@@ -18,7 +18,7 @@ BASE_ARGS = [
     "--qqqm", "28000",
     "--soxx", "6000",
     "--dd", "0",
-    "--tiers-executed", "none",
+    "--tiers-executed", "none", "--open-orders-status", "clear",
 ]
 
 

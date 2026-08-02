@@ -15,6 +15,11 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Iterable
 
+try:
+    from scripts.account_reconciliation import reconcile_nav
+except ModuleNotFoundError:  # direct script execution
+    from account_reconciliation import reconcile_nav
+
 VALID_CAPABILITY_STATES = {"available", "unavailable", "stale", "conflicting"}
 REQUIRED_SECTIONS = {
     "identity",
@@ -49,6 +54,34 @@ def _parse_timestamp(value: Any) -> datetime | None:
     if parsed.tzinfo is None:
         return None
     return parsed.astimezone(timezone.utc)
+
+
+def _number(value: Any) -> float | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    return float(value)
+
+
+def _position_values(value: Any) -> list[float] | None:
+    if isinstance(value, dict):
+        result = []
+        for item in value.values():
+            number = _number(item if not isinstance(item, dict) else item.get("market_value"))
+            if number is None:
+                return None
+            result.append(number)
+        return result
+    if isinstance(value, list):
+        result = []
+        for item in value:
+            if not isinstance(item, dict):
+                return None
+            number = _number(item.get("market_value", item.get("marketValue")))
+            if number is None:
+                return None
+            result.append(number)
+        return result
+    return None
 
 
 def validate_runtime(
@@ -105,6 +138,24 @@ def validate_runtime(
         declared = reconciliation.get("issues", [])
         if declared:
             issues.extend(f"reconciliation: {item}" for item in declared)
+
+    summary = runtime.get("account_summary")
+    balances = runtime.get("balances")
+    nav = _number(summary.get("net_liquidation")) if isinstance(summary, dict) else None
+    cash = None
+    if isinstance(balances, dict):
+        cash = _number(balances.get("total_cash", balances.get("cash")))
+    positions = _position_values(runtime.get("positions"))
+    if nav is None or cash is None or positions is None:
+        issues.append("actual reconciliation inputs are unavailable")
+    else:
+        try:
+            actual = reconcile_nav(nav, cash, positions)
+        except ValueError as exc:
+            issues.append(f"actual reconciliation invalid: {exc}")
+        else:
+            if not actual.passed:
+                issues.append(actual.issue or "actual reconciliation failed")
 
     status = "PASS" if not issues else "DATA INCOMPLETE"
     return ValidationResult(status, tuple(issues))

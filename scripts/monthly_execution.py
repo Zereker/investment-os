@@ -50,6 +50,11 @@ import sys
 import urllib.request
 from datetime import date
 
+try:
+    from scripts.account_reconciliation import reconcile_nav
+except ModuleNotFoundError:  # direct script execution
+    from account_reconciliation import reconcile_nav
+
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 HISTORY_API = "https://stockanalysis.com/api/symbol/e/{sym}/history?range=10Y&period=Daily"
 
@@ -311,6 +316,7 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
          f"{min(A_EXECUTION_CAP, A_STAGE):.0%}",
          res["a_actual_after"] <= min(A_EXECUTION_CAP, A_STAGE) + 1e-9 or res["restore"] == 0),
         ("A_execution_cap 未变动（变动即属提高倾斜，须完整 IC）", True),
+        ("没有重复或冲突订单", inp.get("open_orders_status") == "clear"),
     ]
     for label, ok in checks:
         print(f"  [{'x' if ok else ' '}] {label}")
@@ -448,6 +454,8 @@ def main() -> int:
                     help="本回撤周期内已执行的档位，逗号分隔，如 T1 或 T1,T2；无则填 none")
     ap.add_argument("--lookthrough-current", action="store_true",
                     help="当季 LOOKTHROUGH_CHECK 核查有效。不传即视为无效，SOXX 回补冻结")
+    ap.add_argument("--open-orders-status", choices=("clear", "conflicting", "unknown"), default="unknown",
+                    help="权威订单核查结果；只有 clear 允许月度候选，省略即 unknown 并失败关闭")
     ap.add_argument("--today", default=None, help="计算 R 用的日期 YYYY-MM-DD（默认今天）")
     ap.add_argument("--self-test", action="store_true", help="校验算术是否镜像规则")
     args, _ = ap.parse_known_args()
@@ -473,6 +481,17 @@ def main() -> int:
     if args.dd is not None and not (0.0 <= args.dd < 1.0):
         print(
             "DATA INCOMPLETE: --dd 必须使用小数且范围为 [0, 1)；例如 1.68% 应传 0.0168",
+            file=sys.stderr,
+        )
+        return 2
+    reconciliation = reconcile_nav(args.nav, args.cash, (args.spym, args.qqqm, args.soxx))
+    if not reconciliation.passed:
+        print(f"DATA INCOMPLETE: {reconciliation.issue}", file=sys.stderr)
+        return 2
+    if args.open_orders_status != "clear":
+        print(
+            f"DATA INCOMPLETE: open orders status is {args.open_orders_status}; "
+            "must be clear before monthly candidates",
             file=sys.stderr,
         )
         return 2
