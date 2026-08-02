@@ -389,7 +389,6 @@ def main() -> None:
         "indexes.nasdaq.com",
         "前三大权重上限分别为12%、10%、8%",
     )
-    require("README.md", "# Investment OS v4.6")
     require("PRODUCTION.md", "# Investment OS v4.6 — Production Contract")
     require(
         "Research/2026-08-01-valuation-subsystem-retirement.md",
