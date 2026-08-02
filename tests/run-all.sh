@@ -12,6 +12,7 @@ python3 -c 'import yaml' 2>/dev/null || {
   exit 1
 }
 python3 tests/test_skill_system.py
+python3 tests/test_plugin_installation.py
 python3 tests/test_broker_runtime.py
 python3 tests/test_execution_runtime.py
 python3 tests/test_decision_packet.py

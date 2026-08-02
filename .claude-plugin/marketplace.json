@@ -1,0 +1,18 @@
+{
+  "name": "investment-os",
+  "description": "Investment OS skills and deterministic policy workflows",
+  "owner": {
+    "name": "Zereker"
+  },
+  "plugins": [
+    {
+      "name": "investment-os",
+      "description": "Policy-driven portfolio review and investment-system audit workflows",
+      "version": "0.3.0",
+      "source": "./",
+      "author": {
+        "name": "Zereker"
+      }
+    }
+  ]
+}

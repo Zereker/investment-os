@@ -72,20 +72,23 @@ def test_manifests() -> None:
     assert claude["name"] == codex["name"] == "investment-os"
     assert claude["version"] == codex["version"] == version
     assert codex["skills"] == "./skills/"
-    hooks = json.loads((ROOT / "hooks/hooks.json").read_text())
-    command = hooks["hooks"]["SessionStart"][0]["hooks"][0]["command"]
-    assert "session-start" in command
+    assert "hooks" not in codex
+    assert not (ROOT / "hooks/hooks.json").exists()
+    command = claude["hooks"]["SessionStart"][0]["hooks"][0]["command"]
+    assert "scripts/claude-session-start" in command
 
 
 def test_bootstrap() -> None:
     env = os.environ.copy()
     env["CLAUDE_PLUGIN_ROOT"] = str(ROOT)
-    result = subprocess.run(["bash", str(ROOT / "hooks/session-start")], check=True, capture_output=True, text=True, env=env)
+    result = subprocess.run(["bash", str(ROOT / "scripts/claude-session-start")], check=True, capture_output=True, text=True, env=env)
     payload = json.loads(result.stdout)
     context = payload["hookSpecificOutput"]["additionalContext"]
     assert "INVESTMENT_OS_BOOTSTRAP" in context
     assert "using-investment-os" in context
-    assert "only policy authority" in context
+    assert "installed plugin distribution" in context
+    assert "current working directory" in context
+    assert "runtime network fetch" in context
     assert "DATA INCOMPLETE" not in context
 
 

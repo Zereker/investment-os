@@ -1,6 +1,6 @@
 {
   "name": "investment-os",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Policy-driven portfolio review and investment-system audit workflows using the policy files distributed with this plugin and fresh authoritative runtime state.",
   "author": {
     "name": "Zereker",
@@ -17,7 +17,6 @@
     "ibkr"
   ],
   "skills": "./skills/",
-  "hooks": {},
   "interface": {
     "displayName": "Investment OS",
     "shortDescription": "Policy-driven portfolio reviews and system audits",
