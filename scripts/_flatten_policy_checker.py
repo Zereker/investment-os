@@ -41,11 +41,13 @@ for node in ast.walk(tree):
                 remove_lines.update(range(item.lineno, item.end_lineno + 1))
                 removed_tuple_items += 1
 
-if (removed_calls, removed_tuple_items) != (8, 1):
+if (removed_calls, removed_tuple_items) != (7, 2):
     raise SystemExit(
-        f"expected to remove 8 retired calls and 1 tuple item; got "
+        f"expected to remove 7 retired call statements and 2 tuple items; got "
         f"{removed_calls} calls and {removed_tuple_items} tuple items"
     )
+if removed_calls + removed_tuple_items != 9:
+    raise SystemExit("retired release assertion count must remain exactly 9")
 
 lines = source.splitlines()
 cleaned = "\n".join(
@@ -67,4 +69,4 @@ if checks not in text:
     text = text.replace(anchor, checks + anchor, 1)
     GOVERNANCE.write_text(text, encoding="utf-8")
 
-print("Flattened policy checker: removed 8 calls and 1 tuple item.")
+print("Flattened policy checker: removed 7 calls and 2 tuple items (9 total).")
