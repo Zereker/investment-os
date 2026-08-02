@@ -106,3 +106,8 @@ Real Harness behavior: NOT YET VERIFIED
 `.plugin-version` 只表示 Skill / Plugin 分发 SemVer，不表示投资政策版本。
 
 本仓库用于长期投资决策纪律与工具研究，不构成面向他人的投资建议，也不保证投资收益。
+
+
+## Data Maintenance Boundary
+
+仓库不维护重复的中央证券数据库。行情、ETF 成分、issuer 和行业分类按已登记来源在运行时读取；只有规则、契约、公开证据或工具变化才提交。**普通数据变化不更新项目**。
