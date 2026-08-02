@@ -1,0 +1,41 @@
+{
+  "name": "investment-os",
+  "version": "6.4.0",
+  "description": "Policy-driven portfolio review and investment-system audit workflows using current repository rules and fresh authoritative runtime state.",
+  "author": {
+    "name": "Zereker",
+    "url": "https://github.com/Zereker"
+  },
+  "homepage": "https://github.com/Zereker/investment-os",
+  "repository": "https://github.com/Zereker/investment-os",
+  "license": "MIT",
+  "keywords": [
+    "agent-skills",
+    "investment-policy",
+    "portfolio-review",
+    "risk-controls",
+    "ibkr"
+  ],
+  "skills": "./skills/",
+  "hooks": {},
+  "interface": {
+    "displayName": "Investment OS",
+    "shortDescription": "Policy-driven portfolio reviews and system audits",
+    "longDescription": "Use Investment OS to review a live investment account, determine what current repository rules authorize, route policy proposals, and audit reliability without persisting private portfolio state.",
+    "developerName": "Zereker",
+    "category": "Finance",
+    "capabilities": [
+      "Interactive",
+      "Read"
+    ],
+    "defaultPrompt": [
+      "Run today's Investment OS account review.",
+      "Audit the current Investment OS repository and runtime readiness."
+    ],
+    "websiteURL": "https://github.com/Zereker/investment-os",
+    "privacyPolicyURL": "https://github.com/Zereker/investment-os/blob/master/PROJECT.md",
+    "termsOfServiceURL": "https://github.com/Zereker/investment-os/blob/master/LICENSE",
+    "brandColor": "#1F6FEB",
+    "screenshots": []
+  }
+}
