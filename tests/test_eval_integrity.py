@@ -5,6 +5,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER = ROOT / "evals" / "run.py"
@@ -30,6 +31,11 @@ def run(*extra: str) -> subprocess.CompletedProcess[str]:
 
 
 def main() -> None:
+    scenario = yaml.safe_load(SCENARIO.read_text(encoding="utf-8"))
+    expected_turns = len(scenario["turns"])
+    if expected_turns < 4:
+        raise AssertionError("adversarial intent-continuity scenario must retain at least four turns")
+
     missing = run()
     if missing.returncode == 0 or "NOT VERIFIED: no verifier configured" not in missing.stderr:
         raise AssertionError("missing verifier must be non-zero and explicitly NOT VERIFIED")
@@ -41,8 +47,10 @@ def main() -> None:
     if actor_payload["status"] != "NOT VERIFIED":
         raise AssertionError("actor-only payload must remain NOT VERIFIED")
     transcript = actor_payload["actor"]["transcript"]
-    if len([item for item in transcript if item["role"] == "user"]) != 2:
-        raise AssertionError("multi-turn scenario was not preserved in one actor transcript")
+    user_turns = [item for item in transcript if item["role"] == "user"]
+    assistant_turns = [item for item in transcript if item["role"] == "assistant"]
+    if len(user_turns) != expected_turns or len(assistant_turns) != expected_turns:
+        raise AssertionError("all scenario turns must be preserved in one actor transcript")
 
     verified = run("--verifier-command", f"{sys.executable} {VERIFIER}")
     if verified.returncode != 0:
