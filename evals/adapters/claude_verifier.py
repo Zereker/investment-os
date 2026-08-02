@@ -151,27 +151,55 @@ def main() -> int:
     if payload.get("is_error"):
         raise SystemExit(f"verifier reported an error turn: {str(payload.get('result'))[:400]}")
 
+    verified_session = payload.get("session_id")
+    if verified_session != verifier_session_id:
+        raise SystemExit(
+            "verifier session identity unverified: asked for "
+            f"{verifier_session_id}, CLI reported {verified_session!r}"
+        )
+
     judged = extract_json(payload["result"])
 
-    # Normalize against the rubric: the behavior strings must match the scenario
-    # exactly and in order, so a paraphrase from the model cannot silently
-    # re-scope what was judged.
-    required_checks = []
-    for index, behavior in enumerate(required):
-        item = judged["required_checks"][index]
-        required_checks.append({
-            "behavior": behavior,
-            "passed": bool(item["passed"]),
-            "evidence": str(item["evidence"]).strip(),
-        })
-    forbidden_checks = []
-    for index, behavior in enumerate(forbidden):
-        item = judged["forbidden_checks"][index]
-        forbidden_checks.append({
-            "behavior": behavior,
-            "triggered": bool(item["triggered"]),
-            "evidence": str(item["evidence"]).strip(),
-        })
+    # Validate strictly; never repair. Coercing here would defeat the schema
+    # integrity run.py enforces downstream: bool("false") is True, str(None) is
+    # a non-empty "None" that satisfies a non-empty check, and rewriting
+    # "behavior" from the rubric would silently correct a model that judged the
+    # wrong line. A malformed verdict must surface as NOT VERIFIED, not be
+    # cleaned up into a plausible one.
+    def checked(section: str, index: int, behavior: str, flag: str) -> dict:
+        items = judged.get(section)
+        if not isinstance(items, list) or index >= len(items):
+            raise SystemExit(f"verifier output missing {section}[{index}]")
+        item = items[index]
+        if not isinstance(item, dict):
+            raise SystemExit(f"verifier {section}[{index}] is not an object")
+        if item.get("behavior") != behavior:
+            raise SystemExit(
+                f"verifier {section}[{index}] judged a different behavior than the rubric: "
+                f"{item.get('behavior')!r}"
+            )
+        value = item.get(flag)
+        if not isinstance(value, bool):
+            raise SystemExit(
+                f"verifier {section}[{index}].{flag} must be a JSON boolean, got {value!r}"
+            )
+        evidence = item.get("evidence")
+        if not isinstance(evidence, str) or not evidence.strip():
+            raise SystemExit(
+                f"verifier {section}[{index}].evidence must be a non-empty string, got {evidence!r}"
+            )
+        return {"behavior": behavior, flag: value, "evidence": evidence.strip()}
+
+    for section, expected in (("required_checks", required), ("forbidden_checks", forbidden)):
+        items = judged.get(section)
+        if not isinstance(items, list) or len(items) != len(expected):
+            raise SystemExit(
+                f"verifier must return exactly {len(expected)} {section}, got "
+                f"{len(items) if isinstance(items, list) else type(items).__name__}"
+            )
+
+    required_checks = [checked("required_checks", i, b, "passed") for i, b in enumerate(required)]
+    forbidden_checks = [checked("forbidden_checks", i, b, "triggered") for i, b in enumerate(forbidden)]
 
     verdict = "pass" if (
         all(item["passed"] for item in required_checks)
@@ -187,7 +215,12 @@ def main() -> int:
                 "separate_process": True,
                 "separate_session": True,
                 "actor_session_id": actor["session_id"],
-                "verifier_session_id": verifier_session_id,
+                # The CLI-reported id, checked above to equal the one requested.
+                # Minting a UUID proves nothing on its own: `claude -p` reuses
+                # the caller's session when none is passed, which would make a
+                # clean-session claim false while still looking schema-valid.
+                "verifier_session_id": verified_session,
+                "session_identity_verified": True,
                 "different_harness": False,
                 "different_model": MODEL != os.environ.get("EVAL_ACTOR_MODEL", "claude-sonnet-5"),
                 "verifier_model": MODEL,

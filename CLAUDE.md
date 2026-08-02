@@ -1,6 +1,6 @@
 # Claude Code Entry — Investment OS
 
-本文件是 Claude Code 的冷启动入口，只规定如何加载和运行系统，不复制投资参数。具体规则、阈值、公式和投资宇宙必须每次从默认分支 HEAD 读取。
+本文件是 Claude Code 的冷启动入口，只规定如何加载和运行系统，不复制投资参数。具体规则、阈值、公式和投资宇宙必须每次从**本次安装所分发的政策文件**读取。默认分支 HEAD 是这些文件的规范来源，但会话不在运行时另行获取更新：分发是否落后于默认分支属于发版问题，不是会话能自证的问题（见 `docs/SKILL-DISTRIBUTION.md` 的 Version boundary）。
 
 ## 1. Mandatory Start
 
@@ -30,7 +30,7 @@ Investment OS 是一个 router 加多个可组合 Skills：
 - `routing-investment-research`：隔离未批准研究；
 - `auditing-investment-os`：审计政策、实现、隐私、测试和运行准备度。
 
-Skill 只保存流程，不保存易变参数。每次运行都必须重读 HEAD。
+Skill 只保存流程，不保存易变参数。每次运行都必须重读本次分发的政策文件，不得沿用聊天记忆、旧摘要或上次运行的结论。
 
 ## 3. Runtime Chain
 

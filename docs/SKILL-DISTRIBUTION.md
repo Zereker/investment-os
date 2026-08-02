@@ -15,7 +15,19 @@ broker runtime                      current private account state
 
 ## Version boundary
 
-The repository default-branch HEAD identifies the current investment policy. The plugin distribution has a separate SemVer read from `.plugin-version` and copied into the harness manifests.
+Three things are easy to conflate and must stay distinct:
+
+| Layer | What it is | Who establishes it |
+|---|---|---|
+| **Canonical authority** | The default-branch HEAD identifies the current investment policy. Policy changes happen here. | The repository |
+| **Session input** | The policy files of the installed distribution. A session reads these and only these; it never fetches a newer copy at runtime. | The installation |
+| **Provenance** | Each released `.plugin-version` has a matching Git tag, and that tag is the record of the source commit the distribution was cut from. | The release, at release time |
+
+A session therefore reports the distribution version it is running, never a commit it resolved for itself. An auditor who needs the exact source commit resolves version → tag → commit offline; nothing about that requires the running session to reach a network or a repository.
+
+The distribution can be behind the default branch. That is a release concern, surfaced by comparing versions and tags — not something a session can detect about itself, and not something it should claim to have checked.
+
+The plugin distribution has a separate SemVer read from `.plugin-version` and copied into the harness manifests.
 
 **Plugin distribution version is not an Investment OS policy version.** Policy history belongs in `Decision-Log.md`; defects belong in `BUGLOG.md`; concrete code history belongs in commits and pull requests.
 

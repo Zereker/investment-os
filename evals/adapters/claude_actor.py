@@ -102,10 +102,19 @@ def claude_turn(prompt: str, session_id: str, first: bool) -> tuple[str, dict]:
     text = payload.get("result")
     if not isinstance(text, str) or not text.strip():
         raise RuntimeError("claude returned an empty assistant turn")
+    # Minting a UUID is not proof. `claude -p` reuses the caller's session when
+    # none is passed, so a clean-session claim has to be checked against what
+    # the CLI actually reports, not against what we asked for.
+    reported = payload.get("session_id")
+    if reported != session_id:
+        raise RuntimeError(
+            f"session identity unverified: asked for {session_id}, CLI reported {reported!r}"
+        )
     meta = {
         "num_turns": payload.get("num_turns"),
         "used_tools": isinstance(payload.get("num_turns"), int) and payload["num_turns"] > 1,
         "permission_denials": payload.get("permission_denials", []),
+        "cli_session_id": reported,
     }
     return text, meta
 
@@ -126,6 +135,12 @@ def main() -> int:
         transcript.append({"role": "assistant", "content": reply})
         turn_meta.append(meta)
 
+    # Every turn must have run in the one session; a resumed turn that reported
+    # a different id would mean the transcript is not a single conversation.
+    reported_ids = {m["cli_session_id"] for m in turn_meta}
+    if reported_ids != {session_id}:
+        raise RuntimeError(f"turns did not share one session: {sorted(reported_ids)}")
+
     json.dump(
         {
             "session_id": session_id,
@@ -136,6 +151,7 @@ def main() -> int:
                 "mcp_servers": "none (--strict-mcp-config with empty config)",
                 "tools": {"allowed": ALLOWED_TOOLS, "denied": DENIED_TOOLS},
                 "persistent_session": len(turns) > 1,
+                "session_identity_verified": True,
                 # Not judged by the verifier; kept so a reader can tell whether
                 # a missing behavior was never attempted or merely unspoken.
                 "turn_observability": turn_meta,

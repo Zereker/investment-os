@@ -55,7 +55,7 @@ Investment OS 通过一个 router 分发多个可组合 Skills：
 - `routing-investment-research`
 - `auditing-investment-os`
 
-共享源位于 [`skills/`](skills/README.md)，Claude Code 与 Codex 使用各自的薄 manifest。Skill 只保存流程，不保存易变投资参数；每次运行必须重读默认分支 HEAD。
+共享源位于 [`skills/`](skills/README.md)，Claude Code 与 Codex 使用各自的薄 manifest。Skill 只保存流程，不保存易变投资参数；每次运行必须重读本次分发的政策文件（规范来源为默认分支 HEAD，但会话不在运行时获取更新）。
 
 ## Fail-Closed Rules
 

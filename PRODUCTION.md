@@ -1,6 +1,6 @@
 # Investment OS — Production Contract
 
-本文件定义 Production 的运行、控制和执行边界。它不创造投资参数；现行参数始终来自默认分支 HEAD 中的 IPS、Constitution、Operating System、Transition Plan 与 Journal。
+本文件定义 Production 的运行、控制和执行边界。它不创造投资参数；现行参数始终来自 IPS、Constitution、Operating System、Transition Plan 与 Journal——以默认分支 HEAD 为规范来源，会话则读取本次安装所分发的这些文件。
 
 ## 1. 权威与优先级
 
@@ -99,7 +99,7 @@ IC 批准只表示该候选可以进入执行授权阶段。它不是 Broker 授
 
 执行过程中不得临时引入指标、改变阈值或更换口径。新策略语义必须进入 `Research/`，经过独立研究、书面提案、所有者批准和 Production 文档同步后方可生效。
 
-`.plugin-version` 仅表示 Skill / Plugin 分发版本，不表示投资政策版本。现行政策始终以默认分支 HEAD 为准。
+`.plugin-version` 仅表示 Skill / Plugin 分发版本，不表示投资政策版本。现行政策始终以默认分支 HEAD 为规范来源；会话报告自己运行的分发版本，不得报告一个自行解析出来的 commit，也不得声称已确认该分发是最新的。
 
 ## 8. 隐私与留痕
 

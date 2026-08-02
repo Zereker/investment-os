@@ -19,6 +19,22 @@
 - 逻辑上循环：用一份可能已过期的 Skill，去指示 Agent 校验这份 Skill 是否过期。过期的分发携带的也是过期的校验指令。
 - 实测证据：要求输出 HEAD SHA 后，Agent 两次运行报出不同 revision，其一是特性分支而非默认分支，且 `git rev-parse` 只反映上次 fetch，无法证明「最新」。结果是把原本含糊但诚实的来源引用，换成了精确却未经验证的 commit id——制造虚假权威。
 
+### 三层语义（独立审阅意见后补充）
+
+初版只改了 Skill 层，导致同一个安装包出现两套 Mandatory Start：`CLAUDE.md` 等文件仍要求「每次从默认分支 HEAD 读取」，而 Skill 已改为「分发包内容即权威」。现统一为三层，互不混淆：
+
+| 层 | 含义 | 由谁确立 |
+|---|---|---|
+| 规范权威 | 默认分支 HEAD 标识现行投资政策，政策变更在此发生 | 仓库 |
+| 会话实际输入 | 本次安装所分发的政策文件；会话只读它，不在运行时取更新 | 安装 |
+| 来源证明 | 每个已发布 `.plugin-version` 对应一个 Git tag，该 tag 记录这份分发切自哪个 commit | 发版时 |
+
+会话报告自己运行的分发版本，不报告自行解析的 commit；审计者按 版本 → tag → commit 离线还原。分发落后于默认分支属于发版问题，会话无法自证、也不得声称已确认。
+
+同步更新：`CLAUDE.md`、`PROJECT.md`、`PRODUCTION.md`、`README.md`、`docs/SKILL-DISTRIBUTION.md` 与两份 plugin manifest 描述；`check_skill_distribution.py` 断言三层标题存在。
+
+`.plugin-version` 自 `0.1.0` 升至 `0.2.0`：Skill 契约的权威来源语义发生实质变更。（`0.1.0` 实际从未打 tag 发布。）
+
 ### 非交易声明
 
 本决定只修正 Skill 层的权威来源与版本语义，不改变投资宇宙、配置、资金公式、回撤规则或任何交易权限，不授权任何订单。

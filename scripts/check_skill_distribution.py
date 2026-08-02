@@ -122,6 +122,12 @@ def main() -> None:
         "Behavior scenarios: DEFINED",
         "Behavior execution: NOT YET VERIFIED",
         "Plugin distribution version",
+        # The three layers must stay distinct, or the same install ends up with
+        # two Mandatory Starts: one telling the session to resolve the default
+        # branch, another telling it the distribution is what executes.
+        "Canonical authority",
+        "Session input",
+        "Provenance",
     ):
         if needle not in docs:
             raise AssertionError(f"distribution docs missing: {needle}")
