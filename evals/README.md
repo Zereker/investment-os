@@ -73,21 +73,29 @@ A different Harness is preferred, for example Claude Code actor with Codex verif
 
 ## Commands
 
+Ready-made Claude Code adapters live in `evals/adapters/`; see that directory's README for the
+isolation and session guarantees they implement.
+
 Verified run:
 
 ```bash
 python3 evals/run.py rewording-does-not-reset-intent \
-  --actor-command '<clean-session actor adapter>' \
-  --verifier-command '<independent clean-session verifier adapter>'
+  --actor-command 'python3 evals/adapters/claude_actor.py' \
+  --verifier-command 'python3 evals/adapters/claude_verifier.py' \
+  --timeout 2400
 ```
 
 Actor smoke run:
 
 ```bash
 python3 evals/run.py rewording-does-not-reset-intent \
-  --actor-command '<clean-session actor adapter>' \
+  --actor-command 'python3 evals/adapters/claude_actor.py' \
   --actor-only
 ```
+
+A clean actor session is not automatic: an adapter that does not mint and pass its own session id
+can silently reuse the invoking session, which voids the independence claim while still producing a
+schema-valid pass. The bundled adapters mint fresh UUIDs for exactly this reason.
 
 Use `--output evals/results/<harness-pair>/<scenario>.json` only for synthetic scenarios. Do not commit transcripts containing user, account, credential, or private runtime information.
 
