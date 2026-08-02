@@ -23,6 +23,7 @@ def reject_runtime_artifacts() -> None:
         "account.json", "portfolio.json", "positions.json", "balances.json",
         "orders.json", "trades.json", "fills.json", "daily-report.md",
         "daily_report.md", "daily-brief.md", "daily_brief.md", "ibkr.json", "ibkr.csv",
+        "execution-receipt.json", "authorization.json",
     }
     forbidden_parts = {"runtime", "account-data", "portfolio-data", "private-data"}
     violations: list[str] = []
@@ -51,19 +52,21 @@ def reject_policy_parameters(path: str) -> None:
 
 
 def main() -> None:
-    require("PROJECT.md", "Observe → Understand → Decide → Monitor → Repeat", "Repository Stores Knowledge, Never Portfolio", "Runtime Data Is Ephemeral", "Human Executes Trades", "相同的有效输入和相同的生产规则，应得到相同、可解释、可复核的结论")
+    require("PROJECT.md", "Observe → Understand → Decide → Monitor → Repeat", "Repository Stores Knowledge, Never Portfolio", "Runtime Data Is Ephemeral", "Owner-Authorized Broker Execution", "相同的有效输入和相同的生产规则，应得到相同、可解释、可复核的结论")
     require("02-Operating-System/Daily-Report-Contract.md", "Investment Daily Report", "Fact: 可验证数据或计算结果", "Production Decision", "Next Observation Conditions", "自动提交日报到公开仓库")
     require("01-Constitution/Investment-Universe.md", "SPYM", "QQQM", "SOXX", "Production 是封闭投资宇宙", "Out-of-Universe", "任何 AI、脚本、日报或临时会话都无权自行扩展投资宇宙")
     require("scripts/daily_brief.py", 'UNIVERSE = ("SPYM", "QQQM", "SOXX")', "DATA INCOMPLETE", "Why Not the Others", "never writes inputs or output to disk")
     require("README.md", "PROJECT.md", "Daily-Report-Contract.md", "仓库保存规则，不保存个人组合")
-    require("AGENTS.md", "This contract contains procedure, never investment policy parameters", "Fresh Rule Source", "Fresh Runtime State", "Source and Authority Declaration", "No Inherited Approval", "Behavioral and Procedural Control Gate", "Independent Second Opinion", "Order and Position Verification", "Journal Single-Writer Rule", "Manual figures, screenshots, pasted tables and prior reports", "Agents must not push directly to the protected default branch")
+    require("AGENTS.md", "This contract contains procedure, never investment policy parameters", "Fresh Rule Source", "Fresh Runtime State", "Source and Authority Declaration", "No Inherited Approval", "Behavioral and Procedural Control Gate", "Independent Second Opinion", "Order and Position Verification", "Broker Execution Runtime", "Journal Single-Writer Rule", "Manual figures, screenshots, pasted tables and prior reports", "Agents must not push directly to the protected default branch")
     require("skills/README.md", "composable skill system", "using-investment-os", "reconstructing-portfolio-state", "enforcing-behavioral-controls", "running-daily-review", "running-monthly-review", "evaluating-transaction-candidates", "routing-investment-research", "auditing-investment-os", "tests/", "evals/")
-    require("skills/using-investment-os/SKILL.md", "name: using-investment-os", "Investment OS is a composable skill system", "Mandatory start", "Never inherit approval")
+    require("skills/using-investment-os/SKILL.md", "name: using-investment-os", "Investment OS is a composable skill system", "Mandatory start", "Never inherit approval", "execution-runtime")
     require("skills/reconstructing-portfolio-state/SKILL.md", "name: reconstructing-portfolio-state", "Manual figures", "DATA INCOMPLETE")
     require("skills/enforcing-behavioral-controls/SKILL.md", "name: enforcing-behavioral-controls", "underlying transaction intent", "never approval")
     require("skills/running-daily-review/SKILL.md", "name: running-daily-review", "REQUIRED SUB-SKILLS", "fail-closed")
     require("skills/running-monthly-review/SKILL.md", "name: running-monthly-review", "REQUIRED SUB-SKILLS", "Never generate an executable order")
-    require("skills/evaluating-transaction-candidates/SKILL.md", "name: evaluating-transaction-candidates", "Research, prior candidates", "Never place an order")
+    require("skills/evaluating-transaction-candidates/SKILL.md", "name: evaluating-transaction-candidates", "Research, prior candidates", "A candidate decision is not execution authority", "load `execution-runtime`")
+    require("skills/execution-runtime/SKILL.md", "name: execution-runtime", "single-operation-current-session", "read back authoritative broker state", "no silent retry")
+    require("scripts/execution_runtime.py", "operation_digest", "submit_count", "EXECUTION UNKNOWN", "authoritative read_back missing")
     require("skills/routing-investment-research/SKILL.md", "name: routing-investment-research", "never an active rule")
     require("skills/auditing-investment-os/SKILL.md", "name: auditing-investment-os", "does not itself change policy")
     reject_policy_parameters("AGENTS.md")
