@@ -60,7 +60,11 @@ def main() -> None:
     require("README.md", "PROJECT.md", "Daily-Report-Contract.md", "仓库保存规则，不保存个人组合")
     require("AGENTS.md", "This contract contains procedure, never investment policy parameters", "Fresh Rule Source", "Fresh Runtime State", "Source and Authority Declaration", "No Inherited Approval", "Behavioral and Procedural Control Gate", "Independent Second Opinion", "Order and Position Verification", "Broker Execution Runtime", "Journal Single-Writer Rule", "Manual figures, screenshots, pasted tables and prior reports", "Agents must not push directly to the protected default branch")
     require("skills/README.md", "composable skill system", "using-investment-os", "reconstructing-portfolio-state", "enforcing-behavioral-controls", "running-daily-review", "running-monthly-review", "evaluating-transaction-candidates", "routing-investment-research", "auditing-investment-os", "tests/", "evals/")
-    require("skills/using-investment-os/SKILL.md", "name: using-investment-os", "Investment OS is a composable skill system", "Mandatory start", "Never inherit approval", "execution-runtime")
+    # "resolved HEAD SHA" closes the loop on the mandatory first step: resolving
+    # HEAD was already required, but nothing made it observable, so skipping it
+    # carried no consequence and a formal ruling could cite policy files by name
+    # without establishing the revision it ruled under.
+    require("skills/using-investment-os/SKILL.md", "name: using-investment-os", "Investment OS is a composable skill system", "Mandatory start", "Never inherit approval", "execution-runtime", "resolved HEAD SHA", "stop formal work")
     require("skills/reconstructing-portfolio-state/SKILL.md", "name: reconstructing-portfolio-state", "Manual figures", "DATA INCOMPLETE")
     require("skills/enforcing-behavioral-controls/SKILL.md", "name: enforcing-behavioral-controls", "underlying transaction intent", "never approval")
     require("skills/running-daily-review/SKILL.md", "name: running-daily-review", "REQUIRED SUB-SKILLS", "DecisionPacket", "renderer may explain or format", "must not recompute")
