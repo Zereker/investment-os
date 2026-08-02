@@ -1,0 +1,25 @@
+name: Temporary current runtime crosslink migration
+
+on:
+  push:
+    branches:
+      - agent/documentation-governance
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: agent/documentation-governance
+      - run: python3 scripts/_add_current_runtime_crosslinks.py
+      - run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add PRODUCTION.md CLAUDE.md 02-Operating-System/Monthly-Workflow.md
+          git commit -m "docs: restore current runtime crosslinks"
+          git push origin HEAD:agent/documentation-governance
