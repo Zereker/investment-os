@@ -1,6 +1,6 @@
 {
   "name": "investment-os",
-  "version": "6.4.0",
+  "version": "0.1.0",
   "description": "Policy-driven portfolio review and investment-system audit workflows using current repository rules and fresh authoritative runtime state.",
   "author": {
     "name": "Zereker",

@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS = ROOT / "skills"
-VERSION = "6.4.0"
+VERSION = (ROOT / ".plugin-version").read_text(encoding="utf-8").strip()
 REQUIRED_SKILLS = {
     "using-investment-os",
     "reconstructing-portfolio-state",
@@ -73,6 +73,9 @@ def validate_skill(path: Path) -> None:
 
 
 def main() -> None:
+    if not re.fullmatch(r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)", VERSION):
+        raise AssertionError(".plugin-version must contain a plain SemVer value")
+
     actual = {path.parent.name for path in SKILLS.glob("*/SKILL.md")}
     missing = REQUIRED_SKILLS - actual
     if missing:
@@ -97,7 +100,7 @@ def main() -> None:
         if manifest.get("name") != "investment-os":
             raise AssertionError(f"{label} manifest has wrong name")
         if manifest.get("version") != VERSION:
-            raise AssertionError(f"{label} manifest version must be {VERSION}")
+            raise AssertionError(f"{label} manifest version must match .plugin-version ({VERSION})")
         if manifest.get("repository") != "https://github.com/Zereker/investment-os":
             raise AssertionError(f"{label} manifest has wrong repository")
     if codex.get("skills") != "./skills/":
@@ -111,7 +114,15 @@ def main() -> None:
         raise AssertionError("Claude SessionStart bootstrap is not wired")
 
     docs = (ROOT / "docs" / "SKILL-DISTRIBUTION.md").read_text(encoding="utf-8")
-    for needle in ("composable skill library", "Claude Code", "Codex", "Testing model", "evals/"):
+    for needle in (
+        "composable skill library",
+        "Claude Code",
+        "Codex",
+        "Testing model",
+        "Behavior scenarios: DEFINED",
+        "Behavior execution: NOT YET VERIFIED",
+        "Plugin distribution version",
+    ):
         if needle not in docs:
             raise AssertionError(f"distribution docs missing: {needle}")
 

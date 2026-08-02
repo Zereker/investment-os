@@ -109,6 +109,8 @@ Investment OS 以一个跨 Harness 插件分发多个可组合 Skills，而不�
 - `evals/`：synthetic Agent 行为压力场景
 - `BUGLOG.md`：可靠性缺陷、根因和防复发措施
 - `Decision-Log.md`：改变系统方向或产生长期影响的决定
+- `.plugin-version`：仅用于 Skill / Plugin 分发的独立 SemVer，不表示投资政策版本
+- Git tags / GitHub Releases：插件分发发布记录；现行政策始终以默认分支 HEAD 为准
 - `Research/`：未生效的研究、假设和版本提案
 - `00-IPS/`：使命、期限、风险与治理
 - `01-Constitution/`：不可随意改变的目标配置和边界
@@ -117,7 +119,6 @@ Investment OS 以一个跨 Harness 插件分发多个可组合 Skills，而不�
 - `04-Alpha/`：板块倾斜规则、生命周期和当前登记
 - `05-Journal/`：重大投资决策记录；不得保存个人账户状态
 - `06-Lessons/`：长期有效的经验
-- `07-Releases/`：版本发布说明
 - `08-Data/`：Production 数据契约、质量闸门和不含个人状态的公共核查资料
 - `scripts/`：政策、产品、Skill 与隐私检查，以及规则计算工具
 
