@@ -11,6 +11,15 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def main() -> None:
+    legacy_checker = ROOT / "scripts" / "check_policy_consistency_legacy.py"
+    if legacy_checker.exists():
+        raise AssertionError("legacy policy checker must not exist")
+
+    checker = (ROOT / "scripts" / "check_policy_consistency.py").read_text(encoding="utf-8")
+    for forbidden in ("ast.NodeTransformer", "exec(compile", "check_policy_consistency_legacy.py"):
+        if forbidden in checker:
+            raise AssertionError(f"policy checker must execute directly; found {forbidden!r}")
+
     retired = ROOT / "07-Releases"
     if retired.exists():
         files = sorted(str(path.relative_to(ROOT)) for path in retired.rglob("*") if path.is_file())
