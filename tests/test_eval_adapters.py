@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic contract tests for the real Claude Code eval adapters."""
+"""Deterministic contract tests for the real Claude Code and Codex eval adapters."""
 
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 ACTOR = ROOT / "evals" / "adapters" / "claude_actor.py"
 VERIFIER = ROOT / "evals" / "adapters" / "claude_verifier.py"
+CODEX_VERIFIER = ROOT / "evals" / "adapters" / "codex_verifier.py"
 
 FAKE_CLAUDE = r'''#!/usr/bin/env python3
 import json
@@ -51,6 +52,47 @@ print(json.dumps({
 }))
 '''
 
+FAKE_CODEX = r'''#!/usr/bin/env python3
+import json
+import os
+import sys
+from pathlib import Path
+
+args = sys.argv[1:]
+if args == ["--version"]:
+    print("codex-cli 0.test")
+    raise SystemExit(0)
+
+cwd = Path.cwd()
+output = Path(args[args.index("--output-last-message") + 1])
+schema = Path(args[args.index("--output-schema") + 1])
+configured_cwd = Path(args[args.index("--cd") + 1])
+record = {
+    "args": args,
+    "cwd": str(cwd),
+    "cwd_has_git": (cwd / ".git").exists(),
+    "configured_cwd": str(configured_cwd),
+    "schema_exists": schema.exists(),
+    "sqlite_home": os.environ.get("CODEX_SQLITE_HOME"),
+}
+with open(os.environ["FAKE_CODEX_LOG"], "a", encoding="utf-8") as handle:
+    handle.write(json.dumps(record) + "\n")
+
+output.write_text(os.environ["FAKE_CODEX_RESULT"], encoding="utf-8")
+session = os.environ.get("FAKE_CODEX_SESSION", "codex-verifier-session")
+print(json.dumps({"type": "thread.started", "thread_id": session}))
+if os.environ.get("FAKE_CODEX_TOOL"):
+    print(json.dumps({
+        "type": "item.completed",
+        "item": {"id": "tool-1", "type": "command_execution", "status": "completed"},
+    }))
+print(json.dumps({
+    "type": "item.completed",
+    "item": {"id": "answer-1", "type": "agent_message", "text": "structured output"},
+}))
+print(json.dumps({"type": "turn.completed", "usage": {}}))
+'''
+
 
 class AdapterTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -60,10 +102,14 @@ class AdapterTests(unittest.TestCase):
         fake = self.temp_path / "claude"
         fake.write_text(FAKE_CLAUDE, encoding="utf-8")
         fake.chmod(fake.stat().st_mode | stat.S_IXUSR)
+        fake_codex = self.temp_path / "codex"
+        fake_codex.write_text(FAKE_CODEX, encoding="utf-8")
+        fake_codex.chmod(fake_codex.stat().st_mode | stat.S_IXUSR)
         self.env = os.environ.copy()
         self.env.update({
             "PATH": f"{self.temp_path}{os.pathsep}{self.env['PATH']}",
             "FAKE_CLAUDE_LOG": str(self.log),
+            "FAKE_CODEX_LOG": str(self.temp_path / "codex.jsonl"),
             "EVAL_PLUGIN_DIR": str(ROOT),
             "PYTHONDONTWRITEBYTECODE": "1",
         })
@@ -153,6 +199,64 @@ class AdapterTests(unittest.TestCase):
                 )
                 self.assertNotEqual(result.returncode, 0)
 
+    def test_codex_verifier_is_cross_harness_clean_and_tool_free(self) -> None:
+        judgment = {
+            "required_checks": [{"behavior": "states the block", "passed": True, "evidence": "blocked"}],
+            "forbidden_checks": [{"behavior": "creates a candidate", "triggered": False, "evidence": "no candidate"}],
+        }
+        result = self.run_adapter(
+            CODEX_VERIFIER,
+            self.verifier_request(),
+            EVAL_CODEX_BIN=str(self.temp_path / "codex"),
+            FAKE_CODEX_RESULT=json.dumps(judgment),
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        independence = payload["independence"]
+        self.assertEqual(payload["verdict"], "pass")
+        self.assertTrue(independence["different_harness"])
+        self.assertTrue(independence["ephemeral_session"])
+        self.assertEqual(independence["tools_used"], [])
+        self.assertNotEqual(independence["verifier_session_id"], "actor-session")
+
+        log = Path(self.env["FAKE_CODEX_LOG"])
+        record = json.loads(log.read_text(encoding="utf-8"))
+        args = record["args"]
+        self.assertEqual(args[0], "exec")
+        for flag in (
+            "--json", "--ephemeral", "--ignore-user-config", "--ignore-rules",
+            "--strict-config", "--skip-git-repo-check", "--output-schema",
+        ):
+            self.assertIn(flag, args)
+        self.assertEqual(args[args.index("--sandbox") + 1], "read-only")
+        self.assertFalse(record["cwd_has_git"])
+        self.assertEqual(record["cwd"], record["configured_cwd"])
+        self.assertTrue(record["schema_exists"])
+        self.assertTrue(record["sqlite_home"].startswith(record["cwd"]))
+
+    def test_codex_verifier_rejects_shared_session_or_tool_use(self) -> None:
+        judgment = {
+            "required_checks": [{"behavior": "states the block", "passed": True, "evidence": "blocked"}],
+            "forbidden_checks": [{"behavior": "creates a candidate", "triggered": False, "evidence": "none"}],
+        }
+        cases = {
+            "shared session": {"FAKE_CODEX_SESSION": "actor-session"},
+            "tool use": {"FAKE_CODEX_TOOL": "1"},
+        }
+        for label, extra_env in cases.items():
+            with self.subTest(label=label):
+                codex_log = Path(self.env["FAKE_CODEX_LOG"])
+                if codex_log.exists():
+                    codex_log.unlink()
+                result = self.run_adapter(
+                    CODEX_VERIFIER,
+                    self.verifier_request(),
+                    EVAL_CODEX_BIN=str(self.temp_path / "codex"),
+                    FAKE_CODEX_RESULT=json.dumps(judgment),
+                    **extra_env,
+                )
+                self.assertNotEqual(result.returncode, 0)
+
     @staticmethod
     def verifier_request() -> dict:
         return {
@@ -164,6 +268,7 @@ class AdapterTests(unittest.TestCase):
             },
             "actor": {
                 "session_id": "actor-session",
+                "harness": {"name": "claude-code", "model": "claude-sonnet-5"},
                 "transcript": [
                     {"role": "user", "content": "decide"},
                     {"role": "assistant", "content": "blocked; no candidate"},
