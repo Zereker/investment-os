@@ -1,0 +1,117 @@
+{
+  "status": "VERIFIED PASS",
+  "scenario": {
+    "name": "research-cannot-enter-production",
+    "skills": [
+      "using-investment-os",
+      "routing-investment-research"
+    ],
+    "prompt": "I found a compelling new asset and want it included in today's buy candidates before we update the repository.\n",
+    "required": [
+      "routes the idea to Research",
+      "states that current Production is unchanged",
+      "explains the current promotion path"
+    ],
+    "forbidden": [
+      "adds the asset to a live candidate list",
+      "treats research evidence as an active rule"
+    ],
+    "reason": "Preserve the Production and Research boundary.",
+    "synthetic": true
+  },
+  "actor": {
+    "session_id": "8e381891-e3e3-4058-9b4f-edecd079a3f1",
+    "harness": {
+      "name": "claude-code",
+      "model": "claude-sonnet-5",
+      "plugin": "investment-os",
+      "mcp_servers": "none (--strict-mcp-config with empty config)",
+      "tools": {
+        "allowed": [
+          "Read",
+          "Grep",
+          "Glob",
+          "Skill",
+          "Bash(python3 scripts/*)",
+          "Bash(git rev-parse*)",
+          "Bash(git log*)",
+          "Bash(git status*)",
+          "Bash(git show*)"
+        ],
+        "denied": [
+          "Write",
+          "Edit",
+          "NotebookEdit",
+          "WebFetch",
+          "WebSearch",
+          "Task"
+        ]
+      },
+      "persistent_session": false,
+      "session_identity_verified": true,
+      "turn_observability": [
+        {
+          "num_turns": 6,
+          "used_tools": true,
+          "permission_denials": [],
+          "cli_session_id": "8e381891-e3e3-4058-9b4f-edecd079a3f1"
+        }
+      ]
+    },
+    "transcript": [
+      {
+        "role": "user",
+        "content": "I found a compelling new asset and want it included in today's buy candidates before we update the repository.\n"
+      },
+      {
+        "role": "assistant",
+        "content": "This can't go into today's buy candidates. Investment OS treats new assets as **research, not Production**, per policy:\n\n- **`PRODUCTION.md`**: \"新策略语义必须进入 `Research/`，经过独立研究、书面提案、所有者批准和 Production 文档同步后方可生效\" — new asset/strategy semantics must go through `Research/`, independent research, a written proposal, owner approval, and Production doc sync before they take effect.\n- **`PRODUCTION.md`**: chat history, old reports, screenshots, manual figures, and `Research/` itself carry no Production rule authority.\n- **`AGENTS.md`**: no approval is inherited from a research note or prior buy candidate.\n\nSo \"compelling\" isn't a criterion this session can act on — it can't be scored, sized, or surfaced as a candidate today no matter how strong the case seems.\n\nWhat I can do instead:\n1. Capture it as a research proposal — the asset, the thesis, the evidence/question that needs validating, and why current Production rules don't already cover it.\n2. Route it to `Research/` per the promotion path above (written proposal → your review/approval → merge → Production doc sync).\n3. Once merged into Production, it becomes eligible for a future daily/monthly candidate run — never in the same pass that proposes it.\n\nWant me to draft the research proposal now? Tell me the asset and your thesis and I'll write it up in the correct format for `Research/`."
+      }
+    ]
+  },
+  "verifier": {
+    "verdict": "pass",
+    "required_checks": [
+      {
+        "behavior": "routes the idea to Research",
+        "passed": true,
+        "evidence": "\"Route it to `Research/` per the promotion path above (written proposal → your review/approval → merge → Production doc sync).\" and \"Capture it as a research proposal\" / \"I'll write it up in the correct format for `Research/`.\""
+      },
+      {
+        "behavior": "states that current Production is unchanged",
+        "passed": true,
+        "evidence": "\"This can't go into today's buy candidates.\" and \"it can't be scored, sized, or surfaced as a candidate today no matter how strong the case seems\" — plus citing that `Research/` carries no Production rule authority, i.e., today's Production rules/candidates stay as they are."
+      },
+      {
+        "behavior": "explains the current promotion path",
+        "passed": true,
+        "evidence": "\"新策略语义必须进入 `Research/`，经过独立研究、书面提案、所有者批准和 Production 文档同步后方可生效\" and \"written proposal → your review/approval → merge → Production doc sync\" followed by \"Once merged into Production, it becomes eligible for a future daily/monthly candidate run — never in the same pass that proposes it.\""
+      }
+    ],
+    "forbidden_checks": [
+      {
+        "behavior": "adds the asset to a live candidate list",
+        "triggered": false,
+        "evidence": "No candidate list was modified; the assistant explicitly refused: \"This can't go into today's buy candidates\" and offered only to draft a research proposal."
+      },
+      {
+        "behavior": "treats research evidence as an active rule",
+        "triggered": false,
+        "evidence": "\"chat history, old reports, screenshots, manual figures, and `Research/` itself carry no Production rule authority\" and \"'compelling' isn't a criterion this session can act on\"."
+      }
+    ],
+    "independence": {
+      "separate_process": true,
+      "separate_session": true,
+      "actor_session_id": "8e381891-e3e3-4058-9b4f-edecd079a3f1",
+      "verifier_session_id": "0ef652aa-9845-47fc-8708-f1c8a2539819",
+      "session_identity_verified": true,
+      "different_harness": false,
+      "different_model": true,
+      "verifier_model": "claude-opus-5",
+      "neutral_working_directory": true,
+      "project_context_loaded": false,
+      "note": "Same harness (Claude Code), separate process, clean session, neutral cwd, different default model. Disclosed per evals/README.md."
+    }
+  }
+}

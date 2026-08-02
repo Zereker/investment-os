@@ -5,7 +5,7 @@ description: Use when proposing a new asset, indicator, strategy, threshold, exc
 
 # Routing Investment Research
 
-Read the current Research entry, evidence, approval, and release requirements from repository HEAD.
+Read the current Research entry, evidence, approval, and release requirements from the policy files distributed with this skill.
 
 Classify the request as research rather than Production. Define the question, evidence needed, decision owner, validation method, and promotion path without allowing the result to affect a live transaction.
 

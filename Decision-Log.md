@@ -2,6 +2,44 @@
 
 本文件记录改变系统方向或产生长期影响的决定。日常定投不逐笔记录。
 
+## 2026-08-02 — 分发出去的 Skill 以「加载即执行」为权威，不在运行时取最新
+
+### 决定
+
+- Skill 层不再要求 Agent 解析仓库 HEAD 或获取最新政策。**加载进会话的那份内容与版本，就是本次要执行的内容**；版本身份取自 `.plugin-version`。
+- `using-investment-os` 的 Core rule 与 Mandatory start、两份 Harness 映射表、以及各 domain skill 中「从 repository HEAD 读取」的表述，统一改为「读取随本 Skill 分发的政策文件」。
+- 会话不得声称、也不得暗示自己这份分发是最新的。分发是否落后属于**发版问题**，不属于会话内可自证的问题。
+- `AGENTS.md` 面向**在仓库上作业的 Agent**（有 git、开分支、提 PR），其 HEAD 协议保留不变；`PROJECT.md` / `PRODUCTION.md` / `README.md` 中「现行政策以默认分支 HEAD 为准」的规范来源陈述保留不变。
+- `check_product_contract.py` 增加断言：分发 Skill 中不得出现 `repository HEAD`（`auditing-investment-os` 例外，它审计仓库本身）。
+- 行为场景 `manual-figures-are-not-authority` 的必需行为相应改为「说明所依据的政策来源，且不得声称取过更新的版本」。
+
+### 原因
+
+- 通过 Harness 市场安装的插件**根本没有 git 仓库**，原措辞会让每一个正经安装的会话停止工作。
+- 逻辑上循环：用一份可能已过期的 Skill，去指示 Agent 校验这份 Skill 是否过期。过期的分发携带的也是过期的校验指令。
+- 实测证据：要求输出 HEAD SHA 后，Agent 两次运行报出不同 revision，其一是特性分支而非默认分支，且 `git rev-parse` 只反映上次 fetch，无法证明「最新」。结果是把原本含糊但诚实的来源引用，换成了精确却未经验证的 commit id——制造虚假权威。
+
+### 三层语义（独立审阅意见后补充）
+
+初版只改了 Skill 层，导致同一个安装包出现两套 Mandatory Start：`CLAUDE.md` 等文件仍要求「每次从默认分支 HEAD 读取」，而 Skill 已改为「分发包内容即权威」。现统一为三层，互不混淆：
+
+| 层 | 含义 | 由谁确立 |
+|---|---|---|
+| 规范权威 | 默认分支 HEAD 标识现行投资政策，政策变更在此发生 | 仓库 |
+| 会话实际输入 | 本次安装所分发的政策文件；会话只读它，不在运行时取更新 | 安装 |
+| 来源证明 | 每个已发布 `.plugin-version` 对应一个 Git tag，该 tag 记录这份分发切自哪个 commit | 发版时 |
+
+会话报告自己运行的分发版本，不报告自行解析的 commit；审计者按 版本 → tag → commit 离线还原。分发落后于默认分支属于发版问题，会话无法自证、也不得声称已确认。
+
+同步更新：`CLAUDE.md`、`PROJECT.md`、`PRODUCTION.md`、`README.md`、`docs/SKILL-DISTRIBUTION.md` 与两份 plugin manifest 描述；`check_skill_distribution.py` 断言三层标题存在。
+
+`.plugin-version` 自 `0.1.0` 升至 `0.2.0`：Skill 契约的权威来源语义发生实质变更。（`0.1.0` 实际从未打 tag 发布。）
+
+### 非交易声明
+
+本决定只修正 Skill 层的权威来源与版本语义，不改变投资宇宙、配置、资金公式、回撤规则或任何交易权限，不授权任何订单。
+
+
 ## 2026-08-02 — Skill 分发版本与政策版本解耦
 
 ### 决定

@@ -11,7 +11,7 @@ Reconstruct the current drawdown cycle from the current repository procedure and
 
 ## Required inputs
 
-- exact current repository HEAD and the current drawdown/state-reconstruction files;
+- the distributed policy files, including the current drawdown/state-reconstruction files;
 - historical closing-price series with sufficient coverage and a declared price basis;
 - current market price required by the workflow;
 - corroborating evidence for stages already executed in the current cycle;
@@ -28,7 +28,14 @@ Reconstruct the current drawdown cycle from the current repository procedure and
 
 ## Fail closed
 
-Return the repository-defined incomplete or review state and stop new drawdown deployment candidates when:
+State **both** of the following explicitly, in addition to stopping new drawdown deployment candidates. Reporting only one of them is itself a failure, because a reader cannot tell from a single status whether account reporting or deployment authority is the affected one:
+
+- `Account Health = WARN`
+- `drawdown deployment state = DATA INCOMPLETE`
+
+Other independent routine funding paths continue to be judged by their own data gates; this pair does not by itself halt them.
+
+Apply this when:
 
 - history coverage or price basis is uncertain;
 - executed-stage evidence conflicts;

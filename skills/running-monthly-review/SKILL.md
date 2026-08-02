@@ -7,7 +7,7 @@ description: Use when reviewing a contribution, routine funding allocation, stra
 
 **REQUIRED SUB-SKILLS:** use `reconstructing-portfolio-state` and `enforcing-behavioral-controls` first.
 
-Read the current monthly workflow, relevant Constitution files, deployment framework, and executable contracts from repository HEAD.
+Read the current monthly workflow, relevant Constitution files, deployment framework, and executable contracts from the policy files distributed with this skill.
 
 Use only confirmed runtime contribution, reserve, lifecycle, executed-state, position, and order inputs. Do not infer missing amounts or reuse previous-month state.
 

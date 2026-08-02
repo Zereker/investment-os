@@ -134,4 +134,4 @@ Daily 必须先生成机器权威 `DecisionPacket`，再由确定性 renderer �
 4. `03-Transition/`
 5. `05-Journal/`
 
-现行政策以默认分支 HEAD 为准。`.plugin-version` 仅用于 Skill / Plugin 分发 SemVer，不表示投资政策版本。
+现行政策以默认分支 HEAD 为准——这是规范来源。会话实际读取的是**本次安装所分发的政策文件**，不在运行时另行获取更新；已发布分发的 source commit 由对应 Git tag 在发版时记录。`.plugin-version` 仅用于 Skill / Plugin 分发 SemVer，不表示投资政策版本。

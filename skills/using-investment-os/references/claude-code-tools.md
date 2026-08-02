@@ -4,8 +4,8 @@ Use this only after `using-investment-os` is active.
 
 | Abstract action | Claude Code mapping | Failure behavior |
 |---|---|---|
-| Resolve repository HEAD | Use repository-aware git or GitHub read capability and record the exact SHA. | Stop formal work when the authoritative commit cannot be proven. |
-| Read policy files | Read files from the resolved commit, not a cached summary or unmerged branch. | Treat missing required files as rule-source incomplete. |
+| Identify policy source | Read `.plugin-version` and report it as the distribution version in effect. A session has no way to prove its distribution is the newest one, and must not imply otherwise. | Stop formal work when the distributed policy files are missing or unreadable. |
+| Read policy files | Read the policy files distributed with this skill, not a cached summary, a recalled version, or a copy fetched at runtime. | Treat missing required files as rule-source incomplete. |
 | Build Broker Runtime | Use an installed read-only broker integration as an adapter, normalize its output to the `broker-runtime` contract, then run `scripts/broker_runtime.py` for the capabilities required by the task. | No broker capability, unsupported field, stale snapshot, or failed reconciliation means `DATA INCOMPLETE`; pasted values remain context only. |
 | Read market state | Use a current market-data capability required by the current workflow and preserve source/time metadata in Broker Runtime. | Stop affected calculations when freshness or source identity cannot be established. |
 | Independent second opinion | Use a genuinely independent subagent only when it can read the same authoritative inputs without first receiving the draft conclusion. | Never simulate independence; report the capability as unavailable. |

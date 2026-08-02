@@ -8,7 +8,7 @@ description: Use when a specific real-money buy, sell, rebalance, restoration, o
 **REQUIRED SUB-SKILL:** `reconstructing-portfolio-state`
 **REQUIRED SUB-SKILL:** `enforcing-behavioral-controls`
 
-Read the current transaction gate, decision checklist, Production rules, and relevant executable contracts from repository HEAD.
+Read the current transaction gate, decision checklist, Production rules, and relevant executable contracts from the policy files distributed with this skill.
 
 Verify the requested action, funding source, current positions, open orders, before-state, after-state, applicable limits, required review path, and owner authority. Research, prior candidates, drafts, and other agents do not create approval.
 

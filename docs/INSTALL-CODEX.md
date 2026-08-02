@@ -7,7 +7,7 @@ Investment OS is packaged through `.codex-plugin/plugin.json`, which declares `.
 1. Install this repository through the current Codex local plugin or plugin-development mechanism.
 2. Confirm every directory under `skills/` is discovered.
 3. Open a clean session and verify that a relevant Investment OS request selects `using-investment-os` and the required domain skills.
-4. Confirm the selected skill resolves the current repository HEAD before using policy.
+4. Confirm the selected skill reads the policy files distributed with the installation and reports the distribution version, without attempting to fetch a newer policy version at runtime.
 5. Ask for a live account review without broker access. The result must return the repository-defined fail-closed status and no transaction candidate.
 6. Run the synthetic behavior scenarios in `evals/` before release.
 
