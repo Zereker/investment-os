@@ -64,7 +64,11 @@ def main() -> None:
     # must not send the agent off to fetch a newer policy version at runtime:
     # a marketplace install has no repository to resolve, and a stale copy
     # cannot certify its own freshness.
-    require("skills/using-investment-os/SKILL.md", "name: using-investment-os", "Investment OS is a composable skill system", "Mandatory start", "Never inherit approval", "execution-runtime", "distributed with this skill", "what shipped is what executes")
+    require("skills/using-investment-os/SKILL.md", "name: using-investment-os", "Investment OS is a composable skill system", "Mandatory start", "Never inherit approval", "execution-runtime", "distributed with this skill", "what shipped is what executes",
+            # The source obligation is stated once, with a consequence. Stating
+            # it twice in two vocabularies and with none was how it came to read
+            # as boilerplate and got skipped whenever an answer felt obvious.
+            "does not name its policy source is not a formal result")
     for skill in (ROOT / "skills").rglob("*.md"):
         rel = str(skill.relative_to(ROOT))
         # auditing-investment-os reviews the repository itself, where git exists

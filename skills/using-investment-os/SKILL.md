@@ -43,7 +43,7 @@ Investment OS is a composable skill system. Select every required domain skill b
 ## Mandatory start
 
 1. Read `AGENTS.md`, `PROJECT.md`, and `PRODUCTION.md` as distributed with this skill.
-2. State the policy source as the distribution version in `.plugin-version`. Never fetch, or claim to have fetched, a newer policy version at runtime: what shipped is what executes, and whether a distribution is current is a release concern rather than a session one.
+2. Establish the policy source for this session — the distribution version in `.plugin-version` plus the files just read — and carry it into every formal result as required by **Completion** below. Never fetch, or claim to have fetched, a newer policy version at runtime: what shipped is what executes, and whether a distribution is current is a release concern rather than a session one.
 3. Load only the domain skills required for the task.
 4. For live account work, build and validate the broker-neutral Broker Runtime before portfolio reconstruction.
 5. Never inherit approval from another agent or prior output.
@@ -61,4 +61,14 @@ A harness-specific connector is an adapter, not the Investment OS contract. Neve
 
 ## Completion
 
-Every formal result states the exact rule source, Broker Runtime health, authority boundary, decision status, and next verifiable observation condition. Every broker write additionally states the operation-specific authorization scope, adapter capability, read-back result, and verification status.
+Every formal result states, explicitly and by name:
+
+- **the policy source it was decided under** — the distribution version from `.plugin-version` together with the specific policy files or skills relied on;
+- Broker Runtime health;
+- the authority boundary;
+- the decision status;
+- the next verifiable observation condition.
+
+A result that does not name its policy source is not a formal result. `Per policy` without saying *which* policy is the exact failure this line exists to prevent: a reader cannot check a claim whose source is unstated. This is easiest to skip precisely when the answer feels obvious — a clear-cut fail-closed reply still has to say what it was decided under.
+
+Every broker write additionally states the operation-specific authorization scope, adapter capability, read-back result, and verification status.
