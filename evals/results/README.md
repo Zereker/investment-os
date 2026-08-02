@@ -5,6 +5,12 @@ Each JSON file holds the immutable scenario, the actor transcript and the indepe
 itemized verdict. Transcripts are synthetic by construction: the actor runs with no MCP servers, so
 no account figure can enter one.
 
+> **Harness provenance notice:** the JSON files currently stored here predate the disposable,
+> git-less actor distribution. Their harness metadata records the old Git allowlist, and the actor
+> ran from the source checkout. They are preserved as raw historical evidence, but they are not
+> post-isolation verification of the current bundled adapter. A fresh real-harness sweep is required
+> before reporting any scenario as `VERIFIED PASS` under the current adapter.
+
 ## Final sweep — head `17ccfc8`
 
 The stored JSON files are from this sweep. Every scenario was regenerated on the reviewed head under
