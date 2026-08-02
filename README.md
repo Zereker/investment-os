@@ -71,26 +71,42 @@ SPYM 回撤部署采用四档：≥10% / 15% / 20% / 25%，分别释放 1.5 / 3 
 - 仓库不维护重复的中央证券数据库；公共市场数据按已登记来源在运行时读取。
 - 普通数据变化不更新项目；只有规则、契约、公开证据或工具发生变化时才提交。
 
+## Agent Skills
+
+Investment OS 以一个跨 Harness 插件分发多个可组合 Skills，而不是把全部能力塞进一个大 Skill：
+
+- `using-investment-os`：统一入口与任务路由；
+- `reconstructing-portfolio-state`：重建实时账户与市场状态；
+- `enforcing-behavioral-controls`：执行多 Agent、订单与流程拦截；
+- `running-daily-review`：生成每日决策产品；
+- `running-monthly-review`：执行月度资金审查；
+- `evaluating-transaction-candidates`：评估具体真实资金候选；
+- `routing-investment-research`：将新标的和新规则隔离到 Research；
+- `auditing-investment-os`：审计政策、实现、隐私、CI 和运行准备度。
+
+共享 Skill 源位于 [`skills/`](skills/README.md)，Claude Code 与 Codex 通过各自的薄 manifest 分发。`tests/` 验证插件和确定性基础设施，`evals/` 定义 synthetic 压力场景验证 Agent 的实际行为。
+
 ## 如何使用
 
-> AI 执行者从 [CLAUDE.md](CLAUDE.md) 开始；产品目标与隐私边界先读 [PROJECT.md](PROJECT.md)。
+> AI 执行者从 [AGENTS.md](AGENTS.md) 和 `using-investment-os` 开始；产品目标与隐私边界先读 [PROJECT.md](PROJECT.md)。
 
-1. 读取 [产品契约](PROJECT.md)，确认任务属于系统职责且不越过隐私边界。
-2. 读取 [生产契约](PRODUCTION.md)。
-3. 读取 [投资政策声明](00-IPS/Investment-Policy-Statement.md) 和 [目标配置](01-Constitution/Target-Allocation.md)。
-4. 每日按 [Daily Review Workflow](02-Operating-System/Daily-Review.md) 取得实时数据，并按 [Daily Report Contract](02-Operating-System/Daily-Report-Contract.md) 输出日报。
-5. 每周按 [Weekly Review Workflow](02-Operating-System/Weekly-Review.md) 汇总运行质量与待处理项。
-6. 每月按 [Monthly Workflow](02-Operating-System/Monthly-Workflow.md) 执行固定投入、战略现金迁移与达档的回撤部署。
-7. 超出月度基线的部署只有回撤档位一条机械路径；主动加速属于规则例外，须进入完整 IC。
-8. 任何非例行真实资金候选先完成 [Investment Committee Packet](02-Operating-System/Decision-Checklist.md)。
-9. 每季度完成 [穿透手工核查](08-Data/LOOKTHROUGH_CHECK.md) 并审核倾斜与集中度。
-10. 所有新假设进入 [Research Sandbox](Research/README.md)，不得直接影响 Production。
-11. 每年审核系统规则、Policy Benchmark、影子基准和系统自身的决策质量。
+1. 读取产品契约与生产契约。
+2. 从当前默认分支 HEAD 选择相关 Skills。
+3. 每次从 IBKR 重建实时账户状态。
+4. 调用现行确定性脚本执行计算和一致性检查。
+5. 按当前 Daily、Monthly、Research 或 Audit 工作流输出。
+6. 数据或控制条件不足时失败关闭。
+7. 最终交易始终由账户所有者确认。
 
 ## 仓库结构
 
 - `PROJECT.md`：项目使命、产品边界、决策循环与隐私契约
 - `PRODUCTION.md`：生产系统入口、规则冻结、运行流程和交易闸门
+- `AGENTS.md`：跨 Agent 执行与授权契约
+- `skills/`：可组合、平台无关的 Agent Skills
+- `.claude-plugin/`、`.codex-plugin/`：跨 Harness 分发元数据
+- `tests/`：非 LLM 插件与基础设施测试
+- `evals/`：synthetic Agent 行为压力场景
 - `BUGLOG.md`：可靠性缺陷、根因和防复发措施
 - `Decision-Log.md`：改变系统方向或产生长期影响的决定
 - `Research/`：未生效的研究、假设和版本提案
@@ -103,13 +119,12 @@ SPYM 回撤部署采用四档：≥10% / 15% / 20% / 25%，分别释放 1.5 / 3 
 - `06-Lessons/`：长期有效的经验
 - `07-Releases/`：版本发布说明
 - `08-Data/`：Production 数据契约、质量闸门和不含个人状态的公共核查资料
-- `scripts/`：政策、产品与隐私检查，以及规则计算工具
-- `CLAUDE.md`：AI 执行手册
+- `scripts/`：政策、产品、Skill 与隐私检查，以及规则计算工具
 
 ## 权威顺序
 
 `PROJECT.md` 定义产品目标、隐私边界和系统行为原则，不创造资产配置参数。
 
-具体投资规则发生冲突时：投资政策声明 → Constitution → Operating System → Transition Plan → Journal。`PRODUCTION.md` 负责执行契约和入口，不覆盖以上策略优先级。聊天记录和 Research 不具有现行规则效力。
+具体投资规则发生冲突时：投资政策声明 → Constitution → Operating System → Transition Plan → Journal。`PRODUCTION.md` 负责执行契约和入口，不覆盖以上策略优先级。聊天记录、旧 Skill 摘要和 Research 不具有现行规则效力。
 
 本仓库用于长期投资决策纪律与工具研究，不构成面向他人的投资建议，不保证投资收益。

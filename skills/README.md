@@ -1,33 +1,42 @@
 # Investment OS Skills
 
-## Available Skill
+Investment OS is a composable skill system distributed through one plugin.
 
-- [`investment-os`](investment-os/SKILL.md) — portable execution and enforcement layer for the current repository policy.
+## Router
+
+- [`using-investment-os`](using-investment-os/SKILL.md) — bootstrap and task router.
+
+## Domain skills
+
+- [`reconstructing-portfolio-state`](reconstructing-portfolio-state/SKILL.md)
+- [`validating-drawdown-state`](validating-drawdown-state/SKILL.md)
+- [`enforcing-behavioral-controls`](enforcing-behavioral-controls/SKILL.md)
+- [`running-daily-review`](running-daily-review/SKILL.md)
+- [`running-monthly-review`](running-monthly-review/SKILL.md)
+- [`evaluating-transaction-candidates`](evaluating-transaction-candidates/SKILL.md)
+- [`routing-investment-research`](routing-investment-research/SKILL.md)
+- [`auditing-investment-os`](auditing-investment-os/SKILL.md)
 
 ## Architecture
 
 ```text
-Skill: procedure, routing, controls, failure behavior
-Repository HEAD: current policy and executable mirrors
-Broker runtime: current private account state
+Skills                 procedure, routing, controls and failure behavior
+Repository HEAD        current policy and deterministic tools
+Broker runtime         current private account state
+Harness adapters       discovery, bootstrap and abstract-action mapping
 ```
 
-The skill is intentionally parameter-free. It must be installed or loaded together with capabilities that can:
+Skills are parameter-free and platform-neutral. Claude Code receives the router through the session-start hook. Codex uses native Skill discovery. Harness-specific action mappings live under `using-investment-os/references/` and never rewrite domain Skills.
 
-- read the authoritative GitHub repository and resolve its current default-branch commit;
-- read the broker sources required by the current Production contract;
-- obtain the market inputs required by the current Production contract;
-- keep real account state ephemeral and private.
+## Tests and evals
 
-The skill does not include broker credentials, portfolio state, target allocations, security identifiers, thresholds, formulas, or executable orders.
+- `tests/`: executable non-LLM plugin, dependency, privacy and deterministic checks.
+- `evals/`: synthetic pressure scenarios and a real-agent behavior runner.
 
-## Use
+Run:
 
-Invoke the skill for:
+```bash
+bash tests/run-all.sh
+```
 
-- daily portfolio and risk reviews;
-- monthly funding reviews;
-- routing new ideas into Research;
-- auditing repository, privacy, and Production readiness.
-
-Every formal run must identify the exact repository commit used. Missing repository or broker access is a fail-closed condition, not a reason to use memory or manually pasted figures.
+Installation and clean-session acceptance requirements are documented in `docs/SKILL-DISTRIBUTION.md`.

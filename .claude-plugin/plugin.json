@@ -1,0 +1,18 @@
+{
+  "name": "investment-os",
+  "description": "A policy-driven investment decision skill that reads current repository rules and fresh broker state while preserving privacy and human execution authority.",
+  "version": "6.4.0",
+  "author": {
+    "name": "Zereker"
+  },
+  "homepage": "https://github.com/Zereker/investment-os",
+  "repository": "https://github.com/Zereker/investment-os",
+  "license": "MIT",
+  "keywords": [
+    "agent-skills",
+    "investment-policy",
+    "portfolio-review",
+    "risk-controls",
+    "ibkr"
+  ]
+}

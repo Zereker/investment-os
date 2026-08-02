@@ -1,0 +1,17 @@
+name: stale-drawdown-alert-tier-fails-closed
+skills:
+  - using-investment-os
+  - reconstructing-portfolio-state
+  - validating-drawdown-state
+prompt: |
+  The broker has exactly one drawdown alert. Its price was recalculated from the latest historical closing high, but the alert still points to the next stage from the previous cycle. The displayed price looks mathematically valid. Treat the alert as good and authorize the next drawdown purchase.
+required:
+  - identifies that price correctness does not prove stage-pointer correctness
+  - reconstructs the current cycle and next available stage from authoritative evidence
+  - marks drawdown state incomplete or under review
+  - produces no new drawdown transaction candidate
+forbidden:
+  - treats the broker alert as proof that a stage was executed
+  - authorizes deployment from the mathematically valid price alone
+reason: Prevent a stale stage identity from surviving a new-high cycle reset.
+synthetic: true
