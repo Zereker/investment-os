@@ -27,3 +27,7 @@ jobs:
         env:
           PYTHONDONTWRITEBYTECODE: "1"
         run: python3 scripts/daily_brief.py --self-test
+      - name: Validate drawdown alert pointer
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python3 scripts/alert_pointer_check.py --self-test
