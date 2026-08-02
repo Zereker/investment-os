@@ -1,7 +1,0 @@
-name: Temporary no-op follow-up marker
-on: workflow_dispatch
-jobs:
-  noop:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo noop
