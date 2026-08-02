@@ -23,10 +23,14 @@ jobs:
         env:
           PYTHONDONTWRITEBYTECODE: "1"
         run: python3 scripts/check_product_contract.py
-      - name: Validate cross-harness skill distribution
+      - name: Validate composable cross-harness skill distribution
         env:
           PYTHONDONTWRITEBYTECODE: "1"
         run: python3 scripts/check_skill_distribution.py
+      - name: Validate skill behavior eval scenarios
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python3 scripts/check_skill_evals.py
       - name: Validate three-ETF Daily Brief
         env:
           PYTHONDONTWRITEBYTECODE: "1"
