@@ -20,7 +20,7 @@ for line in lines:
     if stripped.startswith("require(") and stripped.endswith(")"):
         continue
     cleaned = re.sub(r'\s*"07-Releases/[^\"]+",?', "", line)
-    if cleaned.strip() not in {"", "(", "):"):
+    if cleaned.strip() not in {"", "(", "):"}:
         filtered.append(cleaned)
 
 namespace = {"__name__": "__main__", "__file__": str(LEGACY)}
