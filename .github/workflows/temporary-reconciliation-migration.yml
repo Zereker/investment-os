@@ -1,0 +1,27 @@
+name: Temporary reconciliation migration
+
+on:
+  push:
+    branches:
+      - agent/decision-packet-runtime
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: agent/decision-packet-runtime
+      - name: Apply focused migration
+        run: python3 scripts/_apply_reconciliation_migration.py
+      - name: Commit migration result
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add scripts tests
+          git commit -m "fix: enforce shared reconciliation and order gates"
+          git push origin HEAD:agent/decision-packet-runtime
