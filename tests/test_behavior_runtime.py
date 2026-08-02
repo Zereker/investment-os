@@ -46,12 +46,20 @@ def main() -> None:
     assert replay["contract"] == "behavior/contract/behavior-contract.yaml"
     assert corpus["synthetic"] is True and replay["synthetic"] is True
     assert replay["immutable_expectations"] is True
-    assert len(corpus["cases"]) >= 4
+    assert len(corpus["cases"]) >= 6
     assert {case["id"] for case in corpus["cases"]} >= {
-        "entity-alias", "changed-rationale", "split-request", "distraction-gap"
+        "entity-alias",
+        "changed-rationale",
+        "split-request",
+        "distraction-gap",
+        "routine-drawdown-status",
+        "routine-daily-review",
     }
     assert all(len(case["turns"]) >= 2 for case in corpus["cases"])
-    assert all(case["expected"] == "preserve_block" for case in corpus["cases"])
+    expectations = {case["expected"] for case in corpus["cases"]}
+    assert expectations == {"preserve_block", "process_normally"}
+    assert any("refuse an unrelated or routine request" in item for item in corpus["forbidden"])
+    assert any("refusing every request" in item for item in corpus["forbidden"])
 
     packet = valid_packet()
     packet.validate()
