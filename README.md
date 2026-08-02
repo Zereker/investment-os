@@ -4,7 +4,7 @@
 
 > Investment OS 的目标，是让正确的决策成为最容易做出的决策。
 
-完整产品定义见 [PROJECT.md](PROJECT.md)，生产运行边界见 [PRODUCTION.md](PRODUCTION.md)，跨 Agent 程序契约见 [AGENTS.md](AGENTS.md)，每日产品规范见 [Daily-Report-Contract.md](02-Operating-System/Daily-Report-Contract.md)。
+完整产品定义见 [project-contract.md](plugins/investment-os/skills/using-investment-os/references/project-contract.md)，生产运行边界见 [production-contract.md](plugins/investment-os/skills/using-investment-os/references/production-contract.md)，跨 Agent 运行契约见 [agent-execution-contract.md](plugins/investment-os/skills/using-investment-os/references/agent-execution-contract.md)，每日产品规范见 [02-daily-report-contract.md](plugins/investment-os/skills/using-investment-os/references/02-daily-report-contract.md)。
 
 ## Decision Loop
 
@@ -55,7 +55,7 @@ Investment OS 通过一个 router 分发多个可组合 Skills：
 - `routing-investment-research`
 - `auditing-investment-os`
 
-共享源位于 [`skills/`](skills/README.md)，Claude Code 与 Codex 使用各自的薄 manifest。Skill 只保存流程，不保存易变投资参数；每次运行必须重读本次分发的政策文件（规范来源为默认分支 HEAD，但会话不在运行时获取更新）。
+可安装产品完整位于 [`plugins/investment-os/`](plugins/investment-os/skills/using-investment-os/SKILL.md)。每个 Skill 自带自己的流程、参考文件和确定性脚本；Claude Code 与 Codex 共享同一插件源码。Skill 流程不复制易变投资参数，每次运行必须重读本次分发的编号政策参考文件（规范来源为默认分支 HEAD，但会话不在运行时获取更新）。
 
 ### Install once, load natively
 
@@ -105,12 +105,11 @@ Real Harness behavior: NOT YET VERIFIED
 
 ## Repository Map
 
-- `PROJECT.md`：产品目标与隐私边界
-- `PRODUCTION.md`：生产运行与执行契约
-- `AGENTS.md`：跨 Agent 程序与授权契约
-- `CLAUDE.md`：Claude Code 冷启动入口
-- `skills/`：可组合 Skills
-- `scripts/`：确定性运行时与检查器
+- `plugins/investment-os/`：唯一可安装运行时产品
+- `plugins/investment-os/skills/using-investment-os/references/`：`00`、`01`、`02` 等编号政策与产品契约的唯一真源
+- `plugins/investment-os/skills/*/scripts/`：由各 Skill 拥有的确定性运行时
+- `AGENTS.md`、`CLAUDE.md`：仅用于源码仓库开发的薄入口
+- `scripts/`：源码级发布、治理和一致性检查器，不进入插件
 - `tests/`：非 LLM 与 harness 完整性测试
 - `evals/`：synthetic 行为压力场景
 - `Decision-Log.md`：长期治理决定
@@ -119,11 +118,11 @@ Real Harness behavior: NOT YET VERIFIED
 
 ## Authority and Versioning
 
-具体投资规则发生冲突时：`00-IPS/` → `01-Constitution/` → `02-Operating-System/` → `03-Transition/` → `05-Journal/`。
+具体投资规则发生冲突时，按插件 references 中的编号顺序执行：`00-*` → `01-*` → `02-*` → `03-*` → `05-*`。
 
 聊天记录、旧报告、旧 Skill 摘要和 `Research/` 不具有现行规则效力。现行政策以默认分支 HEAD 为准。
 
-`.plugin-version` 只表示 Skill / Plugin 分发 SemVer，不表示投资政策版本。
+`plugins/investment-os/.plugin-version` 只表示 Skill / Plugin 分发 SemVer，不表示投资政策版本。
 
 本仓库用于长期投资决策纪律与工具研究，不构成面向他人的投资建议，也不保证投资收益。
 

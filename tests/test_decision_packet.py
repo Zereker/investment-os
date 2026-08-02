@@ -6,10 +6,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-from scripts.decision_packet import DecisionPacket, assert_renderer_preserves
+from runtime_paths import SCRIPT_DIRS
+from decision_packet import DecisionPacket, assert_renderer_preserves
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "scripts/daily_brief.py"
+SCRIPT = SCRIPT_DIRS["daily"] / "daily_brief.py"
 
 
 def payload() -> dict:

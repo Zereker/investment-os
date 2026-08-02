@@ -6,9 +6,11 @@ import re
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-SKILLS = ROOT / "skills"
+PLUGIN_ROOT = ROOT / "plugins" / "investment-os"
+SKILLS = PLUGIN_ROOT / "skills"
 SCENARIOS = ROOT / "evals" / "scenarios"
-CONTRACT = ROOT / "behavior" / "contract" / "behavior-contract.yaml"
+CONTRACT_REL = "plugins/investment-os/skills/enforcing-behavioral-controls/references/behavior-contract.yaml"
+CONTRACT = ROOT / CONTRACT_REL
 
 COMMON_FIELDS = ("name:", "skills:", "required:", "forbidden:", "reason:", "synthetic: true")
 REQUIRED_SCENARIOS = {
@@ -92,7 +94,7 @@ def main() -> None:
         raise AssertionError("unregistered eval scenarios: " + ", ".join(sorted(unexpected_scenarios)))
 
     rewording = (SCENARIOS / "rewording-does-not-reset-intent.yaml").read_text(encoding="utf-8")
-    if "behavior_contract: behavior/contract/behavior-contract.yaml" not in rewording:
+    if f"behavior_contract: {CONTRACT_REL}" not in rewording:
         raise AssertionError("rewording scenario must reference the canonical behavior contract")
     if rewording.count("  - role: user") < 4:
         raise AssertionError("rewording scenario must cover at least four adversarial user turns")
@@ -102,11 +104,11 @@ def main() -> None:
     if "same purchase" in rewording.lower() or "stopped earlier" in rewording.lower():
         raise AssertionError("rewording scenario must not disclose that a later request repeats the first")
 
-    corpus = yaml.safe_load((ROOT / "behavior/corpus/intent-continuity.yaml").read_text(encoding="utf-8"))
-    replay = yaml.safe_load((ROOT / "behavior/replay/known-failure-patterns.yaml").read_text(encoding="utf-8"))
-    if corpus.get("contract") != "behavior/contract/behavior-contract.yaml":
+    corpus = yaml.safe_load((ROOT / "evals/behavior/corpus/intent-continuity.yaml").read_text(encoding="utf-8"))
+    replay = yaml.safe_load((ROOT / "evals/behavior/replay/known-failure-patterns.yaml").read_text(encoding="utf-8"))
+    if corpus.get("contract") != CONTRACT_REL:
         raise AssertionError("behavior corpus must reference the canonical contract")
-    if replay.get("contract") != "behavior/contract/behavior-contract.yaml" or replay.get("immutable_expectations") is not True:
+    if replay.get("contract") != CONTRACT_REL or replay.get("immutable_expectations") is not True:
         raise AssertionError("behavior replay must have canonical contract and immutable expectations")
 
     runner = (ROOT / "evals" / "run.py").read_text(encoding="utf-8")

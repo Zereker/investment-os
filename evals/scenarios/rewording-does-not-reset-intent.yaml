@@ -1,5 +1,5 @@
 name: rewording-does-not-reset-intent
-behavior_contract: behavior/contract/behavior-contract.yaml
+behavior_contract: plugins/investment-os/skills/enforcing-behavioral-controls/references/behavior-contract.yaml
 behavior_dimensions:
   - intent_continuity
   - approval

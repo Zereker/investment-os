@@ -245,7 +245,7 @@ def benchmark_interest_tests() -> None:
 
 
 def main() -> None:
-    dictionary = "08-Data/DATA_DICTIONARY.md"
+    dictionary = "plugins/investment-os/skills/using-investment-os/references/08-data-dictionary.md"
     require(
         dictionary,
         r"SPYM \(57\%-A_{basis}\)",
@@ -272,23 +272,23 @@ def main() -> None:
     )
 
     active_files = [
-        "README.md", "PRODUCTION.md",
-        "00-IPS/Investment-Policy-Statement.md",
-        "01-Constitution/Target-Allocation.md",
-        "02-Operating-System/Daily-Review.md",
-        "02-Operating-System/Decision-Checklist.md",
-        "02-Operating-System/Monthly-Workflow.md",
-        "02-Operating-System/Weekly-Review.md",
-        "02-Operating-System/Quarterly-Workflow.md",
-        "02-Operating-System/Deployment-Framework.md",
-        "03-Transition/Transition-Plan.md",
-        "04-Alpha/Alpha-Framework.md",
-        "04-Alpha/Position-Registry.md",
-        "08-Data/README.md",
-        "08-Data/DATA_REGISTRY.md",
-        "08-Data/DATA_QUALITY.md",
-        "08-Data/DATA_DICTIONARY.md",
-        "08-Data/LOOKTHROUGH_CHECK.md",
+        "README.md", "plugins/investment-os/skills/using-investment-os/references/production-contract.md",
+        "plugins/investment-os/skills/using-investment-os/references/00-investment-policy-statement.md",
+        "plugins/investment-os/skills/using-investment-os/references/01-target-allocation.md",
+        "plugins/investment-os/skills/using-investment-os/references/02-daily-review.md",
+        "plugins/investment-os/skills/using-investment-os/references/02-decision-checklist.md",
+        "plugins/investment-os/skills/using-investment-os/references/02-monthly-workflow.md",
+        "plugins/investment-os/skills/using-investment-os/references/02-weekly-review.md",
+        "plugins/investment-os/skills/using-investment-os/references/02-quarterly-workflow.md",
+        "plugins/investment-os/skills/using-investment-os/references/02-deployment-framework.md",
+        "plugins/investment-os/skills/using-investment-os/references/03-transition-plan.md",
+        "plugins/investment-os/skills/using-investment-os/references/04-alpha-framework.md",
+        "plugins/investment-os/skills/using-investment-os/references/04-position-registry.md",
+        "plugins/investment-os/skills/using-investment-os/references/08-data-operations.md",
+        "plugins/investment-os/skills/using-investment-os/references/08-data-registry.md",
+        "plugins/investment-os/skills/using-investment-os/references/08-data-quality.md",
+        "plugins/investment-os/skills/using-investment-os/references/08-data-dictionary.md",
+        "plugins/investment-os/skills/using-investment-os/references/08-lookthrough-check.md",
     ]
     # v3.x machinery must not resurface in active rules
     for path in active_files:
@@ -314,12 +314,12 @@ def main() -> None:
         )
 
     require(
-        "04-Alpha/Position-Registry.md",
+        "plugins/investment-os/skills/using-investment-os/references/04-position-registry.md",
         "3%→4.5%→6%",
         r"当前\(A_{execution\_cap}=3\%\)",
         "永久硬上限",
         "同一次IC不得既推进执行档又执行交易",
-        "LOOKTHROUGH_CHECK.md",
+        "08-lookthrough-check.md",
         "不自动卖出",
         # v4.5: the two paths must stay named and separately gated
         "提高倾斜闸门",
@@ -329,7 +329,7 @@ def main() -> None:
         "不传该标志即视为无当季有效核查",
     )
     require(
-        "01-Constitution/Target-Allocation.md",
+        "plugins/investment-os/skills/using-investment-os/references/01-target-allocation.md",
         "永久硬上限为总组合 **6%**",
         "10% / 12.5% / 15% 治理阶段自 v4.0 起作废",
         "回撤部署（Drawdown Deployment）",
@@ -358,12 +358,12 @@ def main() -> None:
     # the restore must never be describable as raising the cap — that is the one
     # thing it is defined not to do, and the whole split collapses if it drifts
     forbid(
-        "01-Constitution/Target-Allocation.md",
+        "plugins/investment-os/skills/using-investment-os/references/01-target-allocation.md",
         "回补可提高 `A_execution_cap`",
         "回补时推进执行档",
     )
     require(
-        "02-Operating-System/Deployment-Framework.md",
+        "plugins/investment-os/skills/using-investment-os/references/02-deployment-framework.md",
         "与再平衡的分工",
         "由再平衡吸收",
     )
@@ -373,19 +373,19 @@ def main() -> None:
         "未采纳",
     )
     require(
-        "00-IPS/Investment-Policy-Statement.md",
+        "plugins/investment-os/skills/using-investment-os/references/00-investment-policy-statement.md",
         "SB-1 满仓政策组合",
         "SB-2 单一基金",
         "0.45–0.75",
         "不按 alpha 命名或考核",
     )
     require(
-        "04-Alpha/Research/SOXX.md",
+        "Research/alpha/SOXX.md",
         "Incomplete — INDEX METHODOLOGY EVIDENCE",
         "NYSE Semiconductor Index",
     )
     forbid(
-        "04-Alpha/Research/SOXX.md",
+        "Research/alpha/SOXX.md",
         "indexes.nasdaq.com",
         "前三大权重上限分别为12%、10%、8%",
     )
@@ -401,12 +401,12 @@ def main() -> None:
         "反对证据",
         "证伪回路",
     )
-    require("01-Constitution/Target-Allocation.md", "由 T2（15%）、T3（20%）、T4（25%）逐档覆盖")
+    require("plugins/investment-os/skills/using-investment-os/references/01-target-allocation.md", "由 T2（15%）、T3（20%）、T4（25%）逐档覆盖")
     # the retired deep tiers must not survive anywhere in the active rules
-    for path in ("01-Constitution/Target-Allocation.md",
-                 "02-Operating-System/Deployment-Framework.md",
-                 "02-Operating-System/State-Reconstruction.md",
-                 "scripts/drawdown_drill.py", "scripts/monthly_execution.py"):
+    for path in ("plugins/investment-os/skills/using-investment-os/references/01-target-allocation.md",
+                 "plugins/investment-os/skills/using-investment-os/references/02-deployment-framework.md",
+                 "plugins/investment-os/skills/using-investment-os/references/02-state-reconstruction.md",
+                 "plugins/investment-os/skills/validating-drawdown-state/scripts/drawdown_drill.py", "plugins/investment-os/skills/running-monthly-review/scripts/monthly_execution.py"):
         forbid(path, "`DD ≥ 30%`", "`DD ≥ 35%`", '"T5"', '"T6"')
     require(
         "Research/2026-08-01-drawdown-four-tier.md",
@@ -419,7 +419,7 @@ def main() -> None:
         "关于杠杆：明确不做", "强制平仓不是现实风险",
     )
     # the IPS's no-leverage principle must survive this release untouched
-    require("00-IPS/Investment-Policy-Statement.md", "不接受无上限的行业、杠杆或流动性风险")
+    require("plugins/investment-os/skills/using-investment-os/references/00-investment-policy-statement.md", "不接受无上限的行业、杠杆或流动性风险")
     require("Decision-Log.md", "v4.6 回撤阶梯改为四档梯度，25% 处把现金全部投出")
     require(
         "Research/2026-08-01-drawdown-tranching.md",
@@ -428,14 +428,14 @@ def main() -> None:
         "分批本身就是「不知道谷底在哪」的正确答案",
     )
     require("Decision-Log.md", "v4.4 回撤部署改为六档等额分批")
-    require("02-Operating-System/State-Reconstruction.md", "已执行档数")
+    require("plugins/investment-os/skills/using-investment-os/references/02-state-reconstruction.md", "已执行档数")
     require(
         "Research/2026-08-01-benchmark-cash-model-simplification.md",
         "已批准",
         "不得使用实际账户的单位现金收益率",
     )
     require(
-        "02-Operating-System/State-Reconstruction.md",
+        "plugins/investment-os/skills/using-investment-os/references/02-state-reconstruction.md",
         "不存储任何账户数据",
         "现金水位自证",
         "恰好一个",
@@ -443,18 +443,18 @@ def main() -> None:
         "隐私边界",
     )
     require(
-        "scripts/fetch_etf_data.py",
+        "plugins/investment-os/skills/routing-investment-research/scripts/fetch_etf_data.py",
         "holdings-daily-us-en-spym.xlsx",
         "stockanalysis.com",
         "never authorizes trades",
         "GUARD_SEMI_IC = 15.0",
     )
     require(
-        "08-Data/LOOKTHROUGH_CHECK.md",
+        "plugins/investment-os/skills/using-investment-os/references/08-lookthrough-check.md",
         "fetch_etf_data.py",
     )
     require(
-        "scripts/monthly_execution.py",
+        "plugins/investment-os/skills/running-monthly-review/scripts/monthly_execution.py",
         "NEVER places or formats an executable order",
         "NEVER writes account figures to disk",
         # the calculator mirrors the rules; its constants must match this file
@@ -473,7 +473,7 @@ def main() -> None:
         "headroom = min(A_EXECUTION_CAP, A_STAGE) - a_actual",
     )
     require(
-        "01-Constitution/Target-Allocation.md",
+        "plugins/investment-os/skills/using-investment-os/references/01-target-allocation.md",
         "Research/2026-08-01-soxx-restore-vs-increase.md",
     )
     require(
@@ -486,21 +486,21 @@ def main() -> None:
     )
     require("Decision-Log.md", "v4.5 「回补至目标」与「提高倾斜」拆分")
     require(
-        "02-Operating-System/Monthly-Workflow.md",
+        "plugins/investment-os/skills/using-investment-os/references/02-monthly-workflow.md",
         "lookthrough-current",
         "回补",
         "提高倾斜",
     )
-    require("PRODUCTION.md", "回补至目标", "提高倾斜")
-    require("04-Alpha/Alpha-Framework.md", "提高倾斜标准", "回补至目标标准")
+    require("plugins/investment-os/skills/using-investment-os/references/production-contract.md", "回补至目标", "提高倾斜")
+    require("plugins/investment-os/skills/using-investment-os/references/04-alpha-framework.md", "提高倾斜标准", "回补至目标标准")
     require(
-        "02-Operating-System/Deployment-Framework.md",
+        "plugins/investment-os/skills/using-investment-os/references/02-deployment-framework.md",
         "本框架的三条通道只买 SPYM / QQQM",
     )
-    require("CLAUDE.md", "monthly_execution.py")
-    require("02-Operating-System/Monthly-Workflow.md", "monthly_execution.py")
+    require("plugins/investment-os/skills/using-investment-os/references/claude-code-entry.md", "monthly_execution.py")
+    require("plugins/investment-os/skills/using-investment-os/references/02-monthly-workflow.md", "monthly_execution.py")
     require(
-        "scripts/drawdown_drill.py",
+        "plugins/investment-os/skills/validating-drawdown-state/scripts/drawdown_drill.py",
         "never authorizes trades",
         # the drill's tiers must mirror DRAWDOWN_TIERS above, or the drill
         # would be validating a state machine the Constitution does not have
@@ -515,12 +515,12 @@ def main() -> None:
         "在真实周期跑过之前仍属未验证状态",
     )
     require(
-        "02-Operating-System/Deployment-Framework.md",
+        "plugins/investment-os/skills/using-investment-os/references/02-deployment-framework.md",
         "drawdown_drill.py",
         "未验证",
     )
     require(
-        "02-Operating-System/Deployment-Framework.md",
+        "plugins/investment-os/skills/using-investment-os/references/02-deployment-framework.md",
         "回撤部署（Drawdown Deployment）",
         "`DD ≥ 10%`", "`DD ≥ 15%`", "`DD ≥ 20%`", "`DD ≥ 25%`",
         "没有任何可解锁的档位",
@@ -528,7 +528,7 @@ def main() -> None:
         "每档在同一回撤周期内最多执行一次",
     )
     require(
-        "08-Data/LOOKTHROUGH_CHECK.md",
+        "plugins/investment-os/skills/using-investment-os/references/08-lookthrough-check.md",
         "15 分钟",
         "只增不改",
         "不自动改变 Registry",
@@ -536,12 +536,12 @@ def main() -> None:
     )
     for path in (
         "README.md",
-        "PRODUCTION.md",
-        "02-Operating-System/Daily-Review.md",
-        "02-Operating-System/Monthly-Workflow.md",
-        "02-Operating-System/Deployment-Framework.md",
-        "02-Operating-System/Weekly-Review.md",
-        "03-Transition/Transition-Plan.md",
+        "plugins/investment-os/skills/using-investment-os/references/production-contract.md",
+        "plugins/investment-os/skills/using-investment-os/references/02-daily-review.md",
+        "plugins/investment-os/skills/using-investment-os/references/02-monthly-workflow.md",
+        "plugins/investment-os/skills/using-investment-os/references/02-deployment-framework.md",
+        "plugins/investment-os/skills/using-investment-os/references/02-weekly-review.md",
+        "plugins/investment-os/skills/using-investment-os/references/03-transition-plan.md",
     ):
         forbid(path, "Valuation Score", "Opportunity Score")
     # retired v3.x mechanisms survive only as one-line archive entries in the history files
@@ -550,7 +550,7 @@ def main() -> None:
     require("Decision-Log.md", "v3.x 决策存档")
     require("BUGLOG.md", "已退役机制缺陷存档")
     # git history was rebuilt to a single commit: no document may send readers there
-    for path in ("README.md", "CLAUDE.md"):
+    for path in ("README.md", "plugins/investment-os/skills/using-investment-os/references/claude-code-entry.md"):
         forbid(path, "查 git 历史")
     # live account state must never be frozen into rule files (red line 2).
     # Target the pattern "A_actual ... N%" specifically — a bare percentage is
@@ -558,8 +558,8 @@ def main() -> None:
     # "A_actual 约 7.8%" is a frozen observation; "A_actual 高于 6%" references the
     # cap and is legitimate. The approximation marker is what distinguishes them.
     frozen_state = re.compile(r"A_actual[^。\n]{0,12}?(?:约|≈|大约)\s*\d+(?:\.\d+)?\s*%")
-    for path in ("04-Alpha/Position-Registry.md",
-                 "Decision-Log.md", "01-Constitution/Target-Allocation.md"):
+    for path in ("plugins/investment-os/skills/using-investment-os/references/04-position-registry.md",
+                 "Decision-Log.md", "plugins/investment-os/skills/using-investment-os/references/01-target-allocation.md"):
         hit = frozen_state.search(read(path))
         if hit:
             raise AssertionError(f"{path}: frozen A_actual value: {hit.group()!r}")
@@ -569,7 +569,7 @@ def main() -> None:
         "普通数据变化不更新项目",
     )
     require(
-        "PRODUCTION.md",
+        "plugins/investment-os/skills/using-investment-os/references/production-contract.md",
         "仓库不维护行情、ETF成分、issuer或GICS中央数据库",
         "普通巡检不写仓库",
     )
@@ -613,7 +613,7 @@ def main() -> None:
     ):
         if (ROOT / stale).exists():
             raise AssertionError(f"retired file resurfaced: {stale}")
-    forbid("03-Transition/Transition-Plan.md", r"现金、\(A\)、目标缺口")
+    forbid("plugins/investment-os/skills/using-investment-os/references/03-transition-plan.md", r"现金、\(A\)、目标缺口")
 
     privacy_gate()
 

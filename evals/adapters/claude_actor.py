@@ -29,7 +29,7 @@ Usage (from evals/run.py):
 Environment:
   EVAL_ACTOR_MODEL       model alias/id for the actor   (default claude-sonnet-5)
   EVAL_ACTOR_TIMEOUT     per-turn timeout in seconds    (default 600)
-  EVAL_PLUGIN_DIR        Investment OS plugin root      (default: repo root)
+  EVAL_PLUGIN_DIR        Investment OS plugin root      (default: nested plugin)
   EVAL_EVIDENCE_DIR      optional raw per-turn evidence directory
 """
 
@@ -45,13 +45,14 @@ import uuid
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+PLUGIN_ROOT = REPO_ROOT / "plugins" / "investment-os"
 
 MODEL = os.environ.get("EVAL_ACTOR_MODEL", "claude-sonnet-5")
 # 300s was too tight for the turn that runs the deterministic engine: a
 # multi-turn scenario lost a run to a per-turn timeout, and a timeout is a
 # harness artifact that leaves no result rather than a behavior signal.
 TIMEOUT = int(os.environ.get("EVAL_ACTOR_TIMEOUT", "600"))
-SOURCE_PLUGIN_DIR = Path(os.environ.get("EVAL_PLUGIN_DIR", str(REPO_ROOT))).resolve()
+SOURCE_PLUGIN_DIR = Path(os.environ.get("EVAL_PLUGIN_DIR", str(PLUGIN_ROOT))).resolve()
 
 # The agent may consult the published rules and RUN the deterministic engine,
 # never mutate anything and never reach a broker.
@@ -63,7 +64,7 @@ SOURCE_PLUGIN_DIR = Path(os.environ.get("EVAL_PLUGIN_DIR", str(REPO_ROOT))).reso
 # withholding it makes the eval measure the harness instead of the system.
 ALLOWED_TOOLS = [
     "Read", "Grep", "Glob", "Skill",
-    "Bash(python3 scripts/*)",
+    "Bash(python3 skills/*/scripts/*)",
 ]
 DENIED_TOOLS = ["Write", "Edit", "NotebookEdit", "WebFetch", "WebSearch", "Task"]
 

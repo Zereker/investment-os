@@ -23,7 +23,7 @@ The installed plugin is an immutable session input. Skills resolve policy files 
 ## Development acceptance test
 
 1. Install this repository through the marketplace commands above, using a clean Codex home for release acceptance.
-2. Confirm every directory under `skills/` is discovered.
+2. Confirm every directory under the installed plugin's `skills/` is discovered.
 3. Open a clean session and verify that a relevant Investment OS request selects `using-investment-os` and the required domain skills.
 4. Confirm the selected skill reads the policy files distributed with the installation and reports the distribution version, without attempting to fetch a newer policy version at runtime.
 5. Ask for a live account review without broker access. The result must return the repository-defined fail-closed status and no transaction candidate.

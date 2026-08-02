@@ -3,7 +3,8 @@ from __future__ import annotations
 
 from copy import deepcopy
 
-from scripts.execution_runtime import REQUIRED_STAGES, operation_digest, validate
+from runtime_paths import SCRIPT_DIRS  # noqa: F401
+from execution_runtime import REQUIRED_STAGES, operation_digest, validate
 
 
 def base_record():
