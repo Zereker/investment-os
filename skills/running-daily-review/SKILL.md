@@ -7,7 +7,7 @@ description: Use when the user asks what happened in the live portfolio today, w
 
 **REQUIRED SUB-SKILLS:** use `reconstructing-portfolio-state` and `enforcing-behavioral-controls` first.
 
-Read the current daily workflow and report contract from repository HEAD. Use only fresh authoritative runtime inputs and current executable mirrors.
+Read the current daily workflow and report contract from the policy files distributed with this skill. Use only fresh authoritative runtime inputs and current executable mirrors.
 
 The deterministic daily engine must produce a validated `DecisionPacket` before any Markdown or LLM presentation. The packet is authoritative for runtime status, decision, calculations, eligible channels, blockers, next conditions, and execution authority. A renderer may explain or format those fields; it must not recompute, upgrade, downgrade, omit, or replace them.
 

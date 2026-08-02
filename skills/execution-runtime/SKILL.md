@@ -13,7 +13,7 @@ The only valid authorization scope is `single-operation-current-session`.
 
 ## Required inputs
 
-- exact repository HEAD and applicable Production rules;
+- the distributed policy files and applicable Production rules;
 - validated Broker Runtime before-state;
 - one normalized operation request;
 - the exact broker capability required by that operation;

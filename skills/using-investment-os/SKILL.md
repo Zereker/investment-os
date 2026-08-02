@@ -7,7 +7,7 @@ description: Use when starting any Investment OS portfolio, transaction, researc
 
 ## Core rule
 
-Investment OS is a composable skill system. Select every required domain skill before analysis or action. The current default-branch HEAD is the only policy authority; skills contain procedure, never investment parameters or portfolio state.
+Investment OS is a composable skill system. Select every required domain skill before analysis or action. The policy files distributed with this skill are the authority for the session that loaded them; skills contain procedure, never investment parameters or portfolio state.
 
 ## Route
 
@@ -42,8 +42,8 @@ Investment OS is a composable skill system. Select every required domain skill b
 
 ## Mandatory start
 
-1. Resolve the repository default branch and exact HEAD SHA.
-2. Read `AGENTS.md`, `PROJECT.md`, and `PRODUCTION.md` from that SHA.
+1. Read `AGENTS.md`, `PROJECT.md`, and `PRODUCTION.md` as distributed with this skill.
+2. State the policy source as the distribution version in `.plugin-version`. Never fetch, or claim to have fetched, a newer policy version at runtime: what shipped is what executes, and whether a distribution is current is a release concern rather than a session one.
 3. Load only the domain skills required for the task.
 4. For live account work, build and validate the broker-neutral Broker Runtime before portfolio reconstruction.
 5. Never inherit approval from another agent or prior output.

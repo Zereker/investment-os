@@ -21,7 +21,7 @@ Investment OS is a composable skill system distributed through one plugin.
 
 ```text
 Skills                 procedure, routing, controls and failure behavior
-Repository HEAD        current policy and deterministic tools
+Distributed policy     policy files and deterministic tools shipped with the skills
 Broker runtime         current private account state
 Harness adapters       discovery, bootstrap and abstract-action mapping
 ```

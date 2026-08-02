@@ -11,7 +11,7 @@ Reconstruct the current drawdown cycle from the current repository procedure and
 
 ## Required inputs
 
-- exact current repository HEAD and the current drawdown/state-reconstruction files;
+- the distributed policy files, including the current drawdown/state-reconstruction files;
 - historical closing-price series with sufficient coverage and a declared price basis;
 - current market price required by the workflow;
 - corroborating evidence for stages already executed in the current cycle;

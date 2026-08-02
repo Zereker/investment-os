@@ -11,7 +11,7 @@ Expose one broker-neutral runtime contract for Investment OS. Domain skills cons
 
 ## Required runtime capabilities
 
-Discover and read the capabilities required by current repository HEAD. The runtime contract may include:
+Discover and read the capabilities required by the policy files distributed with this skill. The runtime contract may include:
 
 - account identity and account type;
 - account summary and net liquidation value;
@@ -45,7 +45,7 @@ Produce an ephemeral Broker Runtime with these top-level sections:
 
 ## Reconciliation
 
-At minimum, reconcile the account and task-specific facts required by current repository HEAD:
+At minimum, reconcile the account and task-specific facts required by the policy files distributed with this skill:
 
 - position market values and cash against account-level values;
 - currencies and conversion basis;
