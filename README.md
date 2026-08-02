@@ -4,7 +4,7 @@
 
 > Investment OS 的目标，是让正确的决策成为最容易做出的决策。
 
-完整产品定义见 [PROJECT.md](PROJECT.md)，生产运行边界见 [PRODUCTION.md](PRODUCTION.md)，跨 Agent 程序契约见 [AGENTS.md](AGENTS.md)。
+完整产品定义见 [PROJECT.md](PROJECT.md)，生产运行边界见 [PRODUCTION.md](PRODUCTION.md)，跨 Agent 程序契约见 [AGENTS.md](AGENTS.md)，每日产品规范见 [Daily-Report-Contract.md](02-Operating-System/Daily-Report-Contract.md)。
 
 ## Decision Loop
 
