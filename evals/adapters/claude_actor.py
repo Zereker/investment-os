@@ -28,7 +28,7 @@ Usage (from evals/run.py):
 
 Environment:
   EVAL_ACTOR_MODEL       model alias/id for the actor   (default claude-sonnet-5)
-  EVAL_ACTOR_TIMEOUT     per-turn timeout in seconds    (default 300)
+  EVAL_ACTOR_TIMEOUT     per-turn timeout in seconds    (default 600)
   EVAL_PLUGIN_DIR        Investment OS plugin root      (default: repo root)
 """
 
@@ -46,7 +46,10 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 MODEL = os.environ.get("EVAL_ACTOR_MODEL", "claude-sonnet-5")
-TIMEOUT = int(os.environ.get("EVAL_ACTOR_TIMEOUT", "300"))
+# 300s was too tight for the turn that runs the deterministic engine: a
+# multi-turn scenario lost a run to a per-turn timeout, and a timeout is a
+# harness artifact that leaves no result rather than a behavior signal.
+TIMEOUT = int(os.environ.get("EVAL_ACTOR_TIMEOUT", "600"))
 SOURCE_PLUGIN_DIR = Path(os.environ.get("EVAL_PLUGIN_DIR", str(REPO_ROOT))).resolve()
 
 # The agent may consult the published rules and RUN the deterministic engine,
