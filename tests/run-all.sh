@@ -15,6 +15,7 @@ python3 tests/test_skill_system.py
 python3 tests/test_broker_runtime.py
 python3 tests/test_execution_runtime.py
 python3 tests/test_decision_packet.py
+python3 tests/test_behavior_runtime.py
 python3 tests/test_eval_integrity.py
 python3 tests/test_monthly_contribution_cli.py
 python3 tests/test_monthly_dd_cli.py
@@ -28,4 +29,4 @@ python3 scripts/check_policy_consistency.py
 python3 scripts/daily_brief.py --self-test
 python3 scripts/alert_pointer_check.py --self-test
 
-echo "All non-LLM and eval-harness integrity tests passed. Real Harness behavior remains NOT YET VERIFIED."
+echo "All non-LLM, Behavior Runtime, and eval-harness integrity tests passed. Real Harness behavior remains NOT YET VERIFIED."
