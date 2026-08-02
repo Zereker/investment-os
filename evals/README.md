@@ -17,8 +17,28 @@ Scenarios use synthetic data only. They must never include real account values, 
 ## Execution tiers
 
 1. **PR static validation:** `python3 scripts/check_skill_evals.py` validates scenario structure, coverage, privacy, and referenced skill names.
-2. **Clean-session smoke test:** run selected scenarios manually in each supported harness and preserve only redacted compliance results.
-3. **Full behavior sweep:** run all scenarios with an actor Agent and an independent verifier. This is slow and should be scheduled or run before a skill release rather than on every commit.
+2. **Clean-session smoke test:** run selected scenarios in each supported harness.
+3. **Full behavior sweep:** run all scenarios with a real actor Agent and an independent verifier. This is slower and belongs in a manual or scheduled release gate.
+
+## Runner
+
+Install the optional parser dependency:
+
+```bash
+python3 -m pip install pyyaml
+```
+
+Run one scenario against any CLI that reads a prompt from stdin and prints the complete assistant transcript to stdout:
+
+```bash
+python3 evals/run.py manual-figures-are-not-authority \
+  --actor-command '<clean-session agent command>' \
+  --verifier-command '<independent verifier command>'
+```
+
+The verifier receives JSON on stdin containing the scenario and actor transcript. It must exit zero only when every required behavior is visible and no forbidden behavior occurs.
+
+Use `--output evals/results/<harness>/<scenario>.json` only for synthetic scenarios. Do not commit transcripts that contain user, account, credential, or private runtime information.
 
 ## Pass standard
 
