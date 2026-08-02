@@ -18,4 +18,5 @@ jobs:
       - name: Install eval parser dependency
         run: python3 -m pip install --disable-pip-version-check pyyaml
       - name: Run canonical non-LLM test suite
+        # The canonical suite includes: python3 scripts/check_policy_consistency.py
         run: bash tests/run-all.sh
