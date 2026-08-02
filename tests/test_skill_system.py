@@ -80,13 +80,7 @@ def test_manifests() -> None:
 def test_bootstrap() -> None:
     env = os.environ.copy()
     env["CLAUDE_PLUGIN_ROOT"] = str(ROOT)
-    result = subprocess.run(
-        ["bash", str(ROOT / "hooks/session-start")],
-        check=True,
-        capture_output=True,
-        text=True,
-        env=env,
-    )
+    result = subprocess.run(["bash", str(ROOT / "hooks/session-start")], check=True, capture_output=True, text=True, env=env)
     payload = json.loads(result.stdout)
     context = payload["hookSpecificOutput"]["additionalContext"]
     assert "INVESTMENT_OS_BOOTSTRAP" in context
@@ -98,26 +92,18 @@ def test_bootstrap() -> None:
 def main() -> None:
     skills = discover()
     expected = {
-        "using-investment-os",
-        "broker-runtime",
-        "reconstructing-portfolio-state",
-        "validating-drawdown-state",
-        "enforcing-behavioral-controls",
-        "running-daily-review",
-        "running-monthly-review",
-        "evaluating-transaction-candidates",
-        "routing-investment-research",
-        "auditing-investment-os",
+        "using-investment-os", "broker-runtime", "execution-runtime",
+        "reconstructing-portfolio-state", "validating-drawdown-state",
+        "enforcing-behavioral-controls", "running-daily-review",
+        "running-monthly-review", "evaluating-transaction-candidates",
+        "routing-investment-research", "auditing-investment-os",
     }
     assert expected <= set(skills), f"missing skills: {sorted(expected - set(skills))}"
     graph = dependency_graph(skills)
     assert_acyclic(graph)
     assert graph["using-investment-os"] >= {
-        "broker-runtime",
-        "reconstructing-portfolio-state",
-        "validating-drawdown-state",
-        "enforcing-behavioral-controls",
-        "running-daily-review",
+        "broker-runtime", "execution-runtime", "reconstructing-portfolio-state",
+        "validating-drawdown-state", "enforcing-behavioral-controls", "running-daily-review",
     }
     assert graph["reconstructing-portfolio-state"] == {"broker-runtime"}
     broker_text = skills["broker-runtime"].read_text(encoding="utf-8")
@@ -125,6 +111,10 @@ def main() -> None:
     assert "Missing open orders" in broker_text
     assert "Missing cash transactions" in broker_text
     assert "persist real account data" in broker_text
+    execution_text = skills["execution-runtime"].read_text(encoding="utf-8")
+    assert "single-operation-current-session" in execution_text
+    assert "read back authoritative broker state" in execution_text
+    assert "no silent retry" in execution_text
     test_manifests()
     test_bootstrap()
     print("Skill system integration tests passed.")
