@@ -105,13 +105,39 @@ def main() -> None:
             raise AssertionError(f"{label} manifest has wrong repository")
     if codex.get("skills") != "./skills/":
         raise AssertionError("Codex manifest must distribute ./skills/")
-    if codex.get("hooks") != {}:
-        raise AssertionError("Codex manifest must not load repository hooks")
+    if "hooks" in codex:
+        raise AssertionError("Codex manifest must rely on native Skill discovery without a hooks field")
+    if (ROOT / "hooks" / "hooks.json").exists():
+        raise AssertionError("Codex must not auto-discover the Claude SessionStart hook")
 
-    hooks = load_json(ROOT / "hooks" / "hooks.json")
-    command = hooks["hooks"]["SessionStart"][0]["hooks"][0]["command"]
-    if "session-start" not in command or not (ROOT / "hooks" / "session-start").is_file():
-        raise AssertionError("Claude SessionStart bootstrap is not wired")
+    command = claude["hooks"]["SessionStart"][0]["hooks"][0]["command"]
+    if "scripts/claude-session-start" not in command or not (ROOT / "scripts" / "claude-session-start").is_file():
+        raise AssertionError("Claude inline SessionStart bootstrap is not wired")
+
+    codex_marketplace = load_json(ROOT / ".agents" / "plugins" / "marketplace.json")
+    codex_entry = codex_marketplace["plugins"][0]
+    if codex_entry.get("name") != "investment-os":
+        raise AssertionError("Codex marketplace must expose investment-os")
+    if codex_entry.get("source") != {"source": "local", "path": "./"}:
+        raise AssertionError("Codex marketplace must install the repository-root plugin")
+    if codex_entry.get("policy") != {"installation": "AVAILABLE", "authentication": "ON_INSTALL"}:
+        raise AssertionError("Codex marketplace must declare complete install policy")
+
+    claude_marketplace = load_json(ROOT / ".claude-plugin" / "marketplace.json")
+    claude_entry = claude_marketplace["plugins"][0]
+    if claude_entry.get("name") != "investment-os" or claude_entry.get("source") != "./":
+        raise AssertionError("Claude marketplace must install the repository-root plugin")
+    if claude_entry.get("version") != VERSION:
+        raise AssertionError("Claude marketplace version must match .plugin-version")
+
+    for needle in (
+        "Installed distribution root",
+        "../../.plugin-version",
+        "current working directory",
+        "Do not clone, fetch",
+    ):
+        if needle not in router:
+            raise AssertionError(f"router missing installed-runtime boundary: {needle}")
 
     docs = (ROOT / "docs" / "SKILL-DISTRIBUTION.md").read_text(encoding="utf-8")
     for needle in (
@@ -122,6 +148,7 @@ def main() -> None:
         "Behavior scenarios: DEFINED",
         "Behavior execution: NOT YET VERIFIED",
         "Plugin distribution version",
+        "Installed-runtime boundary",
         # The three layers must stay distinct, or the same install ends up with
         # two Mandatory Starts: one telling the session to resolve the default
         # branch, another telling it the distribution is what executes.

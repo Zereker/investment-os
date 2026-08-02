@@ -1,7 +1,7 @@
 {
   "name": "investment-os",
   "description": "A policy-driven investment decision skill that reads the policy files distributed with it and fresh broker state while preserving privacy and human execution authority.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": {
     "name": "Zereker"
   },
@@ -14,5 +14,20 @@
     "portfolio-review",
     "risk-controls",
     "ibkr"
-  ]
+  ],
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/claude-session-start\"",
+            "shell": "bash",
+            "async": false
+          }
+        ]
+      }
+    ]
+  }
 }

@@ -9,6 +9,10 @@ description: Use when starting any Investment OS portfolio, transaction, researc
 
 Investment OS is a composable skill system. Select every required domain skill before analysis or action. The policy files distributed with this skill are the authority for the session that loaded them; skills contain procedure, never investment parameters or portfolio state.
 
+## Installed distribution root
+
+Resolve packaged files relative to this `SKILL.md`, never relative to the user's current working directory. The plugin root is `../..` from `skills/using-investment-os/`. Verify that `../../.plugin-version`, `../../PROJECT.md`, and `../../PRODUCTION.md` exist before formal work. Use policy files and deterministic scripts only from that same root. Do not clone, fetch, or substitute another Investment OS checkout at runtime.
+
 ## Route
 
 - Live portfolio or daily status:
@@ -42,8 +46,8 @@ Investment OS is a composable skill system. Select every required domain skill b
 
 ## Mandatory start
 
-1. Read `AGENTS.md`, `PROJECT.md`, and `PRODUCTION.md` as distributed with this skill.
-2. Establish the policy source for this session — the distribution version in `.plugin-version` plus the files just read — and carry it into every formal result as required by **Completion** below. Never fetch, or claim to have fetched, a newer policy version at runtime: what shipped is what executes, and whether a distribution is current is a release concern rather than a session one.
+1. From the installed distribution root, read `../../AGENTS.md`, `../../PROJECT.md`, and `../../PRODUCTION.md` relative to this skill.
+2. Establish the policy source for this session from `../../.plugin-version` plus the files just read, and carry it into every formal result as required by **Completion** below. The runtime rule is simple: what shipped is what executes; whether a distribution is current is a release concern rather than a runtime network lookup.
 3. Load only the domain skills required for the task.
 4. For live account work, build and validate the broker-neutral Broker Runtime before portfolio reconstruction.
 5. Never inherit approval from another agent or prior output.

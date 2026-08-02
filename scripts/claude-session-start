@@ -22,5 +22,5 @@ escape_json() {
 }
 
 escaped=$(escape_json "$content")
-context="<INVESTMENT_OS_BOOTSTRAP>\nInvestment OS is installed. Before portfolio, transaction, research, or system-governance work, follow the using-investment-os router below and load every required sub-skill. Current repository HEAD is the only policy authority. Missing broker or market capability must fail closed.\n\n${escaped}\n</INVESTMENT_OS_BOOTSTRAP>"
+context="<INVESTMENT_OS_BOOTSTRAP>\nInvestment OS is installed. Resolve every policy file and deterministic script from this installed plugin distribution, not from the current working directory or a runtime network fetch. Before portfolio, transaction, research, or system-governance work, follow the using-investment-os router below and load every required domain skill. Missing broker or market capability must fail closed.\n\n${escaped}\n</INVESTMENT_OS_BOOTSTRAP>"
 printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' "$context"

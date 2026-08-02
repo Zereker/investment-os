@@ -12,15 +12,14 @@ No target, threshold, formula, investment-universe member, lifecycle state or da
 
 ## 1. Fresh Rule Source
 
-Before any portfolio interpretation, trading discussion, Daily Brief, review, broker operation or repository change, the agent must:
+Before any portfolio interpretation, trading discussion, Daily Brief, review, broker operation or repository change, the agent must establish exactly one rule-source mode:
 
-1. read the current default-branch `HEAD` of `Zereker/investment-os`;
-2. record the exact commit SHA used;
-3. read the current product, production, Constitution and applicable Operating System documents from that commit;
-4. treat memory, prior chats, summaries and prior-agent outputs as non-authoritative context;
-5. restart rule resolution if `HEAD` changes before the final decision.
+1. **Installed distribution:** resolve the plugin root from the loaded `using-investment-os` skill, read `.plugin-version` plus the distributed product, production, Constitution and applicable Operating System documents from that root, and record the distribution version and files used. Do not fetch a newer repository copy at runtime.
+2. **Source-repository operation:** when auditing or changing the source repository itself, read the current default-branch `HEAD` of `Zereker/investment-os`, record the exact commit SHA, and read the applicable files from that source state before acting.
 
-The agent must never silently use remembered policy values.
+In either mode, treat memory, prior chats, summaries and prior-agent outputs as non-authoritative context. Restart rule resolution if the selected installed distribution or source `HEAD` changes before the final result.
+
+The default-branch `HEAD` remains the canonical source from which releases are cut. An installed session executes its immutable distributed snapshot; checking whether that snapshot is current belongs to release governance, not the live decision path. The agent must never silently use remembered policy values.
 
 ## 2. Fresh Runtime State
 
@@ -36,9 +35,8 @@ Every formal Daily Brief, transaction-related review, second opinion, decision p
 
 ```text
 Rule Source
-- repository
-- branch
-- commit SHA
+- mode: installed distribution / source repository
+- installed distribution version and files used, or repository branch and commit SHA
 
 Runtime Source
 - required broker reads and their status

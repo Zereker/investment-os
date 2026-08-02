@@ -10,7 +10,9 @@ Run the complete non-LLM suite with:
 bash tests/run-all.sh
 ```
 
-`tests/test_skill_system.py` executes the Claude session-start hook, parses its JSON output, discovers every Skill, verifies dependency references, rejects cycles, and confirms Claude/Codex manifests distribute one shared Skill tree and version.
+`tests/test_skill_system.py` executes the Claude inline session-start hook target, parses its JSON output, discovers every Skill, verifies dependency references, rejects cycles, and confirms Claude/Codex manifests distribute one shared Skill tree and version.
+
+`tests/test_plugin_installation.py` copies the plugin to a git-less cache directory, switches to an unrelated working directory, proves both repository marketplaces resolve the plugin root, verifies Codex cannot auto-discover a Claude hook, runs the Claude bootstrap from the installed copy, and discovers all skills without consulting the source checkout.
 
 Behavior scenarios and the optional real-agent runner live in `evals/`. PR CI validates scenario definitions only; behavioral compliance remains unverified until clean sessions are actually executed and independently checked.
 

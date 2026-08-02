@@ -5,7 +5,8 @@ Investment OS is distributed as a composable skill library with one router, reus
 ```text
 skills/using-investment-os/        bootstrap and router
 skills/*/                           reusable domain capabilities
-hooks/                              Claude Code session bootstrap
+scripts/claude-session-start        Claude Code session bootstrap
+.agents/plugins/                    Codex repository marketplace
 .claude-plugin/                     Claude Code distribution metadata
 .codex-plugin/                      Codex distribution metadata
 .plugin-version                     plugin distribution SemVer only
@@ -43,13 +44,17 @@ The plugin distribution has a separate SemVer read from `.plugin-version` and co
 
 ## Claude Code
 
-Claude Code uses `.claude-plugin/plugin.json`, discovers `skills/`, and loads `hooks/hooks.json`. The `SessionStart` hook injects the full `using-investment-os` router at startup, clear, and compaction events.
+Claude Code installs the repository marketplace entry, discovers `skills/`, and loads the inline SessionStart definition from `.claude-plugin/plugin.json`. The hook runs `scripts/claude-session-start` and injects the full `using-investment-os` router at startup, clear, and compaction events.
 
 See [`INSTALL-CLAUDE-CODE.md`](INSTALL-CLAUDE-CODE.md) and `skills/using-investment-os/references/claude-code-tools.md`.
 
 ## Codex
 
-Codex uses `.codex-plugin/plugin.json`, which declares `./skills/` and intentionally disables repository hooks. Native Skill discovery must be proven with a clean-session acceptance test.
+Codex installs the `.agents/plugins/marketplace.json` entry and uses `.codex-plugin/plugin.json`, which declares `./skills/`. The Codex distribution has no hook field and no default hook path, so native Skill discovery is the only bootstrap. It must be proven with a clean-session acceptance test.
+
+## Installed-runtime boundary
+
+Marketplace installation copies the plugin package into the harness cache. At runtime, `using-investment-os` resolves the plugin root from its own installed path and reads policy files and scripts from that immutable copy. The user's current working directory may be any unrelated project; it is never treated as the Investment OS policy root. Runtime sessions do not clone or update this repository.
 
 See [`INSTALL-CODEX.md`](INSTALL-CODEX.md) and `skills/using-investment-os/references/codex-tools.md`.
 
