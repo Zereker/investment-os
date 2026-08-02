@@ -1,88 +1,165 @@
 # 月度流程
 
-月度流程是 Investment OS 的核心执行层，目标用时不超过 20 分钟。
+月度流程把权威 Broker Runtime 转化为结构化月度决策。它不接受旧报告、人工贴数或估算替代当前状态，也不因公式可计算就自动形成执行权限。
 
-## 输入
+## 1. Required Runtime Inputs
 
-- 固定执行日前实时读取的 Account Summary、Balances、Positions、Open Orders
-- 本月外部净入金：实际计算只使用已到账金额 \(F\)（计划数额按隐私规则不入库，运行时从 IBKR Cash Transactions 读取实际值）
-- 当前税务或流动性约束
-- `04-Alpha/Position-Registry.md` 中的板块倾斜状态
-- SPYM 与 QQQM 的动态目标和正缺口
-- 到 2028-12 剩余的月度执行次数
-- SPYM 历史最高收盘回撤 `DD` 与回撤档位状态
+月度任务需要：
 
-> 计算辅助：`python3 scripts/monthly_execution.py`（用法见 `CLAUDE.md`）一次产出第 2–7 步的全部数值与 Deployment Framework 第 6 节输出格式；回补判定须传 `--lookthrough-current`，不传即视为无当季有效核查。它是本文件与 Constitution 的可执行镜像，结果不一致时以文档为准并修脚本。数值只走命令行与终端，永不落盘。
+- Account Summary；
+- Balances；
+- Positions；
+- Open Orders；
+- 当前市场输入与回撤状态；
+- 当前板块倾斜登记状态；
+- 本月已到账外部净入金 `F` 的权威来源；
+- 当季穿透核查状态（仅在相关路径需要时）。
 
-## 八步执行
+所有输入必须来自同一受信任运行时窗口，并通过 Broker Runtime 的来源、能力、新鲜度、币种和一致性检查。
 
-1. 通过 Data Gate，更新 Cash、SPYM、QQQM、SOXX 和 Legacy 的市值。
-2. 读取 Registry 的 `A_stage` 与 `A_execution_cap`，按 Constitution 的定义计算 `A_actual`、`A_basis`、`U` 及 SPYM 动态目标；检查执行上限不得高于硬上限。
-3. 检查Cash、QQQM、`SPYM + SOXX + Stage Reserve`袖套及SOXX 6%硬上限。
-4. 评估 SOXX 回补至目标：`U>0` 时，回补候选 = \(\min\bigl(U\times V,\ (\min(A_{execution\_cap},A_{stage})-A_{actual})\times V\bigr)\)；五项约束（Constitution）任一不成立即输出 `0`。`A_execution_cap` 不得在本步推进——那是提高倾斜，须完整 IC。
-5. 确认实际外部净入金 \(F\)，计算入金后 Core 正缺口 \(G_0\)，执行 Routine DCA \(D=\min(F,G_0)\)（按正缺口分配）；未分配金额留在现金。
-6. 以 Routine DCA 后的预计现金和剩余 Core 正缺口，按 Deployment Framework 计算战略现金迁移基线 \(B\)。
-7. 评估回撤部署档位：`DD` 达档且该档在本周期未执行时，按 Deployment Framework 第 2 节执行部署。
-8. 按 Deployment Framework 第 6 节的月度输出格式向所有者报告（聊天输出，不落盘），并记录影子基准；仅在非例行决定时写入 Journal。
+## 2. Mandatory Pre-Calculation Gates
 
-## 资金分配算法
+任何部署公式运行前必须依次通过：
 
-- \(F\) = 本月已到账的实际外部净入金，且 \(F\ge0\)；提款或未到账计划额不计入。
-- \(V\)=入金后、交易前净值；`A_actual`、`A_basis`、`U` 按 Constitution 定义计算。
-- QQQM 目标 = \(V\times28\%\)。
-- SPYM 目标 = \(V\times(57\%-A_{basis})\)。
-- \(G_0\) = Routine DCA 前两只 Core 的 `max(目标 − 当前市值, 0)` 合计。
-- \(D=\min(F,G_0)\)。
-- \(C=C_0-D\)，\(G\) = 分配 \(D\) 后两只 Core 的剩余正缺口合计。
-- \(S=\max(C-(15\%+U)\times V,0)\)，\(B=\min(S/R,G)\)。
-- \(B\) 按剩余正缺口在两只 Core 之间分配；为减少碎片交易，可只购买缺口最大的1–2项。
-- 已发布SOXX额度差额`U`作为现金用途标签保留，不先投入SPYM。
-- SOXX 回补候选 \(= \min\bigl(U\times V,\ (\min(A_{execution\_cap},A_{stage})-A_{actual})\times V\bigr)\)，只消耗 `U`，不进入 \(D\)、\(B\) 或回撤 tranche 的分配。
-- **提高倾斜**（推进 `A_execution_cap`）不属于月度例行路径，须完整 IC。
+1. **Capability Gate**：任务所需能力必须可用；
+2. **Freshness Gate**：快照和市场输入在允许时间窗口内；
+3. **Account Reconciliation**：NAV 与现金加持仓市值在允许容差内；
+4. **Open Orders Gate**：权威订单状态必须明确为 `clear`；
+5. **Contribution Gate**：本月实际外部净入金 `F` 已由权威来源确认；
+6. **Drawdown State Gate**：回撤值使用小数、档位状态和已执行集合可验证；
+7. **Policy Gate**：现行 Constitution、Transition 和倾斜状态可读取且无冲突。
 
-## 例行路径检查
+任一项失败：
 
-Routine DCA \(D\)、\(B\)、回撤部署与 SOXX 回补无需完整四视角 Packet，但必须全部满足：
+```text
+DATA INCOMPLETE / HOLD
+```
 
-- 四项 IBKR 数据实时读取成功；
-- 只买 SPYM / QQQM，或走回补路径的 SOXX；
-- 金额完全由已发布公式产生（回撤部署按其分档公式；回补按其上限公式）；
-- 交易后物理现金不低于现行下限（常态`12%+U`；回撤档生效时按其临时下限），且不使用融资；
-- 没有重复或冲突订单；
-- 没有突破 Constitution；
-- 订单类型、数量、限价和有效期明确。
+并停止新的月度候选。
 
-回补另须全部满足（Constitution「回补至目标 vs 提高倾斜」节）：
+## 3. Contribution `F`
 
-- 交易后 `A_actual ≤ min(A_execution_cap, A_stage)`；
-- 当季 `08-Data/LOOKTHROUGH_CHECK.md` 核查有效——过期或 `DATA INCOMPLETE` 即冻结回补；
-- 资金只来自 `U`，未占用回撤 tranche、未挤占 SPYM / QQQM 正缺口；
-- 信息技术 50% 与单一发行人 10% 冻结线不失守；
-- `A_execution_cap` 未在本次变动（变动即属提高倾斜）。
+`F` 只表示本月已到账的实际外部净入金，且 `F ≥ 0`。计划金额、提款、未到账资金或余额变化推断不得作为 `F`。
 
-任一项不满足时，升级为完整 IC 或 `HOLD / STOP`；回补项不满足时回补额为 `0`，不得部分执行。
+- 缺失 `F` 不得静默按零处理；
+- 无入金月份也必须由权威来源明确确认 `0`；
+- 当前 Adapter 若不支持 `cash_transactions`，必须声明 capability unavailable；
+- 在 Production 正式批准其他权威路径前，不允许用人工数字、截图或旧报告替代。
 
-## 非例行部署记录
+因此，当 `cash_transactions` 能力不可用时，Routine DCA 通道必须保持 `DATA INCOMPLETE`。
 
-每次回撤部署、倾斜动作、卖出或公式例外，Journal 至少记录：
+## 4. Open Orders
 
-- 数据日期与来源；
-- 当前价格、`DD` 与档位状态（如适用）；
-- \(F,V,C_0,G_0,D,C,R,S,G,B\)；
-- 部署金额、订单类型和限价；
-- 下一档触发条件；
-- 交易后 Cash / QQQM / SPYM / SOXX 权重；
-- Verdict（完整 IC 路径时）。
+月度流程必须读取权威 Open Orders，并判断重复、方向冲突、现金占用和未完成状态。
 
-## 完成条件
+确定性 CLI 使用：
 
-- 交易后现金仍在约束范围内（含回撤档临时下限），或按 Transition Plan 明确向范围靠拢。
-- 没有未经审核的新标的。
-- 月度输出已按 Deployment Framework 第 6 节格式呈交所有者。
-- \(D\) 与 \(B\) 完全由公式产生，没有被任何判断性闸门削减。
-- SOXX 没有通过月度例行路径提高倾斜；本月若发生回补，五项约束均已逐条确认。
-- 无操作也是有效结果。
+```text
+--open-orders-status clear|conflicting|unknown
+```
 
-## Maintenance Mode
+默认 `unknown`。只有显式且权威确认 `clear` 才能继续形成月度候选；`unknown` 或 `conflicting` 均失败关闭。
 
-当Cash、QQQM、`SPYM + SOXX + Stage Reserve`袖套连续三个自然月落在允许区间，且 Legacy 已按计划处理后，退出 Transition Mode。维护期 \(B=0\)，仅用每月新增资金修复偏差；回撤部署条款继续有效；任何非例行部署继续使用完整 IC。
+## 5. Account Reconciliation
+
+统一调用 `scripts/account_reconciliation.py`，验证：
+
+```text
+NAV ≈ Cash + Σ Position Market Values
+```
+
+对账失败必须在任何资金公式之前停止。调用者自报 `reconciliation.status = PASS` 不能覆盖真实数字冲突。
+
+## 6. Deterministic Calculation Order
+
+通过所有前置闸门后，按现行 Constitution 与 Deployment Framework 执行：
+
+1. 计算当前配置、动态目标、正缺口和板块倾斜状态；
+2. 判断相关回补路径是否满足全部限制；
+3. 以权威 `F` 计算 Routine DCA；
+4. 在 Routine DCA 后计算战略现金迁移；
+5. 根据 SPYM 回撤与本周期已执行档位判断回撤部署；
+6. 生成结构化结果、阻塞项和下一观察条件；
+7. 仅在需要实际 Broker 操作时进入 Execution Runtime。
+
+`D`、战略迁移、回撤部署和回补的具体公式与阈值由 Constitution、Deployment Framework 和 `scripts/monthly_execution.py` 当前实现共同约束。本文不复制易变参数。
+
+## 7. Routine Path Checks
+
+所有例行月度候选必须同时满足：
+
+- Broker Runtime 所需能力完整；
+- 账户物理对账通过；
+- `F` 权威且期间、币种明确；
+- Open Orders 状态为 `clear`；
+- 只涉及 Production 允许的标的和通道；
+- 金额完全由已发布公式产生；
+- 交易后现金与仓位不突破现行边界；
+- 不使用融资；
+- 不推进需要完整 IC 的风险预算；
+- 订单类型、数量、价格和有效期在执行前可规范化。
+
+任一项不满足时，结论为 `DATA INCOMPLETE`、`HOLD / STOP`，或升级完整 IC；不得部分绕过。
+
+## 8. Decision and Execution Boundary
+
+月度脚本输出的是候选与上限，不是 Broker 授权。
+
+实际执行必须经过 `execution-runtime`：
+
+- 当前会话所有者明确授权；
+- 授权绑定一个完整单次操作摘要；
+- capability 可用；
+- 只提交一次；
+- 权威 read-back；
+- 验证实际 Broker 状态与授权操作一致。
+
+候选、公式结果、IC Verdict 或历史批准均不能替代该执行授权。
+
+## 9. Output
+
+月度输出至少包含：
+
+- Rule Source 与 Runtime Source；
+- capability 与数据门状态；
+- Account Reconciliation；
+- Open Orders；
+- 当前配置与正缺口；
+- 各资金通道结果；
+- Blocking Issues；
+- Production Decision；
+- Execution Authority；
+- Next Observation Conditions。
+
+真实账户数据只在当前私有会话展示，不落盘、不提交公开仓库。
+
+## 10. Canonical Command
+
+```bash
+python3 scripts/monthly_execution.py \
+  --nav <NetLiq> \
+  --cash <TotalCash> \
+  --spym <MarketValue> \
+  --qqqm <MarketValue> \
+  --soxx <MarketValue> \
+  --contribution <AuthoritativeF> \
+  --dd <DecimalDrawdown> \
+  --tiers-executed <none|T1|T1,T2...> \
+  --open-orders-status clear
+```
+
+只有当当季穿透核查有效且相关路径需要时才传 `--lookthrough-current`。
+
+输入缺失、单位错误、账户不对账、订单状态未知或冲突时，CLI 必须非零退出并输出 `DATA INCOMPLETE`。
+
+## 11. Completion Conditions
+
+月度流程只有在以下条件满足时才算完成：
+
+- 所有前置数据门有明确结论；
+- 机器计算与现行规则一致；
+- 阻塞项没有被文案隐藏；
+- 候选与执行权限明确分离；
+- 无操作时输出完整 `HOLD`；
+- 若执行，已完成 read-back verification；
+- 真实账户状态未写入仓库。
