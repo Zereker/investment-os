@@ -12,16 +12,19 @@ Investment OS is a composable skill system. Select every required domain skill b
 ## Route
 
 - Live portfolio or daily status:
+  - **REQUIRED SUB-SKILL:** `broker-runtime`
   - **REQUIRED SUB-SKILL:** `reconstructing-portfolio-state`
   - **REQUIRED SUB-SKILL:** `validating-drawdown-state`
   - **REQUIRED SUB-SKILL:** `enforcing-behavioral-controls`
   - **REQUIRED SUB-SKILL:** `running-daily-review`
 - Monthly contribution or routine funding:
+  - **REQUIRED SUB-SKILL:** `broker-runtime`
   - **REQUIRED SUB-SKILL:** `reconstructing-portfolio-state`
   - **REQUIRED SUB-SKILL:** `validating-drawdown-state` when drawdown deployment is in scope
   - **REQUIRED SUB-SKILL:** `enforcing-behavioral-controls`
   - **REQUIRED SUB-SKILL:** `running-monthly-review`
 - Proposed transaction:
+  - **REQUIRED SUB-SKILL:** `broker-runtime`
   - **REQUIRED SUB-SKILL:** `reconstructing-portfolio-state`
   - **REQUIRED SUB-SKILL:** `validating-drawdown-state` when drawdown funding is claimed
   - **REQUIRED SUB-SKILL:** `enforcing-behavioral-controls`
@@ -36,8 +39,9 @@ Investment OS is a composable skill system. Select every required domain skill b
 1. Resolve the repository default branch and exact HEAD SHA.
 2. Read `AGENTS.md`, `PROJECT.md`, and `PRODUCTION.md` from that SHA.
 3. Load only the domain skills required for the task.
-4. Never inherit approval from another agent or prior output.
-5. Stop when a required authority, runtime source, review capability, or control gate is unavailable.
+4. For live account work, build and validate the broker-neutral Broker Runtime before portfolio reconstruction.
+5. Never inherit approval from another agent or prior output.
+6. Stop when a required authority, runtime source, review capability, or control gate is unavailable.
 
 ## Harness mapping
 
@@ -46,8 +50,8 @@ Use the mapping for the running environment without changing domain skill conten
 - Claude Code: `references/claude-code-tools.md`
 - Codex: `references/codex-tools.md`
 
-Never simulate a missing broker, market-data, independent-review, or repository capability.
+A harness-specific connector is an adapter, not the Investment OS contract. Never simulate a missing broker, market-data, independent-review, or repository capability.
 
 ## Completion
 
-Every formal result states the exact rule source, runtime-source health, authority boundary, decision status, and next verifiable observation condition.
+Every formal result states the exact rule source, Broker Runtime health, authority boundary, decision status, and next verifiable observation condition.

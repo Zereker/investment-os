@@ -99,6 +99,7 @@ def main() -> None:
     skills = discover()
     expected = {
         "using-investment-os",
+        "broker-runtime",
         "reconstructing-portfolio-state",
         "validating-drawdown-state",
         "enforcing-behavioral-controls",
@@ -112,11 +113,18 @@ def main() -> None:
     graph = dependency_graph(skills)
     assert_acyclic(graph)
     assert graph["using-investment-os"] >= {
+        "broker-runtime",
         "reconstructing-portfolio-state",
         "validating-drawdown-state",
         "enforcing-behavioral-controls",
         "running-daily-review",
     }
+    assert graph["reconstructing-portfolio-state"] == {"broker-runtime"}
+    broker_text = skills["broker-runtime"].read_text(encoding="utf-8")
+    assert "broker-neutral" in broker_text
+    assert "Missing open orders" in broker_text
+    assert "Missing cash transactions" in broker_text
+    assert "persist real account data" in broker_text
     test_manifests()
     test_bootstrap()
     print("Skill system integration tests passed.")
