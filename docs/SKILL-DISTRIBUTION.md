@@ -1,6 +1,6 @@
 # Investment OS Skill Distribution
 
-Investment OS is distributed as a composable Skill library with one router, reusable domain Skills, deterministic repository tools, and thin harness adapters.
+Investment OS is distributed as a composable skill library with one router, reusable domain Skills, deterministic repository tools, and thin harness adapters.
 
 ```text
 skills/using-investment-os/        bootstrap and router
