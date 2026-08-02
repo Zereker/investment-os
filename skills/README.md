@@ -1,6 +1,6 @@
 # Investment OS Skills
 
-Investment OS is a composable skill library distributed through one plugin.
+Investment OS is a composable skill system distributed through one plugin.
 
 ## Router
 
@@ -28,10 +28,15 @@ Harness adapters       discovery, bootstrap and abstract-action mapping
 
 Skills are parameter-free and platform-neutral. Claude Code receives the router through the session-start hook. Codex uses native Skill discovery. Harness-specific action mappings live under `using-investment-os/references/` and never rewrite domain Skills.
 
-## Validation
+## Tests and evals
+
+- `tests/`: executable non-LLM plugin, dependency, privacy and deterministic checks.
+- `evals/`: synthetic pressure scenarios and a real-agent behavior runner.
+
+Run:
 
 ```bash
 bash tests/run-all.sh
 ```
 
-Real-agent behavior scenarios live in `evals/`. Installation and clean-session acceptance requirements are documented in `docs/SKILL-DISTRIBUTION.md`.
+Installation and clean-session acceptance requirements are documented in `docs/SKILL-DISTRIBUTION.md`.
