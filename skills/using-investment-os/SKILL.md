@@ -42,7 +42,7 @@ Investment OS is a composable skill system. Select every required domain skill b
 
 ## Mandatory start
 
-1. Resolve the repository default branch and exact HEAD SHA, and record that SHA. Citing a policy file by name is not resolving it. When the authoritative commit cannot be proven, stop formal work and report the rule source as unavailable.
+1. Resolve the repository default branch and exact HEAD SHA.
 2. Read `AGENTS.md`, `PROJECT.md`, and `PRODUCTION.md` from that SHA.
 3. Load only the domain skills required for the task.
 4. For live account work, build and validate the broker-neutral Broker Runtime before portfolio reconstruction.
@@ -61,4 +61,4 @@ A harness-specific connector is an adapter, not the Investment OS contract. Neve
 
 ## Completion
 
-Every formal result states the resolved HEAD SHA it was decided under, the exact rule source, Broker Runtime health, authority boundary, decision status, and next verifiable observation condition. A result that cannot name the SHA is not a formal result, however complete the rest of its reasoning looks. Every broker write additionally states the operation-specific authorization scope, adapter capability, read-back result, and verification status.
+Every formal result states the exact rule source, Broker Runtime health, authority boundary, decision status, and next verifiable observation condition. Every broker write additionally states the operation-specific authorization scope, adapter capability, read-back result, and verification status.
