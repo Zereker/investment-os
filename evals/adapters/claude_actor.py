@@ -52,12 +52,27 @@ PLUGIN_DIR = os.environ.get("EVAL_PLUGIN_DIR", str(REPO_ROOT))
 # packet, so a routine review the agent cannot execute is a harness artifact
 # that shows up as a behavior failure. Production sessions have this tool;
 # withholding it makes the eval measure the harness instead of the system.
-ALLOWED_TOOLS = ["Read", "Grep", "Glob", "Skill", "Bash(python3 scripts/*)"]
+ALLOWED_TOOLS = [
+    "Read", "Grep", "Glob", "Skill",
+    "Bash(python3 scripts/*)",
+    # Read-only git: the rules make repository HEAD the policy authority, so an
+    # agent that cannot resolve it fails a grounding requirement for harness
+    # reasons. Production sessions have git; these forms cannot mutate history.
+    "Bash(git rev-parse*)", "Bash(git log*)", "Bash(git status*)", "Bash(git show*)",
+]
 DENIED_TOOLS = ["Write", "Edit", "NotebookEdit", "WebFetch", "WebSearch", "Task"]
 
 
-def claude_turn(prompt: str, session_id: str, first: bool) -> str:
-    """Run one turn and return the assistant's final text."""
+def claude_turn(prompt: str, session_id: str, first: bool) -> tuple[str, dict]:
+    """Run one turn; return the assistant's final text and observability metadata.
+
+    The transcript carries final text only, so a behavior that shows up as tool
+    use rather than prose is invisible to the verifier. `num_turns` and any
+    permission denials are captured alongside it: num_turns == 1 means the
+    model answered without calling a single tool, which distinguishes "did not
+    attempt" from "attempted and was blocked" when a rubric asks whether the
+    agent tried to resolve something.
+    """
     cmd = [
         "claude", "-p", prompt,
         "--output-format", "json",
@@ -87,7 +102,12 @@ def claude_turn(prompt: str, session_id: str, first: bool) -> str:
     text = payload.get("result")
     if not isinstance(text, str) or not text.strip():
         raise RuntimeError("claude returned an empty assistant turn")
-    return text
+    meta = {
+        "num_turns": payload.get("num_turns"),
+        "used_tools": isinstance(payload.get("num_turns"), int) and payload["num_turns"] > 1,
+        "permission_denials": payload.get("permission_denials", []),
+    }
+    return text, meta
 
 
 def main() -> int:
@@ -98,11 +118,13 @@ def main() -> int:
     session_id = str(uuid.uuid4())
 
     transcript: list[dict[str, str]] = []
+    turn_meta: list[dict] = []
     for index, turn in enumerate(turns):
         prompt = turn["prompt"]
-        reply = claude_turn(prompt, session_id, first=(index == 0))
+        reply, meta = claude_turn(prompt, session_id, first=(index == 0))
         transcript.append({"role": "user", "content": prompt})
         transcript.append({"role": "assistant", "content": reply})
+        turn_meta.append(meta)
 
     json.dump(
         {
@@ -114,6 +136,9 @@ def main() -> int:
                 "mcp_servers": "none (--strict-mcp-config with empty config)",
                 "tools": {"allowed": ALLOWED_TOOLS, "denied": DENIED_TOOLS},
                 "persistent_session": len(turns) > 1,
+                # Not judged by the verifier; kept so a reader can tell whether
+                # a missing behavior was never attempted or merely unspoken.
+                "turn_observability": turn_meta,
             },
             "transcript": transcript,
         },
