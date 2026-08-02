@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the cross-harness Investment OS skill distribution."""
+"""Validate the cross-harness Investment OS composable skill distribution."""
 
 from __future__ import annotations
 
@@ -8,8 +8,26 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SKILL = ROOT / "skills" / "investment-os" / "SKILL.md"
+SKILLS = ROOT / "skills"
 VERSION = "6.4.0"
+REQUIRED_SKILLS = {
+    "using-investment-os",
+    "reconstructing-portfolio-state",
+    "enforcing-behavioral-controls",
+    "running-daily-review",
+    "running-monthly-review",
+    "evaluating-transaction-candidates",
+    "routing-investment-research",
+    "auditing-investment-os",
+}
+FORBIDDEN_VENDOR_TERMS = ("Claude Code tool", "Codex tool", "api_tool", "web.run", "Task tool")
+FORBIDDEN_POLICY = {
+    "percentages": re.compile(r"(?<![A-Za-z0-9])\d+(?:\.\d+)?\s*%"),
+    "tier labels": re.compile(r"\bT[1-9]\b"),
+    "production identifiers": re.compile(r"\b(?:SPYM|QQQM|SOXX)\b"),
+    "allocation formulas": re.compile(r"\b(?:A_basis|A_stage|A_execution_cap|D_max|G_0)\b"),
+    "hard-coded money": re.compile(r"\$\s*\d|\b\d[\d,]*(?:\.\d+)?\s*(?:USD|美元)\b", re.I),
+}
 
 
 def load_json(path: Path) -> dict:
@@ -20,12 +38,11 @@ def load_json(path: Path) -> dict:
 def parse_frontmatter(text: str) -> dict[str, str]:
     if not text.startswith("---\n"):
         raise AssertionError("SKILL.md must start with YAML frontmatter")
-    try:
-        raw = text.split("---\n", 2)[1]
-    except IndexError as exc:
-        raise AssertionError("SKILL.md frontmatter is not closed") from exc
+    parts = text.split("---\n", 2)
+    if len(parts) < 3:
+        raise AssertionError("SKILL.md frontmatter is not closed")
     result: dict[str, str] = {}
-    for line in raw.splitlines():
+    for line in parts[1].splitlines():
         if not line.strip():
             continue
         key, sep, value = line.partition(":")
@@ -35,72 +52,60 @@ def parse_frontmatter(text: str) -> dict[str, str]:
     return result
 
 
-def main() -> None:
-    text = SKILL.read_text(encoding="utf-8")
+def validate_skill(path: Path) -> None:
+    text = path.read_text(encoding="utf-8")
     frontmatter = parse_frontmatter(text)
-
-    if frontmatter.get("name") != "investment-os":
-        raise AssertionError("skill name must be investment-os")
+    expected_name = path.parent.name
+    if frontmatter.get("name") != expected_name:
+        raise AssertionError(f"{path}: name must match directory {expected_name}")
     description = frontmatter.get("description", "")
     if not description.startswith("Use when "):
-        raise AssertionError("skill description must start with 'Use when '")
+        raise AssertionError(f"{path}: description must start with 'Use when '")
     if len(description) > 500:
-        raise AssertionError("skill description should remain concise")
-
-    required_references = {
-        "references/authority-and-runtime.md",
-        "references/task-routing.md",
-        "references/control-gates.md",
-    }
-    for relative in required_references:
-        if relative not in text:
-            raise AssertionError(f"SKILL.md must link {relative}")
-        if not (SKILL.parent / relative).is_file():
-            raise AssertionError(f"missing skill reference: {relative}")
-
-    forbidden_vendor_terms = (
-        "Claude Code tool",
-        "Codex tool",
-        "api_tool",
-        "web.run",
-        "Task tool",
-    )
-    for term in forbidden_vendor_terms:
+        raise AssertionError(f"{path}: description should remain concise")
+    for term in FORBIDDEN_VENDOR_TERMS:
         if term in text:
-            raise AssertionError(f"platform-neutral skill contains vendor tool term: {term}")
-
-    forbidden_policy = {
-        "percentages": re.compile(r"(?<![A-Za-z0-9])\d+(?:\.\d+)?\s*%"),
-        "tier labels": re.compile(r"\bT[1-9]\b"),
-        "production identifiers": re.compile(r"\b(?:SPYM|QQQM|SOXX)\b"),
-        "allocation formulas": re.compile(r"\b(?:A_basis|A_stage|A_execution_cap|D_max|G_0)\b"),
-        "hard-coded money": re.compile(r"\$\s*\d|\b\d[\d,]*(?:\.\d+)?\s*(?:USD|美元)\b", re.I),
-    }
-    violations = [name for name, pattern in forbidden_policy.items() if pattern.search(text)]
+            raise AssertionError(f"{path}: contains vendor tool term {term}")
+    violations = [name for name, pattern in FORBIDDEN_POLICY.items() if pattern.search(text)]
     if violations:
-        raise AssertionError("SKILL.md contains policy parameters: " + ", ".join(violations))
+        raise AssertionError(f"{path}: contains policy parameters: {', '.join(violations)}")
+
+
+def main() -> None:
+    actual = {path.parent.name for path in SKILLS.glob("*/SKILL.md")}
+    missing = REQUIRED_SKILLS - actual
+    if missing:
+        raise AssertionError("missing required skills: " + ", ".join(sorted(missing)))
+    if "investment-os" in actual:
+        raise AssertionError("monolithic investment-os skill must not coexist with the composable library")
+    for path in sorted(SKILLS.glob("*/SKILL.md")):
+        validate_skill(path)
+
+    router = (SKILLS / "using-investment-os" / "SKILL.md").read_text(encoding="utf-8")
+    for name in REQUIRED_SKILLS - {"using-investment-os"}:
+        if name not in router:
+            raise AssertionError(f"router must reference {name}")
 
     claude = load_json(ROOT / ".claude-plugin" / "plugin.json")
     codex = load_json(ROOT / ".codex-plugin" / "plugin.json")
-    for name, manifest in (("Claude", claude), ("Codex", codex)):
+    for label, manifest in (("Claude", claude), ("Codex", codex)):
         if manifest.get("name") != "investment-os":
-            raise AssertionError(f"{name} manifest has wrong name")
+            raise AssertionError(f"{label} manifest has wrong name")
         if manifest.get("version") != VERSION:
-            raise AssertionError(f"{name} manifest version must be {VERSION}")
+            raise AssertionError(f"{label} manifest version must be {VERSION}")
         if manifest.get("repository") != "https://github.com/Zereker/investment-os":
-            raise AssertionError(f"{name} manifest has wrong repository")
-
+            raise AssertionError(f"{label} manifest has wrong repository")
     if codex.get("skills") != "./skills/":
         raise AssertionError("Codex manifest must distribute ./skills/")
     if codex.get("hooks") != {}:
         raise AssertionError("Codex manifest must not load repository hooks")
 
     docs = (ROOT / "docs" / "SKILL-DISTRIBUTION.md").read_text(encoding="utf-8")
-    for needle in ("platform-neutral skill source", "Claude Code", "Codex", "Acceptance tests"):
+    for needle in ("composable skill library", "Claude Code", "Codex", "Testing model", "evals/"):
         if needle not in docs:
             raise AssertionError(f"distribution docs missing: {needle}")
 
-    print("Skill distribution checks passed.")
+    print("Composable skill distribution checks passed.")
 
 
 if __name__ == "__main__":
