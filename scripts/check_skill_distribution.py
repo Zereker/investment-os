@@ -13,6 +13,7 @@ VERSION = "6.4.0"
 REQUIRED_SKILLS = {
     "using-investment-os",
     "reconstructing-portfolio-state",
+    "validating-drawdown-state",
     "enforcing-behavioral-controls",
     "running-daily-review",
     "running-monthly-review",
@@ -81,10 +82,14 @@ def main() -> None:
     for path in sorted(SKILLS.glob("*/SKILL.md")):
         validate_skill(path)
 
-    router = (SKILLS / "using-investment-os" / "SKILL.md").read_text(encoding="utf-8")
+    router_path = SKILLS / "using-investment-os" / "SKILL.md"
+    router = router_path.read_text(encoding="utf-8")
     for name in REQUIRED_SKILLS - {"using-investment-os"}:
         if name not in router:
             raise AssertionError(f"router must reference {name}")
+    for mapping in ("references/claude-code-tools.md", "references/codex-tools.md"):
+        if mapping not in router or not (router_path.parent / mapping).is_file():
+            raise AssertionError(f"router mapping missing: {mapping}")
 
     claude = load_json(ROOT / ".claude-plugin" / "plugin.json")
     codex = load_json(ROOT / ".codex-plugin" / "plugin.json")
@@ -99,6 +104,11 @@ def main() -> None:
         raise AssertionError("Codex manifest must distribute ./skills/")
     if codex.get("hooks") != {}:
         raise AssertionError("Codex manifest must not load repository hooks")
+
+    hooks = load_json(ROOT / "hooks" / "hooks.json")
+    command = hooks["hooks"]["SessionStart"][0]["hooks"][0]["command"]
+    if "session-start" not in command or not (ROOT / "hooks" / "session-start").is_file():
+        raise AssertionError("Claude SessionStart bootstrap is not wired")
 
     docs = (ROOT / "docs" / "SKILL-DISTRIBUTION.md").read_text(encoding="utf-8")
     for needle in ("composable skill library", "Claude Code", "Codex", "Testing model", "evals/"):
