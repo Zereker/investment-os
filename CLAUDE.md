@@ -141,3 +141,8 @@ DATA INCOMPLETE / NOT EXECUTED
 ```
 
 停止新的候选或执行，不估算、不沿用旧值、不自行放宽规则。
+
+
+## 11. Deterministic Entry Points
+
+月度确定性计算入口是 `scripts/monthly_execution.py`。调用前必须先通过 Broker Runtime、账户对账、权威 `F` 与 Open Orders 状态门；脚本输出候选，不自动形成执行权限。

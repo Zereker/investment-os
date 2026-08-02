@@ -120,3 +120,9 @@ bash tests/run-all.sh
 ```text
 Real Harness behavior: NOT YET VERIFIED
 ```
+
+
+## 10. 倾斜路径术语
+
+- **回补至目标**：不提高已批准风险预算，只在现行规则允许范围内恢复被市场漂移压低的已批准权重；
+- **提高倾斜**：推进或扩大风险预算，必须进入完整 IC，不能伪装成例行回补。

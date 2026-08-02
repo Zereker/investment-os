@@ -163,3 +163,8 @@ python3 scripts/monthly_execution.py \
 - 无操作时输出完整 `HOLD`；
 - 若执行，已完成 read-back verification；
 - 真实账户状态未写入仓库。
+
+
+## 12. 回补与提高倾斜
+
+`--lookthrough-current` 只证明相关当季核查有效，不创造风险预算。**回补至目标**必须保持现行执行上限不变；任何推进执行上限或扩大预算的行为都属于**提高倾斜**，必须进入完整 IC。
