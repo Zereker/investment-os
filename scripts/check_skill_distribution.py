@@ -73,7 +73,7 @@ def validate_skill(path: Path) -> None:
 
 
 def main() -> None:
-    if not re.fullmatch(r"0|[1-9]\d*\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)", VERSION):
+    if not re.fullmatch(r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)", VERSION):
         raise AssertionError(".plugin-version must contain a plain SemVer value")
 
     actual = {path.parent.name for path in SKILLS.glob("*/SKILL.md")}
