@@ -73,15 +73,15 @@ A different Harness is preferred, for example Claude Code actor with Codex verif
 
 ## Commands
 
-Ready-made Claude Code adapters live in `evals/adapters/`; see that directory's README for the
-isolation and session guarantees they implement.
+Ready-made Claude Code actor and Claude/Codex verifier adapters live in `evals/adapters/`; see that
+directory's README for the isolation and session guarantees they implement.
 
 Verified run:
 
 ```bash
 python3 evals/run.py rewording-does-not-reset-intent \
   --actor-command 'python3 evals/adapters/claude_actor.py' \
-  --verifier-command 'python3 evals/adapters/claude_verifier.py' \
+  --verifier-command 'python3 evals/adapters/codex_verifier.py' \
   --timeout 2400
 ```
 
