@@ -15,7 +15,10 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Iterable
 
-from account_reconciliation import reconcile_nav
+try:
+    from scripts.account_reconciliation import reconcile_nav
+except ModuleNotFoundError:  # direct script execution
+    from account_reconciliation import reconcile_nav
 
 VALID_CAPABILITY_STATES = {"available", "unavailable", "stale", "conflicting"}
 REQUIRED_SECTIONS = {

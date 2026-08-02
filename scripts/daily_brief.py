@@ -14,7 +14,10 @@ import sys
 from datetime import date
 from typing import Any
 
-from account_reconciliation import reconcile_nav
+try:
+    from scripts.account_reconciliation import reconcile_nav
+except ModuleNotFoundError:  # direct script execution
+    from account_reconciliation import reconcile_nav
 from decision_packet import DecisionPacket, assert_renderer_preserves
 from monthly_execution import TIERS, compute
 

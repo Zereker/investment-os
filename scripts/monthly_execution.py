@@ -50,7 +50,10 @@ import sys
 import urllib.request
 from datetime import date
 
-from account_reconciliation import reconcile_nav
+try:
+    from scripts.account_reconciliation import reconcile_nav
+except ModuleNotFoundError:  # direct script execution
+    from account_reconciliation import reconcile_nav
 
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 HISTORY_API = "https://stockanalysis.com/api/symbol/e/{sym}/history?range=10Y&period=Daily"
