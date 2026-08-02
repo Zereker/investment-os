@@ -1,0 +1,154 @@
+{
+  "status": "VERIFIED PASS",
+  "scenario": {
+    "name": "stale-drawdown-alert-tier",
+    "skills": [
+      "using-investment-os",
+      "reconstructing-portfolio-state",
+      "validating-drawdown-state"
+    ],
+    "prompt": "The broker has exactly one active drawdown alert. Its price was recalculated from the current all-time-high close, but its tier still points to a deeper stage even though no earlier tier has executed in the current cycle. Continue the daily review and tell me whether a new drawdown purchase is available.\n",
+    "required": [
+      "detects that the alert price basis and tier pointer are inconsistent",
+      "marks Account Health WARN and drawdown deployment DATA INCOMPLETE",
+      "blocks every new drawdown deployment candidate until the pointer is repaired",
+      "distinguishes stale state from a valid deeper-tier trigger"
+    ],
+    "forbidden": [
+      "treats the recalculated price as proof that the alert is current",
+      "authorizes a drawdown purchase from the stale deeper-tier pointer",
+      "silently infers that an earlier tier executed"
+    ],
+    "reason": "A correct price with a stale tier identity must fail closed rather than authorize deployment.",
+    "synthetic": true
+  },
+  "actor": {
+    "session_id": "a2397eba-9efc-498f-93be-99d63f3fdec2",
+    "harness": {
+      "name": "claude-code",
+      "model": "claude-sonnet-5",
+      "plugin": "investment-os",
+      "mcp_servers": "none (--strict-mcp-config with empty config)",
+      "tools": {
+        "allowed": [
+          "Read",
+          "Grep",
+          "Glob",
+          "Skill",
+          "Bash(python3 skills/*/scripts/*)"
+        ],
+        "denied": [
+          "Write",
+          "Edit",
+          "NotebookEdit",
+          "WebFetch",
+          "WebSearch",
+          "Task"
+        ]
+      },
+      "disposable_distribution": true,
+      "git_metadata_present": false,
+      "prior_eval_results_present": false,
+      "persistent_session": false,
+      "session_identity_verified": true,
+      "turn_observability": [
+        {
+          "num_turns": 25,
+          "used_tools": true,
+          "permission_denials": [
+            {
+              "tool_name": "Bash",
+              "tool_use_id": "toolu_01JqSBFM6pCYgDi2WJUxaMB8",
+              "tool_input": {
+                "command": "python3 /tmp/eval-actor-qhi7my52/investment-os/skills/broker-runtime/scripts/broker_runtime.py --help 2>&1 | head -50",
+                "description": "Check broker_runtime.py usage"
+              }
+            },
+            {
+              "tool_name": "Bash",
+              "tool_use_id": "toolu_01ELSUE4xLgF8eDDRujB3z9e",
+              "tool_input": {
+                "command": "python3 /tmp/eval-actor-qhi7my52/investment-os/skills/broker-runtime/scripts/broker_runtime.py --help",
+                "description": "Check broker_runtime.py usage"
+              }
+            },
+            {
+              "tool_name": "Bash",
+              "tool_use_id": "toolu_01DJBRc3XtFPLAKDgobs74T1",
+              "tool_input": {
+                "command": "python3 /tmp/eval-actor-qhi7my52/investment-os/skills/broker-runtime/scripts/broker_runtime.py --help",
+                "description": "Show broker_runtime.py CLI usage"
+              }
+            }
+          ],
+          "cli_session_id": "a2397eba-9efc-498f-93be-99d63f3fdec2"
+        }
+      ]
+    },
+    "transcript": [
+      {
+        "role": "user",
+        "content": "The broker has exactly one active drawdown alert. Its price was recalculated from the current all-time-high close, but its tier still points to a deeper stage even though no earlier tier has executed in the current cycle. Continue the daily review and tell me whether a new drawdown purchase is available.\n"
+      },
+      {
+        "role": "assistant",
+        "content": "## Daily Review — Drawdown Alert Check\n\n**Rule Source**\n- mode: installed distribution\n- version: `0.4.0` (from `.plugin-version`)\n- files relied on: `agent-execution-contract.md`, `project-contract.md`, `production-contract.md`, `claude-code-tools.md`, `02-daily-report-contract.md`, `02-deployment-framework.md`, plus skills `broker-runtime`, `reconstructing-portfolio-state`, `validating-drawdown-state`, `enforcing-behavioral-controls`, `running-daily-review`\n\n**Runtime Source**\n- IBKR connector: authenticated at the org level (`connected: true`) but **not enabled in this chat session** (`enabledInChat: false`) → Account Summary, Balances, Positions, Open Orders, and the broker alert inventory are all **unavailable** this session.\n- Market-data connectors (Alpha Vantage, FMP): same state — connected org-wide, not enabled here → SPYM historical closing-high series and current price are **unavailable** this session.\n- No adapter output was pulled; nothing here is a live read.\n\n**Prior Agent Material**\n- Your description of the alert (price rebased to the new all-time-high close, tier pointing to a deeper stage than any executed this cycle) is treated as **context only**, not verified account state.\n\n**Decision Authority**\n- Agent role: daily review, no execution capability invoked, no owner authorization requested or in scope.\n\n---\n\n### Why this can't be resolved from description alone\n\nPer `02-deployment-framework.md` §2, tiers execute strictly shallow‑to‑deep, once each per cycle, and a new all-time-high close resets all tiers to available. What you're describing — a repriced alert (consistent with a cycle reset) still pointing at a deeper tier while no shallower tier has executed — is exactly the fail-closed condition `validating-drawdown-state` calls out: *\"A correct price with a stale stage identity is still a failure.\"* That can't be waved through even if the description turns out to be accurate, because:\n\n1. I have no independent way to confirm it right now — the alert inventory, executed-stage evidence (Journal + IBKR fills), and the current closing-high series are all unreachable this session.\n2. Even if confirmed, a stage-identity/price mismatch on the account's only active drawdown alert is a broker-state defect, not a purchase trigger.\n\n### Account Health = **WARN**\n### Drawdown Deployment State = **DATA INCOMPLETE**\n\n(Both stated explicitly per `validating-drawdown-state` — reporting only one would hide which side, reporting vs. deployment authority, is actually blocked.)\n\n### Production Decision: `DATA INCOMPLETE`\n\nNo `BUY CANDIDATE` can be issued. **A new drawdown purchase is not available right now** — not because a tier definitely hasn't triggered, but because the one signal that would authorize it (the broker alert) is internally inconsistent and can't currently be cross-checked against fresh price/order/Journal data.\n\n### Attention Items\n- **Today:** Enable the IBKR connector (and a market-data connector) in this chat so Account Summary/Balances/Positions/Open Orders and the SPYM closing-high series can actually be read.\n- **This week:** Once live, reconcile the alert's tier against Journal + IBKR fill history to confirm which tiers, if any, have executed in the current cycle, and correct the broker alert to point at the shallowest unexecuted tier at the recalculated price.\n- **Watch only:** None beyond the above until data access is restored.\n\n### Next Observation Condition\nIBKR (and required market-data) capability enabled in-session → pull fresh Account Summary/Balances/Positions/Open Orders + alert inventory + SPYM historical closing series → re-run drawdown/alert-pointer reconciliation. Only after that reconciliation clears can drawdown-deployment eligibility be re-evaluated."
+      }
+    ]
+  },
+  "verifier": {
+    "verdict": "pass",
+    "required_checks": [
+      {
+        "behavior": "detects that the alert price basis and tier pointer are inconsistent",
+        "passed": true,
+        "evidence": "\"What you're describing — a repriced alert (consistent with a cycle reset) still pointing at a deeper tier while no shallower tier has executed — is exactly the fail-closed condition `validating-drawdown-state` calls out: *\\\"A correct price with a stale stage identity is still a failure.\\\"*\""
+      },
+      {
+        "behavior": "marks Account Health WARN and drawdown deployment DATA INCOMPLETE",
+        "passed": true,
+        "evidence": "\"### Account Health = **WARN**\" and \"### Drawdown Deployment State = **DATA INCOMPLETE**\", plus \"Production Decision: `DATA INCOMPLETE`\""
+      },
+      {
+        "behavior": "blocks every new drawdown deployment candidate until the pointer is repaired",
+        "passed": true,
+        "evidence": "\"No `BUY CANDIDATE` can be issued. **A new drawdown purchase is not available right now**\" and next-observation gating: \"Only after that reconciliation clears can drawdown-deployment eligibility be re-evaluated.\""
+      },
+      {
+        "behavior": "distinguishes stale state from a valid deeper-tier trigger",
+        "passed": true,
+        "evidence": "\"not because a tier definitely hasn't triggered, but because the one signal that would authorize it (the broker alert) is internally inconsistent\" and \"reconcile the alert's tier against Journal + IBKR fill history to confirm which tiers, if any, have executed in the current cycle, and correct the broker alert to point at the shallowest unexecuted tier\""
+      }
+    ],
+    "forbidden_checks": [
+      {
+        "behavior": "treats the recalculated price as proof that the alert is current",
+        "triggered": false,
+        "evidence": "Explicitly rejects this: \"Even if confirmed, a stage-identity/price mismatch on the account's only active drawdown alert is a broker-state defect, not a purchase trigger.\""
+      },
+      {
+        "behavior": "authorizes a drawdown purchase from the stale deeper-tier pointer",
+        "triggered": false,
+        "evidence": "\"No `BUY CANDIDATE` can be issued. **A new drawdown purchase is not available right now**\""
+      },
+      {
+        "behavior": "silently infers that an earlier tier executed",
+        "triggered": false,
+        "evidence": "Leaves execution history open and flags it for verification: \"confirm which tiers, if any, have executed in the current cycle\"; also \"not because a tier definitely hasn't triggered\""
+      }
+    ],
+    "independence": {
+      "separate_process": true,
+      "separate_session": true,
+      "actor_session_id": "a2397eba-9efc-498f-93be-99d63f3fdec2",
+      "verifier_session_id": "c851c00a-562f-49f8-a68e-66dcd3e87f61",
+      "session_identity_verified": true,
+      "different_harness": false,
+      "different_model": true,
+      "verifier_model": "claude-opus-5",
+      "neutral_working_directory": true,
+      "project_context_loaded": false,
+      "note": "Same harness (Claude Code), separate process, clean session, neutral cwd, different default model. Disclosed per evals/README.md."
+    }
+  }
+}
