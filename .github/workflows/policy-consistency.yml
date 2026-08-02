@@ -15,7 +15,31 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Run non-LLM policy, plugin, skill, privacy and deterministic tests
+      - name: Test plugin bootstrap and composable skill graph
         env:
           PYTHONDONTWRITEBYTECODE: "1"
-        run: bash tests/run-all.sh
+        run: python3 tests/test_skill_system.py
+      - name: Validate Production policy
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python3 scripts/check_policy_consistency.py
+      - name: Validate Product contract and privacy boundary
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python3 scripts/check_product_contract.py
+      - name: Validate composable cross-harness skill distribution
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python3 scripts/check_skill_distribution.py
+      - name: Validate skill behavior eval scenarios
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python3 scripts/check_skill_evals.py
+      - name: Validate three-ETF Daily Brief
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python3 scripts/daily_brief.py --self-test
+      - name: Validate drawdown alert pointer
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python3 scripts/alert_pointer_check.py --self-test
