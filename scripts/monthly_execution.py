@@ -470,6 +470,12 @@ def main() -> int:
     if args.nav <= 0:
         print("DATA INCOMPLETE: NAV 必须为正", file=sys.stderr)
         return 2
+    if args.dd is not None and not (0.0 <= args.dd < 1.0):
+        print(
+            "DATA INCOMPLETE: --dd 必须使用小数且范围为 [0, 1)；例如 1.68% 应传 0.0168",
+            file=sys.stderr,
+        )
+        return 2
 
     today = date.fromisoformat(args.today) if args.today else date.today()
 
