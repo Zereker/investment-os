@@ -408,6 +408,21 @@ def main() -> None:
                  "plugins/investment-os/skills/using-investment-os/references/02-state-reconstruction.md",
                  "plugins/investment-os/skills/validating-drawdown-state/scripts/drawdown_drill.py", "plugins/investment-os/skills/running-monthly-review/scripts/monthly_execution.py"):
         forbid(path, "`DD ≥ 30%`", "`DD ≥ 35%`", '"T5"', '"T6"')
+    # the v4.4 ammunition text (9pp ending at 6%+U) must not survive in the
+    # constitution either — BUG-014's pattern is stale numbers in prose, and
+    # this exact paragraph shipped one release behind the tier table above it
+    forbid(
+        "plugins/investment-os/skills/using-investment-os/references/01-target-allocation.md",
+        "合计 9 个百分点",
+        "降至 T4 的 `6%+U`",
+        # every figure in the constitution must be traceable to Research/;
+        # 24.1% never was (the four-tier proposal carries 22.5 / 26.7 / 10.96 / 11.60)
+        "24.1%",
+    )
+    require(
+        "plugins/investment-os/skills/using-investment-os/references/01-target-allocation.md",
+        "合计 15 个百分点的 NAV",
+    )
     require(
         "Research/2026-08-01-drawdown-four-tier.md",
         "已批准", "证伪回路", "未采纳",
