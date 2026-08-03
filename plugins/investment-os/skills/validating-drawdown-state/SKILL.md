@@ -33,6 +33,8 @@ State **both** of the following explicitly, in addition to stopping new drawdown
 - `Account Health = WARN`
 - `drawdown deployment state = DATA INCOMPLETE`
 
+These labels are independent of Broker Runtime health and other blocking statuses. Do not replace `Account Health = WARN` with `Account Health = DATA INCOMPLETE` when an unavailable runtime or another data gate also makes the broader review `DATA INCOMPLETE`; emit every applicable status separately.
+
 Other independent routine funding paths continue to be judged by their own data gates; this pair does not by itself halt them.
 
 Apply this when:
