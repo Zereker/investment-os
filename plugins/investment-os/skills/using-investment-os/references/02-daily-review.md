@@ -4,15 +4,19 @@
 
 ## A. 数据读取
 
-依次读取并记录时间戳：
+依次读取并记录每个端点自己的来源与时间戳：
 
 1. IBKR Account Summary
 2. IBKR Balances
 3. IBKR Positions
 4. IBKR Open Orders
 5. IBKR 当前启用的 SPYM 回撤警报
+6. 现金活动 / 入金记录
+7. 券商常驻自动化（如 DRIP、定投；仅在适配器可读取时）
 
 若任一账户接口失败，账户报告状态为 `DATA INCOMPLETE`。不得用上次快照填充“今日”账户数据。
+
+不可用能力必须表示为 `null`，不得伪装成 `0`、空对象或空数组。只有接口成功读取后，空订单、空警报或空现金活动才是可采信事实。单一编排时间戳不能替代各端点的 `observed_at`。
 
 ## B. 一致性检查
 
@@ -23,12 +27,13 @@
 - 是否出现零数量持仓、碎股、异常价格或重复合约
 - Leverage 是否来自真实借款，还是仅表示投资比例
 - 回撤警报数量、标的、字段、运算符、档位和价格是否与当前周期状态一致
+- 是否存在可绕过 Production universe 的常驻券商自动化；发现时只报告并阻断，不自动修改
 
 ### B.1 回撤警报指针不变量
 
 每日必须从当前历史最高收盘和本周期已执行档位重建 `expected alert pointer`，不得把券商警报本身当成已执行状态的唯一证据。
 
-1. 从足够长的 SPYM 日线窗口确认当前历史最高收盘；窗口不足以排除更早高点时继续向前扩展。
+1. 从足够长的 SPYM 日线窗口确认当前历史最高收盘；窗口不足以排除更早高点时继续向前扩展。实时 `LAST` 与最后一个已完成日线收盘必须分开记录，`DD` 只使用后者。
 2. 按 `State-Reconstruction.md` 的三信号程序重建本周期已执行档位。
 3. 使用 `python3 skills/validating-drawdown-state/scripts/alert_pointer_check.py`，比较重建出的 expected pointer 与 IBKR actual alert。
 4. 未耗尽阶梯时，账户内必须恰好有一个启用警报，且满足：

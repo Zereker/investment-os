@@ -20,6 +20,8 @@ Discover and read the capabilities required by the policy files distributed with
 - open and pending orders, including duplicates and conflicting instructions;
 - cash transactions or contribution evidence when a funding workflow needs them;
 - quotes or market series when required by current policy;
+- broker alert inventory required for drawdown-pointer validation;
+- standing broker automations, including dividend reinvestment and recurring-investment settings, when the adapter exposes them;
 - source, snapshot time, timezone, currency basis, and freshness for every component.
 
 A capability is `available`, `unavailable`, `stale`, or `conflicting`. Never replace an unavailable capability with an estimate, prior value, manual figure, screenshot, or another agent's output.
@@ -37,9 +39,16 @@ Produce an ephemeral Broker Runtime with these top-level sections:
 7. `open_orders`
 8. `cash_transactions`
 9. `market_inputs`
-10. `reconciliation`
-11. `blocking_issues`
-12. `runtime_status`
+10. `alert_inventory`
+11. `standing_automations`
+12. `observations`
+13. `reconciliation`
+14. `blocking_issues`
+15. `runtime_status`
+
+`observations` records `source`, `observed_at`, and any provider `source_as_of` separately for each capability. A single orchestration timestamp does not prove that every endpoint is fresh.
+
+An unavailable capability must carry `null`, never `0`, `{}`, or `[]`. Empty collections are authoritative facts only after a successful read. This distinction is mandatory for orders, alerts, cash transactions, and standing automations.
 
 `runtime_status` is `PASS` only when every capability required for the current task is present, fresh, internally consistent, and attributable to an authoritative runtime source. Otherwise it is `DATA INCOMPLETE`.
 
@@ -74,6 +83,9 @@ Adapters must not:
 - Missing open orders: no new transaction candidate may be authorized.
 - Missing cash transactions or contribution evidence: Routine DCA and contribution-based funding are `DATA INCOMPLETE`.
 - Missing required market inputs: the affected valuation, drawdown, or deployment path is `DATA INCOMPLETE`.
+- Missing alert inventory: alert-pointer validation and drawdown deployment are `DATA INCOMPLETE`; do not substitute an empty alert list.
+- Missing cash transactions: contribution-funded channels are `DATA INCOMPLETE`; do not substitute zero contribution.
+- An active standing automation that can add an out-of-universe asset is a control blocker until reviewed; do not mutate the broker setting automatically.
 - Stale or conflicting snapshots: stop the affected workflow until refreshed and reconciled.
 
 Return the exact missing capability, affected workflow, runtime status, and next verifiable action. Keep all real account data ephemeral.

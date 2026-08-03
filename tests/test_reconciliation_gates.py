@@ -55,11 +55,17 @@ def main() -> None:
             "account_summary": "available", "balances": "available",
             "positions": "available", "open_orders": "available",
             "cash_transactions": "available", "market_inputs": "available",
+            "alert_inventory": "available", "standing_automations": "available",
+        },
+        "observations": {
+            name: {"source": "synthetic", "observed_at": now.isoformat()}
+            for name in ("positions", "balances")
         },
         "account_summary": {"net_liquidation": 100000},
         "balances": {"cash": 95000},
         "positions": [{"symbol": "SYNTHETIC", "market_value": 200000}],
         "open_orders": [], "cash_transactions": [], "market_inputs": {},
+        "alert_inventory": [], "standing_automations": [],
         "reconciliation": {"status": "PASS", "issues": []},
     }
     result = validate_runtime(
