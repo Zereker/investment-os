@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Fetch SPYM / QQQM / SOXX holdings & sector data and compute combined
-look-through exposure for the quarterly manual check (skills/using-investment-os/references/08-lookthrough-check.md).
+look-through exposure for the quarterly manual check (skills/using-investment-os/references/02-data-contract.md, look-through manual check).
 
 Data layers (proven to work in the AI execution sandbox, 2026-07-31):
 
@@ -22,7 +22,7 @@ Usage:
   python3 skills/routing-investment-research/scripts/fetch_etf_data.py --scenario current      # + combined @ Cash15/SPYM51/QQQM28/SOXX6
   python3 skills/routing-investment-research/scripts/fetch_etf_data.py --scenario final-void   # + combined @ voided 15% end-state (reference)
   python3 skills/routing-investment-research/scripts/fetch_etf_data.py --weights spym=0.492,qqqm=0.195,soxx=0.078,cash=0.235
-  python3 skills/routing-investment-research/scripts/fetch_etf_data.py --scenario current --markdown   # snapshot block for skills/using-investment-os/references/08-YYYY-MM-DD-lookthrough-check.md
+  python3 skills/routing-investment-research/scripts/fetch_etf_data.py --scenario current --markdown   # snapshot block for skills/using-investment-os/references/records/lookthrough-YYYY-MM-DD.md
 
 Output quality is labeled per source. This tool reports facts and guardrail
 comparisons only; it never changes the Registry and never authorizes trades.
@@ -144,7 +144,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--scenario", choices=sorted(SCENARIOS), help="preset portfolio weights")
     ap.add_argument("--weights", help="custom weights, e.g. spym=0.49,qqqm=0.20,soxx=0.08,cash=0.23")
-    ap.add_argument("--markdown", action="store_true", help="emit snapshot block for skills/using-investment-os/references/08-YYYY-MM-DD-lookthrough-check.md")
+    ap.add_argument("--markdown", action="store_true", help="emit snapshot block for skills/using-investment-os/references/records/lookthrough-YYYY-MM-DD.md")
     args = ap.parse_args()
 
     funds: dict[str, dict] = {}
@@ -209,14 +209,14 @@ def main() -> None:
         print(f"   半导体已知下界: {semi_known:.1f}%  [{semi_flag}]  + 未覆盖尾部上界 {tail:.1f}pp")
         if semi_known < GUARD_SEMI_IC <= semi_known + tail:
             print("   !! 已知值未越线但『已知+未覆盖』可能越线 → 倾斜新增结论 WAIT / DATA INCOMPLETE")
-        print("   信息技术: 用管理人官方行业表手工计算（本工具持仓表不含行业列）——见 08-lookthrough-check.md 第2步")
+        print("   信息技术: 用管理人官方行业表手工计算（本工具持仓表不含行业列）——见 02-data-contract.md 穿透核查程序第2步")
         print(f"   单一发行人 (>8% WARN / ≥10% 冻结倾斜):")
         for t, v in top_issuers:
             flag = " ≥10 FREEZE" if v >= GUARD_ISSUER_FREEZE else (" >8 WARN" if v > GUARD_ISSUER_WARN else "")
             print(f"     {t:<12}{v:6.2f}%{flag}")
 
         if args.markdown:
-            print("\n---8<--- 保存为 skills/using-investment-os/references/08-YYYY-MM-DD-lookthrough-check.md ---")
+            print("\n---8<--- 保存为 skills/using-investment-os/references/records/lookthrough-YYYY-MM-DD.md ---")
             print(f"# Look-through Check — {date.today().isoformat()}\n")
             print(f"- observed_at: {date.today().isoformat()}")
             print(f"- 组合权重 w: " + ", ".join(f"{k}={v:.1%}" for k, v in weights.items()))

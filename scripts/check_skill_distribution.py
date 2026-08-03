@@ -13,6 +13,7 @@ SKILLS = PLUGIN_ROOT / "skills"
 VERSION = (PLUGIN_ROOT / ".plugin-version").read_text(encoding="utf-8").strip()
 REQUIRED_SKILLS = {
     "using-investment-os",
+    "financial-agent-discipline",
     "reconstructing-portfolio-state",
     "validating-drawdown-state",
     "enforcing-behavioral-controls",
@@ -135,8 +136,8 @@ def main() -> None:
     for needle in (
         "Installed distribution root",
         "../../.plugin-version",
-        "references/project-contract.md",
-        "references/production-contract.md",
+        "references/product-contract.md",
+        "references/agent-execution-contract.md",
         "current working directory",
         "Do not clone, fetch",
     ):

@@ -9,9 +9,9 @@ computation* had none. Every month it was hand-derived from the docs, which is s
 closes that gap: same inputs -> same answer, every time.
 
 Mirrors (any divergence from these files is a BUG in this script, not a new rule):
-  skills/using-investment-os/references/01-target-allocation.md      targets, A_basis/U, guardrails, tiers
-  skills/using-investment-os/references/02-deployment-framework.md   D / S / B / drawdown deployment
-  skills/using-investment-os/references/02-monthly-workflow.md   seven-step order and routine-path checks
+  skills/using-investment-os/references/00-constitution.md       targets, A_basis/U, guardrails, tiers
+  skills/using-investment-os/references/01-operating-manual.md   deployment framework (D / S / B / drawdown),
+                                                                 monthly gate order and routine-path checks
 
 Hard boundaries this script will not cross:
   - It NEVER places or formats an executable order. Output is the published
@@ -59,7 +59,7 @@ UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.3
 HISTORY_API = "https://stockanalysis.com/api/symbol/e/{sym}/history?range=10Y&period=Daily"
 
 # --- Constitution constants. Changing these here changes nothing in the rules;
-# --- they must be edited in Target-Allocation.md first (red line 5).
+# --- they must be edited in 00-constitution.md first (red line 5).
 CASH_TARGET = 0.15
 CASH_FLOOR = 0.12
 QQQM_TARGET = 0.28
@@ -180,7 +180,7 @@ def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed, today,
     reserve_after = reserve - restore / nav
     floor_after = (ABSOLUTE_FLOOR if consumed else CASH_FLOOR) + reserve_after
     # A month can legitimately START below the normal floor: the tranches
-    # lowered cash by design, and 02-deployment-framework §2 says it rebuilds
+    # lowered cash by design, and the deployment framework (01-operating-manual.md §7.2) says it rebuilds
     # only from external contributions afterwards, with the Routine DCA
     # explicitly not paused for it. The floor gate therefore checks what THIS
     # month's trades do, not where history left the balance: trades must not
@@ -290,7 +290,7 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
         # the D / B / drawdown Core paths proceed on their own gates.
         print(f"  ** 未提供 --lookthrough-current：无当季有效穿透核查 → 回补冻结（回补额 = 0）**")
         print(f"     穿透核查失败只冻结自主倾斜新增，不阻断 SPYM / QQQM 例行路径")
-        print(f"     完成 skills/using-investment-os/references/08-lookthrough-check.md 当季核查后重跑")
+        print(f"     完成 skills/using-investment-os/references/02-data-contract.md 穿透核查程序当季核查后重跑")
         restore_frozen = True
     else:
         print(f"  回补候选 = min(U×V={money(res['reserve']*nav)}, "

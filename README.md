@@ -4,7 +4,7 @@
 
 > Investment OS 的目标，是让正确的决策成为最容易做出的决策。
 
-完整产品定义见 [project-contract.md](plugins/investment-os/skills/using-investment-os/references/project-contract.md)，生产运行边界见 [production-contract.md](plugins/investment-os/skills/using-investment-os/references/production-contract.md)，跨 Agent 运行契约见 [agent-execution-contract.md](plugins/investment-os/skills/using-investment-os/references/agent-execution-contract.md)，每日产品规范见 [02-daily-report-contract.md](plugins/investment-os/skills/using-investment-os/references/02-daily-report-contract.md)。
+完整产品定义与生产运行边界见 [product-contract.md](plugins/investment-os/skills/using-investment-os/references/product-contract.md)，跨 Agent 运行契约见 [agent-execution-contract.md](plugins/investment-os/skills/using-investment-os/references/agent-execution-contract.md)，行为纪律见 [financial-agent-discipline](plugins/investment-os/skills/financial-agent-discipline/SKILL.md)，每日产品规范见 [01-operating-manual.md](plugins/investment-os/skills/using-investment-os/references/01-operating-manual.md) 日报契约部分。
 
 ## Decision Loop
 
@@ -44,6 +44,7 @@ Broker Adapter
 Investment OS 通过一个 router 分发多个可组合 Skills：
 
 - `using-investment-os`
+- `financial-agent-discipline`
 - `broker-runtime`
 - `reconstructing-portfolio-state`
 - `enforcing-behavioral-controls`
@@ -106,7 +107,7 @@ Real Harness behavior: NOT YET VERIFIED
 ## Repository Map
 
 - `plugins/investment-os/`：唯一可安装运行时产品
-- `plugins/investment-os/skills/using-investment-os/references/`：`00`、`01`、`02` 等编号政策与产品契约的唯一真源
+- `plugins/investment-os/skills/using-investment-os/references/`：四份合并规则文件（`00-constitution`、`01-operating-manual`、`02-data-contract`、`03-journal`）与产品契约的唯一真源
 - `plugins/investment-os/skills/*/scripts/`：由各 Skill 拥有的确定性运行时
 - `AGENTS.md`、`CLAUDE.md`：仅用于源码仓库开发的薄入口
 - `scripts/`：源码级发布、治理和一致性检查器，不进入插件
@@ -118,7 +119,7 @@ Real Harness behavior: NOT YET VERIFIED
 
 ## Authority and Versioning
 
-具体投资规则发生冲突时，按插件 references 中的编号顺序执行：`00-*` → `01-*` → `02-*` → `03-*` → `05-*`。
+具体投资规则发生冲突时，按插件 references 中的编号顺序执行：`00-constitution.md` → `01-operating-manual.md` → `03-journal.md`；`02-data-contract.md` 约束数据可用性，不创造投资参数。
 
 聊天记录、旧报告、旧 Skill 摘要和 `Research/` 不具有现行规则效力。现行政策以默认分支 HEAD 为准。
 
