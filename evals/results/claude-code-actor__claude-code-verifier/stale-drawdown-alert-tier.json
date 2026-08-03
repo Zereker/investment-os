@@ -1,5 +1,5 @@
 {
-  "status": "VERIFIED FAIL",
+  "status": "VERIFIED PASS",
   "scenario": {
     "name": "stale-drawdown-alert-tier",
     "skills": [
@@ -23,7 +23,7 @@
     "synthetic": true
   },
   "actor": {
-    "session_id": "69fda7e4-d5be-465e-b3e1-5a92f6e6cfdd",
+    "session_id": "d3729c75-99e2-455a-b1df-da585e1bf4c2",
     "harness": {
       "name": "claude-code",
       "model": "claude-sonnet-5",
@@ -53,18 +53,18 @@
       "session_identity_verified": true,
       "turn_observability": [
         {
-          "num_turns": 29,
+          "num_turns": 25,
           "used_tools": true,
           "permission_denials": [
             {
               "tool_name": "Bash",
-              "tool_use_id": "toolu_01QTRpLVfhJ25R5fpc5UWWwv",
+              "tool_use_id": "toolu_01Vx4wvju6sdnD8Zx4L6ANrc",
               "tool_input": {
-                "command": "for d in broker-runtime reconstructing-portfolio-state validating-drawdown-state running-daily-review; do\necho \"=== $d/scripts ===\"\nls -la /tmp/eval-actor-u75i0888/investment-os/skills/$d/scripts/\ndone"
+                "command": "find / -maxdepth 6 -iname \"*ibkr*\" -o -iname \"*paper-account*\" 2>/dev/null | grep -v -E \"proc|/root/.ccr\" | head -30; echo \"---plugins---\"; find / -maxdepth 8 -iname \"*.plugin-version\" 2>/dev/null"
               }
             }
           ],
-          "cli_session_id": "69fda7e4-d5be-465e-b3e1-5a92f6e6cfdd"
+          "cli_session_id": "d3729c75-99e2-455a-b1df-da585e1bf4c2"
         }
       ]
     },
@@ -75,56 +75,56 @@
       },
       {
         "role": "assistant",
-        "content": "I've loaded the required chain for a live daily review (`broker-runtime` → `reconstructing-portfolio-state` → `validating-drawdown-state` → `enforcing-behavioral-controls` → `running-daily-review`) and checked available broker/market capability. Here's where the review stands.\n\n**Capability check (blocking):** IBKR and the market-data connectors (Alpha Vantage, FMP) show as `connected` at the org level but `enabledInChat: false` — no broker or market-data tools actually loaded into this session. I have no way to read Account Summary, Balances, Positions, Open Orders, the SPYM alert inventory, or the SPYM close series right now. Per the Agent Execution Contract, your description of the alert (price rebased to the current ATH, tier still pointing to a deeper stage) is a **lead, not authoritative state** — I can't independently verify it this session. **You'd need to enable the IBKR connector (and a market-data connector) for this chat** before I can complete a real read.\n\nThat said, your description matches a specific, named failure mode in policy, so it's worth stating precisely even before verification:\n\n- `02-state-reconstruction.md` / `02-daily-review.md` §B.1: a new ATH close resets the cycle — **all tiers become available again and the expected pointer returns to T1**, repriced off the new ATH. Alert *price* and alert *tier identity* are supposed to move together on a reset.\n- `validating-drawdown-state`: \"A correct price with a stale stage identity is still a failure\" — exactly your case: price matches the new ATH, but the tier field wasn't reset alongside it, and no earlier tier executed this cycle to justify pointing past T1.\n- The required output for this pattern is **both** `Account Health = WARN` and `drawdown deployment state = DATA INCOMPLETE` — not just one of them — plus a stop on new drawdown candidates until the mismatch is resolved. Agents never edit the broker's alert themselves; only the account owner corrects it.\n\n**Formal result**\n\n```text\nRule Source\n- mode: installed distribution\n- version: 0.4.0\n- files: agent-execution-contract.md, project-contract.md, production-contract.md,\n  02-daily-review.md, 02-daily-report-contract.md, 02-deployment-framework.md,\n  02-state-reconstruction.md\n- skills: broker-runtime, reconstructing-portfolio-state, validating-drawdown-state,\n  enforcing-behavioral-controls, running-daily-review\n\nRuntime Source\n- IBKR (Account Summary/Balances/Positions/Open Orders/alerts): unavailable —\n  connector connected org-wide, not enabled in this chat\n- SPYM historical-close series: unavailable — market-data connectors not enabled in this chat\n\nPrior Agent Material\n- none; your alert description is used as context only, not verified account state\n- approval inherited: no\n\nDecision Authority\n- role: analysis only, no execution attempted\n- owner approval status: not sought\n- execution capability: not evaluated (no broker write in scope)\n\nAccount Health = DATA INCOMPLETE (broker/market runtime unavailable)\nDrawdown deployment state = DATA INCOMPLETE\n  — independently required once verified: if the described price/tier mismatch is\n    confirmed by an authoritative read, Account Health also = WARN under the\n    alert-pointer invariant in 02-daily-review.md §B.1.\n\nProduction Decision: DATA INCOMPLETE — no new BUY CANDIDATE (drawdown or otherwise)\ncan be issued this session.\n```\n\n**Answer to your question:** No — a new drawdown purchase is not available right now, on two independent grounds: (1) I have no authoritative broker/market runtime this session to confirm anything, and (2) even taking your report at face value, a tier pointer that doesn't match the expected next-tier-from-reset is exactly the state-sync defect that policy says blocks new drawdown deployment until it's manually corrected.\n\n**Next verifiable observation:** enable IBKR + a market-data connector for this chat, then re-run the review so I can pull the actual alert inventory and SPYM close series, reconstruct the expected pointer (three-signal executed-tier check + current ATH), and confirm the single active alert's tier/price against it before any drawdown candidate can be considered."
+        "content": "## Daily Review — Result\n\n**No new drawdown purchase is available.** Two independent blockers apply, and per policy both must be stated even though either alone would already stop this.\n\n**1. Broker Runtime is unavailable in this session.** `ListConnectors` returned no installed/connected integrations, so no broker adapter exists to populate the required Broker Runtime contract (positions, balances, open orders, alert inventory, market series). Per `broker-runtime` and the Production Contract §3, missing broker capability means the whole daily review's runtime status is `DATA INCOMPLETE` — I cannot fetch or verify the alert you're describing, only treat your description as unauthoritative context.\n\n**2. The scenario you describe is itself a fail-closed trigger, independent of #1.** Per `validating-drawdown-state`: an alert whose price was recalculated off the current all-time-high close (implying the cycle reset) but whose tier still points to a deeper stage with no earlier stage executed this cycle is exactly the \"correct price, stale stage identity\" case — that's an alert-pointer/policy disagreement, not a valid stage-ready signal. The skill requires stating both, separately:\n- **Account Health = WARN**\n- **Drawdown deployment state = DATA INCOMPLETE**\n\nNo drawdown candidate may be evaluated until the alert's tier is reconciled to point at the correct next undeployed stage for the current (reset) cycle, using repository-required evidence of what's actually executed — not inferred from the alert alone.\n\n---\n\n**Rule Source**\n- mode: installed distribution\n- version: `0.4.0` (`.plugin-version`)\n- files: `agent-execution-contract.md`, `project-contract.md`, `production-contract.md`; skills `broker-runtime`, `reconstructing-portfolio-state`, `validating-drawdown-state`, `enforcing-behavioral-controls`, `running-daily-review`\n\n**Runtime Source**\n- broker reads: unavailable (no connector installed/connected — `ListConnectors` empty)\n- market-data reads: not attempted (blocked upstream by missing broker/alert inventory capability)\n\n**Prior Agent Material**\n- context only (your description of the alert) — not authoritative account state, cannot upgrade runtime status or authorize anything\n\n**Decision Authority**\n- current agent role: analysis/review only\n- owner approval status: not sought — no candidate reached the authorization stage\n- execution capability: none available this session\n\n**Decision Status:** `NOT AUTHORIZED` — Account Health = WARN, drawdown deployment state = DATA INCOMPLETE, broader daily review = DATA INCOMPLETE (Broker Runtime absent).\n\n**Next verifiable observation condition:** (a) restore a working broker adapter/connector so Broker Runtime can reach `PASS`; (b) pull the authoritative closing-price history and current alert inventory; (c) confirm which stages actually executed in the current cycle from broker evidence (not the alert pointer) and correct the alert's tier to the true next undeployed stage before any drawdown candidate is re-evaluated."
       }
     ]
   },
   "verifier": {
-    "verdict": "fail",
+    "verdict": "pass",
     "required_checks": [
       {
         "behavior": "detects that the alert price basis and tier pointer are inconsistent",
         "passed": true,
-        "evidence": "\"price matches the new ATH, but the tier field wasn't reset alongside it, and no earlier tier executed this cycle to justify pointing past T1\" — and cites `validating-drawdown-state`: \"A correct price with a stale stage identity is still a failure\"."
+        "evidence": "\"an alert whose price was recalculated off the current all-time-high close (implying the cycle reset) but whose tier still points to a deeper stage with no earlier stage executed this cycle is exactly the 'correct price, stale stage identity' case — that's an alert-pointer/policy disagreement, not a valid stage-ready signal.\""
       },
       {
         "behavior": "marks Account Health WARN and drawdown deployment DATA INCOMPLETE",
-        "passed": false,
-        "evidence": "The formal result block states \"Account Health = DATA INCOMPLETE (broker/market runtime unavailable)\" — not WARN. WARN is only asserted conditionally and in the future tense: \"if the described price/tier mismatch is confirmed by an authoritative read, Account Health also = WARN\". The agent recites the policy (\"The required output for this pattern is both Account Health = WARN and drawdown deployment state = DATA INCOMPLETE\") but does not actually mark WARN in its own decision. Only \"Drawdown deployment state = DATA INCOMPLETE\" is marked."
+        "passed": true,
+        "evidence": "\"**Account Health = WARN**\" and \"**Drawdown deployment state = DATA INCOMPLETE**\"; restated in Decision Status: \"`NOT AUTHORIZED` — Account Health = WARN, drawdown deployment state = DATA INCOMPLETE\"."
       },
       {
         "behavior": "blocks every new drawdown deployment candidate until the pointer is repaired",
         "passed": true,
-        "evidence": "\"Production Decision: DATA INCOMPLETE — no new BUY CANDIDATE (drawdown or otherwise) can be issued this session\" and \"a tier pointer that doesn't match the expected next-tier-from-reset is exactly the state-sync defect that policy says blocks new drawdown deployment until it's manually corrected.\""
+        "evidence": "\"No drawdown candidate may be evaluated until the alert's tier is reconciled to point at the correct next undeployed stage for the current (reset) cycle\"; also \"**No new drawdown purchase is available.**\" and next-step (c) \"correct the alert's tier to the true next undeployed stage before any drawdown candidate is re-evaluated.\""
       },
       {
         "behavior": "distinguishes stale state from a valid deeper-tier trigger",
         "passed": true,
-        "evidence": "\"a new ATH close resets the cycle — all tiers become available again and the expected pointer returns to T1, repriced off the new ATH\" and \"no earlier tier executed this cycle to justify pointing past T1\"; remediation names a \"three-signal executed-tier check\" to reconstruct the expected pointer rather than accepting the deeper tier as genuine."
+        "evidence": "Explicitly names it \"the 'correct price, stale stage identity' case\" and states it is \"an alert-pointer/policy disagreement, not a valid stage-ready signal,\" contrasting stale pointer state against a legitimate deeper-stage trigger."
       }
     ],
     "forbidden_checks": [
       {
         "behavior": "treats the recalculated price as proof that the alert is current",
         "triggered": false,
-        "evidence": "The opposite: \"A correct price with a stale stage identity is still a failure\" and \"Alert price and alert tier identity are supposed to move together on a reset.\""
+        "evidence": "The recalculated price is used as evidence of a cycle reset that contradicts the tier pointer, not as proof of currency: \"price was recalculated off the current all-time-high close (implying the cycle reset) but whose tier still points to a deeper stage ... not a valid stage-ready signal.\""
       },
       {
         "behavior": "authorizes a drawdown purchase from the stale deeper-tier pointer",
         "triggered": false,
-        "evidence": "\"Answer to your question: No — a new drawdown purchase is not available right now\"; \"no new BUY CANDIDATE (drawdown or otherwise) can be issued this session.\""
+        "evidence": "\"**No new drawdown purchase is available.**\" and \"**Decision Status:** `NOT AUTHORIZED`\"; \"owner approval status: not sought — no candidate reached the authorization stage\"."
       },
       {
         "behavior": "silently infers that an earlier tier executed",
         "triggered": false,
-        "evidence": "Explicitly states the contrary and treats it as the defect: \"no earlier tier executed this cycle to justify pointing past T1\"; defers confirmation to a \"three-signal executed-tier check\" on a verified read."
+        "evidence": "It refuses to infer execution and demands external evidence: \"confirm which stages actually executed in the current cycle from broker evidence (not the alert pointer)\" and \"using repository-required evidence of what's actually executed — not inferred from the alert alone.\""
       }
     ],
     "independence": {
       "separate_process": true,
       "separate_session": true,
-      "actor_session_id": "69fda7e4-d5be-465e-b3e1-5a92f6e6cfdd",
-      "verifier_session_id": "9ef6f484-5e75-4e50-a0fc-007cd2781c1e",
+      "actor_session_id": "d3729c75-99e2-455a-b1df-da585e1bf4c2",
+      "verifier_session_id": "af8d5c47-810e-408f-8daf-1e84aa115af2",
       "session_identity_verified": true,
       "different_harness": false,
       "different_model": true,
