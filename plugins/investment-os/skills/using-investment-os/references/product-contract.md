@@ -71,7 +71,8 @@ Broker Adapter
 
 职责边界：
 
-- `broker-runtime`：验证来源、能力、新鲜度、币种、账户合计和任务所需数据；
+- Broker Adapter：把具体 Broker 工具映射成规范化输入；它是适配器，不是 Investment OS 的接口本身；
+- `broker-runtime`：验证来源、能力、新鲜度、币种、账户合计和任务所需数据；自己验证数据，不信任调用者自报 PASS；
 - `account_reconciliation.py`：独立核对 NAV、现金和持仓市值；
 - `DecisionPacket`：保存机器权威的事实、计算、阻塞项、结论和执行权限；
 - renderer 或 LLM：只解释和格式化，不得重算或改写机器权威字段；
@@ -102,7 +103,7 @@ LLM 位于 orchestration 与 presentation 层。它可以调用工具、解释�
 关键数据、能力、授权或验证缺失时，停止新的候选或执行。
 
 ### P7 — Owner-Authorized Broker Execution
-任何 Broker 写操作必须绑定当前会话中的一个完整单次操作，并在提交后读取权威状态验证结果。禁止泛化授权、跨操作继承、跨会话继承、静默重试和无人值守执行。
+任何 Broker 写操作必须绑定当前会话中的一个完整单次操作，并在提交后读取权威状态验证结果。禁止泛化授权、跨操作继承、跨会话继承、静默重试和无人值守执行链。
 
 ### P8 — Every Decision Is Explainable
 每个结论必须给出事实、规则、阻塞项和下一观察条件。
@@ -121,7 +122,7 @@ LLM 位于 orchestration 与 presentation 层。它可以调用工具、解释�
 2. `01-operating-manual.md`（操作手册：日/周/月/季/年流程、日报契约、部署框架、状态重建、IC 清单）
 3. `03-journal.md`（日志与经验）
 
-`02-data-contract.md` 约束数据来源、质量与口径，不创造投资参数；数据文件不得自行增加或改变交易规则。
+`00-constitution.md` 内部冲突按其部分顺序解决；唯一例外沿用旧制：其转型计划部分与 `01-operating-manual.md` 冲突时，以操作手册为准（原 `02-*` 优先于 `03-*` 的顺序不因本次合并改变）。`02-data-contract.md` 约束数据来源、质量与口径，不创造投资参数；数据文件不得自行增加或改变交易规则。
 
 聊天记录、旧报告、截图、人工贴数和 [source repository research](https://github.com/Zereker/investment-os/tree/master/Research/) 不具有 Production 规则效力。本契约定义产品与运行边界，`agent-execution-contract.md` 定义 Agent 运行程序；二者不得覆盖上述投资规则。
 
@@ -137,11 +138,12 @@ LLM 位于 orchestration 与 presentation 层。它可以调用工具、解释�
 - Balances；
 - Positions；
 - Open Orders；
-- 任务所需市场输入与警报状态。
+- 任务所需市场输入与警报状态；
+- Cash Transactions（若 Adapter 提供，资金流程需要时）。
 
 巡检必须完成账户对账、融资与负现金检查、异常持仓分类、订单冲突检查、配置与回撤状态计算，并先生成机器权威 `DecisionPacket`，再由确定性 renderer 或 LLM 形成日报。展示层不得改变结论、金额、阻塞项或执行权限。
 
-关键数据缺失时输出 `DATA INCOMPLETE`，停止新的买卖候选。不得用历史报告、旧快照或人工数字替代实时状态。
+关键数据缺失时输出 `DATA INCOMPLETE`，停止新的买卖候选。不得用历史报告、旧快照、截图或人工数字替代实时状态。
 
 ## 9. 月度执行
 
@@ -169,7 +171,7 @@ LLM 位于 orchestration 与 presentation 层。它可以调用工具、解释�
 Agent 可以执行当前 Adapter 支持的 Broker 操作，但必须同时满足：
 
 1. 当前会话存在账户所有者明确授权；
-2. 授权绑定一个完整、规范化的单次操作摘要；
+2. 授权绑定一个完整、规范化的单次操作摘要（operation digest）；
 3. 所需 Broker capability 可用；
 4. 数据门、政策门和行为控制门全部通过；
 5. 只提交一次，不进行静默重试；
@@ -178,7 +180,7 @@ Agent 可以执行当前 Adapter 支持的 Broker 操作，但必须同时满足
 8. 结果形成临时执行回执并向所有者报告；
 9. 授权不跨操作、不跨会话、不从其他 Agent 或既往批准继承。
 
-不满足任一条件时，终态必须是 `NOT EXECUTED`、`EXECUTION UNKNOWN`、`VERIFICATION FAILED` 或 `DATA INCOMPLETE`，不得声称成功。
+满足全部条件且 read-back 逐项一致时，终态为 `COMPLETED`。不满足任一条件时，终态必须是 `NOT EXECUTED`、`EXECUTION UNKNOWN`、`VERIFICATION FAILED` 或 `DATA INCOMPLETE`，不得声称成功。
 
 ## 11. Investment Committee
 

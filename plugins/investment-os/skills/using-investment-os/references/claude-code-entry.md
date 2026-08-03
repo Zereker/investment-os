@@ -45,7 +45,7 @@ Broker Adapter
 → execution-runtime（仅有单次授权时）
 ```
 
-分层职责、每层的失败关闭语义、Broker 状态读取范围、候选与执行权限的边界，以及 LLM 不得重算或改写机器权威字段的完整规定，见 `product-contract.md` 第 5、8、9、10 节——本入口不重复这些契约，只指路。
+分层职责、每层的失败关闭语义、Broker 状态读取范围、候选与执行权限的边界，以及 LLM 不得重算或改写机器权威字段的完整规定，见 `product-contract.md` 第 5、8、9、10 节、`agent-execution-contract.md` 第 8 节与 `broker-runtime` Skill 的 Adapter boundary——本入口不重复这些契约，只指路。
 
 特别提示月度入金 `F`：缺少权威 `cash_transactions` 能力时，Routine DCA 必须 `DATA INCOMPLETE`，除非 Production 未来正式批准一条窄化的 owner-attested runtime fact 规则。
 

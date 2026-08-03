@@ -8,7 +8,7 @@
 
 - 编号政策参考由 29 份合并为 4 份规则文件加契约与适配层：`00-constitution.md`（IPS + 投资宇宙 + 目标配置 + 转型计划 + 倾斜框架 + 登记表）、`01-operating-manual.md`（日/周/月/季/年流程 + 日报契约 + 部署框架 + 状态重建 + IC 清单）、`02-data-contract.md`（数据操作 + 注册表 + 质量闸门 + 字段字典 + 穿透核查程序）、`03-journal.md`（日志 + 经验）。`project-contract.md` 与 `production-contract.md` 去重合并为 `product-contract.md`。日期化核查记录移至 `references/records/lookthrough-YYYY-MM-DD.md`。
 - **合并为逐条保真的串联加去重**：每一条规范性规则原文保留，只更新交叉引用、去除跨文件完全重复的陈述；不改变任何投资参数、阈值、公式或授权语义。
-- 权威顺序更新为 `00-constitution.md` → `01-operating-manual.md` → `03-journal.md`；`02-data-contract.md` 约束数据可用性，不创造投资参数。
+- 权威顺序更新为 `00-constitution.md` → `01-operating-manual.md` → `03-journal.md`；`02-data-contract.md` 约束数据可用性，不创造投资参数。为保持冲突解决语义不变，显式保留一条旧制例外：宪法的转型计划部分与操作手册冲突时以操作手册为准（原 `02-*` 优先于 `03-*`）。
 - 新增纯规则 Skill `financial-agent-discipline`：把行为契约七原则写成可观测、带后果的行为规范，不含任何投资参数或流程；`behavior-contract.yaml` 声明为其机器镜像。所有任务在领域工作前先适用该 Skill。
 - 检查器回归可执行断言：`check_policy_consistency.py` 删除约百条散文 require/forbid 钉子，保留政策数学性质测试、隐私门、冻结状态正则、退役文件检查与一个小型已知陈旧词汇禁令；新增 `mirror_tests()` 用 importlib 加载实际运行时模块并逐元组比对档位与常量（取代只看首尾两行的字符串钉）。`check_document_governance.py` 收缩为结构检查（规则文件存在、标题无版本号、`NOT YET VERIFIED` 声明存续）。
 - `.plugin-version` 自 `0.4.0` 升至 `0.5.0`：分发结构发生实质变更（文件合并、新增 Skill、入口更新）。
