@@ -120,6 +120,11 @@ def main() -> None:
     assert "single-operation-current-session" in execution_text
     assert "read back authoritative broker state" in execution_text
     assert "no silent retry" in execution_text
+    behavior_text = skills["enforcing-behavioral-controls"].read_text(encoding="utf-8")
+    assert "current rule source and every required runtime source were verified" in behavior_text
+    assert "verified account owner" in behavior_text
+    drawdown_text = skills["validating-drawdown-state"].read_text(encoding="utf-8")
+    assert "Do not replace `Account Health = WARN`" in drawdown_text
     test_manifests()
     test_bootstrap()
     print("Skill system integration tests passed.")

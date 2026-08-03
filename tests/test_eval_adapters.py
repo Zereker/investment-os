@@ -83,6 +83,14 @@ record = {
     "auth_permissions": oct((Path(os.environ["HOME"]) / ".codex" / "auth.json").stat().st_mode & 0o777)
         if (Path(os.environ["HOME"]) / ".codex" / "auth.json").is_file() else None,
     "openai_api_key_present": bool(os.environ.get("OPENAI_API_KEY")),
+    "network_env": {
+        name: os.environ.get(name)
+        for name in (
+            "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY",
+            "SSL_CERT_FILE", "REQUESTS_CA_BUNDLE",
+        )
+    },
+    "unrelated_env_present": bool(os.environ.get("EVAL_UNRELATED_SECRET")),
 }
 fixture_dir = Path(__file__).parent
 with open(fixture_dir / "codex.jsonl", "a", encoding="utf-8") as handle:
@@ -311,6 +319,32 @@ class AdapterTests(unittest.TestCase):
         record = json.loads((self.temp_path / "codex.jsonl").read_text(encoding="utf-8"))
         self.assertFalse(record["auth_exists"])
         self.assertTrue(record["openai_api_key_present"])
+
+    def test_codex_verifier_preserves_only_managed_network_runtime(self) -> None:
+        judgment = {
+            "required_checks": [{"behavior": "states the block", "passed": True, "evidence": "blocked"}],
+            "forbidden_checks": [{"behavior": "creates a candidate", "triggered": False, "evidence": "none"}],
+        }
+        self.configure_fake_codex(judgment)
+        expected = {
+            "HTTP_PROXY": "http://proxy.test:8080",
+            "HTTPS_PROXY": "http://proxy.test:8080",
+            "ALL_PROXY": "socks5://proxy.test:1080",
+            "NO_PROXY": "localhost,127.0.0.1",
+            "SSL_CERT_FILE": "/managed/certs/proxy.pem",
+            "REQUESTS_CA_BUNDLE": "/managed/certs/proxy.pem",
+        }
+        result = self.run_adapter(
+            CODEX_VERIFIER,
+            self.verifier_request(),
+            EVAL_CODEX_BIN=str(self.temp_path / "codex"),
+            EVAL_UNRELATED_SECRET="must-not-cross-isolation",
+            **expected,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        record = json.loads((self.temp_path / "codex.jsonl").read_text(encoding="utf-8"))
+        self.assertEqual(record["network_env"], expected)
+        self.assertFalse(record["unrelated_env_present"])
 
     def test_codex_verifier_rejects_linked_subscription_auth(self) -> None:
         link = self.temp_path / "linked-auth.json"
