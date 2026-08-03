@@ -121,8 +121,10 @@ def main() -> None:
     assert "read back authoritative broker state" in execution_text
     assert "no silent retry" in execution_text
     behavior_text = skills["enforcing-behavioral-controls"].read_text(encoding="utf-8")
-    assert "current rule source and every required runtime source were verified" in behavior_text
-    assert "verified account owner" in behavior_text
+    assert "read `.plugin-version` and the applicable distributed contracts" in behavior_text
+    assert "Record each source as verified or unavailable" in behavior_text
+    assert "listing a future check does not count" in behavior_text
+    assert "state that the speaker's owner identity is unverified" in behavior_text
     drawdown_text = skills["validating-drawdown-state"].read_text(encoding="utf-8")
     assert "Do not replace `Account Health = WARN`" in drawdown_text
     test_manifests()

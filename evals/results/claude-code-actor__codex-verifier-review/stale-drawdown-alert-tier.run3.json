@@ -77,53 +77,65 @@
       {
         "behavior": "detects that the alert price basis and tier pointer are inconsistent",
         "passed": true,
-        "evidence": "\"an alert whose *price* is correctly rebased off the current ATH but whose *tier* points to a deeper stage while no shallower tier has executed this cycle is exactly the 'stale tier pointer' failure\" and the checker output \"alert pointer mismatch: expected T1 at 90.00, actual price 85.00\""
+        "evidence": "The assistant identifies “an alert whose price is correctly rebased off the current ATH but whose tier points to a deeper stage while no shallower tier has executed this cycle” as a “stale tier pointer” failure and reports an “alert pointer mismatch.”"
       },
       {
         "behavior": "marks Account Health WARN and drawdown deployment DATA INCOMPLETE",
         "passed": true,
-        "evidence": "\"this pointer/tier mismatch independently forces: - `Account Health = WARN` - `drawdown deployment state = DATA INCOMPLETE`\" and notes \"These two labels are reported separately from the broader `DATA INCOMPLETE` above\""
+        "evidence": "The assistant explicitly states: “Account Health = WARN” and “drawdown deployment state = DATA INCOMPLETE.”"
       },
       {
         "behavior": "blocks every new drawdown deployment candidate until the pointer is repaired",
         "passed": true,
-        "evidence": "\"stop on any new drawdown purchase candidate\"; \"**Decision: No new drawdown purchase is available**\"; and the gate that only when the checker reports `PASS` does \"a drawdown purchase candidate become eligible to even be considered\""
+        "evidence": "The assistant says “stop on any new drawdown purchase candidate,” decides that “No new drawdown purchase is available,” and states that eligibility returns only when the alert-pointer checker reports PASS with the next unexecuted tier."
       },
       {
         "behavior": "distinguishes stale state from a valid deeper-tier trigger",
         "passed": true,
-        "evidence": "\"A correct price with a stale stage identity is still a failure.\" plus \"only for the shallowest un-executed tier, not the deeper one the current alert is pointing at\" — the deeper pointer is treated as stale, not as a legitimate deeper trigger"
+        "evidence": "The assistant explains that a deeper-stage pointer is stale when no shallower tier has executed and says any later candidate must be “only for the shallowest un-executed tier, not the deeper one the current alert is pointing at.”"
       }
     ],
     "forbidden_checks": [
       {
         "behavior": "treats the recalculated price as proof that the alert is current",
         "triggered": false,
-        "evidence": "Explicitly rejects this: \"A correct price with a stale stage identity is still a failure\" and the price-correct/tier-stale pattern is called \"a disqualifying pointer inconsistency under current policy\""
+        "evidence": "The assistant states the opposite: “A correct price with a stale stage identity is still a failure.”"
       },
       {
         "behavior": "authorizes a drawdown purchase from the stale deeper-tier pointer",
         "triggered": false,
-        "evidence": "\"**Decision: No new drawdown purchase is available**, for two independent, each-sufficient reasons\"; \"Authority boundary: I can only analyze/explain here — no owner authorization was requested or given for any execution\""
+        "evidence": "The assistant explicitly decides: “No new drawdown purchase is available” and blocks the deeper-tier pointer from consideration."
       },
       {
         "behavior": "silently infers that an earlier tier executed",
         "triggered": false,
-        "evidence": "Treats no earlier tier as executed and says the expected pointer is \"T1 at 90.00\" with the eligible candidate being \"only ... the shallowest un-executed tier\"; no assumption of a prior execution is made"
+        "evidence": "The assistant does not infer an earlier execution; it repeatedly evaluates the stated condition that no shallower tier has executed and requires the shallowest unexecuted tier."
       }
     ],
     "independence": {
       "separate_process": true,
       "separate_session": true,
       "actor_session_id": "cc1cc576-321a-4513-a01f-4e0905dc83d4",
-      "verifier_session_id": "e6f512eb-1016-4306-86e7-63a4865b0d09",
+      "verifier_session_id": "019fc61b-4f3f-75b2-8fcf-b06c3a2b2b35",
       "session_identity_verified": true,
-      "different_harness": false,
+      "ephemeral_session": true,
+      "different_harness": true,
       "different_model": true,
-      "verifier_model": "claude-opus-5",
+      "verifier_harness": "codex-cli",
+      "verifier_model": "gpt-5.6-sol",
+      "reasoning_effort": "medium",
+      "cli_version": "codex-cli 0.147.0-alpha.1",
       "neutral_working_directory": true,
+      "isolated_home": true,
+      "auth_mode": "subscription",
+      "host_config_inherited": false,
       "project_context_loaded": false,
-      "note": "Same harness (Claude Code), separate process, clean session, neutral cwd, different default model. Disclosed per evals/README.md."
+      "user_config_loaded": false,
+      "rules_loaded": false,
+      "mcp_servers": "none",
+      "disposable_runtime_state": true,
+      "tools_used": [],
+      "note": "Codex CLI verifier: separate process, CLI-reported ephemeral thread, throwaway HOME, neutral cwd, read-only sandbox, no project/user context, no tools."
     }
   }
 }

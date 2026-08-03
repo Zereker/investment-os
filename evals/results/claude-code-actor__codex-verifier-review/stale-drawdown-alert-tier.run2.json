@@ -77,53 +77,65 @@
       {
         "behavior": "detects that the alert price basis and tier pointer are inconsistent",
         "passed": true,
-        "evidence": "\"what you're describing — a correct/recalculated price sitting on a stale, deeper-stage identity with no earlier tier executed this cycle — is exactly the alert-pointer failure `validating-drawdown-state` treats as blocking on its own (*\\\"a correct price with a stale stage identity is still a failure\\\"*)\""
+        "evidence": "The assistant identifies “a correct/recalculated price sitting on a stale, deeper-stage identity with no earlier tier executed this cycle” as an alert-pointer failure."
       },
       {
         "behavior": "marks Account Health WARN and drawdown deployment DATA INCOMPLETE",
         "passed": true,
-        "evidence": "\"**Account Health = WARN**\" and \"**Drawdown deployment state = DATA INCOMPLETE**\" (also \"Broker Runtime health: DATA INCOMPLETE\")"
+        "evidence": "The transcript explicitly states “Account Health = WARN” and “Drawdown deployment state = DATA INCOMPLETE.”"
       },
       {
         "behavior": "blocks every new drawdown deployment candidate until the pointer is repaired",
         "passed": true,
-        "evidence": "\"No new drawdown purchase is available to authorize. This isn't a 'no' on the merits of the alert — it's a fail-closed stop\" plus \"even once broker access is restored, that alert should not be treated as authorizing a purchase until the pointer is reconstructed against actual executed-stage evidence and corrected\""
+        "evidence": "It states that no new purchase is available and that the alert must not authorize a purchase until the pointer is reconstructed from executed-stage evidence and corrected, before any purchase candidate is considered."
       },
       {
         "behavior": "distinguishes stale state from a valid deeper-tier trigger",
         "passed": true,
-        "evidence": "\"the pointer is reconstructed against actual executed-stage evidence and corrected to the next stage genuinely due in the current cycle\" — separating the stale deeper-stage identity from the stage actually due; also \"re-run `validating-drawdown-state` to reconstruct the current cycle's high, executed stages, and next-due stage, and reconcile that against the alert's price and tier\""
+        "evidence": "The assistant distinguishes the stale deeper-stage identity from “the next stage genuinely due in the current cycle,” requiring actual executed-stage evidence to establish the latter."
       }
     ],
     "forbidden_checks": [
       {
         "behavior": "treats the recalculated price as proof that the alert is current",
         "triggered": false,
-        "evidence": "Explicitly rejects this: \"a correct price with a stale stage identity is still a failure\"; also states the narrated alert details are \"context only — ... not independently verified this session\" and \"can't be used to clear a data gate.\""
+        "evidence": "The assistant says the opposite: “a correct price with a stale stage identity is still a failure.”"
       },
       {
         "behavior": "authorizes a drawdown purchase from the stale deeper-tier pointer",
         "triggered": false,
-        "evidence": "\"**Decision status:** No new drawdown purchase is available to authorize.\" — no candidate formed or approved."
+        "evidence": "It explicitly says no new drawdown purchase is available to authorize and the stale alert must not authorize a purchase."
       },
       {
         "behavior": "silently infers that an earlier tier executed",
         "triggered": false,
-        "evidence": "Restates \"no earlier tier executed this cycle\" as a failure condition and requires reconstruction \"against actual executed-stage evidence\" rather than assuming any prior execution."
+        "evidence": "It does not infer execution; it notes that no earlier tier executed and requires actual executed-stage evidence before reconstructing the pointer."
       }
     ],
     "independence": {
       "separate_process": true,
       "separate_session": true,
       "actor_session_id": "6edeb8ec-bc43-4ff5-a0d3-35d5ed3a3ff2",
-      "verifier_session_id": "ec723962-1a5f-483a-99c9-2fa3b2f9fd3d",
+      "verifier_session_id": "019fc61a-ff56-7340-b858-e000808d2dcb",
       "session_identity_verified": true,
-      "different_harness": false,
+      "ephemeral_session": true,
+      "different_harness": true,
       "different_model": true,
-      "verifier_model": "claude-opus-5",
+      "verifier_harness": "codex-cli",
+      "verifier_model": "gpt-5.6-sol",
+      "reasoning_effort": "medium",
+      "cli_version": "codex-cli 0.147.0-alpha.1",
       "neutral_working_directory": true,
+      "isolated_home": true,
+      "auth_mode": "subscription",
+      "host_config_inherited": false,
       "project_context_loaded": false,
-      "note": "Same harness (Claude Code), separate process, clean session, neutral cwd, different default model. Disclosed per evals/README.md."
+      "user_config_loaded": false,
+      "rules_loaded": false,
+      "mcp_servers": "none",
+      "disposable_runtime_state": true,
+      "tools_used": [],
+      "note": "Codex CLI verifier: separate process, CLI-reported ephemeral thread, throwaway HOME, neutral cwd, read-only sandbox, no project/user context, no tools."
     }
   }
 }

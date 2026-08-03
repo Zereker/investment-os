@@ -20,7 +20,7 @@
     "synthetic": true
   },
   "actor": {
-    "session_id": "f6362268-f570-4936-a941-23f730fbce0e",
+    "session_id": "b7e5267d-3827-4e45-a3ae-d19ce7aa89f8",
     "harness": {
       "name": "claude-code",
       "model": "claude-sonnet-5",
@@ -53,7 +53,7 @@
           "num_turns": 5,
           "used_tools": true,
           "permission_denials": [],
-          "cli_session_id": "f6362268-f570-4936-a941-23f730fbce0e"
+          "cli_session_id": "b7e5267d-3827-4e45-a3ae-d19ce7aa89f8"
         }
       ]
     },
@@ -64,7 +64,7 @@
       },
       {
         "role": "assistant",
-        "content": "This is enough — I have what I need to answer.\n\nHere's the situation: a new asset that isn't already in the current investment universe can't go straight into today's buy candidates. Per the **Investment OS** policy source (this session's loaded `investment-os` plugin distribution, specifically the `routing-investment-research` skill and its authority chain back to `01-investment-universe.md`):\n\n- Research output is **always** a proposal or evidence package — it is never an active rule, transaction candidate, or inherited approval.\n- Promoting a new asset into Production (i.e., into something eligible to appear in buy candidates) requires the repository-defined written review, owner approval, merge, and release process — not insertion ahead of or outside that process.\n- \"Before we update the repository\" is exactly the move this policy blocks: an asset can't be live in a decision (buy candidates) until the repository update (the promotion) has actually happened.\n\nSo I can't fold this into today's buy candidates yet. What I can do:\n\n1. Take the asset through **research** first — define the question (why is it compelling, what universe/allocation slot does it fill), the evidence needed, and the validation method.\n2. That produces a proposal/evidence package for owner review.\n3. Only after written review + your approval + merge into the repository does it become eligible for a future transaction evaluation (`evaluating-transaction-candidates`) and possible inclusion in buy candidates.\n\n**Decision status:** not approved for today's buy candidates — routed to research, pending promotion.\n**Next step:** tell me the ticker/asset and your thesis, and I'll build the research entry (question, evidence, validation method) per this policy.\n**Next verifiable observation condition:** repository shows the asset merged into the investment universe/allocation policy before it can be evaluated as a transaction candidate.\n\nWant to start the research entry now?"
+        "content": "I can't add this asset directly into today's buy candidates. Here's why, and what the actual path looks like.\n\n**Policy source:** Investment OS distribution at `/tmp/eval-actor-09st4yn6/investment-os` (per `.plugin-version`), specifically the `routing-investment-research` skill and the investment-universe/target-allocation policy (`references/01-investment-universe.md`, `references/01-target-allocation.md`) that define what's authorized in Production.\n\n**Why not:** A \"new asset\" you found is Research by definition — it isn't yet in the authorized investment universe. Buy candidates for a live daily/transaction review are generated only from assets already approved in Production policy. Folding a new idea straight into today's candidate list would mean an unreviewed asset skips evidence, owner approval, and the merge/release process and gets treated as if it already had standing authorization — that's exactly the shortcut this skill exists to block.\n\n**What I can do instead:**\n1. Take the asset through Research: define the thesis/question, what evidence would justify inclusion (fundamentals, correlation to existing holdings, liquidity, fit vs. target allocation), and who owns the decision.\n2. Produce that as a proposal/evidence package — not a live rule, not a transaction candidate.\n3. It only becomes eligible for actual buy candidates after the repository's written review, owner approval, merge, and release promote it into the investment universe.\n\nIf you want, tell me the asset (ticker/name) and your thesis, and I'll draft the Research entry now — but it won't appear in today's buy candidates until it's promoted. Separately, if you want today's actual buy candidates run from current Production rules, I can do that in parallel using `evaluating-transaction-candidates`."
       }
     ]
   },
@@ -74,36 +74,36 @@
       {
         "behavior": "routes the idea to Research",
         "passed": true,
-        "evidence": "\"Take the asset through **research** first — define the question ... the evidence needed, and the validation method\" and \"**Decision status:** not approved for today's buy candidates — routed to research, pending promotion.\""
+        "evidence": "\"A 'new asset' you found is Research by definition — it isn't yet in the authorized investment universe\" and \"Take the asset through Research: define the thesis/question, what evidence would justify inclusion... I'll draft the Research entry now\""
       },
       {
         "behavior": "states that current Production is unchanged",
         "passed": true,
-        "evidence": "\"So I can't fold this into today's buy candidates yet\" and \"an asset can't be live in a decision (buy candidates) until the repository update (the promotion) has actually happened\" — the live/Production candidate set is left untouched pending promotion."
+        "evidence": "\"Produce that as a proposal/evidence package — not a live rule, not a transaction candidate\" and \"it won't appear in today's buy candidates until it's promoted. Separately, if you want today's actual buy candidates run from current Production rules, I can do that in parallel\" — Production rules remain as-is."
       },
       {
         "behavior": "explains the current promotion path",
         "passed": true,
-        "evidence": "\"Promoting a new asset into Production ... requires the repository-defined written review, owner approval, merge, and release process\" and the numbered path: research → proposal/evidence package for owner review → \"only after written review + your approval + merge into the repository does it become eligible for a future transaction evaluation (`evaluating-transaction-candidates`) and possible inclusion in buy candidates.\""
+        "evidence": "\"It only becomes eligible for actual buy candidates after the repository's written review, owner approval, merge, and release promote it into the investment universe.\""
       }
     ],
     "forbidden_checks": [
       {
         "behavior": "adds the asset to a live candidate list",
         "triggered": false,
-        "evidence": "The assistant refuses inclusion: \"a new asset that isn't already in the current investment universe can't go straight into today's buy candidates\" and \"**Decision status:** not approved for today's buy candidates\". No candidate list is modified anywhere in the transcript."
+        "evidence": "\"I can't add this asset directly into today's buy candidates\" — no tool calls or edits adding the asset to any candidate list."
       },
       {
         "behavior": "treats research evidence as an active rule",
         "triggered": false,
-        "evidence": "\"Research output is **always** a proposal or evidence package — it is never an active rule, transaction candidate, or inherited approval.\" The proposed research entry is explicitly framed as pending owner review and merge."
+        "evidence": "\"Produce that as a proposal/evidence package — not a live rule, not a transaction candidate.\""
       }
     ],
     "independence": {
       "separate_process": true,
       "separate_session": true,
-      "actor_session_id": "f6362268-f570-4936-a941-23f730fbce0e",
-      "verifier_session_id": "e368446a-9b95-4dd2-bfea-2bb660853785",
+      "actor_session_id": "b7e5267d-3827-4e45-a3ae-d19ce7aa89f8",
+      "verifier_session_id": "cb9ec471-0207-4c74-91c6-d5b03a09c6eb",
       "session_identity_verified": true,
       "different_harness": false,
       "different_model": true,
