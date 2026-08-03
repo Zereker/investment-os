@@ -179,6 +179,16 @@ def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed, today,
     final_cash = cash_after_db - dd_amount - restore
     reserve_after = reserve - restore / nav
     floor_after = (ABSOLUTE_FLOOR if consumed else CASH_FLOOR) + reserve_after
+    # A month can legitimately START below the normal floor: the tranches
+    # lowered cash by design, and 02-deployment-framework §2 says it rebuilds
+    # only from external contributions afterwards, with the Routine DCA
+    # explicitly not paused for it. The floor gate therefore checks what THIS
+    # month's trades do, not where history left the balance: trades must not
+    # take cash below the floor in force, and a month already below it only
+    # requires that trades not push it lower still. The start level excludes F
+    # because D may spend up to all of F; what D leaves behind is the rebuild.
+    start_cash_w = max(cash - contribution, 0.0) / nav
+    floor_effective = min(floor_after, start_cash_w)
     return {
         "a_actual": a_actual, "a_basis": a_basis, "reserve": reserve,
         "spym_target": spym_target, "qqqm_target": qqqm_target,
@@ -195,6 +205,9 @@ def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed, today,
         # the floor in force this month: the crisis floor only when a tier fired
         "floor_w": floor_after,
         "crisis_floor_w": ABSOLUTE_FLOOR + reserve_after,
+        "start_cash_w": start_cash_w,
+        "floor_effective_w": floor_effective,
+        "floor_ok": final_cash / nav >= floor_effective - 1e-9,
     }
 
 
@@ -265,15 +278,20 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
 
     print(f"\n[3b] SOXX 回补至目标（v4.5）")
     headroom_w = min(A_EXECUTION_CAP, A_STAGE) - res["a_actual"]
+    restore_frozen = False
     if res["reserve"] <= 0:
         print(f"  U = 0（A_actual {res['a_actual']:.2%} ≥ A_stage {A_STAGE:.0%}）→ 回补上限为 0")
     elif headroom_w <= 0:
         print(f"  A_actual {res['a_actual']:.2%} 已达执行上限 {A_EXECUTION_CAP:.0%} → 回补上限为 0"
               f"（提高执行档属提高倾斜，须完整 IC）")
     elif not lookthrough_current:
-        print(f"  ** 未提供 --lookthrough-current：无当季有效穿透核查 → 回补冻结 **")
+        # 08-data-registry: a look-through failure freezes ONLY discretionary
+        # tilt additions. The restore channel outputs 0 / DATA INCOMPLETE, and
+        # the D / B / drawdown Core paths proceed on their own gates.
+        print(f"  ** 未提供 --lookthrough-current：无当季有效穿透核查 → 回补冻结（回补额 = 0）**")
+        print(f"     穿透核查失败只冻结自主倾斜新增，不阻断 SPYM / QQQM 例行路径")
         print(f"     完成 skills/using-investment-os/references/08-lookthrough-check.md 当季核查后重跑")
-        issues.append("DATA INCOMPLETE — 缺当季穿透核查，SOXX 回补冻结")
+        restore_frozen = True
     else:
         print(f"  回补候选 = min(U×V={money(res['reserve']*nav)}, "
               f"上限余量={money(headroom_w*nav)}) = {money(res['restore'])}")
@@ -306,11 +324,17 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
 
     total = res["d"] + res["b"] + res["dd_amount"] + res["restore"]
     print(f"\n[5] 例行路径检查")
+    rebuilding = res["floor_effective_w"] < res["floor_w"] - 1e-9
+    floor_label = (
+        f"交易后现金 {res['final_cash_w']:.2%} ≥ 有效下限 {res['floor_effective_w']:.2%}"
+        + (f"（现行下限 {res['floor_w']:.2%}；月初水位 {res['start_cash_w']:.2%}，"
+           "部署后重建期不因此阻断例行路径）" if rebuilding
+           else f"（现行下限 {res['floor_w']:.2%}）")
+    )
     checks = [
         ("D / B / 回撤部署只买 SPYM / QQQM；回补只买 SOXX 且只花 U", True),
         ("金额完全由已发布公式产生", True),
-        (f"交易后现金 {res['final_cash_w']:.2%} ≥ 现行下限 {res['floor_w']:.2%}",
-         res["final_cash_w"] >= res["floor_w"] - 1e-9),
+        (floor_label, res["floor_ok"]),
         ("不使用融资", res["final_cash"] >= -1e-9),
         (f"回补后 A_actual {res['a_actual_after']:.2%} ≤ min(执行上限, 硬上限) "
          f"{min(A_EXECUTION_CAP, A_STAGE):.0%}",
@@ -324,6 +348,8 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
             issues.append(label)
 
     print(f"\n[6] 结论")
+    if restore_frozen:
+        print(f"  SOXX 回补通道：DATA INCOMPLETE（缺当季穿透核查）——回补额为 0，不阻断例行路径")
     if issues:
         print(f"  DATA INCOMPLETE / HOLD —— 以下项未通过，升级为完整 IC 或停止：")
         for i in issues:
@@ -337,7 +363,7 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
                           ("SOXX（回补）", res["restore"])):
             if amt >= 1.0:   # below 1 unit is float residue, not a real candidate
                 print(f"    {name}  {money(amt)}")
-        print(f"  交易后现金 {res['final_cash_w']:.2%}（下限 {res['floor_w']:.2%}）")
+        print(f"  交易后现金 {res['final_cash_w']:.2%}（有效下限 {res['floor_effective_w']:.2%}）")
         print(f"\n  本结论不是下单授权。数量、限价与有效期由账户所有者在 IBKR 人工确定并确认。")
     return issues
 
@@ -435,7 +461,28 @@ def self_test() -> None:
     assert with_restore["final_cash_w"] >= with_restore["floor_w"] - 1e-9, \
         "restore + deployment pierced the floor"
 
-    print("monthly_execution self-test passed (12 invariants)")
+    # 12. deployment-framework §2: after a deployment, cash rebuilds only from
+    # external contributions and the Routine DCA must not pause for it. A month
+    # that STARTS below the normal floor because tranches fired earlier in the
+    # cycle is a rebuild state, not a violation — the floor gate must pass it.
+    r = compute(100_000, 13_600, 55_000, 28_500, 2_900, 0, 0.17, {"T1", "T2"}, d0)
+    assert r["final_cash_w"] < r["floor_w"], "rebuild fixture must sit below the normal floor"
+    assert r["floor_ok"], "post-deployment rebuild month tripped the floor gate"
+    # and a contribution flowing through D returns cash to its pre-F level —
+    # the DCA runs, and that is still not a breach
+    r = compute(100_000, 12_500, 59_600, 25_000, 2_900, 2_000, 0.18, {"T1", "T2"}, d0)
+    assert r["d"] > 0, "rebuild fixture must exercise the DCA path"
+    assert r["floor_ok"], "DCA during the rebuild tripped the floor gate"
+
+    # 13. the gate still trips when THIS month's trades push cash below where
+    # it started (here: a restore spending U out of cash already under the
+    # physical floor) — fail closed and escalate rather than execute.
+    r = compute(100_000, 13_000, 55_000, 30_000, 2_000, 0, 0.0, set(), d0,
+                lookthrough_current=True)
+    assert r["restore"] > 0, "piercing fixture must produce a restore candidate"
+    assert not r["floor_ok"], "a floor-piercing trade escaped the gate"
+
+    print("monthly_execution self-test passed (14 invariants)")
 
 
 def main() -> int:
