@@ -32,6 +32,10 @@ a new writable HOME for every verifier invocation. In subscription mode it valid
 `~/.codex/auth.json`, copies it without following links into the throwaway HOME at mode `0600`, and
 deletes that copy with the temporary directory. It never inherits host Codex config, plugins, skills,
 sessions or rules. In API-key mode it passes only the key and a small environment allowlist.
+The allowlist also preserves the managed runtime's `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`,
+`NO_PROXY`, `SSL_CERT_FILE`, and `REQUESTS_CA_BUNDLE` values when present, without recording them in
+evidence. This keeps the verifier network-capable behind an approved proxy while retaining host-state
+isolation.
 
 Full registered sweep (the only command that can produce an aggregate `VERIFIED PASS`):
 

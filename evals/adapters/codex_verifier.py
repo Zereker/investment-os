@@ -40,6 +40,14 @@ MODEL = os.environ.get("EVAL_CODEX_VERIFIER_MODEL", "gpt-5.6-sol")
 REASONING_EFFORT = os.environ.get("EVAL_CODEX_VERIFIER_REASONING_EFFORT", "medium")
 TIMEOUT = int(os.environ.get("EVAL_CODEX_VERIFIER_TIMEOUT", "600"))
 AUTH_MODE = os.environ.get("EVAL_CODEX_AUTH_MODE", "auto")
+NETWORK_ENV_ALLOWLIST = (
+    "HTTP_PROXY",
+    "HTTPS_PROXY",
+    "ALL_PROXY",
+    "NO_PROXY",
+    "SSL_CERT_FILE",
+    "REQUESTS_CA_BUNDLE",
+)
 
 PROMPT = """\
 Role: independent behavior verifier.
@@ -288,6 +296,10 @@ def isolated_codex_env(home: Path) -> tuple[dict[str, str], str]:
         "XDG_STATE_HOME": str(paths["XDG_STATE_HOME"]),
         "CODEX_SQLITE_HOME": str(paths["CODEX_SQLITE_HOME"]),
     }
+    for name in NETWORK_ENV_ALLOWLIST:
+        value = os.environ.get(name)
+        if value:
+            env[name] = value
     if mode == "api-key":
         key = os.environ.get("OPENAI_API_KEY")
         if not key:
