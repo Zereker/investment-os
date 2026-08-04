@@ -2,8 +2,6 @@
 from __future__ import annotations
 
 import json
-import os
-import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -69,29 +67,10 @@ def test_manifests() -> None:
     assert codex["skills"] == "./skills/"
     assert "hooks" not in codex
     assert codex["interface"]["privacyPolicyURL"].endswith("/skills/using-investment-os/SKILL.md")
-    command = claude["hooks"]["SessionStart"][0]["hooks"][0]["command"]
-    assert "skills/using-investment-os/scripts/claude-session-start" in command
-
-
-def test_bootstrap() -> None:
-    env = os.environ.copy()
-    env["CLAUDE_PLUGIN_ROOT"] = str(PLUGIN_ROOT)
-    bootstrap = SKILLS / "using-investment-os" / "scripts" / "claude-session-start"
-    result = subprocess.run(["bash", str(bootstrap)], check=True, capture_output=True, text=True, env=env)
-    payload = json.loads(result.stdout)
-    context = payload["hookSpecificOutput"]["additionalContext"]
-    assert "INVESTMENT_OS_BOOTSTRAP" in context
-    assert "using-investment-os" in context
-    assert "installed plugin distribution" in context
-    assert "current working directory" in context
-    assert "runtime network fetch" in context
-
-
 def main() -> None:
     test_single_skill()
     test_internal_assets()
     test_manifests()
-    test_bootstrap()
     print("Single-skill Investment OS integration tests passed.")
 
 

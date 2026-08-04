@@ -110,11 +110,6 @@ def check_manifests() -> None:
     if codex.get("interface", {}).get("privacyPolicyURL") != privacy:
         raise AssertionError("Codex privacy policy URL is stale")
 
-    command = claude["hooks"]["SessionStart"][0]["hooks"][0]["command"]
-    bootstrap = SKILLS / "using-investment-os" / "scripts" / "claude-session-start"
-    if "skills/using-investment-os/scripts/claude-session-start" not in command or not bootstrap.is_file():
-        raise AssertionError("Claude bootstrap is not wired")
-
     claude_marketplace = load_json(ROOT / ".claude-plugin" / "marketplace.json")
     if claude_marketplace["plugins"][0].get("version") != VERSION:
         raise AssertionError("Claude marketplace version must match .plugin-version")

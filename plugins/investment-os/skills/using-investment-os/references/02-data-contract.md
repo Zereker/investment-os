@@ -30,7 +30,7 @@
 
 ### Production 边界
 
-快照只提供事实数据。是否影响交易由 `product-contract.md`、`00-constitution.md` 和 `01-operating-manual.md` 决定。数据文件不得自行增加或改变交易规则。
+快照只提供事实数据。是否影响交易由 canonical `SKILL.md`、`00-constitution.md` 和 `01-operating-manual.md` 决定。数据文件不得自行增加或改变交易规则。
 
 ---
 
