@@ -31,7 +31,7 @@
 
 1. 从足够长的 SPYM 日线窗口确认当前历史最高收盘；窗口不足以排除更早高点时继续向前扩展。实时 `LAST` 与最后一个已完成日线收盘必须分开记录，`DD` 只使用后者。
 2. 按本手册状态重建部分的三信号程序重建本周期已执行档位。
-3. 使用 `python3 skills/validating-drawdown-state/scripts/alert_pointer_check.py`，比较重建出的 expected pointer 与 IBKR actual alert。
+3. 使用 `python3 skills/using-investment-os/scripts/alert_pointer_check.py`，比较重建出的 expected pointer 与 IBKR actual alert。
 4. 未耗尽阶梯时，账户内必须恰好有一个启用警报，且满足：
    - 标的是 SPYM；
    - 字段是 `LAST`；
@@ -180,7 +180,7 @@ DATA INCOMPLETE / HOLD
 
 ### 5. Account Reconciliation
 
-统一调用 `skills/reconstructing-portfolio-state/scripts/account_reconciliation.py`，验证：
+统一调用 `skills/using-investment-os/scripts/account_reconciliation.py`，验证：
 
 ```text
 NAV ≈ Cash + Σ Position Market Values
@@ -200,7 +200,7 @@ NAV ≈ Cash + Σ Position Market Values
 6. 生成结构化结果、阻塞项和下一观察条件；
 7. 仅在需要实际 Broker 操作时进入 Execution Runtime。
 
-`D`、战略迁移、回撤部署和回补的具体公式与阈值由 `00-constitution.md`、本手册部署框架和 `skills/running-monthly-review/scripts/monthly_execution.py` 当前实现共同约束。本文不复制易变参数。
+`D`、战略迁移、回撤部署和回补的具体公式与阈值由 `00-constitution.md`、本手册部署框架和 `skills/using-investment-os/scripts/monthly_execution.py` 当前实现共同约束。本文不复制易变参数。
 
 ### 7. Routine Path Checks
 
@@ -243,7 +243,7 @@ NAV ≈ Cash + Σ Position Market Values
 ### 10. Canonical Command
 
 ```bash
-python3 skills/running-monthly-review/scripts/monthly_execution.py \
+python3 skills/using-investment-os/scripts/monthly_execution.py \
   --nav <NetLiq> \
   --cash <TotalCash> \
   --spym <MarketValue> \
@@ -505,7 +505,7 @@ v4.2 起系统不再持有任何估值判断。价格不定义贵或便宜，只
 
      该映射要求各档累计释放互不相同(本梯度满足);若同期再平衡使水位落在两档之间,以 a、b 两信号定夺,仍冲突则 `DATA INCOMPLETE`。
    - **Alert 标记维护**(状态存于券商,不入库):任一时刻账户内保持**恰好一个**回撤警报,指向下一个可用档,价位 = `(1−该档触发线)×ATH收盘`(T1 `0.90×`、T2 `0.85×`、T3 `0.80×`、T4 `0.75×`)。某档执行后删除其警报、创建下一档;**T4 执行后不再创建新警报**——弹药已尽,`DD` 继续加深没有可解锁的档位;新 ATH 收盘后把**周期状态与警报档位作为同一个原子状态重置**:已执行档位清空、expected pointer 退回 T1、价格按新 ATH 更新。不得只更新价格基准而保留旧档位身份。启动时读取现有警报,但警报只作为 actual pointer;expected pointer 必须由 ATH 与三信号重建结果独立计算。
-   - **Alert pointer 一致性检查**:把当前 ATH、重建出的 `tiers_executed` 和 IBKR active alerts 输入 `python3 skills/validating-drawdown-state/scripts/alert_pointer_check.py`。未耗尽阶梯时必须恰好一个启用警报,且标的、字段、运算符、档位和价格均与 expected pointer 一致;阶梯耗尽后必须没有启用回撤警报。任何差异 ⇒ `Account Health = WARN`、`drawdown deployment state = DATA INCOMPLETE`、停止新的回撤部署候选。agent 只报告 expected/actual 和修复条件,不自动修改券商警报。
+   - **Alert pointer 一致性检查**:把当前 ATH、重建出的 `tiers_executed` 和 IBKR active alerts 输入 `python3 skills/using-investment-os/scripts/alert_pointer_check.py`。未耗尽阶梯时必须恰好一个启用警报,且标的、字段、运算符、档位和价格均与 expected pointer 一致;阶梯耗尽后必须没有启用回撤警报。任何差异 ⇒ `Account Health = WARN`、`drawdown deployment state = DATA INCOMPLETE`、停止新的回撤部署候选。agent 只报告 expected/actual 和修复条件,不自动修改券商警报。
 5. **穿透核查**:读取最新的穿透核查记录(`records/lookthrough-YYYY-MM-DD.md`);超过一个季度或缺失 → 倾斜追加冻结,例行路径不受影响。
 6. **实际入金 `F`**:IBKR Cash Transactions 读本月已到账外部净入金。计划数额不存在于仓库;`D=min(F,G_0)` 只用实际值。
 

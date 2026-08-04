@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic Execution Runtime contract validator.
+"""Deterministic validator for one broker operation.
 
 This module does not connect to a broker. It validates an adapter-produced execution
 record and enforces operation-specific authorization, single-submit semantics,

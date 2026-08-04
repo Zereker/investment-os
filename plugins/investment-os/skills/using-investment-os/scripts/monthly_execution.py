@@ -27,17 +27,17 @@ Hard boundaries this script will not cross:
     DCA path say DATA INCOMPLETE rather than silently deploying on an assumed F=0.
 
 Usage (figures come from IBKR, in account currency; they are never persisted):
-  python3 skills/running-monthly-review/scripts/monthly_execution.py --nav 100000 --cash 18000 \\
+  python3 skills/using-investment-os/scripts/monthly_execution.py --nav 100000 --cash 18000 \\
       --spym 50000 --qqqm 26000 --soxx 6000 --contribution 2000
 
   # already deployed T1 earlier in this drawdown cycle:
-  python3 skills/running-monthly-review/scripts/monthly_execution.py ... --tiers-executed T1
+  python3 skills/using-investment-os/scripts/monthly_execution.py ... --tiers-executed T1
 
   # a current-quarter look-through check exists -> the SOXX restore may compute:
-  python3 skills/running-monthly-review/scripts/monthly_execution.py ... --lookthrough-current
+  python3 skills/using-investment-os/scripts/monthly_execution.py ... --lookthrough-current
 
   # skip the network call for the drawdown check (offline / IBKR series preferred):
-  python3 skills/running-monthly-review/scripts/monthly_execution.py ... --dd 0.0
+  python3 skills/using-investment-os/scripts/monthly_execution.py ... --dd 0.0
 """
 
 from __future__ import annotations
@@ -47,10 +47,7 @@ import json
 import sys
 import urllib.request
 from datetime import date
-from pathlib import Path
 
-PLUGIN_ROOT = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(PLUGIN_ROOT / "skills" / "reconstructing-portfolio-state" / "scripts"))
 from account_reconciliation import reconcile_nav  # noqa: E402
 
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
