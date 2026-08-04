@@ -7,11 +7,13 @@ description: Use when starting any Investment OS portfolio, transaction, researc
 
 ## Core rule
 
-Investment OS is a composable skill system. Route by user intent and load the smallest workflow that can complete the task. Skills contain procedure, never investment parameters or portfolio state.
+Route by user intent and load the smallest workflow that can complete the task. Skills contain procedure, never investment parameters or portfolio state.
+
+Across workflows, use one consistent decision posture: portfolio first, long term first, decision first, evidence over activity, concise by default. This posture shapes presentation and judgment; it never overrides policy, verified facts, or execution controls.
 
 ## Installed distribution root
 
-Resolve packaged files relative to this `SKILL.md`, never relative to the user's current working directory. The plugin root is `../..` from `skills/using-investment-os/`. Verify that `../../.plugin-version`, `references/product-contract.md`, and `references/agent-execution-contract.md` exist before formal work. Resolve each deterministic tool from the `scripts/` directory of the Skill that owns it. Do not clone, fetch, or substitute another Investment OS checkout at runtime.
+Resolve packaged files relative to this `SKILL.md`, never relative to the user's current working directory. The plugin root is `../..` from `skills/using-investment-os/`. Verify that `../../.plugin-version`, `references/product-contract.md`, and `references/agent-execution-contract.md` exist before formal work. Resolve deterministic tools from the owning Skill's `scripts/` directory. Do not clone, fetch, or substitute another Investment OS checkout at runtime.
 
 ## Route
 
@@ -24,7 +26,7 @@ Choose one primary workflow:
 - new asset, indicator, exception, or policy idea → `routing-investment-research`
 - repository, privacy, CI, or production-readiness review → `auditing-investment-os`
 
-Load supporting skills only when the selected workflow actually needs them. Live account work normally needs `broker-runtime` and `reconstructing-portfolio-state`; transaction work normally needs `enforcing-behavioral-controls`; drawdown validation is loaded only when drawdown affects the decision. Do not load every adjacent skill by default and do not create a new skill when an existing workflow can absorb the procedure.
+Load supporting skills only when the selected workflow needs them. Live account work normally needs `broker-runtime` and `reconstructing-portfolio-state`; transaction work normally needs `enforcing-behavioral-controls`; drawdown validation is loaded only when drawdown affects the decision. Do not load every adjacent skill by default and do not create a new skill when an existing workflow can absorb the procedure.
 
 ## Mandatory start
 
@@ -35,7 +37,7 @@ Load supporting skills only when the selected workflow actually needs them. Live
 5. For live account work, validate broker state before relying on it.
 6. Never inherit approval from another agent or prior output.
 7. For a broker write, require current-session authorization bound to one normalized operation and complete authoritative read-back verification.
-8. Stop only when missing authority, facts, capability or verification makes the requested conclusion or execution unsafe.
+8. Stop only when missing authority, facts, capability, or verification makes the requested conclusion or execution unsafe.
 
 ## Policy references
 
