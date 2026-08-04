@@ -73,7 +73,7 @@ timeout covers the whole actor command, not one turn.
 | One persistent session across turns | Turn 1 uses `--session-id`; later turns `--resume` that same id. |
 | Installed-distribution authority | The actor runs from a disposable copy of the plugin with `.git` and prior eval results excluded. It cannot resolve a repository commit at runtime or learn from recorded answers. |
 | Separate verifier process and session | Each verifier is a separate process. Claude verifies the requested fresh UUID; Codex reports a new ephemeral thread id from its JSONL event stream. The runner rejects either id if it equals the actor's. |
-| Verifier not contaminated by the system under test | It runs in a neutral temporary directory, so no `CLAUDE.md`, plugin, SessionStart hook or skill is loaded. It judges from the rubric and transcript only. |
+| Verifier not contaminated by the system under test | It runs in a neutral temporary directory with no plugin or Skill loaded. It judges from the rubric and transcript only. |
 | Host-state isolation | The Codex verifier runs under a new HOME/XDG/TMPDIR tree with an allowlisted environment. Only the selected authentication material is seeded; host config and prior sessions are absent. |
 | Different harness preferred | `codex_verifier.py` supplies the preferred Claude Code actor / Codex verifier pairing and reports `different_harness: true`. |
 | Disclosed harness metadata | Adapters report model, tooling, session identity and isolation in result JSON. Same-harness Claude verification remains available and is disclosed as `different_harness: false`. |
@@ -93,8 +93,8 @@ structural:
 - the Codex verifier runs ephemeral and read-only with user config, project rules, MCP servers and
   web search disabled, and rejects the run if its JSONL trace contains a tool item.
 
-The actor still loads the Investment OS plugin via `--plugin-dir`, because the plugin — its router
-hook, skills and published rules — **is** the system under test.
+The actor still loads the Investment OS plugin via `--plugin-dir`, because its canonical Skill and
+published rules are the system under test.
 
 ## Environment
 
@@ -107,7 +107,7 @@ hook, skills and published rules — **is** the system under test.
 | `EVAL_CODEX_VERIFIER_REASONING_EFFORT` | `medium` | Codex verifier reasoning effort |
 | `EVAL_CODEX_AUTH_MODE` | `auto` | `auto`, `subscription`, or `api-key`; auto prefers an explicitly exported API key and otherwise uses Codex login auth |
 | `EVAL_CODEX_AUTH_FILE` | Codex login path | optional subscription `auth.json` source override |
-| `EVAL_ACTOR_TIMEOUT` | `600` | per-turn timeout, seconds; the turn that runs the deterministic engine can be slow, and a timeout loses the run rather than producing a result |
+| `EVAL_ACTOR_TIMEOUT` | `600` | per-turn timeout, seconds; a timeout loses the run rather than producing a result |
 | `EVAL_VERIFIER_TIMEOUT` | `600` | verifier timeout, seconds |
 | `EVAL_CODEX_VERIFIER_TIMEOUT` | `600` | Codex verifier timeout, seconds |
 | `EVAL_PLUGIN_DIR` | repo root | Investment OS plugin source copied into the disposable actor distribution |

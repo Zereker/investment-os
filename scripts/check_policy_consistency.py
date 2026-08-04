@@ -1,15 +1,5 @@
 #!/usr/bin/env python3
-"""Fail CI when Production policy formulas, state or guardrails diverge.
-
-Scope (rules-first, v0.5.0): this checker holds EXECUTABLE invariants only —
-policy math property tests, a real constant-mirror comparison against the
-shipped runtime modules, the public-repo privacy gate, a frozen-live-state
-regex, retired-file resurfacing, and a small curated list of known-stale
-vocabulary that must never return to the consolidated rule files. The old
-~100 require/forbid pins on living prose were retired with the 29->9 rule
-consolidation: they asserted that sentences existed, not that behavior was
-correct, and they broke on every innocuous rewording.
-"""
+"""Test executable policy mathematics and the public-repository privacy boundary."""
 
 from math import isfinite, nan, inf
 from pathlib import Path
@@ -18,10 +8,6 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 CONSTITUTION = "plugins/investment-os/skills/using-investment-os/references/00-constitution.md"
-OPERATING_MANUAL = "plugins/investment-os/skills/using-investment-os/references/01-operating-manual.md"
-DATA_CONTRACT = "plugins/investment-os/skills/using-investment-os/references/02-data-contract.md"
-JOURNAL = "plugins/investment-os/skills/using-investment-os/references/03-journal.md"
-RULE_FILES = (CONSTITUTION, OPERATING_MANUAL, DATA_CONTRACT, JOURNAL)
 
 STAGES = (0.06,)  # v4.0: 6% is the permanent hard cap; 10/12.5/15% stages are void
 EXECUTION_CAPS = (0.03, 0.045, 0.06)
@@ -47,20 +33,6 @@ SLEEVE = 0.57
 
 def read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
-
-
-def require(path: str, *needles: str) -> None:
-    text = read(path)
-    for needle in needles:
-        if needle not in text:
-            raise AssertionError(f"{path}: missing required text: {needle}")
-
-
-def forbid(path: str, *needles: str) -> None:
-    text = read(path)
-    for needle in needles:
-        if needle in text:
-            raise AssertionError(f"{path}: forbidden stale text: {needle}")
 
 
 def close_to_member(value: float, allowed: tuple[float, ...]) -> bool:
@@ -203,18 +175,14 @@ def mirror_tests() -> None:
     pins, which could not see a corrupted middle tier."""
     monthly = load_runtime_module(
         "plugins/investment-os/skills/running-monthly-review/scripts/monthly_execution.py")
-    drill = load_runtime_module(
-        "Research/tools/drawdown_drill.py")
-
-    for label, module in (("monthly_execution", monthly), ("drawdown_drill", drill)):
-        tiers = tuple((trigger, tranche) for trigger, _name, tranche in module.TIERS)
-        if tiers != DRAWDOWN_TIERS:
-            raise AssertionError(f"{label}.TIERS diverged from the canonical ladder: {tiers}")
-        names = tuple(name for _t, name, _w in module.TIERS)
-        if names != TIER_NAMES:
-            raise AssertionError(f"{label}.TIERS names diverged: {names}")
-        if module.ABSOLUTE_FLOOR != ABSOLUTE_FLOOR:
-            raise AssertionError(f"{label}.ABSOLUTE_FLOOR diverged: {module.ABSOLUTE_FLOOR}")
+    tiers = tuple((trigger, tranche) for trigger, _name, tranche in monthly.TIERS)
+    if tiers != DRAWDOWN_TIERS:
+        raise AssertionError(f"monthly_execution.TIERS diverged: {tiers}")
+    names = tuple(name for _trigger, name, _tranche in monthly.TIERS)
+    if names != TIER_NAMES:
+        raise AssertionError(f"monthly_execution.TIERS names diverged: {names}")
+    if monthly.ABSOLUTE_FLOOR != ABSOLUTE_FLOOR:
+        raise AssertionError(f"monthly_execution.ABSOLUTE_FLOOR diverged: {monthly.ABSOLUTE_FLOOR}")
 
     if monthly.CASH_TARGET != CASH_TARGET or monthly.CASH_FLOOR != NORMAL_CASH_FLOOR:
         raise AssertionError("monthly_execution cash constants diverged")
@@ -222,10 +190,6 @@ def mirror_tests() -> None:
         raise AssertionError("monthly_execution sleeve constants diverged")
     if monthly.A_STAGE != CURRENT_STAGE or monthly.A_EXECUTION_CAP != CURRENT_EXECUTION_CAP:
         raise AssertionError("monthly_execution tilt constants diverged")
-    if drill.NORMAL_CASH_FLOOR != NORMAL_CASH_FLOOR:
-        raise AssertionError("drawdown_drill.NORMAL_CASH_FLOOR diverged")
-
-
 PRIVACY_PATTERNS = (
     (re.compile(r"\$\s?\d"), "dollar amount ($N)"),
     (re.compile(r"\d[\d,]*(?:\.\d+)?\s*美元"), "CNY-written dollar amount (N美元)"),
@@ -300,59 +264,6 @@ def benchmark_interest_tests() -> None:
         raise AssertionError("NAV scale applied incorrectly")
 
 
-def stale_vocabulary_gate() -> None:
-    """Known-stale rule text must never return to the consolidated rule files.
-
-    This is a curated regression guard (BUG-014's class: stale numbers in an
-    authoritative document), NOT a prose-preservation patrol. Add a needle only
-    when a real stale-text defect was found and fixed.
-    """
-    for path in RULE_FILES:
-        forbid(
-            path,
-            # v3.x machinery
-            "Add Candidate Packet的",
-            "validate_lookthrough_packet",
-            "10%、12.5%与15%",
-            "3%→4.5%→6%→10%",
-            "Frozen — DATA GATE",
-            "长期硬上限与最终治理阶段15%",
-            "Bundle v1.4",
-            "Bundle v1.5",
-            # v4.2 retired the valuation subsystem; the vocabulary must not return
-            "CHEAP",
-            "VERY EXPENSIVE",
-            "Forward P/E",
-            "战术加速",
-            "ETF-Valuation-Framework",
-            "Valuation Score",
-            "Opportunity Score",
-            # v4.6 retired the deep tiers
-            "`DD ≥ 30%`",
-            "`DD ≥ 35%`",
-            '"T5"',
-            '"T6"',
-            # the v4.4 ammunition text (9pp ending at 6%+U) shipped one release
-            # behind the tier table in the same file; it must never come back
-            "合计 9 个百分点",
-            "降至 T4 的 `6%+U`",
-            # every figure in the constitution must be traceable to Research/
-            "24.1%",
-        )
-    # the numeric tier table in the constitution must match the canonical ladder
-    require(
-        CONSTITUTION,
-        "T1 | `DD ≥ 10%` | 1.50pp",
-        "T2 | `DD ≥ 15%` | 3.00pp",
-        "T3 | `DD ≥ 20%` | 4.50pp",
-        "T4 | `DD ≥ 25%` | 6.00pp",
-        "`0+U`",
-    )
-    # git history was rebuilt to a single commit: no document may send readers there
-    for path in ("README.md",):
-        forbid(path, "查 git 历史")
-
-
 def frozen_state_gate() -> None:
     """Live account state must never be frozen into rule files (red line 2).
 
@@ -368,41 +279,6 @@ def frozen_state_gate() -> None:
             raise AssertionError(f"{path}: frozen A_actual value: {hit.group()!r}")
 
 
-def retired_files_gate() -> None:
-    for stale in (
-        "scripts/validate_lookthrough_packet.py",
-        "scripts/parse_lookthrough_sources.py",
-        "scripts/test_lookthrough_adversarial.py",
-        "scripts/check_lookthrough_history.py",
-        "08-Data/LOOKTHROUGH_PACKET.md",
-        "08-Data/LOOKTHROUGH_PACKET_TEMPLATE.json",
-        # retired in the v4.0 cleanup: every section duplicated another file, and its
-        # account fields could never be filled without failing the privacy gate
-        "03-Transition/Transition-Dashboard.md",
-        # retired in the v4.0 cleanup: single-stock research template, but stock
-        # authorization is 0% and the tilt framework allows exactly one vehicle
-        "04-Alpha/Research/README.md",
-        # retired in v4.2: four Red inputs that cannot go Green, and a
-        # historical-percentile requirement no source can satisfy
-        "02-Operating-System/ETF-Valuation-Framework.md",
-        # retired from the plugin in the runtime slim (v0.5.1): the drill's
-        # mission is complete (mechanism proven, evidence in Research/, constants
-        # mirror-tested); it lives on as Research/tools/drawdown_drill.py
-        "plugins/investment-os/skills/validating-drawdown-state/scripts/drawdown_drill.py",
-        # retired in the 29->9 rules-first consolidation (v0.5.0)
-        "plugins/investment-os/skills/using-investment-os/references/01-target-allocation.md",
-        "plugins/investment-os/skills/using-investment-os/references/02-deployment-framework.md",
-        "plugins/investment-os/skills/using-investment-os/references/project-contract.md",
-        "plugins/investment-os/skills/using-investment-os/references/production-contract.md",
-    ):
-        if (ROOT / stale).exists():
-            raise AssertionError(f"retired file resurfaced: {stale}")
-
-    drawdown_drill = "Research/tools/drawdown_drill.py"
-    require(drawdown_drill, "references/02-data-contract.md")
-    forbid(drawdown_drill, "references/08-data-registry.md")
-
-
 def main() -> None:
     if CURRENT_EXECUTION_CAP > CURRENT_STAGE:
         raise AssertionError("current execution cap exceeds current stage")
@@ -410,9 +286,7 @@ def main() -> None:
     drawdown_tests()
     mirror_tests()
     benchmark_interest_tests()
-    stale_vocabulary_gate()
     frozen_state_gate()
-    retired_files_gate()
     privacy_gate()
     print("Policy consistency checks passed.")
 

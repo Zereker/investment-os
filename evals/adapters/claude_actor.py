@@ -20,8 +20,8 @@ Isolation (why this cannot touch the real account):
   - Direct write tools, network tools and unrestricted shell are denied.
   Scenarios are synthetic by construction; this makes that structural.
 
-The Investment OS plugin itself IS the system under test, so it is loaded via
---plugin-dir: the SessionStart hook injects the router and the skills resolve.
+The Investment OS plugin itself IS the system under test, so its one native
+Skill is loaded from a disposable distribution via --plugin-dir.
 
 Usage (from evals/run.py):
   --actor-command 'python3 evals/adapters/claude_actor.py'
@@ -48,20 +48,12 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 PLUGIN_ROOT = REPO_ROOT / "plugins" / "investment-os"
 
 MODEL = os.environ.get("EVAL_ACTOR_MODEL", "claude-sonnet-5")
-# 300s was too tight for the turn that runs the deterministic engine: a
-# multi-turn scenario lost a run to a per-turn timeout, and a timeout is a
-# harness artifact that leaves no result rather than a behavior signal.
+# A timeout is a harness artifact that leaves no result rather than a behavior signal.
 TIMEOUT = int(os.environ.get("EVAL_ACTOR_TIMEOUT", "600"))
 SOURCE_PLUGIN_DIR = Path(os.environ.get("EVAL_PLUGIN_DIR", str(PLUGIN_ROOT))).resolve()
 
-# The agent may consult the published rules and RUN the deterministic engine,
-# never mutate anything and never reach a broker.
-#
-# Scoped script execution is deliberate, not a loosening. The published rules
-# require the deterministic engine — not the model — to produce a decision
-# packet, so a routine review the agent cannot execute is a harness artifact
-# that shows up as a behavior failure. Production sessions have this tool;
-# withholding it makes the eval measure the harness instead of the system.
+# The agent may consult the published rules and run their deterministic math
+# and safety tools, but may never mutate anything or reach a broker.
 ALLOWED_TOOLS = [
     "Read", "Grep", "Glob", "Skill",
     "Bash(python3 skills/*/scripts/*)",

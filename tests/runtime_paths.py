@@ -12,11 +12,9 @@ SKILLS = PLUGIN_ROOT / "skills"
 SCRIPT_DIRS = {
     "broker": SKILLS / "broker-runtime" / "scripts",
     "reconciliation": SKILLS / "reconstructing-portfolio-state" / "scripts",
-    "daily": SKILLS / "running-daily-review" / "scripts",
     "monthly": SKILLS / "running-monthly-review" / "scripts",
     "drawdown": SKILLS / "validating-drawdown-state" / "scripts",
     "execution": SKILLS / "execution-runtime" / "scripts",
-    "research": SKILLS / "routing-investment-research" / "scripts",
 }
 
 for path in SCRIPT_DIRS.values():
