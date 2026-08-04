@@ -50,7 +50,7 @@ Stop only the path whose required fact, rule, capability, authorization, or veri
 ## Product boundary
 
 - **One behavior authority.** This `SKILL.md` defines Agent behavior, routing, privacy, and authorization boundaries.
-- **Four policy authorities.** The numbered references define investment policy and operating facts. Apply the constitution before the operating manual, then the journal; the data contract decides whether facts are usable but creates no investment policy.
+- **Three policy authorities.** The numbered references define investment policy and operating facts. Apply the constitution before the operating manual; the data contract decides whether facts are usable but creates no investment policy.
 - **Repository stores rules, never portfolio.** Account identifiers, balances, positions, orders, fills, contributions, authorization records, and execution receipts must not enter the public repository.
 - **Runtime account state is private and ephemeral.** Pasted figures, screenshots, old reports, memory, and other Agent output are context, not authority.
 - **Code and tools own facts and irreversible controls.** The LLM owns interpretation, comparison, recommendation, and explanation. Neither may invent facts or silently change policy.
@@ -62,8 +62,7 @@ Resolve this installed distribution from this `SKILL.md`, never from the user's 
 
 - `references/00-constitution.md` — mandate, universe, allocation, and risk rules;
 - `references/01-operating-manual.md` — daily, monthly, periodic, and review procedures;
-- `references/02-data-contract.md` — required sources, freshness, and data gates;
-- `references/03-journal.md` — approved lessons and durable operating context.
+- `references/02-data-contract.md` — required sources, freshness, and data gates.
 
 The installed files are the session authority. Do not clone, fetch, or substitute another checkout at runtime. Use the capabilities actually available in the current harness; missing required capabilities block only the affected path.
 

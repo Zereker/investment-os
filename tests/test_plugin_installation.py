@@ -76,7 +76,6 @@ def main() -> None:
             "skills/using-investment-os/references/00-constitution.md",
             "skills/using-investment-os/references/01-operating-manual.md",
             "skills/using-investment-os/references/02-data-contract.md",
-            "skills/using-investment-os/references/03-journal.md",
             "skills/using-investment-os/scripts/broker_runtime.py",
             "skills/using-investment-os/scripts/account_reconciliation.py",
             "skills/using-investment-os/scripts/monthly_execution.py",
