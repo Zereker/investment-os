@@ -8,6 +8,9 @@ scenario = request["scenario"]
 actor_session_id = request["actor"]["session_id"]
 scenario_name = scenario["name"]
 forced_failure = os.environ.get("FAKE_EVAL_FAIL_SCENARIO") == scenario_name
+# mirrors the real same-harness claude verifier: honest fields that the
+# aggregate gate must reject (different_harness False, HOME not isolated)
+same_harness = os.environ.get("FAKE_EVAL_SAME_HARNESS") == "1"
 required_checks = [
     {
         "behavior": behavior,
@@ -26,10 +29,10 @@ json.dump({
     "independence": {
         "separate_process": True,
         "separate_session": True,
-        "different_harness": True,
+        "different_harness": not same_harness,
         "session_identity_verified": True,
-        "isolated_home": True,
-        "host_config_inherited": False,
+        "isolated_home": not same_harness,
+        "host_config_inherited": same_harness,
         "actor_session_id": actor_session_id,
         "verifier_session_id": f"verifier-clean-session-{scenario_name}"
     }

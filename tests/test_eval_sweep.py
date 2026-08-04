@@ -66,6 +66,19 @@ def main() -> None:
                 if not (scenario_dir / relative).is_file():
                     raise AssertionError(f"missing sweep evidence: {scenario}/{relative}")
 
+        # A same-harness verifier (the shipped claude_verifier shape: honest
+        # different_harness=False, HOME not isolated) must never aggregate to a
+        # verified sweep — the cross-harness claim requires a foreign judge.
+        same_dir = root / "same-harness"
+        same = run_sweep(same_dir, FAKE_EVAL_SAME_HARNESS="1")
+        if same.returncode == 0:
+            raise AssertionError("same-harness sweep must not exit zero")
+        same_aggregate = json.loads((same_dir / "aggregate.json").read_text(encoding="utf-8"))
+        if same_aggregate["status"] == "VERIFIED PASS":
+            raise AssertionError("same-harness sweep must not aggregate to VERIFIED PASS")
+        if "different verifier harness" not in json.dumps(same_aggregate):
+            raise AssertionError("same-harness rejection must name the different-harness requirement")
+
         stale = run_sweep(success_dir)
         if stale.returncode != 2 or "output directory is not empty" not in stale.stderr:
             raise AssertionError("sweep must fail closed instead of reusing stale evidence")
