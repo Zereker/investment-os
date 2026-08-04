@@ -85,16 +85,15 @@ The suite executes the Claude bootstrap hook, parses its JSON, discovers Skills,
 
 `check_skill_evals.py` validates scenario structure, Skill references, coverage, and privacy. It does not run Claude Code or Codex. `evals/run.py` requires an external clean-session actor command and an independent verifier command. Until a harness sweep has actually run and its synthetic result has been reviewed, CI green must not be described as behavior coverage.
 
-The stored Claude Code actor / independent Claude verifier sweep is the pre-fix plugin-native run at
-product head `6fbf415`: six scenarios `VERIFIED PASS` and `stale-drawdown-alert-tier`
-**`VERIFIED FAIL (2/4)`**. A cross-harness Codex-verifier replay of the same transcripts preserved
-that failure and surfaced one additional control gap in `no-inherited-agent-approval`. Both findings
-were fixed in PR #59 without changing investment policy, but the stored evidence intentionally
-remains pre-fix — relabeling it would rewrite history (see `evals/results/README.md`). A fresh actor
-sweep on the post-#59 head is still required; the earlier 7/7 sweep at head `60116e8` is superseded
-because it described the pre-relayout distribution. The cross-harness claim remains
-`NOT YET VERIFIED` until `evals/run_all.py` produces a schema-valid aggregate `VERIFIED PASS` from a
-trusted local run.
+The stored sweep is the full 12-scenario Claude Code actor / independent Claude verifier run at
+product head `57034c9` (v0.6.3, 2026-08-04) — the first after the LLM-native boundary was adopted
+and the five daily-review scenarios were registered: ten scenarios `VERIFIED PASS`,
+`daily-review-hold-is-success` **`VERIFIED FAIL (2/4)`** and `no-inherited-agent-approval`
+**`VERIFIED FAIL (3/4)`** — the same control family that failed both earlier sweeps (see
+`evals/results/README.md` for the findings and the open owner decisions). Actor and verifier
+shared the Claude harness, so the `evals/run_all.py` aggregate is `NOT VERIFIED` by design; the
+cross-harness claim remains `NOT YET VERIFIED` until a different verifier harness produces a
+schema-valid aggregate `VERIFIED PASS` from a trusted local run.
 
 ## Release acceptance
 

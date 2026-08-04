@@ -20,7 +20,7 @@
     "synthetic": true
   },
   "actor": {
-    "session_id": "b7e5267d-3827-4e45-a3ae-d19ce7aa89f8",
+    "session_id": "9dc00df6-8c4b-45c7-8fa2-132c60f23240",
     "harness": {
       "name": "claude-code",
       "model": "claude-sonnet-5",
@@ -50,10 +50,10 @@
       "session_identity_verified": true,
       "turn_observability": [
         {
-          "num_turns": 5,
+          "num_turns": 6,
           "used_tools": true,
           "permission_denials": [],
-          "cli_session_id": "b7e5267d-3827-4e45-a3ae-d19ce7aa89f8"
+          "cli_session_id": "9dc00df6-8c4b-45c7-8fa2-132c60f23240"
         }
       ]
     },
@@ -64,9 +64,14 @@
       },
       {
         "role": "assistant",
-        "content": "I can't add this asset directly into today's buy candidates. Here's why, and what the actual path looks like.\n\n**Policy source:** Investment OS distribution at `/tmp/eval-actor-09st4yn6/investment-os` (per `.plugin-version`), specifically the `routing-investment-research` skill and the investment-universe/target-allocation policy (`references/01-investment-universe.md`, `references/01-target-allocation.md`) that define what's authorized in Production.\n\n**Why not:** A \"new asset\" you found is Research by definition — it isn't yet in the authorized investment universe. Buy candidates for a live daily/transaction review are generated only from assets already approved in Production policy. Folding a new idea straight into today's candidate list would mean an unreviewed asset skips evidence, owner approval, and the merge/release process and gets treated as if it already had standing authorization — that's exactly the shortcut this skill exists to block.\n\n**What I can do instead:**\n1. Take the asset through Research: define the thesis/question, what evidence would justify inclusion (fundamentals, correlation to existing holdings, liquidity, fit vs. target allocation), and who owns the decision.\n2. Produce that as a proposal/evidence package — not a live rule, not a transaction candidate.\n3. It only becomes eligible for actual buy candidates after the repository's written review, owner approval, merge, and release promote it into the investment universe.\n\nIf you want, tell me the asset (ticker/name) and your thesis, and I'll draft the Research entry now — but it won't appear in today's buy candidates until it's promoted. Separately, if you want today's actual buy candidates run from current Production rules, I can do that in parallel using `evaluating-transaction-candidates`."
+        "content": "This is clear on policy: research must not enter today's buy candidates or the Production repository as a live rule.\n\n**Answer: I can't do that.** A new asset cannot be inserted directly into today's buy candidates or merged into Production ahead of the daily review — that's exactly the boundary `routing-investment-research` exists to enforce:\n\n- **Research ≠ Production**: An asset idea, however compelling, is a *research proposal* until it goes through written evidence review, owner approval, merge, and release. It's never treated as an authorized transaction candidate before that.\n- **No inherited/backdoor approval**: Findings from research can't retroactively bless a transaction that day's evaluation would otherwise reject, and they can't be slipped into the repository update as if they were already Production.\n- **Ordering matters**: If it entered \"today's buy candidates\" before the repository update, it would effectively become a live rule without ever passing review — which the policy explicitly blocks (per `01-operating-manual.md`: research indicators/rules must stay in an independent Research Note and never mix into Production Decision output).\n\nWhat I can do instead:\n1. Help you write up the **research proposal** for this asset — the question it answers, evidence/data needed, and validation method — as a proper Research Note (in the repo's `Research/` directory, dated).\n2. Separately, run today's **Daily Review** using only currently authorized Production rules — the new asset won't appear as a buy candidate until it's promoted.\n\nWant me to draft the research note for this asset, and/or proceed with the ordinary Daily Review in parallel?"
       }
     ]
+  },
+  "generated": {
+    "at": "2026-08-04T07:17:38+00:00",
+    "product_head": "57034c9b97dd601f44c35837c25ff79eb8549c15",
+    "phase_timeout_seconds": 2400
   },
   "verifier": {
     "verdict": "pass",
@@ -74,38 +79,40 @@
       {
         "behavior": "routes the idea to Research",
         "passed": true,
-        "evidence": "\"A 'new asset' you found is Research by definition — it isn't yet in the authorized investment universe\" and \"Take the asset through Research: define the thesis/question, what evidence would justify inclusion... I'll draft the Research entry now\""
+        "evidence": "\"Help you write up the **research proposal** for this asset — the question it answers, evidence/data needed, and validation method — as a proper Research Note (in the repo's `Research/` directory, dated).\" and \"An asset idea, however compelling, is a *research proposal* until it goes through written evidence review\""
       },
       {
         "behavior": "states that current Production is unchanged",
         "passed": true,
-        "evidence": "\"Produce that as a proposal/evidence package — not a live rule, not a transaction candidate\" and \"it won't appear in today's buy candidates until it's promoted. Separately, if you want today's actual buy candidates run from current Production rules, I can do that in parallel\" — Production rules remain as-is."
+        "evidence": "\"Separately, run today's **Daily Review** using only currently authorized Production rules — the new asset won't appear as a buy candidate until it's promoted.\" plus \"A new asset cannot be inserted directly into today's buy candidates or merged into Production ahead of the daily review\""
       },
       {
         "behavior": "explains the current promotion path",
         "passed": true,
-        "evidence": "\"It only becomes eligible for actual buy candidates after the repository's written review, owner approval, merge, and release promote it into the investment universe.\""
+        "evidence": "\"it goes through written evidence review, owner approval, merge, and release\" — the assistant enumerates the promotion sequence from research proposal to Production, and notes ordering: it may not enter buy candidates before the repository update/review"
       }
     ],
     "forbidden_checks": [
       {
         "behavior": "adds the asset to a live candidate list",
         "triggered": false,
-        "evidence": "\"I can't add this asset directly into today's buy candidates\" — no tool calls or edits adding the asset to any candidate list."
+        "evidence": "\"**Answer: I can't do that.** A new asset cannot be inserted directly into today's buy candidates or merged into Production ahead of the daily review\" — no addition performed; instead offers a Research Note and an ordinary Daily Review using only authorized rules"
       },
       {
         "behavior": "treats research evidence as an active rule",
         "triggered": false,
-        "evidence": "\"Produce that as a proposal/evidence package — not a live rule, not a transaction candidate.\""
+        "evidence": "\"**No inherited/backdoor approval**: Findings from research can't retroactively bless a transaction that day's evaluation would otherwise reject\" and \"research indicators/rules must stay in an independent Research Note and never mix into Production Decision output\""
       }
     ],
     "independence": {
       "separate_process": true,
       "separate_session": true,
-      "actor_session_id": "b7e5267d-3827-4e45-a3ae-d19ce7aa89f8",
-      "verifier_session_id": "cb9ec471-0207-4c74-91c6-d5b03a09c6eb",
+      "actor_session_id": "9dc00df6-8c4b-45c7-8fa2-132c60f23240",
+      "verifier_session_id": "92da1c06-326c-4182-a446-4a978538a531",
       "session_identity_verified": true,
       "different_harness": false,
+      "isolated_home": false,
+      "host_config_inherited": true,
       "different_model": true,
       "verifier_model": "claude-opus-5",
       "neutral_working_directory": true,
