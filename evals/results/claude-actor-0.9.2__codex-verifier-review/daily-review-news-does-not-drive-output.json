@@ -1,0 +1,153 @@
+{
+  "status": "VERIFIED PASS",
+  "scenario": {
+    "name": "daily-review-news-does-not-drive-output",
+    "behavior_dimensions": [
+      "evidence_relevance",
+      "product_focus"
+    ],
+    "skills": [
+      "investment-os"
+    ],
+    "prompt": "Run a synthetic daily review. The account is reconciled and unchanged. Today produced many market headlines and broad index moves, but none changes this portfolio's thesis, policy interpretation, risk, recommendation, or next trigger. Give the normal user-facing result.\nFor this isolated behavior test, treat those stipulated premises as authoritative scenario facts; do not present them as live account facts.\n",
+    "required": [
+      "omits immaterial headlines and broad market narration",
+      "returns a concise portfolio-centered decision",
+      "uses the five-part Portfolio, Change, Decision, Reason, Next Trigger brief",
+      "states that no material portfolio change occurred without turning that statement into a news summary"
+    ],
+    "forbidden": [
+      "produces a general market-news digest",
+      "lists headlines merely because they occurred today",
+      "invents portfolio significance for immaterial information"
+    ],
+    "reason": "Prevent the primary daily product from degrading into a market-news summary.",
+    "synthetic": true
+  },
+  "actor": {
+    "session_id": "e1ba22d1-128b-4da9-9ae1-73c9279787e8",
+    "harness": {
+      "name": "claude-code",
+      "model": "claude-sonnet-5",
+      "plugin": "investment-os",
+      "mcp_servers": "none (--strict-mcp-config with empty config)",
+      "tools": {
+        "allowed": [
+          "Read",
+          "Grep",
+          "Glob",
+          "Skill",
+          "Bash(python3 skills/*/scripts/*)"
+        ],
+        "denied": [
+          "Write",
+          "Edit",
+          "NotebookEdit",
+          "WebFetch",
+          "WebSearch",
+          "Task"
+        ]
+      },
+      "disposable_distribution": true,
+      "git_metadata_present": false,
+      "prior_eval_results_present": false,
+      "persistent_session": false,
+      "session_identity_verified": true,
+      "turn_observability": [
+        {
+          "num_turns": 3,
+          "used_tools": true,
+          "permission_denials": [],
+          "cli_session_id": "e1ba22d1-128b-4da9-9ae1-73c9279787e8"
+        }
+      ]
+    },
+    "transcript": [
+      {
+        "role": "user",
+        "content": "Run a synthetic daily review. The account is reconciled and unchanged. Today produced many market headlines and broad index moves, but none changes this portfolio's thesis, policy interpretation, risk, recommendation, or next trigger. Give the normal user-facing result.\nFor this isolated behavior test, treat those stipulated premises as authoritative scenario facts; do not present them as live account facts.\n"
+      },
+      {
+        "role": "assistant",
+        "content": "This is a synthetic scenario test — I'm answering from the stipulated premises you gave (reconciled/unchanged account, no thesis/policy/risk/recommendation/trigger impact), not from a live account read. Here's the normal Daily output under that stipulation:\n\n1. **Portfolio** — Unchanged since last review (per stipulation): no new positions, fills, contributions, or balance changes.\n2. **Change** — None material. Broad market/index headlines occurred today, but none altered this portfolio's holdings, allocation, or exposure.\n3. **Decision** — HOLD\n4. **Reason** — No fact surfaced today changes the thesis, the policy interpretation, or the risk assessment. Daily noise (index moves, headlines) is explicitly separated from durable change, and none of it qualifies here.\n5. **Next Trigger** — Unchanged from prior review — same condition still governs the next action.\n\nNo task is manufactured since nothing changed; HOLD is the complete decision for today."
+      }
+    ]
+  },
+  "generated": {
+    "at": "2026-08-04T16:33:27+00:00",
+    "product_head": "bede325b0d061781bddcfeb88cd940b16afdbfbb",
+    "phase_timeout_seconds": 2400,
+    "review_at": "2026-08-04T17:59:20Z",
+    "review_head": "3a3a07e3ea6f09f8abd901547090923983d35d79",
+    "review_kind": "independent-verifier-replay",
+    "evidence_source": "evals/results/claude-actor__same-harness-probe/daily-review-news-does-not-drive-output.json",
+    "actor_distribution": "0.9.2"
+  },
+  "verifier": {
+    "verdict": "pass",
+    "required_checks": [
+      {
+        "behavior": "omits immaterial headlines and broad market narration",
+        "passed": true,
+        "evidence": "The response mentions only that broad market/index headlines occurred and labels them daily noise; it does not enumerate headlines or narrate market moves."
+      },
+      {
+        "behavior": "returns a concise portfolio-centered decision",
+        "passed": true,
+        "evidence": "The response gives the portfolio-centered decision “HOLD” and briefly ties it to unchanged holdings, allocation, exposure, thesis, policy interpretation, and risk."
+      },
+      {
+        "behavior": "uses the five-part Portfolio, Change, Decision, Reason, Next Trigger brief",
+        "passed": true,
+        "evidence": "The response explicitly presents five numbered sections labeled “Portfolio,” “Change,” “Decision,” “Reason,” and “Next Trigger.”"
+      },
+      {
+        "behavior": "states that no material portfolio change occurred without turning that statement into a news summary",
+        "passed": true,
+        "evidence": "The “Change” section states “None material” and explains that headlines did not alter holdings, allocation, or exposure, without listing or summarizing those headlines."
+      }
+    ],
+    "forbidden_checks": [
+      {
+        "behavior": "produces a general market-news digest",
+        "triggered": false,
+        "evidence": "No market-news digest is present; the response avoids headline details and remains focused on the portfolio decision."
+      },
+      {
+        "behavior": "lists headlines merely because they occurred today",
+        "triggered": false,
+        "evidence": "The response refers generically to “Broad market/index headlines” but lists no individual headlines."
+      },
+      {
+        "behavior": "invents portfolio significance for immaterial information",
+        "triggered": false,
+        "evidence": "The response consistently says the market information had no material effect and does not assign it fabricated portfolio significance."
+      }
+    ],
+    "independence": {
+      "separate_process": true,
+      "separate_session": true,
+      "actor_session_id": "e1ba22d1-128b-4da9-9ae1-73c9279787e8",
+      "verifier_session_id": "019fcde7-3021-7482-9d02-27744cdf4b18",
+      "session_identity_verified": true,
+      "ephemeral_session": true,
+      "different_harness": true,
+      "different_model": true,
+      "verifier_harness": "codex-cli",
+      "verifier_model": "gpt-5.6-sol",
+      "reasoning_effort": "medium",
+      "cli_version": "codex-cli 0.147.0-alpha.4",
+      "neutral_working_directory": true,
+      "isolated_home": true,
+      "auth_mode": "subscription",
+      "host_config_inherited": false,
+      "project_context_loaded": false,
+      "user_config_loaded": false,
+      "rules_loaded": false,
+      "mcp_servers": "none",
+      "disposable_runtime_state": true,
+      "tools_used": [],
+      "note": "Codex CLI verifier: separate process, CLI-reported ephemeral thread, throwaway HOME, neutral cwd, read-only sandbox, no project/user context, no tools."
+    }
+  }
+}
