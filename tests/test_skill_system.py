@@ -40,16 +40,19 @@ def test_single_skill() -> None:
         "Rule 5 — Operation-scoped authorization", "Rule 6 — No policy override",
         "Rule 7 — Fail closed", "Treat `Daily` as a complete request",
         "A recommendation is not authorization", "Do not prepend policy narration",
+        "Repository stores rules, never portfolio", "Runtime account state is private and ephemeral",
     ):
         assert needle in text, f"canonical skill missing: {needle}"
 
 
 def test_internal_assets() -> None:
-    # Old workflow directories may keep scripts and references, but none may
-    # expose another SKILL.md. They are implementation details of one product.
+    # Old workflow directories may keep scripts, but none may expose another
+    # SKILL.md. They are implementation details of one product.
     for path in (
-        SKILLS / "using-investment-os" / "references" / "product-contract.md",
-        SKILLS / "using-investment-os" / "references" / "agent-execution-contract.md",
+        SKILLS / "using-investment-os" / "references" / "00-constitution.md",
+        SKILLS / "using-investment-os" / "references" / "01-operating-manual.md",
+        SKILLS / "using-investment-os" / "references" / "02-data-contract.md",
+        SKILLS / "using-investment-os" / "references" / "03-journal.md",
         SKILLS / "running-daily-review" / "scripts" / "daily_brief.py",
         SKILLS / "running-monthly-review" / "scripts" / "monthly_execution.py",
         SKILLS / "execution-runtime" / "scripts" / "execution_runtime.py",
@@ -65,6 +68,7 @@ def test_manifests() -> None:
     assert claude["version"] == codex["version"] == version
     assert codex["skills"] == "./skills/"
     assert "hooks" not in codex
+    assert codex["interface"]["privacyPolicyURL"].endswith("/skills/using-investment-os/SKILL.md")
     command = claude["hooks"]["SessionStart"][0]["hooks"][0]["command"]
     assert "skills/using-investment-os/scripts/claude-session-start" in command
 
