@@ -1,10 +1,12 @@
-# 源仓库入口
+# Source Repository Entry
 
-本仓库开发 Investment OS 插件。改动产品前，从 `skills/investment-os/SKILL.md` 开始，
-只阅读本次改动真正需要的编号政策 references。
+This repository develops the Investment OS plugin. Before changing the product,
+start from `skills/investment-os/SKILL.md` and read
+only the numbered policy references required by the change.
 
-仓库根目录既是插件根目录，也是开发面。运行时规则、流程与确定性工具都在
-`skills/investment-os/` 下。不要另建第二份运行时政策副本。
+The repository root is both the plugin root and development surface. Runtime
+rules, procedures, and deterministic tools live under `skills/investment-os/`.
+Do not create a second copy of runtime policy.
 
-使用分支与 Pull Request，运行 `bash tests/run-all.sh`，守住隐私边界；
-纯实现类工作中不得改变投资政策。
+Use a branch and pull request, run `bash tests/run-all.sh`, preserve the privacy
+boundary, and do not change investment policy inside implementation-only work.
