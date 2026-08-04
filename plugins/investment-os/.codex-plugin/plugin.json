@@ -1,6 +1,6 @@
 {
   "name": "investment-os",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Policy-driven portfolio review and investment-system audit workflows using the policy files distributed with this plugin and fresh authoritative runtime state.",
   "author": {
     "name": "Zereker",
