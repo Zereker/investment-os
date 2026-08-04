@@ -1,7 +1,7 @@
 {
   "name": "investment-os",
   "description": "A rules-first long-term investment agent with one canonical skill, fresh runtime facts, and owner-authorized execution.",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "author": {
     "name": "Zereker"
   },
@@ -14,20 +14,5 @@
     "portfolio-review",
     "risk-controls",
     "ibkr"
-  ],
-  "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "startup|clear|compact",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/skills/using-investment-os/scripts/claude-session-start\"",
-            "shell": "bash",
-            "async": false
-          }
-        ]
-      }
-    ]
-  }
+  ]
 }

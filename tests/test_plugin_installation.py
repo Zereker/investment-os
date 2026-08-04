@@ -4,9 +4,7 @@
 from __future__ import annotations
 
 import json
-import os
 import shutil
-import subprocess
 import tempfile
 from pathlib import Path
 
@@ -93,28 +91,6 @@ def main() -> None:
         assert codex_manifest["skills"] == "./skills/"
         assert "hooks" not in codex_manifest
         assert codex_manifest["interface"]["privacyPolicyURL"].endswith("/skills/using-investment-os/SKILL.md")
-
-        claude_manifest = load_json(installed / ".claude-plugin" / "plugin.json")
-        hook = claude_manifest["hooks"]["SessionStart"][0]["hooks"][0]
-        assert hook["command"] == 'bash "${CLAUDE_PLUGIN_ROOT}/skills/using-investment-os/scripts/claude-session-start"'
-
-        env = os.environ.copy()
-        env["CLAUDE_PLUGIN_ROOT"] = str(installed)
-        result = subprocess.run(
-            ["bash", str(installed / "skills" / "using-investment-os" / "scripts" / "claude-session-start")],
-            cwd=neutral_cwd,
-            env=env,
-            text=True,
-            capture_output=True,
-            check=True,
-        )
-        payload = json.loads(result.stdout)
-        context = payload["hookSpecificOutput"]["additionalContext"]
-        assert "INVESTMENT_OS_BOOTSTRAP" in context
-        assert "installed plugin distribution" in context
-        assert "current working directory" in context
-        assert "runtime network fetch" in context
-        assert str(ROOT) not in context
 
     print("Single-skill plugin installation and cache-isolation tests passed.")
 

@@ -362,7 +362,7 @@ NAV ≈ Cash + Σ Position Market Values
 
 ### 8. Decision and Execution Boundary
 
-月度脚本输出的是候选与上限，不是 Broker 授权。实际执行必须经过 `execution-runtime` 的单次操作授权契约（授权条件见 `product-contract.md` 第 10 节）；候选、公式结果、IC Verdict 或历史批准均不能替代该执行授权。
+月度脚本输出的是候选与上限，不是 Broker 授权。实际执行必须满足 canonical `SKILL.md` 的单次操作授权和 read-back 要求；候选、公式结果、IC Verdict 或历史批准均不能替代该执行授权。
 
 ### 9. Output
 
@@ -626,7 +626,7 @@ v4.2 起系统不再持有任何估值判断。价格不定义贵或便宜，只
 
 ### 启动顺序
 
-1. **读规则**:`product-contract.md` → `00-constitution.md`。规则即代码,状态是规则作用于实时数据的函数。
+1. **读规则**：canonical `SKILL.md` → `00-constitution.md`。规则即代码，状态是规则作用于实时数据的函数。
 2. **读账户**(IBKR,固定顺序):Account Summary → Balances → Positions → Open Orders。任一失败 → 账户侧 `DATA INCOMPLETE`,停止交易建议。
 3. **计算派生状态**(无需任何存储):
    - `A_actual` = SOXX 市值 ÷ NetLiq;`A_basis=max(A_actual,6%)`;`U=max(6%−A_actual,0)`

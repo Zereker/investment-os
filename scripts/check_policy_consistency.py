@@ -349,8 +349,7 @@ def stale_vocabulary_gate() -> None:
         "`0+U`",
     )
     # git history was rebuilt to a single commit: no document may send readers there
-    for path in ("README.md",
-                 "plugins/investment-os/skills/using-investment-os/references/claude-code-entry.md"):
+    for path in ("README.md",):
         forbid(path, "查 git 历史")
 
 
