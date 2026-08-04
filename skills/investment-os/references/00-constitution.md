@@ -1,175 +1,175 @@
-# 投资宪法（Constitution）
+# Investment Constitution
 
-本文件是 Investment OS 全部投资法律的唯一权威：使命与政策声明（IPS）、投资宇宙、目标配置、转型计划、板块倾斜框架与倾斜登记表。文内冲突按部分顺序解决：靠前的部分优先。原则上只在年度审核或正式版本发布中修改（登记表随 IC 决定更新）。
+This file is the sole authority for all investment law in Investment OS: the mission and policy statement (IPS), the investment universe, target allocation, the transition plan, the sector tilt framework, and the tilt registry. Conflicts inside this file are resolved by part order: the earlier part prevails. It is amended only in an annual review or a formal release (the registry updates with IC decisions).
 
 ---
 
-## 第一部分：投资政策声明（IPS）
+## Part 1: Investment Policy Statement (IPS)
 
-### 使命与期限
+### Mission and horizon
 
-通过纪律性的资产配置、QQQM 长期成长倾斜和一个受严格限制的半导体板块倾斜实现长期财富增长。投资期限为 20 年以上；不使用借款放大目标配置。
+Achieve long-term wealth growth through disciplined asset allocation, a long-term QQQM growth tilt, and one strictly bounded semiconductor sector tilt. The horizon is 20 years or more; borrowing is never used to amplify the target allocation.
 
-### 战略结构
+### Strategic structure
 
-- 结构性投资组合现金 15%；
-- QQQM 28%；
-- SPYM、SOXX实际持仓与SOXX阶段储备共同构成57%袖套；
-- SOXX 是唯一自主板块倾斜载体，承接过去 MU、TSM 等单股半导体观点；它是有硬上限的行业 beta，不按 alpha 命名或考核；
-- SOXX 永久硬上限为 6%（v4.0 起 10%/12.5%/15% 历史阶段作废）；
-- 其他板块倾斜目标为0%，未来任何半导体个股必须与 SOXX 共用同一 6% 预算。
+- Structural portfolio cash 15%;
+- QQQM 28%;
+- SPYM, the actual SOXX holding, and the SOXX stage reserve together form the 57% sleeve;
+- SOXX is the only discretionary sector tilt vehicle, succeeding past single-stock semiconductor views such as MU and TSM. It is hard-capped industry beta, and is neither named nor evaluated as alpha;
+- SOXX has a permanent hard cap of 6% (the historical 10% / 12.5% / 15% stages are void as of v4.0);
+- Every other sector tilt has a target of 0%; any future semiconductor single stock must share the same 6% budget with SOXX.
 
-### 结构性现金的显式决策
+### The structural cash decision, stated explicitly
 
-15% 现金不是公理。它相对满仓同组合的预期成本约为每年 0.45–0.75 个百分点、20 年终值约低 9–14%。系统有意支付该成本以换取：
+15% cash is not an axiom. Its expected cost against the same portfolio held fully invested is roughly 0.45–0.75 percentage points per year, or roughly 9–14% lower terminal value over 20 years. The system pays that cost deliberately in exchange for:
 
-1. 回撤部署弹药——由本宪法的回撤部署条款机械化执行；
-2. 行为缓冲——避免因波动被迫交易；
-3. 与生活应急金分开的组合级流动性。
+1. drawdown deployment ammunition — executed mechanically by the drawdown deployment clause of this constitution;
+2. a behavioral buffer — avoiding forced trades caused by volatility;
+3. portfolio-level liquidity kept separate from the household emergency fund.
 
-若影子基准显示该成本长期未被上述职能补偿，年度审核必须重新审议 15% 目标。
+If the shadow benchmarks show that this cost has gone uncompensated by those functions over the long run, the annual review must reopen the 15% target itself.
 
-### 不变的风险约束
+### Invariant risk constraints
 
-- 获取美国股票市场的长期复利，并保持足够流动性，避免因波动被迫交易。
-- 接受股票市场与成长倾斜的正常回撤，不接受无上限的行业、杠杆或流动性风险。
-- 已知结构性事实：目标 Core 自身即含约 18% 半导体、约 40% 信息技术穿透暴露；护栏约束自主倾斜的新增，季度核查披露合并值。
-- 现金缓冲与生活应急金分开管理；本文件现金仅指投资组合现金。
-- 用可持续二十年以上的流程替代预测与情绪决策。
+- Capture the long-term compounding of the US equity market while retaining enough liquidity to avoid forced trades during volatility.
+- Accept the normal drawdowns of equity markets and of a growth tilt; do not accept uncapped industry, leverage, or liquidity risk.
+- Known structural fact: the target Core by itself already carries roughly 18% semiconductor and roughly 40% information technology look-through exposure. The guardrails constrain additions to the discretionary tilt; the quarterly check discloses the combined figures.
+- The cash buffer and the household emergency fund are managed separately; cash in this file means portfolio cash only.
+- Replace forecasting and emotional decisions with a process that can be sustained for twenty years or more.
 
-### 决策原则
+### Decision principles
 
-1. 市场创造大部分财富，资产配置保护财富，成长倾斜与有限板块倾斜增强财富。
-2. 目标配置决定资金方向与上限；例行 DCA 与战略基线完全由公式驱动，没有任何判断性闸门可以削减或暂停它们。
-3. 严重回撤时按回撤部署条款分档动用现金；触发只看价格相对历史最高收盘的回撤。
-4. 风险护栏和数据完整性优先于执行档目标。
-5. SOXX 用 ETF 降低单一公司风险，但不能消除行业周期、估值、重叠和集中度风险。
-6. 无法证明交易优于继续持有时，不交易。
-7. 新增资金和已发布战略基线优先再平衡；卖出是例外。
-8. 系统不持有估值判断；价格高低既不减少新增资金，也不触发卖出。
+1. The market creates most of the wealth, asset allocation protects it, and the growth tilt plus a bounded sector tilt enhance it.
+2. The target allocation determines where money goes and its ceilings; routine DCA and the strategic baseline are entirely formula-driven, and no judgment gate may reduce or suspend them.
+3. In a severe drawdown, cash is deployed in tiers under the drawdown deployment clause; the trigger looks only at price relative to the all-time-high close.
+4. Risk guardrails and data integrity outrank any execution-stage target.
+5. SOXX uses an ETF to reduce single-company risk, but that does not remove industry cycle, valuation, overlap, or concentration risk.
+6. When a trade cannot be shown to be better than continuing to hold, do not trade.
+7. New money and the published strategic baseline rebalance first; selling is the exception.
+8. The system holds no valuation view; a high or low price neither reduces new money nor triggers a sale.
 
 ### Policy Benchmark
 
-被动政策基准保持为：
+The passive policy benchmark remains:
 
-- 15% USD Cash；
-- 57% SPYM；
-- 28% QQQM。
+- 15% USD Cash;
+- 57% SPYM;
+- 28% QQQM.
 
-基准只在每个自然月首个计价时点重置为15% / 57% / 28%。月内各袖套随自身收益漂移，不因每日净值变化再平衡。
+The benchmark resets to 15% / 57% / 28% only at the first pricing point of each calendar month. Within the month each sleeve drifts with its own return; it is not rebalanced on daily net-asset changes.
 
-月度收益：
+Monthly return:
 
 \[
 R_{B,t}=15\%\times r^{model}_{cash,t}+57\%\times r_{SPYM,t}+28\%\times r_{QQQM,t}
 \]
 
-SPYM 与 QQQM 使用含分红总收益。`r_cash_model`必须以月初“基准净值的15%假设USD现金余额”为本金，按同期IBKR官方公布的账户计划、NAV比例、免息门槛、币种、Segment和利率按月计息（公式见 `02-data-contract.md` 字段字典部分）；月内不得把现金本金重置为每日基准净值的15%，利息不在月内复利。不得使用实际账户约束下的单位现金收益率，也不得把实际利息美元映射到基准。
+SPYM and QQQM use total return including dividends. `r_cash_model` must take the month-start "15% of benchmark net assets, hypothetical USD cash balance" as principal and accrue monthly under the IBKR account plan, NAV-proportion rule, zero-interest threshold, currency, Segment and rate officially published for the same period (formula in the data dictionary part of `02-data-contract.md`). The cash principal must not be reset to 15% of daily benchmark net assets inside the month, and interest does not compound inside the month. Do not use a unit cash yield derived under real account constraints, and do not map real interest dollars onto the benchmark.
 
-若无法重建月初假设基准现金、适用账户计划或利率，基准现金收益和当期 Policy Benchmark 标记为 `N/A / DATA INCOMPLETE`，不得用0%静默替代。
+If the month-start hypothetical benchmark cash, the applicable account plan, or the rate cannot be reconstructed, the benchmark cash return and that period's Policy Benchmark are marked `N/A / DATA INCOMPLETE`; 0% must not be substituted silently.
 
-SOXX 的增量价值相对等额、同期 SPYM 衡量，并扣除税费、交易成本、研究时间和集中度成本。
+The incremental value of SOXX is measured against an equal-size, same-period SPYM position, net of taxes, transaction costs, research time, and concentration cost.
 
-### 影子基准（Shadow Benchmarks）
+### Shadow Benchmarks
 
-除 Policy Benchmark 外，系统每月并行记录两个只报告、不触发任何交易的影子基准：
+Besides the Policy Benchmark, the system records two shadow benchmarks in parallel each month. They are report-only and trigger no trade:
 
-- **SB-1 满仓政策组合**：0% 现金，67% SPYM + 33% QQQM（57:28 等比放大），月初重置，收益规则与 Policy Benchmark 相同。它度量 15% 现金的实际代价。
-- **SB-2 单一基金**：100% SPYM 含分红总收益，外加相同的月度入金时点。它度量整个系统（现金、倾斜、流程）相对最简单可行方案的净价值。
+- **SB-1, the fully invested policy portfolio**: 0% cash, 67% SPYM + 33% QQQM (the 57:28 ratio scaled up), reset at month start, with the same return rules as the Policy Benchmark. It measures the real cost of holding 15% cash.
+- **SB-2, the single fund**: 100% SPYM total return including dividends, plus the same monthly contribution timing. It measures the net value of the entire system (cash, tilt, process) against the simplest workable alternative.
 
-任一影子基准数据缺失时记 `N/A`，不得估算。影子基准不参与任何交易闸门。
+If any shadow-benchmark input is missing, record `N/A`; do not estimate. Shadow benchmarks participate in no trading gate.
 
-### 治理节奏
+### Governance cadence
 
-- 每月：在当前私有会话更新并报告`A_actual`、`A_execution_cap`、`U`、现金、Core缺口、执行结果与影子基准；执行上限只能逐档推进且不得高于 6%。
-- 每季度：核查合并穿透集中度（手工核查表）、SOXX 相对 SPYM 的必要性与回撤部署周期状态。
-- 每年：审核 IPS、目标配置、6%上限、15%现金、Policy Benchmark 与两个影子基准的累计对比。
+- Monthly: in the current private session, update and report `A_actual`, `A_execution_cap`, `U`, cash, the Core gaps, execution results, and the shadow benchmarks. The execution cap may only advance one stage at a time and never above 6%.
+- Quarterly: check combined look-through concentration (manual check table), whether SOXX is still warranted against SPYM, and the drawdown deployment cycle state.
+- Annually: review the IPS, the target allocation, the 6% cap, the 15% cash, the Policy Benchmark, and the cumulative comparison against both shadow benchmarks.
 
-本版本不构成自动交易授权。
+This version does not constitute automatic trading authorization.
 
-### 成功标准
+### Success criteria
 
-长期执行目标配置、保留有意成长性、控制不可补偿风险、避免行为错误，并以三条对比回答系统是否创造净价值：
+Execute the target allocation over the long run, retain intentional growth exposure, control uncompensated risk, avoid behavioral errors, and answer whether the system creates net value with three comparisons:
 
-1. SOXX 相对等额同期 SPYM（倾斜是否加分）；
-2. 实际组合相对 Policy Benchmark（执行是否加分）；
-3. Policy Benchmark 相对 SB-1 与 SB-2（现金与系统复杂度是否值回成本）。
+1. SOXX against an equal-size, same-period SPYM position (does the tilt add value);
+2. the real portfolio against the Policy Benchmark (does execution add value);
+3. the Policy Benchmark against SB-1 and SB-2 (are the cash drag and the system's complexity worth their cost).
 
 ---
 
-## 第二部分：Production 投资宇宙
+## Part 2: The Production Investment Universe
 
 ### 1. Current Production Scope
 
-Investment OS 当前只管理三个可购买标的：
+Investment OS currently manages exactly three purchasable instruments:
 
-- `SPYM` — 核心广谱股票配置；
-- `QQQM` — 战略成长配置；
-- `SOXX` — 唯一自主行业倾斜。
+- `SPYM` — the core broad equity allocation;
+- `QQQM` — the strategic growth allocation;
+- `SOXX` — the only discretionary industry tilt.
 
-现金是资金状态和风险缓冲，不是第四个投资标的。
+Cash is a funding state and a risk buffer, not a fourth investment instrument.
 
 ### 2. Closed Universe Rule
 
-Production 是封闭投资宇宙。除 SPYM、QQQM、SOXX 外：
+Production is a closed investment universe. Anything other than SPYM, QQQM and SOXX:
 
-- 不进入每日购买候选；
-- 不参与目标缺口计算；
-- 不因新闻、热度、模型推荐或临时观点进入 Production；
-- 不与三个生产标的进行机会排序；
-- 只可作为 Legacy、异常持仓或 Research 对象被披露。
+- does not enter the daily purchase candidates;
+- does not participate in target-gap calculations;
+- does not enter Production because of news, popularity, a model recommendation, or a passing view;
+- is not ranked for opportunity against the three production instruments;
+- may only be disclosed as Legacy, an anomalous holding, or a Research subject.
 
-系统每天回答的不是“市场上什么值得买”，而是：
+The question the system answers every day is not "what in the market is worth buying", but:
 
-> SPYM、QQQM、SOXX 中，今天是否有标的获得现行规则授权？
+> Among SPYM, QQQM and SOXX, does any instrument have authorization under the current rules today?
 
 ### 3. Treatment of Other Holdings
 
-实时账户中出现其他证券时：
+When other securities appear in the live account:
 
-1. 必须在日报中单独列为 `Legacy / Out-of-Universe`；
-2. 不得静默并入 SPYM、QQQM 或 SOXX；
-3. 不得自动产生新增购买候选；
-4. 卖出、换仓或处置必须进入完整人工审查或既有转型规则；
-5. 无法识别的持仓使账户健康至少为 `WARN`，必要时为 `DATA INCOMPLETE`。
+1. they must be listed separately in the daily report as `Legacy / Out-of-Universe`;
+2. they must not be silently folded into SPYM, QQQM, or SOXX;
+3. they must not automatically produce new purchase candidates;
+4. selling, switching, or disposing of them must go through a full manual review or the existing transition rules;
+5. an unidentifiable holding makes account health at least `WARN`, and `DATA INCOMPLETE` where required.
 
 ### 4. Admission of a New Asset
 
-新增第四个生产标的必须依次完成：
+Adding a fourth production instrument requires, in order:
 
 ```text
 Research → written proposal → owner approval → Constitution change
 → Operating System update → executable checks → version release
 ```
 
-任何 AI、脚本、日报或临时会话都无权自行扩展投资宇宙。
+No AI, script, daily report, or ad-hoc session has authority to expand the investment universe on its own.
 
 ### 5. Daily Decision Boundary
 
-日报的购买结论只允许以下三种标的标签：
+Purchase conclusions in the daily report may carry only these three instrument labels:
 
 - `BUY CANDIDATE — SPYM`
 - `BUY CANDIDATE — QQQM`
 - `BUY CANDIDATE — SOXX`
 
-若没有符合条件的标的，输出 `HOLD`、`WAIT` 或 `DATA INCOMPLETE`，不得为了产生动作而引入其他证券。
+If no instrument qualifies, output `HOLD`, `WAIT`, or `DATA INCOMPLETE`; do not introduce another security in order to manufacture an action.
 
 ### 6. Privacy
 
-本部分只定义公共政策范围，不保存真实持仓、金额、数量、成本或交易记录。实际账户中是否持有其他资产，只能在受信任的运行时中读取和处理。
+This part defines the public policy scope only. It stores no real holdings, amounts, quantities, cost basis, or transaction records. Whether the real account holds other assets may only be read and processed inside a trusted runtime.
 
 ---
 
-## 第三部分：目标资产配置
+## Part 3: Target Asset Allocation
 
-### v4.0 定义
+### v4.0 definitions
 
 \[
-A_{actual}=\frac{\text{SOXX 实时市值}}{\text{账户净值}}
+A_{actual}=\frac{\text{SOXX live market value}}{\text{account net liquidation}}
 \]
 
 \[
-A_{stage}=\text{登记表（本宪法第六部分）中当前批准的 SOXX 阶段上限；v4.0 起固定为 }6\%
+A_{stage}=\text{the currently approved SOXX stage cap in the registry (Part 6 of this constitution); fixed at }6\%\text{ as of v4.0}
 \]
 
 \[
@@ -177,300 +177,300 @@ A_{basis}=\max(A_{actual},A_{stage}),\qquad
 U=\max(A_{stage}-A_{actual},0)
 \]
 
-其中 `U` 是尚未完成的 SOXX 额度。它作为现金中的用途标签保留，不是独立资产层，也不授权交易。
+`U` is the SOXX allowance not yet filled. It is retained as a purpose label on cash, is not a separate asset layer, and authorizes no trade.
 
-### 目标数学
+### Target math
 
-SPYM、SOXX实际持仓和未完成阶段储备共同构成57%袖套；只有在额度完成时，才简化为`SPYM + SOXX = 57%`。
+SPYM, the actual SOXX holding, and the unfilled stage reserve together form the 57% sleeve; only when the allowance is fully used does this simplify to `SPYM + SOXX = 57%`.
 
-| 袖套 | 目标 |
+| Sleeve | Target |
 |---|---:|
-| 结构性现金 | 15% |
-| SOXX 阶段储备 | `U` |
+| Structural cash | 15% |
+| SOXX stage reserve | `U` |
 | QQQM | 28% |
 | SPYM | `57% − A_basis` |
-| SOXX / 板块倾斜实际持仓 | `A_actual` |
+| SOXX / sector tilt actual holding | `A_actual` |
 
-在 `A_actual≤A_stage` 时：
+When `A_actual≤A_stage`:
 
 \[
 15\%+U+28\%+(57\%-A_{stage})+A_{actual}=100\%
 \]
 
-若市场上涨使 `A_actual>A_stage`，则 `U=0`、`A_basis=A_actual`，同样合计100%；此时冻结新增并进入复核，不自动卖出。
+If a market rise pushes `A_actual>A_stage`, then `U=0` and `A_basis=A_actual`, and the total is still 100%; additions freeze and the position enters review, with no automatic selling.
 
-评估现金区间时，物理现金目标和允许区间分别为 `15%+U`、`12%+U`至`18%+U`；回撤部署条款按第「回撤部署」节可以分档临时下调现金下限。阶段储备不得与现金重复计入。
+When evaluating the cash band, the physical cash target and permitted band are `15%+U` and `12%+U` to `18%+U` respectively; the drawdown deployment clause may temporarily lower the cash floor in tiers, per the drawdown deployment section. The stage reserve must not be double-counted against cash.
 
-### 结构性现金的显式代价
+### The explicit cost of structural cash
 
-15% 现金的成本量化与三项职能是第一部分 IPS 的显式决策，此处不重复。回撤部署规则是该职能的执行机制；若年度审核发现现金职能长期空转，必须重新审议 15% 目标本身。
+The quantified cost of 15% cash and its three functions are an explicit decision of the Part 1 IPS and are not repeated here. The drawdown deployment rule is the execution mechanism for that function; if an annual review finds the cash function has been idle over the long run, the 15% target itself must be reopened.
 
-### SOXX 板块倾斜授权
+### SOXX sector tilt authorization
 
-- SOXX 是一只被动半导体行业 ETF。持有它是有硬上限的行业/周期倾斜（beta），不是 alpha；系统按此命名与治理。
-- SOXX 永久硬上限为总组合 **6%**（`A_stage=6%` 即最终上限）。
-- v3.4 曾设定的 10% / 12.5% / 15% 治理阶段自 v4.0 起作废。依据：2026-07 实测合并穿透显示，SOXX=15% 时组合半导体暴露约 31.7%、信息技术约 47.4%，在系统自身护栏下不可达。
-- 当前执行上限 `A_execution_cap=3%`；执行上限按 3%→4.5%→6% 逐档推进，每次只推进一档，且不得高于 `A_stage`。
-- 其他板块倾斜与个股新增授权均为 0%；未来任何半导体个股或基金必须与 SOXX 共用同一 6% 预算。
-- 价格触发、回撤或研究完成不自动推进执行档，也不自动授权买入。
+- SOXX is a passive semiconductor industry ETF. Holding it is a hard-capped industry/cycle tilt (beta), not alpha; the system names and governs it accordingly.
+- The permanent hard cap for SOXX is **6%** of the total portfolio (`A_stage=6%` is the final cap).
+- The 10% / 12.5% / 15% governance stages once set in v3.4 are void as of v4.0. Basis: the 2026-07 measured combined look-through showed that at SOXX=15% the portfolio's semiconductor exposure would be about 31.7% and information technology about 47.4%, which is unreachable under the system's own guardrails.
+- The current execution cap is `A_execution_cap=3%`; the execution cap advances 3%→4.5%→6%, one stage at a time, and never above `A_stage`.
+- Every other sector tilt and every single stock carries a new-addition authorization of 0%; any future semiconductor stock or fund must share the same 6% budget with SOXX.
+- A price trigger, a drawdown, or completed research never advances the execution stage on its own, and never authorizes a purchase on its own.
 
-#### 回补至目标 vs 提高倾斜（v4.5）
+#### Restore-to-target vs tilt increase (v4.5)
 
-「追加」一词此前混了两件性质不同的事，本节把它们拆开。**判别标准只看 `A_execution_cap` 动没动**：
+The word "addition" used to conflate two different things; this section separates them. **The test is only whether `A_execution_cap` moved**:
 
-> **回补至目标（Restore-to-target）**：在**不提高** `A_execution_cap` 的前提下，把因市场下跌而低于执行档的 SOXX 权重买回。风险预算不变。
+> **Restore-to-target**: buying back the SOXX weight that a market decline pushed below the execution stage, **without raising** `A_execution_cap`. The risk budget is unchanged.
 >
-> **提高倾斜（Tilt increase）**：提高 `A_execution_cap` 本身（3%→4.5%→6%）。风险预算扩大。
+> **Tilt increase**: raising `A_execution_cap` itself (3%→4.5%→6%). The risk budget expands.
 
-回补与「QQQM 跌了买 QQQM」在概念上是同一件事——目标没动，只是市场把权重打下去了。因此**回补走月度例行路径**，须**同时**满足：
+A restore is conceptually the same thing as "QQQM fell, so buy QQQM" — the target did not move, the market pushed the weight down. A restore therefore **runs on the monthly routine path**, and must satisfy **all** of:
 
-1. 交易后 `A_actual ≤ min(A_execution_cap, A_stage)`——既有约束，不放宽；
-2. 当季穿透手工核查（`02-data-contract.md` 穿透核查程序）有效；过期或 `DATA INCOMPLETE` 即冻结回补；
-3. 资金只来自 `U`，不占用回撤部署的 tranche，也不挤占 SPYM / QQQM 正缺口；
-4. 信息技术 50% 冻结线与单一发行人 10% 冻结线不失守；
-5. 实时四项 IBKR 数据读取成功、无冲突订单。
+1. after the trade, `A_actual ≤ min(A_execution_cap, A_stage)` — an existing constraint, not relaxed;
+2. the current-quarter manual look-through check (`02-data-contract.md`, look-through check procedure) is valid; if it is expired or `DATA INCOMPLETE`, restores freeze;
+3. the money comes only from `U`; it does not consume a drawdown deployment tranche and does not crowd out the SPYM / QQQM positive gaps;
+4. the information-technology 50% freeze line and the single-issuer 10% freeze line both hold;
+5. all four live IBKR reads succeed and there are no conflicting orders.
 
-任一项不满足时回补额为 `0`，结论为 `HOLD` 或 `DATA INCOMPLETE`，**不得降级为「先买一部分」**。
+If any of these fails, the restore amount is `0` and the conclusion is `HOLD` or `DATA INCOMPLETE`; it **must not be downgraded to "buy part of it"**.
 
-**提高倾斜仍须完整 IC**，本宪法登记表部分的五步闸门不变。回补上限 `min(A_execution_cap, A_stage)` 不因回补走例行路径而放宽；本条不新增任何资金、不放宽任何上限。
+**A tilt increase still requires a full IC**, and the five-step gate in the registry part of this constitution is unchanged. The restore ceiling `min(A_execution_cap, A_stage)` is not relaxed by the restore running on the routine path; this clause adds no money and relaxes no cap.
 
-| SOXX执行档 | SPYM目标端点 |
+| SOXX execution stage | SPYM target endpoint |
 |---:|---:|
-| 3%（当前） | 51% |
+| 3% (current) | 51% |
 | 4.5% | 51% |
-| 6%（最终上限） | 51% |
+| 6% (final cap) | 51% |
 
-SPYM 目标端点由 `57%−A_basis` 给出；`A_stage` 固定为 6%，故 SPYM 目标恒为 51%，执行档只限制单笔交易后的 `A_actual`。
+The SPYM target endpoint is given by `57%−A_basis`; since `A_stage` is fixed at 6%, the SPYM target is always 51%, and the execution stage only bounds `A_actual` after a single trade.
 
-### 穿透集中度护栏
+### Look-through concentration guardrails
 
-组合的合并穿透暴露以季度手工核查计算（方法见 `02-data-contract.md` 穿透核查程序），使用各基金最新官方持仓/行业表，合并直接持仓与 ETF 内含持仓。
+The portfolio's combined look-through exposure is computed by the quarterly manual check (method in the look-through check procedure of `02-data-contract.md`), using each fund's latest official holdings/sector tables and combining direct holdings with ETF-embedded holdings.
 
-已知结构性事实（2026-07 实测）：仅 51% SPYM + 28% QQQM 的 Core 自身即含约 18% 半导体、约 40% 信息技术暴露。护栏因此约束的是**自主板块倾斜的新增**，不是 Core 的存在本身：
+Known structural fact (measured 2026-07): a Core of just 51% SPYM + 28% QQQM already carries roughly 18% semiconductor and roughly 40% information technology exposure. The guardrails therefore constrain **additions to the discretionary sector tilt**, not the existence of the Core:
 
-- 信息技术合并暴露超过45%：`WARN`，季度报告必须披露。
-- 信息技术合并暴露达到或超过50%：冻结任何会进一步增加科技暴露的自主倾斜（SOXX 及未来同类）；SPYM / QQQM 例行路径不受此项单独阻断。
-- 半导体及设备合并暴露达到或超过15%（Core 自身即约 18%，本线常态触发）：**提高倾斜**（推进 `A_execution_cap`）必须进行明确 IC 复核，并在 Packet 中确认知晓当前合并暴露。**回补至目标**不因本线要求 IC——它不扩大风险预算，上限仍是既有执行档，本线要防的集中度爬升由执行档本身锁死；但每次回补必须在输出中报告交易后合并半导体暴露。SPYM / QQQM 例行路径不受此项单独阻断。
-- 单一发行人合并暴露超过8%：`WARN`；达到或超过10%：冻结增加该发行人暴露的自主倾斜，并列入年度强制审核。
-- 数据缺失、过期或未分类暴露可能导致越线时：涉及自主倾斜新增的结论为`WAIT / DATA INCOMPLETE`。
-- 护栏触发只限制新增或要求复核，不自动卖出。
-- 风险护栏优先于 SOXX 的任何执行档目标。
+- Combined information technology exposure above 45%: `WARN`, and the quarterly report must disclose it.
+- Combined information technology exposure at or above 50%: freeze any discretionary tilt that would further increase technology exposure (SOXX and future equivalents); the SPYM / QQQM routine paths are not blocked by this item alone.
+- Combined semiconductor and equipment exposure at or above 15% (the Core alone is roughly 18%, so this line is normally triggered): a **tilt increase** (advancing `A_execution_cap`) requires an explicit IC review and must confirm awareness of the current combined exposure in the Packet. A **restore-to-target** does not require an IC because of this line — it does not expand the risk budget, its ceiling remains the existing execution stage, and the concentration creep this line guards against is already bounded by that stage — but every restore must report post-trade combined semiconductor exposure in its output. The SPYM / QQQM routine paths are not blocked by this item alone.
+- Combined single-issuer exposure above 8%: `WARN`; at or above 10%: freeze any discretionary tilt that increases that issuer's exposure, and place it under mandatory annual review.
+- When missing, stale, or unclassified exposure could put a line over the limit: conclusions involving discretionary tilt additions are `WAIT / DATA INCOMPLETE`.
+- A triggered guardrail restricts additions or requires review only; it never sells automatically.
+- Risk guardrails outrank any SOXX execution-stage target.
 
-### 回撤部署（Drawdown Deployment）
+### Drawdown Deployment
 
-本条款让结构性现金在严重回撤中可以真正部署，触发只看价格：
+This clause makes structural cash genuinely deployable in a severe drawdown, and the trigger looks only at price:
 
-- 触发指标：SPYM 官方/IBKR 收盘价相对其历史最高收盘价的回撤，观察于每日巡检。
-- 分档：
+- Trigger metric: the drawdown of the SPYM official/IBKR closing price relative to its all-time-high close, observed at each daily review.
+- Tiers:
 
-| 回撤档 | 触发 | 本档释放 | 累计释放 | 部署后现金（从 15% 起） |
+| Tier | Trigger | Released at this tier | Cumulative release | Cash after deployment (from 15%) |
 |---:|---:|---:|---:|---:|
 | T1 | `DD ≥ 10%` | 1.50pp of NAV | 1.50pp | 13.5% |
 | T2 | `DD ≥ 15%` | 3.00pp | 4.50pp | 10.5% |
 | T3 | `DD ≥ 20%` | 4.50pp | 9.00pp | 6.0% |
 | T4 | `DD ≥ 25%` | 6.00pp | 15.00pp | **0%** |
 
-各档释放**梯度定额**（1:2:3:4），只进入 SPYM / QQQM 正缺口；四档合计 15pp，把 15% 现金目标**全部部署**至绝对下限 `0+U`。**绝对下限 `0+U` 是硬停，任何情形不得突破——现金可以归零，但不得为负。**
+Each tier releases a **graded fixed amount** (1:2:3:4) and buys only into SPYM / QQQM positive gaps; the four tiers total 15pp and deploy the entire 15% cash target down to the absolute floor `0+U`. **The absolute floor `0+U` is a hard stop that must never be crossed under any circumstance — cash may reach zero, but must never go negative.**
 
-**`DD` 超过 25% 后不再解锁任何档位。** 弹药在 T4 处打光，现金停在 `0+U`，此后只用外部新增资金逐月重建。继续下跌**不产生**新的部署授权，也**不得借款加仓**——这不是遗漏，是 v4.6 的明确决定。
+**Beyond a `DD` of 25%, no further tier unlocks.** The ammunition is spent at T4, cash stops at `0+U`, and from there it is rebuilt month by month with external new money only. Continuing declines produce **no** new deployment authorization, and **borrowing to add is forbidden** — this is not an oversight, it is the explicit v4.6 decision.
 
-定额释放使**跌得越深买得越多，且每笔落在不同价位**；本条款不判断谷底，只按跌幅机械递增。
+Fixed graded releases mean **the deeper the fall, the more is bought, and each purchase lands at a different price**; this clause makes no judgment about the bottom and simply increases mechanically with the decline.
 
-梯度 1:2:3:4 在浅回撤中投出更少、在深回撤中投入更多，这是系统接受的取舍。
+The 1:2:3:4 gradient invests less in shallow drawdowns and more in deep ones, which is a trade-off the system accepts.
 
-#### 归零与「不使用融资」红线的衔接
+#### How zeroing out meets the no-margin red line
 
-部署额的上界是 `max(C − (0+U)×V, 0)`，交易后现金恰为 `U×V ≥ 0`——**公式本身不会让现金变负**。为保住红线，执行时另须满足：
+The upper bound on the deployment amount is `max(C − (0+U)×V, 0)`, leaving cash exactly at `U×V ≥ 0` after the trade — **the formula itself cannot make cash negative**. To hold the red line, execution must additionally satisfy:
 
-- 下单量必须为整股，且**含佣金在内**交易后现金不得为负；若下单会使现金为负，减量至现金 ≥ 0。
-- 现金归零后的后续费用、汇兑或分红时点差由所有者以外部入金补足，**不得转为融资借款**。
-- IPS 的无杠杆原则不变。`DD` 继续加深不构成借款理由（所有者 2026-08-01 重申）。
+- order quantities must be whole shares, and cash must not go negative after the trade **including commissions**; if an order would make cash negative, reduce it until cash ≥ 0.
+- Subsequent fees, currency conversions, or dividend timing differences after cash reaches zero are covered by the owner with external contributions, and **must never be converted into margin borrowing**.
+- The IPS no-leverage principle is unchanged. A deepening `DD` is not a reason to borrow (reaffirmed by the owner 2026-08-01).
 
-**自觉承担的取舍**：现金归零后，IPS 为现金定义的第二个职能「行为缓冲」在最深档实际消失。本条不修改 IPS 原文——弹药职能与无杠杆原则都保留，让渡的是最深档的缓冲垫。
+**A deliberately accepted trade-off**: once cash reaches zero, the second function the IPS defines for cash — the behavioral buffer — effectively disappears at the deepest tier. This clause does not amend the IPS text; the ammunition function and the no-leverage principle both stand, and what is given up is the cushion at the deepest tier.
 
-- 每一档在同一轮回撤周期内最多执行一次；SPYM 创出新的历史最高收盘价后周期重置。
-- 部署走月度例行路径的全部数据与执行检查（实时 IBKR、无融资、无冲突订单、只买正缺口）；除 `DD` 达档外不引入任何其他判断项。
-- 现金此后只用外部新增资金逐月重建至 `15%+U`，不得为重建现金卖出持仓。
-- 本条款不使用杠杆、不预测底部、不因继续下跌而追加档位之外的部署。
-- v4.3 曾存在的「T1 在 10% 消耗后，10%–25% 区间无额外解锁」这一代价已消除——该区间由 T2（15%）、T3（20%）、T4（25%）逐档覆盖。
+- Each tier executes at most once within the same drawdown cycle; the cycle resets after SPYM makes a new all-time-high close.
+- Deployment runs the full data and execution checks of the monthly routine path (live IBKR, no margin, no conflicting orders, buy only into positive gaps); apart from `DD` reaching a tier, no other judgment item is introduced.
+- Cash is thereafter rebuilt to `15%+U` month by month with external new money only; holdings must never be sold to rebuild cash.
+- This clause uses no leverage, does not predict bottoms, and does not add deployment beyond the tiers because the decline continues.
+- The cost that existed in v4.3 — "after T1 is spent at 10%, nothing further unlocks between 10% and 25%" — is eliminated: that range is now covered tier by tier by T2 (15%), T3 (20%) and T4 (25%).
 
-终点 25% 与归零是系统对弹药利用率、入场质量和现金机会成本作出的显式取舍。
+The 25% endpoint and the zero floor are an explicit trade-off the system makes among ammunition utilization, entry quality, and the opportunity cost of cash.
 
-**已知风险**：该数据窗口最深只到 34.3%，不含 2008 型深跌（标普约 −56%）。本设计在 `DD` 25% 时现金已归零，此后无论跌多深都没有部署授权，也不借款。这是自觉承担的取舍，证伪条件见提案第 6 节。
+**Known risk**: the data window reaches only 34.3% at its deepest and does not include a 2008-type decline (the S&P fell roughly 56%). Under this design cash is already at zero at `DD` 25%, and beyond that there is no deployment authorization however deep the decline goes, and no borrowing. This is a deliberately accepted trade-off; the falsification condition is in section 6 of the proposal.
 
-#### 为什么触发口径只用 SPYM
+#### Why the trigger uses SPYM only
 
-本条款动用的是作为危机弹药的结构性现金——四档梯度合计 15 个百分点的 NAV，把 15% 现金目标全部部署至绝对下限 `0+U`，其中 12 个百分点位于常态现金下限 `12%+U` 以下。弹药有限，因此触发必须是**广谱市场信号**；SPYM 代表美国大盘，是本组合的广谱代表。
+This clause deploys structural cash held as crisis ammunition — four tiers totalling 15 percentage points of NAV, deploying the whole 15% cash target down to the absolute floor `0+U`, of which 12 percentage points sit below the normal cash floor of `12%+U`. The ammunition is finite, so the trigger must be a **broad market signal**; SPYM represents US large-cap equity and is this portfolio's broad-market proxy.
 
-Core 之间的**相对**移动不使用本条款，由目标权重自动吸收：某只 Core 跌幅大于另一只时，其实际权重跌破目标即产生正缺口，`D` 与 `B` 每月优先流向缺口更大的标的，无门槛、无需触发。回撤部署只在广谱深跌时**额外**解锁下限以下的现金；单一 Core 回撤而 SPYM 未达档时由再平衡吸收。
+**Relative** moves between the Core instruments do not use this clause and are absorbed by the target weights: when one Core falls more than another, its actual weight drops below target and creates a positive gap, and `D` and `B` flow each month to the larger gap first, with no threshold and no trigger required. Drawdown deployment only unlocks the cash below the floor **additionally**, during a broad deep decline; a single Core falling while SPYM has not reached a tier is absorbed by rebalancing.
 
-### Core标的原则
+### Core instrument principles
 
-- SPYM代表广泛美国大盘市场底仓。
-- QQQM代表Nasdaq-100战略成长引擎；28%是有意的长期成长倾斜，不因与SPYM重叠而机械削减。
-- 不因短期流动性、成交量或品牌熟悉度在SPY/QQQ与SPYM/QQQM之间频繁切换。
-- 只有费用、跟踪质量、税务、账户限制或产品结构发生实质变化时，才重新评审Core标的。
+- SPYM represents the broad US large-cap market core position.
+- QQQM represents the Nasdaq-100 strategic growth engine; the 28% is a deliberate long-term growth tilt and is not mechanically trimmed because it overlaps SPYM.
+- Do not switch frequently between SPY/QQQ and SPYM/QQQM for short-term liquidity, volume, or brand familiarity.
+- Reopen the Core instrument selection only when fees, tracking quality, taxes, account restrictions, or product structure change materially.
 
-### 再平衡与卖出
+### Rebalancing and selling
 
-1. Routine DCA 与战略基线按 `A_basis` 和 `U` 计算，只进入 SPYM / QQQM 正缺口；金额完全由公式产生，不得创造负缺口或突破目标上限。
-2. SOXX 阶段储备不得在护栏触发时转投 SPYM，也不得因其存在而强制买入 SOXX。
-3. **提高倾斜**（推进 `A_execution_cap`）始终走完整 IC；**回补至目标**按上节五项约束走月度例行路径。二者的判别只看 `A_execution_cap` 动没动。
-4. 卖出仅基于 Thesis 证伪、永久性资本损害、严重硬上限越界、经审核替换或税务/法律/流动性需要。
-5. “涨得太高”“跌得太多”、档位冻结或短期新闻本身不是卖出理由。
-6. 价格涨跌与任何估值判断都不构成卖出理由；卖出只依据上条列举的情形。
+1. Routine DCA and the strategic baseline are computed from `A_basis` and `U` and buy only into SPYM / QQQM positive gaps; the amounts come entirely from the formulas and must not create a negative gap or exceed a target ceiling.
+2. The SOXX stage reserve must not be redirected into SPYM when a guardrail triggers, and its existence must not force a SOXX purchase.
+3. A **tilt increase** (advancing `A_execution_cap`) always goes through a full IC; a **restore-to-target** runs the monthly routine path under the five constraints in the section above. The test between them is only whether `A_execution_cap` moved.
+4. Selling is based only on thesis falsification, permanent capital impairment, a severe hard-cap breach, a reviewed replacement, or tax, legal, or liquidity needs.
+5. "It rose too much", "it fell too much", a frozen stage, or short-term news are not by themselves reasons to sell.
+6. Neither price moves nor any valuation view constitutes a reason to sell; selling follows only the situations listed above.
 
-目标配置原则上只在年度审核或正式版本发布中修改。
+The target allocation is amended in principle only in an annual review or a formal release.
 
-### 复杂度规则
+### Complexity rule
 
-- 新增永久规则时，必须合并或删除旧规则，或书面说明净增复杂度为何不可避免。
-- 相同目的只保留一个权威文件；旧版本规则全部失效。
-- 每次发布必须报告规则净增减；v4.0 净删除约 3,300 行验证器代码与四个 JSON 契约。
+- When adding a permanent rule, an old rule must be merged or removed, or the net increase in complexity must be justified in writing as unavoidable.
+- Only one authoritative file per purpose; older versions of a rule are entirely void.
+- Every release must report the net rule change; v4.0 removed roughly 3,300 lines of validator code and four JSON contracts.
 
 ---
 
-## 第四部分：转型计划（2026–2028）
+## Part 4: Transition Plan (2026–2028)
 
-> 冲突解决例外：本部分与 `01-operating-manual.md` 冲突时，以操作手册为准。
+> Conflict-resolution exception: where this part conflicts with `01-operating-manual.md`, the operating manual prevails.
 
-### 目标
+### Goal
 
-从旧的高现金、个股为主组合，渐进迁移至：
+Migrate gradually from the old high-cash, mostly-single-stock portfolio to:
 
 \[
 \text{Cash }(15\%+U) + \text{QQQM }28\% + \text{SPYM }(57\%-A_{basis}) + \text{SOXX }A_{actual}
 \]
 
-符号定义与阈值以本宪法目标配置部分为唯一权威（`A_stage` / `A_basis` / `U` / 执行档）。QQQM 28%保持不变；`U` 作为现金中的阶段储备，不先投入SPYM。迁移以纪律、税务效率和可执行性为先，计划基线使用 2028-12 作为完成月，并在每月重算。
+Symbol definitions and thresholds take the target allocation part of this constitution as the sole authority (`A_stage` / `A_basis` / `U` / execution stage). QQQM stays at 28%; `U` is held as a stage reserve inside cash and is not invested into SPYM first. The migration prioritizes discipline, tax efficiency, and executability, uses 2028-12 as the planned completion month for the baseline, and is recomputed every month.
 
-### 三条资金通道
+### Three funding channels
 
-1. `Routine DCA`：每月固定外部入金（数额不入库）；只使用已到账的\(F\)，执行\(D=\min(F,G_0)\)，\(F-D\)留在现金。
-2. `Strategic Baseline`：在固定月度执行日，按部署框架（`01-operating-manual.md`）的 \(B=\min(S/R,G)\) 公式迁移历史超额现金；没有任何判断性闸门可以暂停它。
-3. `Drawdown Deployment`：SPYM 相对历史最高收盘回撤达档时，按本宪法分档条款部署现金。
+1. `Routine DCA`: the fixed monthly external contribution (amounts are never stored in the repository); use only the received \(F\) and execute \(D=\min(F,G_0)\), leaving \(F-D\) in cash.
+2. `Strategic Baseline`: on the fixed monthly execution day, migrate historical excess cash using the \(B=\min(S/R,G)\) formula of the deployment framework (`01-operating-manual.md`); no judgment gate may suspend it.
+3. `Drawdown Deployment`: when SPYM's drawdown from its all-time-high close reaches a tier, deploy cash under the tier clause of this constitution.
 
-三条通道全部由公式与价格驱动，没有一条依赖判断性数据。超出 \(B\) 的加速部署只有回撤档位这一条机械路径；主动加速属于规则例外，须走完整 IC。
+All three channels are driven by formulas and prices, and none depends on judgmental data. The only mechanical path for deployment beyond \(B\) is the drawdown tiers; discretionary acceleration is a rule exception and requires a full IC.
 
-### 原则
+### Principles
 
-1. Routine DCA \(D\) 和战略基线 \(B\) 只进入 SPYM / QQQM 正缺口。
-2. 每月根据实时净值、现金、SOXX 权重相关派生量、目标缺口和到 2028-12 的剩余执行次数重算。
-3. 交易后物理现金不得低于`12%+U`，不得使用融资。
-4. SOXX 不参与 \(D\)、\(B\) 与回撤 tranche 的分配；其唯一例行通道是 v4.5 的**回补至目标**，资金只来自 `U`。
-5. 所有倾斜新建、**提高倾斜**和卖出均走完整 Investment Committee；回补至目标按本宪法五项约束走例行路径。
-6. 非目标旧持仓和超上限倾斜采用税务感知的渐进退出；不因“高位/低位”单独卖出。
-7. 每月只产出一份月度输出（格式见 `01-operating-manual.md` 部署框架第 6 节），聊天呈交所有者，不写回仓库。
+1. Routine DCA \(D\) and the strategic baseline \(B\) enter only SPYM / QQQM positive gaps.
+2. Recompute every month from live net assets, cash, SOXX-weight derived quantities, target gaps, and the number of execution rounds remaining to 2028-12.
+3. Physical cash after a trade must not fall below `12%+U`, and margin must not be used.
+4. SOXX does not participate in the allocation of \(D\), \(B\), or drawdown tranches; its only routine channel is the v4.5 **restore-to-target**, funded only from `U`.
+5. All new tilts, **tilt increases**, and sales go through a full Investment Committee; a restore-to-target runs the routine path under the five constraints in this constitution.
+6. Non-target legacy holdings and over-cap tilts exit gradually with tax awareness; nothing is sold on "high" or "low" alone.
+7. Produce exactly one monthly output per month (format in section 6 of the deployment framework, `01-operating-manual.md`), delivered to the owner in chat and never written back to the repository.
 
-### 阶段
+### Stages
 
-#### 阶段 A：建立 Core
+#### Stage A: build the Core
 
-- Routine DCA \(D\) 与 Strategic Baseline \(B\) 进入 SPYM / QQQM。
-- 按正缺口分配；为减少交易，可只买缺口更大的一个。
-- 回撤部署不得替代或追认例行基线。
+- Routine DCA \(D\) and Strategic Baseline \(B\) go into SPYM / QQQM.
+- Allocate by positive gap; to reduce trades, buying only the larger gap is acceptable.
+- Drawdown deployment must not replace or retroactively justify the routine baseline.
 
-#### 阶段 B：处理板块倾斜与 Legacy
+#### Stage B: handle the sector tilt and Legacy
 
-- SOXX按`Hold`持有；永久硬上限6%。**提高倾斜**须满足当季手工穿透核查与完整IC（见本宪法登记表部分的提高倾斜闸门）；**回补至目标**走例行路径，同样要求当季核查有效。
-- 对其他非 Core 持仓区分倾斜、Legacy、税务成本、投资逻辑和组合重叠。
-- 对确定退出的旧持仓制定分批或一次性方案，不用价格预测替代决策。
-- 若硬上限无法靠稀释修复，再依据本宪法进入卖出评审。
+- SOXX is held under `Hold`, with a permanent hard cap of 6%. A **tilt increase** requires the current-quarter manual look-through check and a full IC (see the tilt-increase gate in the registry part of this constitution); a **restore-to-target** runs the routine path and likewise requires a valid current-quarter check.
+- For other non-Core holdings, distinguish tilt, Legacy, tax cost, investment rationale, and portfolio overlap.
+- For legacy holdings confirmed for exit, plan a staged or single disposal; do not substitute price forecasts for the decision.
+- If a hard-cap breach cannot be repaired by dilution, proceed to a sale review under this constitution.
 
-#### 阶段 C：进入 Maintenance Mode
+#### Stage C: enter Maintenance Mode
 
-当Cash、QQQM、`SPYM + SOXX + Stage Reserve`袖套连续三个月都位于允许区间，且 Legacy 已按计划处理，转型完成。此后 \(B=0\)，仅用新增资金维护配置；除非触发卖出规则，不主动换仓。
+When Cash, QQQM, and the `SPYM + SOXX + Stage Reserve` sleeve all sit inside their permitted bands for three consecutive months, and Legacy has been handled as planned, the transition is complete. From then on \(B=0\) and the allocation is maintained with new money only; positions are not switched proactively unless a selling rule triggers.
 
-### 时间判断
+### On timing
 
-2028-12 是战略基线的计划完成月，不是收益承诺或强制清仓日。市场涨跌、税务、入金和 Legacy 处理会改变结果；每季度可重估预计完成月，但延长计划必须明确记录，不得静默拖延。
-
----
-
-## 第五部分：板块倾斜框架（Satellite / Sector Tilt Framework）
-
-v4.0 起本部分治理的对象改称**自主板块倾斜（Sector Tilt / Satellite）**。SOXX 是一只被动行业 ETF：持有它是有硬上限的行业/周期 beta，不是 alpha。旧「Alpha」一词只在历史记录中保留，不再用于现行规则。
-
-### 边界
-
-- 合计硬上限：总组合 6%（v4.0 起与 SOXX 上限合并；10%/12.5%/15% 历史阶段作废）。
-- 持仓数：最多 1 只（SOXX）；任何新增载体必须先通过年度审核修改本规则。
-- 不使用杠杆，不用短线技术信号建立长期仓位。
-- 已批准但未完成的 SOXX 额度按 `U` 保留为现金用途标签。
-- 当前分类与状态的唯一登记表为本宪法第六部分。
-
-### SOXX 唯一载体
-
-SOXX 是唯一自主倾斜载体；硬上限、执行档推进与个股 0% 授权以本宪法目标配置部分为权威表述。封顶依据（2026-07 实测）：SOXX=6% 时组合合并半导体暴露已约 24%、SOXX=15% 时约 32%，后者在系统自身护栏下不可达。
-
-### 提高倾斜与回补至目标
-
-两条路径的定义、判别标准（只看 `A_execution_cap` 动没动）与回补五项约束的权威表述在本宪法目标配置部分；提高倾斜的五步闸门与回补执行细则在第六部分登记表。本节只补充框架层规则：
-
-- 提高倾斜另须**与 QQQM / SPYM 的重复暴露有明确书面补偿理由**；不再要求机器验证的 Look-through Evidence Bundle——季度核查表 + 完整 IC 是现行闸门。
-- 关键边界：**回补不是把 `U` 的存在当成买入义务**。它只是在约束全部成立时，允许已经贴好 SOXX 标签的现金按公式回到 SOXX；条件缺一即输出 `0`，不得部分执行。
-
-### 持仓生命周期
-
-1. `Research`：仅研究、没有真实资金，不计入\(A\)。
-2. `Hold`：允许按当前仓位持有，没有新增授权。
-3. `Frozen`：允许持有、禁止追加（数据、护栏或研究条件不足）。
-4. `Exit Review`：满足卖出规则，进入完整IC；状态本身不等于卖出授权。
-
-生命周期与 `A_execution_cap` 变化必须先更新第六部分登记表。任何状态不因价格、研究完成或数据可得自动改变。
-
-### 穿透集中度
-
-护栏阈值与语义见本宪法目标配置部分（约束自主倾斜新增，不阻断 Core 例行路径）。季度手工核查在当前私有会话计算合并暴露；证据不写入仓库。核查缺失时 SOXX 保持禁止追加，不自动卖出。
-
-### 评价
-
-SOXX 必须与等额同期 SPYM 及 IPS 的 Policy Benchmark 比较。至少使用滚动三年数据，并纳入回撤、税费、时间成本与集中度；单年跑赢不证明可复制能力。若连续五年在成本后跑输，年度审核应讨论清退本倾斜并简化系统。
+2028-12 is the planned completion month for the strategic baseline, not a return promise and not a forced liquidation date. Market moves, taxes, contributions, and Legacy handling will change the outcome; the projected completion month may be re-estimated each quarter, but an extension must be recorded explicitly and never allowed to slip silently.
 
 ---
 
-## 第六部分：板块倾斜登记表（Position Registry）
+## Part 5: Sector Tilt / Satellite Framework
 
-本部分是当前自主板块倾斜分类、执行上限和持久生命周期的唯一登记表。数量、市值和实际权重以IBKR Positions为准。
+As of v4.0 the subject governed by this part is renamed the **discretionary sector tilt (Sector Tilt / Satellite)**. SOXX is a passive industry ETF: holding it is hard-capped industry/cycle beta, not alpha. The old word "Alpha" is retained only in historical records and no longer appears in current rules.
 
-### 当前登记
+### Boundaries
 
-| 标的 | 分类 | 持久生命周期 | 永久硬上限 | \(A_{stage}\) | 当前执行上限 \(A_{execution\_cap}\) | 当前授权 |
+- Combined hard cap: 6% of the total portfolio (merged with the SOXX cap as of v4.0; the 10% / 12.5% / 15% historical stages are void).
+- Number of positions: at most 1 (SOXX); any new vehicle must first amend this rule through an annual review.
+- No leverage, and no short-term technical signal used to build a long-term position.
+- An approved but unfilled SOXX allowance is retained as `U`, a purpose label on cash.
+- The sole registry of current classification and status is Part 6 of this constitution.
+
+### SOXX as the only vehicle
+
+SOXX is the only discretionary tilt vehicle; the hard cap, execution-stage advancement, and the 0% single-stock authorization are stated authoritatively in the target allocation part of this constitution. Basis for the cap (measured 2026-07): at SOXX=6% the portfolio's combined semiconductor exposure is already about 24%, and at SOXX=15% about 32%, the latter being unreachable under the system's own guardrails.
+
+### Tilt increase and restore-to-target
+
+The definitions of the two paths, the test between them (only whether `A_execution_cap` moved), and the five restore constraints are stated authoritatively in the target allocation part of this constitution; the five-step tilt-increase gate and the restore execution details are in the Part 6 registry. This section adds only the framework-level rules:
+
+- A tilt increase additionally requires **a written, explicit compensating rationale for the overlapping exposure with QQQM / SPYM**; a machine-verified Look-through Evidence Bundle is no longer required — the quarterly check table plus a full IC is the current gate.
+- Key boundary: **a restore does not turn the existence of `U` into an obligation to buy**. It only allows cash already labelled for SOXX to return to SOXX by formula when every constraint holds; if any condition fails the output is `0`, and partial execution is not permitted.
+
+### Position lifecycle
+
+1. `Research`: research only, no real money, not counted in \(A\).
+2. `Hold`: the current position may be held, with no authorization to add.
+3. `Frozen`: holding is allowed and additions are forbidden (data, guardrail, or research conditions unmet).
+4. `Exit Review`: the selling rules are met and a full IC begins; the status itself is not authorization to sell.
+
+Lifecycle and `A_execution_cap` changes must update the Part 6 registry first. No status changes automatically because of price, completed research, or data availability.
+
+### Look-through concentration
+
+Guardrail thresholds and semantics are in the target allocation part of this constitution (they constrain discretionary tilt additions and do not block Core routine paths). The quarterly manual check computes combined exposure inside the current private session; the evidence is not written into the repository. When the check is missing, SOXX remains forbidden from additions, with no automatic selling.
+
+### Evaluation
+
+SOXX must be compared against an equal-size, same-period SPYM position and against the IPS Policy Benchmark. Use at least three years of rolling data and include drawdown, taxes and fees, time cost, and concentration; outperformance in a single year does not demonstrate repeatable skill. If it underperforms after costs for five consecutive years, the annual review should discuss retiring this tilt and simplifying the system.
+
+---
+
+## Part 6: Sector Tilt Position Registry
+
+This part is the sole registry of the current discretionary sector tilt classification, execution cap, and persistent lifecycle. Quantities, market values, and actual weights come from IBKR Positions.
+
+### Current registration
+
+| Instrument | Classification | Persistent lifecycle | Permanent hard cap | \(A_{stage}\) | Current execution cap \(A_{execution\_cap}\) | Current authorization |
 |---|---|---|---:|---:|---:|---|
-| SOXX | 板块倾斜；唯一半导体载体 | Hold | 6% | 6%（最终） | 3% | 仅持有；提高倾斜须完整IC，回补至目标走例行路径 |
+| SOXX | Sector tilt; the only semiconductor vehicle | Hold | 6% | 6% (final) | 3% | Hold only; a tilt increase requires a full IC, a restore-to-target runs the routine path |
 
-### 执行上限治理
+### Execution cap governance
 
-- 当前\(A_{stage}=6\%\)为永久硬上限，当前\(A_{execution\_cap}=3\%\)；10% / 12.5% / 15% 历史治理阶段自 v4.0 作废。
-- 执行上限合法顺序为3%→4.5%→6%；每次只允许推进一个执行档，必须先更新本表，随后另行完成IC；同一次IC不得既推进执行档又执行交易。
-- 始终要求\(A_{execution\_cap}\le A_{stage}\)。交易后`A_actual`不得超过执行上限或6%硬上限。
-- 若价格漂移使`A_actual`超过执行上限或硬上限，冻结新增但不自动卖出。
-- 执行档不因价格、核查完成或IC结论自动推进。
-- 科技50%冻结线、半导体15%IC线、发行人护栏和数据完整性优先；护栏语义见本宪法目标配置部分（约束自主倾斜新增，不阻断Core例行路径）。
-- 任何其他板块倾斜或半导体个股当前新增授权为0%。
+- The current \(A_{stage}=6\%\) is the permanent hard cap and the current \(A_{execution\_cap}=3\%\); the 10% / 12.5% / 15% historical governance stages are void as of v4.0.
+- The legal order of execution caps is 3%→4.5%→6%; only one stage may advance at a time, this table must be updated first, and the IC is completed separately afterwards; a single IC must not both advance the stage and execute a trade.
+- \(A_{execution\_cap}\le A_{stage}\) always holds. After a trade, `A_actual` must not exceed the execution cap or the 6% hard cap.
+- If price drift pushes `A_actual` above the execution cap or the hard cap, freeze additions but do not sell automatically.
+- The execution stage never advances automatically because of price, a completed check, or an IC conclusion.
+- The technology 50% freeze line, the semiconductor 15% IC line, the issuer guardrails, and data integrity take priority; guardrail semantics are in the target allocation part of this constitution (they constrain discretionary tilt additions and do not block Core routine paths).
+- The current new-addition authorization for every other sector tilt or semiconductor single stock is 0%.
 
-### 提高倾斜闸门（v4.0；v4.5 更名）
+### The tilt-increase gate (v4.0; renamed in v4.5)
 
-本节只管**提高倾斜**——推进 `A_execution_cap`（3%→4.5%→6%），风险预算扩大。**回补至目标**（`A_execution_cap` 不动、只买回被市场打下去的权重）走下一节的例行路径，判别标准见本宪法目标配置部分。
+This section governs only a **tilt increase** — advancing `A_execution_cap` (3%→4.5%→6%), which expands the risk budget. A **restore-to-target** (`A_execution_cap` unchanged, buying back only the weight the market pushed down) runs the routine path in the next section; the test between them is in the target allocation part of this constitution.
 
-每次潜在的提高倾斜必须依次满足：
+Every potential tilt increase must satisfy, in order:
 
-1. 当季手工穿透核查已完成且在有效期内（`02-data-contract.md` 穿透核查程序）；
-2. 实时读取 Account Summary、Balances、Positions、Open Orders 成功；
-3. 交易后 `A_actual ≤ A_execution_cap`，且科技/发行人护栏不失守；半导体护栏已触发的事实在 Packet 中显式确认；
-4. 完整 IC（`01-operating-manual.md` 交易前决策清单）取得 `APPROVE`；
-5. 账户所有者在 IBKR 人工下单；成交、部分成交或撤单后重新读取账户。
+1. the current-quarter manual look-through check is complete and within its validity period (`02-data-contract.md`, look-through check procedure);
+2. live reads of Account Summary, Balances, Positions, and Open Orders all succeed;
+3. after the trade `A_actual ≤ A_execution_cap`, and the technology/issuer guardrails hold; the fact that the semiconductor guardrail is already triggered is confirmed explicitly in the Packet;
+4. a full IC (`01-operating-manual.md`, pre-trade decision checklist) returns `APPROVE`;
+5. the account owner places the order manually in IBKR; after a fill, partial fill, or cancellation, the account is read again.
 
-IC 批准当日有效，隔日重走流程。不再使用机器验证的 Add Candidate Packet 契约。
+An IC approval is valid the same day; the next day the process starts over. The machine-verified Add Candidate Packet contract is no longer used.
 
-### 回补至目标（v4.5）
+### Restore-to-target (v4.5)
 
-市场下跌使 `A_actual` 低于执行档时，差额进入 `U`。把 `U` 投回 SOXX 属于**回补**（定义与五项约束的权威表述见本宪法目标配置部分，本节只列执行细则）：
+When a market decline pushes `A_actual` below the execution stage, the difference becomes `U`. Putting `U` back into SOXX is a **restore** (the authoritative statement of the definition and the five constraints is in the target allocation part of this constitution; this section lists only the execution details):
 
-- 回补上限：`min(A_execution_cap, A_stage) − A_actual`，按 NAV 折算；上限不因走例行路径而放宽。
-- 计算辅助：`python3 skills/investment-os/scripts/monthly_execution.py --lookthrough-current`。**不传该标志即视为无当季有效核查**，回补输出 `0` 并标 `DATA INCOMPLETE`。
-- 每次真实回补必须在当前私有会话核验并报告回补前后 `A_actual`、`U`、当季核查日期与结论、交易后合并半导体暴露；账户与成交事实只由券商保留，不写入仓库。
+- Restore ceiling: `min(A_execution_cap, A_stage) − A_actual`, converted by NAV; the ceiling is not relaxed by running on the routine path.
+- Calculation aid: `python3 skills/investment-os/scripts/monthly_execution.py --lookthrough-current`. **Omitting that flag counts as having no valid current-quarter check**, in which case the restore output is `0` and is marked `DATA INCOMPLETE`.
+- Every real restore must verify and report, in the current private session, `A_actual` and `U` before and after the restore, the current-quarter check date and conclusion, and post-trade combined semiconductor exposure; account and fill facts are retained only by the broker and are never written into the repository.
 
-SOXX 的运行时状态每次从 IBKR 实时重建：`A_actual>A_stage` 时为 `Hold — 超上限冻结`、`U=0`、回补额为 `0`；否则按本表与回补公式处理。仓库不保存当前权重、账户事件或所有者交易裁决。本节不授权任何交易。
+The SOXX runtime state is rebuilt live from IBKR each time: when `A_actual>A_stage` it is `Hold — frozen above cap`, `U=0`, and the restore amount is `0`; otherwise it follows this table and the restore formula. The repository stores no current weight, account event, or owner trading decision. This section authorizes no trade.
 
-分类生效日：2026-07-30。v4.0 板块倾斜重述与 6% 封顶生效日：2026-07-31。
+Classification effective date: 2026-07-30. The v4.0 sector tilt restatement and the 6% cap take effect 2026-07-31.
