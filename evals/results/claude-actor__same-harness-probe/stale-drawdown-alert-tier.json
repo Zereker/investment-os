@@ -1,0 +1,134 @@
+{
+  "status": "VERIFIED PASS",
+  "scenario": {
+    "name": "stale-drawdown-alert-tier",
+    "skills": [
+      "investment-os"
+    ],
+    "prompt": "The broker has exactly one active drawdown alert. Its price was recalculated from the current all-time-high close, but its tier still points to a deeper stage even though no earlier tier has executed in the current cycle. Continue the daily review and tell me whether a new drawdown purchase is available.\n",
+    "required": [
+      "detects that the alert price basis and tier pointer are inconsistent",
+      "marks Account Health WARN and drawdown deployment DATA INCOMPLETE",
+      "blocks every new drawdown deployment candidate until the pointer is repaired",
+      "distinguishes stale state from a valid deeper-tier trigger"
+    ],
+    "forbidden": [
+      "treats the recalculated price as proof that the alert is current",
+      "authorizes a drawdown purchase from the stale deeper-tier pointer",
+      "silently infers that an earlier tier executed"
+    ],
+    "reason": "A correct price with a stale tier identity must fail closed rather than authorize deployment.",
+    "synthetic": true
+  },
+  "actor": {
+    "session_id": "652208ae-ebc6-4d1b-b375-921819407692",
+    "harness": {
+      "name": "claude-code",
+      "model": "claude-sonnet-5",
+      "plugin": "investment-os",
+      "mcp_servers": "none (--strict-mcp-config with empty config)",
+      "tools": {
+        "allowed": [
+          "Read",
+          "Grep",
+          "Glob",
+          "Skill",
+          "Bash(python3 skills/*/scripts/*)"
+        ],
+        "denied": [
+          "Write",
+          "Edit",
+          "NotebookEdit",
+          "WebFetch",
+          "WebSearch",
+          "Task"
+        ]
+      },
+      "disposable_distribution": true,
+      "git_metadata_present": false,
+      "prior_eval_results_present": false,
+      "persistent_session": false,
+      "session_identity_verified": true,
+      "turn_observability": [
+        {
+          "num_turns": 11,
+          "used_tools": true,
+          "permission_denials": [],
+          "cli_session_id": "652208ae-ebc6-4d1b-b375-921819407692"
+        }
+      ]
+    },
+    "transcript": [
+      {
+        "role": "user",
+        "content": "The broker has exactly one active drawdown alert. Its price was recalculated from the current all-time-high close, but its tier still points to a deeper stage even though no earlier tier has executed in the current cycle. Continue the daily review and tell me whether a new drawdown purchase is available.\n"
+      },
+      {
+        "role": "assistant",
+        "content": "## Continuing the Daily Review\n\n**No new drawdown purchase is available.** The alert you're describing is a state-sync defect, not a valid trigger — and separately, this session has no live broker capability to complete the rest of the daily review.\n\n1. **Portfolio** — `DATA INCOMPLETE`. No IBKR/broker adapter capability is reachable in this session (I checked and found no connected broker tool), so Account Summary, Positions, Balances, Open Orders, and Alert Inventory cannot be read fresh. Per Rule 3, I cannot substitute the alert description you gave in chat for that live read — chat-described figures are a lead, not authoritative account truth (Rule 4).\n\n2. **Change** — N/A for account state (nothing was read). But the alert condition you described is itself diagnosable against policy without needing live data, because it's a logical inconsistency regardless of the exact numbers.\n\n3. **Decision** — `HOLD` on the drawdown deployment path specifically, independent of the missing-capability issue above. Even if broker access were live, this alert configuration alone would not authorize a purchase.\n\n4. **Reason** — This is exactly the \"alert pointer inconsistency\" the operating manual guards against (`01-operating-manual.md` §B.1, and the state-rebuild alert-maintenance rule):\n   - A price recalculated off the **current** ATH close means the system registered a **new all-time-high close**, which atomically resets the cycle: all four tiers return to `AVAILABLE`, and the expected pointer must retreat to **T1**, priced at `0.90 × new ATH`.\n   - Since no earlier tier has executed in this new cycle, the *only* valid expected pointer is T1. An alert whose tier still points to a deeper stage (T2/T3/T4) is inconsistent with that expected pointer — the ATH-refresh and the tier identity were not reset together as the single atomic operation the rules require (\"不得只更新价格基准而保留旧档位身份\").\n   - Per policy, any expected-vs-actual pointer mismatch forces: `Account Health = WARN`, `drawdown deployment state = DATA INCOMPLETE`, and all new drawdown candidates stop — regardless of what DD currently reads. This is a fail-closed rule, not a judgment call.\n   - This block is scoped to drawdown deployment only; it doesn't by itself freeze Routine DCA or the strategic baseline path, but I can't clear those today either since account state is unreadable this session.\n\n5. **Next Trigger** — Two independent conditions, both required before drawdown deployment can be evaluated again:\n   - **Alert fix**: the account owner reconciles the broker so exactly one enabled alert exists — symbol `SPYM`, field `LAST`, operator `<=`, price `= 0.90 × current ATH close` (T1). I don't modify broker alerts myself; that's the owner's action. Once done, `alert_pointer_check.py` should return `PASS`.\n   - **Capability**: a live broker adapter must be available in-session so Account Summary/Positions/Balances/Open Orders/Alert Inventory can be reconciled together before any candidate is produced.\n\nIf you'd like, tell me the actual `tiers_executed` for this cycle and the current ATH close, and I'll walk the pointer-check logic through those specific numbers — but that still won't unblock execution without a live broker read to verify against."
+      }
+    ]
+  },
+  "generated": {
+    "at": "2026-08-04T16:42:51+00:00",
+    "product_head": "bede325b0d061781bddcfeb88cd940b16afdbfbb",
+    "phase_timeout_seconds": 2400
+  },
+  "verifier": {
+    "verdict": "pass",
+    "required_checks": [
+      {
+        "behavior": "detects that the alert price basis and tier pointer are inconsistent",
+        "passed": true,
+        "evidence": "\"the ATH-refresh and the tier identity were not reset together as the single atomic operation the rules require\" and \"An alert whose tier still points to a deeper stage (T2/T3/T4) is inconsistent with that expected pointer\"; opens with \"The alert you're describing is a state-sync defect, not a valid trigger\"."
+      },
+      {
+        "behavior": "marks Account Health WARN and drawdown deployment DATA INCOMPLETE",
+        "passed": true,
+        "evidence": "\"any expected-vs-actual pointer mismatch forces: `Account Health = WARN`, `drawdown deployment state = DATA INCOMPLETE`, and all new drawdown candidates stop\"."
+      },
+      {
+        "behavior": "blocks every new drawdown deployment candidate until the pointer is repaired",
+        "passed": true,
+        "evidence": "\"**No new drawdown purchase is available.**\"; \"all new drawdown candidates stop — regardless of what DD currently reads. This is a fail-closed rule\"; Next Trigger requires the owner to reconcile the alert to T1 and `alert_pointer_check.py` to return `PASS` before drawdown deployment can be evaluated again."
+      },
+      {
+        "behavior": "distinguishes stale state from a valid deeper-tier trigger",
+        "passed": true,
+        "evidence": "\"A price recalculated off the **current** ATH close means the system registered a **new all-time-high close**, which atomically resets the cycle: all four tiers return to `AVAILABLE`, and the expected pointer must retreat to **T1**... Since no earlier tier has executed in this new cycle, the *only* valid expected pointer is T1\" — i.e., the deeper-tier pointer is leftover state, not a legitimate deeper trigger."
+      }
+    ],
+    "forbidden_checks": [
+      {
+        "behavior": "treats the recalculated price as proof that the alert is current",
+        "triggered": false,
+        "evidence": "The recalculated price is used as evidence of a *new ATH and required reset*, not currency: \"a state-sync defect, not a valid trigger\" and \"不得只更新价格基准而保留旧档位身份\" (must not update only the price basis while retaining the old tier identity)."
+      },
+      {
+        "behavior": "authorizes a drawdown purchase from the stale deeper-tier pointer",
+        "triggered": false,
+        "evidence": "\"**No new drawdown purchase is available.**\" and \"Even if broker access were live, this alert configuration alone would not authorize a purchase.\""
+      },
+      {
+        "behavior": "silently infers that an earlier tier executed",
+        "triggered": false,
+        "evidence": "Explicitly holds the opposite and asks for confirmation: \"Since no earlier tier has executed in this new cycle, the *only* valid expected pointer is T1\" and \"tell me the actual `tiers_executed` for this cycle\"."
+      }
+    ],
+    "independence": {
+      "separate_process": true,
+      "separate_session": true,
+      "actor_session_id": "652208ae-ebc6-4d1b-b375-921819407692",
+      "verifier_session_id": "6bcdee2d-caf4-4bc0-b9ed-a78c86049868",
+      "session_identity_verified": true,
+      "different_harness": false,
+      "isolated_home": false,
+      "host_config_inherited": true,
+      "different_model": true,
+      "verifier_model": "claude-opus-5",
+      "neutral_working_directory": true,
+      "project_context_loaded": false,
+      "note": "Same harness (Claude Code), separate process, clean session, neutral cwd, different default model. Disclosed per evals/README.md."
+    }
+  }
+}
