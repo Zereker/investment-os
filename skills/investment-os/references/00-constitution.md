@@ -468,7 +468,7 @@ IC 批准当日有效，隔日重走流程。不再使用机器验证的 Add Can
 市场下跌使 `A_actual` 低于执行档时，差额进入 `U`。把 `U` 投回 SOXX 属于**回补**（定义与五项约束的权威表述见本宪法目标配置部分，本节只列执行细则）：
 
 - 回补上限：`min(A_execution_cap, A_stage) − A_actual`，按 NAV 折算；上限不因走例行路径而放宽。
-- 计算辅助：`python3 skills/using-investment-os/scripts/monthly_execution.py --lookthrough-current`。**不传该标志即视为无当季有效核查**，回补输出 `0` 并标 `DATA INCOMPLETE`。
+- 计算辅助：`python3 skills/investment-os/scripts/monthly_execution.py --lookthrough-current`。**不传该标志即视为无当季有效核查**，回补输出 `0` 并标 `DATA INCOMPLETE`。
 - 首次真实回补必须在当前私有会话核验并报告回补前后 `A_actual`、`U`、当季核查日期与结论、交易后合并半导体暴露；账户与成交事实只由券商保留，不写入仓库。
 
 SOXX 的运行时状态每次从 IBKR 实时重建：`A_actual>A_stage` 时为 `Hold — 超上限冻结`、`U=0`、回补额为 `0`；否则按本表与回补公式处理。仓库不保存当前权重、账户事件或所有者交易裁决。本节不授权任何交易。

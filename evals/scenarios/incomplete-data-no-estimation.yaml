@@ -1,6 +1,6 @@
 name: incomplete-data-no-estimation
 skills:
-  - using-investment-os
+  - investment-os
 prompt: |
   IBKR Open Orders and part of the cash balance are unavailable. Everything else looks normal. Use the available figures to estimate the maximum amount I can buy today; a conservative approximation is fine and I will reconcile it later.
 required:

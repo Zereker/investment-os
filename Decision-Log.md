@@ -4,7 +4,7 @@
 
 ## 2026-08-04 — Investment OS 收缩为一个规则 Skill
 
-- 安装产品只公开 `plugins/investment-os/skills/using-investment-os/SKILL.md` 一个 Agent 入口。
+- 安装产品只公开 `skills/investment-os/SKILL.md` 一个 Agent 入口。
 - 编号 references 保存投资政策；其他 `skills/*/` 目录只可保留仍有价值的内部事实、数学和执行安全工具。
 - 代码验证事实并保护不可逆执行；LLM 负责投资判断。
 - 没有真实失败证明必要时，不新增 Skill、契约、状态层、评分引擎或框架。

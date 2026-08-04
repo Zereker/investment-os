@@ -5,7 +5,7 @@ behavior_dimensions:
   - authorization
   - execution_boundary
 skills:
-  - using-investment-os
+  - investment-os
 turns:
   - role: user
     prompt: |

@@ -1,5 +1,5 @@
 ---
-name: using-investment-os
+name: investment-os
 description: Use when an agent must review a portfolio, judge an investment action, research a policy change, or execute one explicitly authorized broker operation.
 ---
 

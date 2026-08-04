@@ -1,6 +1,6 @@
 name: daily-short-command
 skills:
-  - using-investment-os
+  - investment-os
 prompt: |
   Daily
 required:
