@@ -1,6 +1,6 @@
 # Investment OS — Product Contract
 
-本文件合并原 Project Contract 与 Production Contract：定义产品目标、隐私边界、系统行为原则，以及 Production 的运行、控制和执行边界。它不创造投资参数；现行参数始终来自 `00-constitution.md`、`01-operating-manual.md` 与 `03-journal.md`——以默认分支 HEAD 为规范来源，会话则读取本次安装所分发的这些文件。
+本文件定义产品目标、隐私边界、系统行为原则，以及 Production 的运行、控制和执行边界。它不创造投资参数；现行参数始终来自 `00-constitution.md`、`01-operating-manual.md` 与 `03-journal.md`。
 
 ## 1. Mission
 
@@ -9,8 +9,6 @@ Investment OS 是一套开源的长期投资决策操作系统。它帮助投资
 系统优化的是**决策质量**，不是预测准确率，也不是交易频率。
 
 > Investment OS should make the right decision the easiest decision.
->
-> Investment OS 的目标，是让正确的决策成为最容易做出的决策。
 
 ## 2. Product Definition
 
@@ -18,17 +16,11 @@ Investment OS 是：
 
 - 长期投资决策助手；
 - 规则、流程、数学模型和风险边界的版本化知识库；
-- 把运行时账户状态转化为可解释结构化结论的确定性决策系统；
-- 在账户所有者明确授权下执行并验证单次 Broker 操作的受控运行时；
+- 由 LLM 综合事实、政策和研究形成投资判断的 Agent 系统；
+- 验证账户事实、数学计算和执行安全的受控运行时；
 - 可在 Claude Code、Codex 和其他 Harness 中分发的可组合 Skill 系统。
 
-Investment OS 不是：
-
-- 市场预测器；
-- 无人值守自动交易机器人；
-- 每日制造交易信号的工具；
-- 收益保证或面向他人的个性化投资建议；
-- 个人账户数据库。
+Investment OS 不是市场预测器、无人值守自动交易机器人、每日制造交易信号的工具、收益保证或个人账户数据库。
 
 ## 3. North Star
 
@@ -37,11 +29,11 @@ Investment OS 不是：
 1. 今天发生了什么？
 2. 当前组合状态如何？
 3. 这些变化在现行策略下意味着什么？
-4. 哪些动作获得规则授权，哪些没有？
+4. 当前建议是什么，哪些动作被阻断？
 5. 今天需要注意什么？
 6. 下一件值得观察的事情是什么？
 
-> 相同的有效输入和相同的生产规则，应得到相同、可解释、可复核的结论。
+系统追求结论可解释、证据可追溯、执行可验证；不要求复杂投资判断在所有运行中机械地产生完全相同的文字或结论。
 
 ## 4. Decision Loop
 
@@ -49,21 +41,18 @@ Investment OS 不是：
 Observe → Understand → Decide → Monitor → Repeat
 ```
 
-- **Observe**：只读取可验证事实；
-- **Understand**：由确定性运行时把事实映射到现行规则；
-- **Decide**：输出受控结论与阻塞项；
-- **Monitor**：给出下一观察条件；
+- **Observe**：读取并验证事实；
+- **Understand**：LLM 结合事实、政策和研究理解变化；
+- **Decide**：LLM 形成结论、理由、阻塞项与下一观察条件；
+- **Monitor**：跟踪使结论失效或需要复核的条件；
 - **Execute**：仅在存在单次所有者授权时，经 Execution Runtime 执行并验证。
 
 ## 5. Runtime Architecture
 
-Production 必须使用以下分层，不允许由自然语言回答替代确定性运行时：
-
 ```text
-Broker Adapter
-→ broker-runtime
-→ account reconciliation
-→ deterministic decision engine / DecisionPacket
+Broker / Market Tools
+→ verified facts and calculations
+→ LLM analysis and decision
 → behavioral and procedural controls
 → presentation
 → execution-runtime（仅在存在单次授权时）
@@ -71,16 +60,14 @@ Broker Adapter
 
 职责边界：
 
-- Broker Adapter：把具体 Broker 工具映射成规范化输入；它是适配器，不是 Investment OS 的接口本身；
-- `broker-runtime`：验证来源、能力、新鲜度、币种、账户合计和任务所需数据；自己验证数据，不信任调用者自报 PASS；
-- `account_reconciliation.py`：独立核对 NAV、现金和持仓市值；
-- `DecisionPacket`：保存机器权威的事实、计算、阻塞项、结论和执行权限；
-- renderer 或 LLM：只解释和格式化，不得重算或改写机器权威字段；
-- `execution-runtime`：验证单次授权、能力、提交、权威回读和终态。
+- Broker Adapter 与 `broker-runtime` 验证来源、能力、新鲜度、币种和任务所需数据；
+- `account_reconciliation.py` 独立核对 NAV、现金和持仓市值；
+- 确定性代码负责可机械验证的事实、计算、授权、提交和 read-back verification；
+- LLM 负责选择证据、理解上下文、比较方案、形成结论并解释不确定性；
+- `DecisionPacket` 清楚分开已验证事实、LLM 判断、阻塞项和执行权限；它不是必须覆盖所有投资推理的通用大 schema；
+- `execution-runtime` 验证单次授权、能力、提交、权威回读和终态。
 
-LLM 位于 orchestration 与 presentation 层。它可以调用工具、解释和格式化，但不能替代数据验证、资金计算、权限判断、执行状态机或 read-back verification。
-
-任一必要层缺失、过期、冲突或无法验证，相关任务必须失败关闭。
+原则：**代码验证事实并保护执行，LLM 负责投资判断。** 不为每个分析细节新增规则、字段、状态机或 Skill；只有真实失败证明必要时才增加结构。
 
 ## 6. Core Principles
 
@@ -99,17 +86,17 @@ LLM 位于 orchestration 与 presentation 层。它可以调用工具、解释�
 ### P5 — Runtime Data Is Ephemeral
 运行时数据、授权和执行回执不进入公开仓库。
 
-### P6 — Fail Closed
-关键数据、能力、授权或验证缺失时，停止新的候选或执行。
+### P6 — Fail Closed on Facts and Execution
+关键账户事实、能力、授权或执行验证缺失时，停止相关候选或执行；分析本身可继续明确讨论不确定性。
 
 ### P7 — Owner-Authorized Broker Execution
 任何 Broker 写操作必须绑定当前会话中的一个完整单次操作，并在提交后读取权威状态验证结果。禁止泛化授权、跨操作继承、跨会话继承、静默重试和无人值守执行链。
 
 ### P8 — Every Decision Is Explainable
-每个结论必须给出事实、规则、阻塞项和下一观察条件。
+每个结论必须给出主要事实、理由、重要不确定性、阻塞项和下一观察条件。
 
-### P9 — Reproducible by Construction
-连接器、状态验证、计算、决策、展示和执行相互分离。
+### P9 — Simple by Default
+优先复用现有 Skill 和契约。除非真实缺陷无法用现有结构解决，不新增层级、分类、状态或文件。
 
 ### P10 — Open by Default, Private by Design
 规则和工具尽可能开源；个人数据从架构上排除。
@@ -118,57 +105,60 @@ LLM 位于 orchestration 与 presentation 层。它可以调用工具、解释�
 
 投资规则发生冲突时，依次适用：
 
-1. `00-constitution.md`（宪法：IPS、投资宇宙、目标配置、转型计划、倾斜框架与登记表）
-2. `01-operating-manual.md`（操作手册：日/周/月/季/年流程、日报契约、部署框架、状态重建、IC 清单）
-3. `03-journal.md`（日志与经验）
+1. `00-constitution.md`
+2. `01-operating-manual.md`
+3. `03-journal.md`
 
-`00-constitution.md` 内部冲突按其部分顺序解决；唯一例外沿用旧制：其转型计划部分与 `01-operating-manual.md` 冲突时，以操作手册为准（原 `02-*` 优先于 `03-*` 的顺序不因本次合并改变）。`02-data-contract.md` 约束数据来源、质量与口径，不创造投资参数；数据文件不得自行增加或改变交易规则。
+`02-data-contract.md` 约束数据来源、质量与口径，不创造投资参数。聊天记录、旧报告、截图、人工贴数和 `Research/` 不具有 Production 规则效力。
 
-聊天记录、旧报告、截图、人工贴数和 [source repository research](https://github.com/Zereker/investment-os/tree/master/Research/) 不具有 Production 规则效力。本契约定义产品与运行边界，`agent-execution-contract.md` 定义 Agent 运行程序；二者不得覆盖上述投资规则。
-
-现行政策以默认分支 HEAD 为准——这是规范来源。会话实际读取的是**本次安装所分发的政策文件**，不在运行时另行获取更新；已发布分发的 source commit 由对应 Git tag 在发版时记录。`.plugin-version` 仅用于 Skill / Plugin 分发 SemVer，不表示投资政策版本。会话报告自己运行的分发版本，不得报告一个自行解析出来的 commit，也不得声称已确认该分发是最新的。
+现行政策以默认分支 HEAD 为规范来源；已安装会话读取本次分发的不可变快照，不在运行时自行更新。
 
 ## 8. Daily Product 与每日巡检
 
-主要产品是 `Investment Daily Report`，规范见 `01-operating-manual.md` 日报契约部分。每日巡检不是每日交易；`HOLD` 是完整且成功的结果。
+主要产品是 `Investment Daily Report`。每日巡检不是每日交易；`HOLD` 是完整且成功的结果。
 
-每日巡检必须从受信任 Broker Adapter 获取并验证 `01-operating-manual.md` 每日复盘部分列出的全部端点（含 Account Summary、Balances、Positions、Open Orders、市场输入与警报状态、现金活动，及 Adapter 提供时的 Cash Transactions），完成账户对账、融资与负现金检查、异常持仓分类、订单冲突检查、配置与回撤状态计算，并先生成机器权威 `DecisionPacket`，再由确定性 renderer 或 LLM 形成日报。展示层不得改变结论、金额、阻塞项或执行权限。
+每日巡检必须从受信任 Broker Adapter 获取并验证操作手册要求的账户与市场输入，完成账户对账、融资与负现金检查、异常持仓分类、订单冲突检查、配置与回撤计算，然后由 LLM 基于这些事实形成结构化结论。
 
-关键数据缺失时输出 `DATA INCOMPLETE`，停止新的买卖候选。不得用历史报告、旧快照、截图或人工数字替代实时状态。
+LLM 不得伪造或静默改写已验证账户事实和数学结果，但可以自主解释其意义、比较方案并形成不同于固定公式的投资判断。
+
+关键账户事实缺失时输出 `DATA INCOMPLETE`，阻止依赖这些事实的新买卖候选和执行。不得用历史报告、旧快照、截图或人工数字替代实时状态。
 
 ## 9. 月度执行
 
-月度流程必须在任何部署公式之前通过 `01-operating-manual.md` 月度流程部分的全部前置闸门（能力、新鲜度、物理对账、Open Orders 明确为 `clear`、权威 `F`、回撤状态、政策一致）。`F` 未知或其数据能力不可用、订单状态为 `unknown` 或 `conflicting`、对账超出容差、回撤输入无法验证，均为 `DATA INCOMPLETE`。
+月度流程必须在部署前验证能力、新鲜度、账户对账、Open Orders、权威月度入金 `F`、回撤状态和政策一致性。
 
-缺失 `F` 时不得默认为零；没有入金的月份也必须由权威来源明确确认零。若当前 Adapter 不支持 `cash_transactions`，必须如实声明能力缺口，不得倒推或估算。
+`F` 未知不得默认为零；订单状态不明、账户无法对账或关键回撤输入无法验证时，不得生成依赖这些输入的执行授权。
 
 ## 10. 候选、批准与执行权限
 
-`HOLD`、`WAIT`、`BUY CANDIDATE`、`SELL CANDIDATE`、IC Verdict 或历史批准均不自动形成 Broker 执行权限。
+`HOLD`、`WAIT`、`BUY CANDIDATE`、`SELL CANDIDATE`、LLM 建议、IC Verdict 或历史批准均不自动形成 Broker 执行权限。
 
-Agent 可以执行当前 Adapter 支持的 Broker 操作，但必须同时满足：
+Agent 执行 Broker 操作必须同时满足：
 
 1. 当前会话存在账户所有者明确授权；
-2. 授权绑定一个完整、规范化的单次操作摘要（operation digest）；
-3. 所需 Broker capability 可用；
-4. 数据门、政策门和行为控制门全部通过；
+2. 授权绑定一个完整、规范化的单次操作摘要；
+3. 所需 Broker capability 与账户状态可验证；
+4. 必要数据门、政策门和行为控制门通过；
 5. 只提交一次，不进行静默重试；
-6. 执行后读取权威 Broker 状态；
-7. read-back 与授权操作逐项匹配；
-8. 结果形成临时执行回执并向所有者报告；
-9. 授权不跨操作、不跨会话、不从其他 Agent 或既往批准继承。
+6. 执行后读取权威 Broker 状态并与授权操作匹配；
+7. 授权不跨操作、不跨会话、不从其他 Agent 或既往批准继承。
 
-满足全部条件且 read-back 逐项一致时，终态为 `COMPLETED`。不满足任一条件时，终态必须是 `NOT EXECUTED`、`EXECUTION UNKNOWN`、`VERIFICATION FAILED` 或 `DATA INCOMPLETE`，不得声称成功。
+终态必须如实报告为 `COMPLETED`、`NOT EXECUTED`、`EXECUTION UNKNOWN`、`VERIFICATION FAILED` 或 `DATA INCOMPLETE`。
 
 ## 11. Investment Committee
 
-非例行资金建议、卖出、换仓、规则例外、提高自主倾斜或偏离已发布公式的操作，必须经过仓库定义的完整 IC 流程。
+非例行资金建议、卖出、换仓、规则例外、提高自主倾斜或偏离已发布公式的操作，必须经过现行规则要求的 IC 流程。
 
-IC 批准只表示该候选可以进入执行授权阶段。它不是 Broker 授权，也不能替代当前会话中针对具体操作的所有者明确授权。
+IC 结论不是 Broker 授权，不能替代当前会话中针对具体操作的所有者明确授权。
 
 ## 12. 研究与规则变更
 
-执行过程中不得临时引入指标、改变阈值或更换口径。新策略语义必须进入 [source repository research](https://github.com/Zereker/investment-os/tree/master/Research/)，经过独立研究、书面提案、所有者批准和 Production 文档同步后方可生效。
+LLM 可以在分析中引入相关指标、提出不同解释和挑战现行策略，但必须区分：
+
+- 现行政策下的当前建议；
+- 对现行政策本身的修改建议。
+
+只有后者需要进入 `Research/`、书面提案、所有者批准和 Production 文档同步。一次分析不得静默改变长期政策。
 
 ## 13. Privacy Boundary
 
@@ -176,18 +166,16 @@ IC 批准只表示该候选可以进入执行授权阶段。它不是 Broker 授
 
 允许进入仓库：政策与流程、数学公式、字段定义、synthetic 示例、不含个人状态的研究证据和经过隐私门检查的治理记录。
 
-真实账户数据、订单、成交、执行回执和授权状态仅存在于受信任运行时或当前私有会话。`Decision-Log.md` 只记录长期治理事实和规则理由，不记录账户号、订单号、警报 ID、真实金额、股数或其他私人运行时状态。
-
 ## 14. Change Test
 
 任何功能或 PR 必须回答：
 
 1. 是否提高长期决策质量？
 2. 是否遵守知识与状态分离？
-3. 是否使结论或执行更可重复、更可解释或更安全？
-4. 是否避免引入未经批准的新策略语义？
+3. 是否使事实、结论或执行更可解释、更安全？
+4. 是否可以通过修改现有结构解决，而不是新增结构？
 
-任一答案为否，默认不进入 Production。
+不能明确证明必要的新层级、新分类、新状态、新契约或新 Skill，默认不进入 Production。
 
 ## 15. 验证要求
 
@@ -197,7 +185,7 @@ IC 批准只表示该候选可以进入执行授权阶段。它不是 Broker 授
 bash tests/run-all.sh
 ```
 
-非 LLM 测试通过不等于真实 Agent 行为已验证。只要 clean-session behavior eval 尚未通过，仓库必须继续如实声明：
+非 LLM 测试通过不等于真实 Agent 行为已验证。只要 clean-session behavior eval 尚未通过，仓库必须继续声明：
 
 ```text
 Real Harness behavior: NOT YET VERIFIED
@@ -210,4 +198,4 @@ Real Harness behavior: NOT YET VERIFIED
 
 ## 17. 数据维护边界
 
-仓库不维护行情、ETF成分、issuer或GICS中央数据库。普通巡检不写仓库；运行时数据和普通市场变化只存在于当前会话。只有规则、契约、公开证据或工具发生变化时才提交。
+仓库不维护行情、ETF 成分、issuer 或 GICS 中央数据库。普通巡检不写仓库；运行时数据和普通市场变化只存在于当前会话。只有规则、契约、公开证据或工具发生变化时才提交。
