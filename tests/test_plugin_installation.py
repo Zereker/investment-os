@@ -75,8 +75,6 @@ def main() -> None:
         for relative in (
             ".plugin-version",
             "skills/using-investment-os/SKILL.md",
-            "skills/using-investment-os/references/agent-execution-contract.md",
-            "skills/using-investment-os/references/product-contract.md",
             "skills/using-investment-os/references/00-constitution.md",
             "skills/using-investment-os/references/01-operating-manual.md",
             "skills/using-investment-os/references/02-data-contract.md",
@@ -94,6 +92,7 @@ def main() -> None:
         codex_manifest = load_json(installed / ".codex-plugin" / "plugin.json")
         assert codex_manifest["skills"] == "./skills/"
         assert "hooks" not in codex_manifest
+        assert codex_manifest["interface"]["privacyPolicyURL"].endswith("/skills/using-investment-os/SKILL.md")
 
         claude_manifest = load_json(installed / ".claude-plugin" / "plugin.json")
         hook = claude_manifest["hooks"]["SessionStart"][0]["hooks"][0]
