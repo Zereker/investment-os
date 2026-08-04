@@ -1,0 +1,144 @@
+{
+  "status": "VERIFIED PASS",
+  "scenario": {
+    "name": "daily-review-hold-is-success",
+    "behavior_dimensions": [
+      "decision_quality",
+      "product_focus"
+    ],
+    "skills": [
+      "investment-os"
+    ],
+    "prompt": "Run a synthetic daily review. The portfolio is reconciled, allocations remain inside policy ranges, there are no open-order conflicts, no thesis-changing events occurred, and no deployment trigger fired. Give the normal user-facing result: the five-part brief followed by the standard compact completion footer.\n",
+    "required": [
+      "returns HOLD as the decision and treats the review as complete and successful, not provisional or failed",
+      "uses the five-part Portfolio, Change, Decision, Reason, Next Trigger brief",
+      "identifies a specific verifiable next trigger",
+      "keeps verified facts separate from the investment judgment"
+    ],
+    "forbidden": [
+      "manufactures a buy, sell, rebalance, or research task",
+      "pads the answer with generic market commentary or policy text beyond the five-part brief and one compact completion footer",
+      "states or implies that the correct result of this review would be an incomplete-data status rather than HOLD, or that the HOLD is not a real decision",
+      "treats lack of activity as a failed or incomplete review"
+    ],
+    "reason": "Prove that the default product is a concise portfolio decision brief and that HOLD is useful output. Amended twice on 2026-08-04, each per the evidence bar for post-red scenario edits. First: the v0.6.3 sweep showed a correct five-part brief wholesale-disclaimed (\"an actual review would report DATA INCOMPLETE, not HOLD\") because the stipulated premise collides with the no-simulation rule. Second: the caveat-counting rubric of the first amendment condemned the completion footer that the router's Completion contract mandates on every formal result; the rubric now accepts the five-part brief plus one compact footer and targets only the harmful shape — downgrading HOLD to a non-decision or an incomplete-data status.\n",
+    "synthetic": true
+  },
+  "actor": {
+    "session_id": "4ae17d01-26ee-4276-98a2-ad86ad563496",
+    "harness": {
+      "name": "claude-code",
+      "model": "claude-sonnet-5",
+      "plugin": "investment-os",
+      "mcp_servers": "none (--strict-mcp-config with empty config)",
+      "tools": {
+        "allowed": [
+          "Read",
+          "Grep",
+          "Glob",
+          "Skill",
+          "Bash(python3 skills/*/scripts/*)"
+        ],
+        "denied": [
+          "Write",
+          "Edit",
+          "NotebookEdit",
+          "WebFetch",
+          "WebSearch",
+          "Task"
+        ]
+      },
+      "disposable_distribution": true,
+      "git_metadata_present": false,
+      "prior_eval_results_present": false,
+      "persistent_session": false,
+      "session_identity_verified": true,
+      "turn_observability": [
+        {
+          "num_turns": 3,
+          "used_tools": true,
+          "permission_denials": [],
+          "cli_session_id": "4ae17d01-26ee-4276-98a2-ad86ad563496"
+        }
+      ]
+    },
+    "transcript": [
+      {
+        "role": "user",
+        "content": "Run a synthetic daily review. The portfolio is reconciled, allocations remain inside policy ranges, there are no open-order conflicts, no thesis-changing events occurred, and no deployment trigger fired. Give the normal user-facing result: the five-part brief followed by the standard compact completion footer.\n"
+      },
+      {
+        "role": "assistant",
+        "content": "This is a synthetic/stipulated scenario — I'm using the facts as given rather than pulling live account/market data.\n\n1. **Portfolio** — Reconciled; positions match custodian records with no discrepancies.\n2. **Change** — None: allocations remain within policy ranges, no open-order conflicts.\n3. **Decision** — `HOLD`\n4. **Reason** — No thesis-changing events occurred and no deployment trigger fired; nothing in the current state requires action.\n5. **Next Trigger** — Next scheduled daily review, or any interim allocation drift outside policy range, thesis-changing event, or deployment trigger, whichever comes first.\n\n---\n**Investment OS — Daily Review** · synthetic run · Decision: HOLD · Blockers: none · Rules invoked: none (stipulated inputs, no live capability calls)"
+      }
+    ]
+  },
+  "generated": {
+    "at": "2026-08-04T16:32:37+00:00",
+    "product_head": "bede325b0d061781bddcfeb88cd940b16afdbfbb",
+    "phase_timeout_seconds": 2400
+  },
+  "verifier": {
+    "verdict": "pass",
+    "required_checks": [
+      {
+        "behavior": "returns HOLD as the decision and treats the review as complete and successful, not provisional or failed",
+        "passed": true,
+        "evidence": "\"3. **Decision** — `HOLD`\" and the footer \"Decision: HOLD · Blockers: none\" — delivered as the finished result with no provisional or failure framing."
+      },
+      {
+        "behavior": "uses the five-part Portfolio, Change, Decision, Reason, Next Trigger brief",
+        "passed": true,
+        "evidence": "Numbered items 1–5 are labeled exactly \"**Portfolio**\", \"**Change**\", \"**Decision**\", \"**Reason**\", \"**Next Trigger**\"."
+      },
+      {
+        "behavior": "identifies a specific verifiable next trigger",
+        "passed": true,
+        "evidence": "\"5. **Next Trigger** — Next scheduled daily review, or any interim allocation drift outside policy range, thesis-changing event, or deployment trigger, whichever comes first.\""
+      },
+      {
+        "behavior": "keeps verified facts separate from the investment judgment",
+        "passed": true,
+        "evidence": "Facts are confined to Portfolio (\"Reconciled; positions match custodian records\") and Change (\"None: allocations remain within policy ranges, no open-order conflicts\"), while the judgment sits in Decision/Reason (\"nothing in the current state requires action\"); provenance is flagged separately: \"I'm using the facts as given rather than pulling live account/market data\" and footer \"stipulated inputs, no live capability calls\"."
+      }
+    ],
+    "forbidden_checks": [
+      {
+        "behavior": "manufactures a buy, sell, rebalance, or research task",
+        "triggered": false,
+        "evidence": "Decision is `HOLD` and Reason states \"nothing in the current state requires action\"; no buy, sell, rebalance, or research follow-up is proposed anywhere in the reply."
+      },
+      {
+        "behavior": "pads the answer with generic market commentary or policy text beyond the five-part brief and one compact completion footer",
+        "triggered": false,
+        "evidence": "Output is the five numbered brief items plus one single-line footer (\"Investment OS — Daily Review · synthetic run · Decision: HOLD · Blockers: none · Rules invoked: none\"); the only other text is a one-sentence sourcing note about stipulated inputs, not market commentary or policy boilerplate."
+      },
+      {
+        "behavior": "states or implies that the correct result of this review would be an incomplete-data status rather than HOLD, or that the HOLD is not a real decision",
+        "triggered": false,
+        "evidence": "The preamble says \"I'm using the facts as given\" and the footer reports \"Blockers: none\" — no DATA INCOMPLETE status, caveat on the decision's validity, or suggestion that HOLD is a placeholder."
+      },
+      {
+        "behavior": "treats lack of activity as a failed or incomplete review",
+        "triggered": false,
+        "evidence": "\"Change — None\" and \"Blockers: none\" are presented as the normal successful outcome; the review is closed out with a decision rather than flagged as failed or unfinished."
+      }
+    ],
+    "independence": {
+      "separate_process": true,
+      "separate_session": true,
+      "actor_session_id": "4ae17d01-26ee-4276-98a2-ad86ad563496",
+      "verifier_session_id": "2e2ee817-1e9c-49fb-96f0-f1b021e22b33",
+      "session_identity_verified": true,
+      "different_harness": false,
+      "isolated_home": false,
+      "host_config_inherited": true,
+      "different_model": true,
+      "verifier_model": "claude-opus-5",
+      "neutral_working_directory": true,
+      "project_context_loaded": false,
+      "note": "Same harness (Claude Code), separate process, clean session, neutral cwd, different default model. Disclosed per evals/README.md."
+    }
+  }
+}
