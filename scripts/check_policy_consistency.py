@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Test executable policy mathematics and the public-repository privacy boundary."""
 
+from __future__ import annotations
+
 from math import isfinite, nan, inf
 from pathlib import Path
 import importlib.util

@@ -345,7 +345,7 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
         if res["consumed"]:
             print(f"  → 本次消耗档位 {', '.join(res['consumed'])}，共释放 {res['released_w']:.1%} of NAV"
                   f"（绝对下限 {res['crisis_floor_w']:.2%}）")
-            print(f"     全部消耗档位必须在 Journal 记为本周期 EXECUTED，并更新 IBKR 警报指针")
+            print(f"     全部消耗档位必须由 IBKR 成交记录确认，并更新 IBKR 警报指针")
 
     print(f"\n[3b] SOXX 回补至目标（v4.5）")
     headroom_w = min(A_EXECUTION_CAP, A_STAGE) - res["a_actual"]

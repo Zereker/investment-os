@@ -11,26 +11,25 @@
 - 第二部分 数据源注册表：允许进入 Production 的来源和失败处理。
 - 第四部分 字段字典：字段定义、口径与缺失值规则。
 - 第三部分 数据质量闸门：Green / Yellow / Red 数据质量闸门。
-- 第五部分 穿透核查程序：季度穿透手工核查程序与记录模板（v4.0 起取代 Bundle 验证器）。
-- `records/lookthrough-YYYY-MM-DD.md`：按观察日期保存不可变的季度核查记录。
+- 第五部分 穿透核查程序：季度穿透手工核查程序（v4.0 起取代 Bundle 验证器）。
 
-运行时数据由已登记的专业来源分别提供，仓库不维护重复的中央证券数据库。普通数据变化不更新项目；只有估值快照与季度核查记录按只增不改原则存档。
+运行时数据由已登记的专业来源分别提供，仓库不维护重复的中央证券数据库，也不保存估值或季度核查快照。事实只在受信任的私有运行时或当前私有会话中使用；后续无法取得可信证据时必须重新读取，不得回退到仓库副本。
 
-### 每周估值快照流程
+### 每周估值读取流程
 
 1. 打开已登记的基金管理人官方页面。
 2. 记录 `observed_at`、官方 `source_as_of`、字段标签和值。
 3. 按数据质量闸门评级。
 4. 缺失字段写 `N/A`，不得估算或沿用旧值。
-5. 通过 PR 写入快照；历史快照不覆盖，只新增。
+5. 结果只在当前私有会话中报告，不写入仓库。
 
 ### 季度穿透核查
 
-按本文件第五部分手工完成，记录保存为 `records/` 下的日期前缀参考文件。核查结论只限制自主倾斜新增或触发复核，不自动改变注册表、不授权交易。
+按本文件第五部分手工完成。核查证据只存在于受信任的私有运行时或当前私有会话；没有当季可信证据时重新核查，无法重算则标记 `DATA INCOMPLETE`。核查结论只限制自主倾斜新增或触发复核，不自动改变注册表、不授权交易。
 
 ### Production 边界
 
-快照只提供事实数据。是否影响交易由 canonical `SKILL.md`、`00-constitution.md` 和 `01-operating-manual.md` 决定。数据文件不得自行增加或改变交易规则。
+运行时事实不创建政策。是否影响交易由 canonical `SKILL.md`、`00-constitution.md` 和 `01-operating-manual.md` 决定。
 
 ---
 
@@ -68,7 +67,7 @@
 | SPYM Holdings / Sector | State Street SPYM 官方页 | 无 | 每季度核查及倾斜追加前 | Green | 缺失时季度核查`DATA INCOMPLETE`，倾斜追加冻结 |
 | QQQM Holdings / Sector | Invesco QQQM 官方页 | 无 | 同上 | Green | 同上 |
 | SOXX Holdings / Sector | iShares SOXX 官方页 | 无 | 同上 | Green | 缺失时 SOXX 保持禁止追加 |
-| Look-through Concentration | IBKR 组合权重 + 官方行业/持仓表 + 本文件第五部分手工核查 | 源仓库 `scripts/fetch_etf_data.py`（辅助计算，不随插件分发） | 每季度及倾斜追加前 | Green（Derived） | 手工加权求和并存档；缺失或口径不明时倾斜追加冻结 |
+| Look-through Concentration | IBKR 组合权重 + 官方行业/持仓表 + 本文件第五部分手工核查 | 源仓库 `scripts/fetch_etf_data.py`（辅助计算，不随插件分发） | 每季度及倾斜追加前 | Green（Derived） | 在当前私有会话加权核查；缺失或口径不明时倾斜追加冻结 |
 | ETF Holdings（辅助采集） | SSGA官方xlsx（SPYM全量） | stockanalysis.com聚合页（QQQM/SOXX前25，Yellow） | 季度核查时 | Yellow | 聚合源仅作核查辅助与下界计算；Green质量须官方页面交叉核对；yfinance在受限网络不可用时不得反复重试 |
 
 ### 变更治理
@@ -94,7 +93,7 @@
 - 字段定义、口径和日期可识别；
 - 数据未超过规定刷新周期；
 - 没有已知来源冲突。
-- 穿透核查数值逐项来自管理人官方行业/持仓表，并在核查记录中保存来源 URL 与 `source_as_of`；缺少官方分类时记 `N/A`，不得自行补写。
+- 穿透核查数值逐项来自管理人官方行业/持仓表，并在当前私有会话中保留来源 URL 与 `source_as_of`；缺少官方分类时记 `N/A`，不得自行补写。
 
 Green 数据可以进入其登记的 Production 计算。
 
@@ -126,7 +125,7 @@ Red 数据不得进入依赖该字段的计算。影响按字段局部化：
 - SPYM历史最高收盘序列为Red：当日不评估回撤部署分档，已执行档位记录不变。
 - Policy Benchmark现金模型的当月利率、门槛或月初净值为Red：当期Benchmark为`N/A / DATA INCOMPLETE`，不得静默使用0%。
 
-### 每次快照必须包含
+### 每次事实读取必须包含
 
 - `observed_at`
 - `source_as_of`
@@ -144,7 +143,7 @@ Red 数据不得进入依赖该字段的计算。影响按字段局部化：
 |---|---|
 | IBKR 账户、持仓、订单 | 本次巡检实时读取 |
 | 市场价格 | 本次巡检实时读取，注明市场状态 |
-| ETF 持仓 / 行业穿透 | 管理人最新公布版本，并记录 `source_as_of`；SOXX新增须存在当季有效的穿透手工核查记录 |
+| ETF 持仓 / 行业穿透 | 管理人最新公布版本，并在当前私有会话保留 `source_as_of`；SOXX新增须存在当季有效的穿透手工核查证据 |
 
 ---
 
@@ -297,29 +296,28 @@ W_{semi}=\sum_{i:\ normalized\_industry(i)=\text{Semiconductors \& Semiconductor
 
 ### 缺失值规则
 
-- Markdown 快照使用 `N/A`，不得写 `0`。
+- 当前核查中的缺失字段使用 `N/A`，不得写 `0`。
 - 缺失或 Red 穿透字段不得被当作零暴露；冻结自主倾斜新增，不阻断 Core 例行路径。
-- 旧快照可用于审计，不可冒充当前价格或穿透暴露。
+- 旧结果不可冒充当前价格或穿透暴露；没有可信私有证据时必须重新核查。
 
 ---
 
 ## 第五部分：季度穿透手工核查（Look-through Manual Check）
 
-v4.0 起本核查表取代 Look-through Evidence Bundle 验证器。目标用时 15 分钟。它计算组合合并穿透暴露并对照宪法护栏；通过或失败都不自动改变注册表、不授权交易。
+v4.0 起本核查程序取代 Look-through Evidence Bundle 验证器。目标用时 15 分钟。它计算组合合并穿透暴露并对照宪法护栏；通过或失败都不自动改变注册表、不授权交易。
 
 ### 频率与时效
 
 - 每季度一次；任何 SOXX / 自主倾斜追加 IC 前必须存在当季有效核查。
-- 三只 ETF 的行业/持仓数据须在同一核查日读取各自最新官方版本，记录各自 `source_as_of`。
+- 三只 ETF 的行业/持仓数据须在同一核查日读取各自最新官方版本，并在当前私有会话保留各自 `source_as_of`。
 
 ### 自动化辅助（推荐先跑）
 
-在源仓库运行（季度核查是治理活动，核查记录经 PR 进仓；工具不随插件分发，政策允许全手工回退）：
+在源仓库运行（工具只辅助当前私有核查，不写入仓库，也不随插件分发；政策允许全手工回退）：
 
 ```bash
 python3 scripts/fetch_etf_data.py --scenario current            # 目标权重
 python3 scripts/fetch_etf_data.py --weights spym=…,qqqm=…,soxx=…,cash=…   # 实际权重
-python3 scripts/fetch_etf_data.py --scenario current --markdown # 生成快照粘贴块
 ```
 
 脚本自动完成:SPYM 官方全量持仓(SSGA xlsx,Green)、QQQM/SOXX 前25(聚合源,Yellow)、半导体合并下界+尾部上界、发行人合并与护栏对照。**IT 行业合并值仍须按第 2 步官方行业表手工加权**;需要 Green 质量时用官方页面交叉核对 QQQM/SOXX 数值。脚本失败或数字异常时,回退到下方全手工步骤。
@@ -336,24 +334,7 @@ python3 scripts/fetch_etf_data.py --scenario current --markdown # 生成快照�
    - `Semi_combined = Σ w_f × Semi_f`（同上）；
    - 对前 10 大发行人：`W_issuer = Σ w_f × h_{f,issuer}`（GOOGL/GOOG 等多股类合并为同一发行人）。
 4. 对照护栏：IT 45% WARN / 50% 冻结自主倾斜新增；半导体 15% 倾斜新增须 IC；单一发行人 8% WARN / 10% 冻结。
-5. 把下方记录模板保存为 `records/lookthrough-YYYY-MM-DD.md`，通过 PR 提交；历史记录只增不改。
-
-### 记录模板
-
-```markdown
-# Look-through Check — YYYY-MM-DD
-
-- observed_at:
-- 组合权重 w（来自实时 IBKR）：cash / SPYM / QQQM / SOXX / other =
-- SPYM：source_url / source_as_of / IT% / Semi% / 前10大
-- QQQM：source_url / source_as_of / IT% / Semi% / 前10大
-- SOXX：source_url / source_as_of / Semi%≈100% 说明 / 前10大
-- IT_combined =        ｜ 护栏结论：
-- Semi_combined =      ｜ 护栏结论：
-- Top issuers combined（≥4% 全列）｜ 护栏结论：
-- 未分类/近似处理说明（QQQM 尾部、直接持仓等）：
-- 总结论：`PASS / WARN / FREEZE-TILT / DATA INCOMPLETE`
-```
+5. 在当前私有会话中报告来源日期、计算结果、近似处理与总结论；不得把账户权重或合并暴露写入仓库。后续没有可信私有证据时重新核查。
 
 ### 失败处理
 

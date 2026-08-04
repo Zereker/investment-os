@@ -194,7 +194,10 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(len(records), 2)
         self.assertEqual([record["session_flag"] for record in records], ["--session-id", "--resume"])
         self.assertEqual({record["requested_session"] for record in records}, {payload["session_id"]})
-        self.assertEqual({record["cwd"] for record in records}, {records[0]["plugin"]})
+        self.assertEqual(
+            {Path(record["cwd"]).resolve() for record in records},
+            {Path(records[0]["plugin"]).resolve()},
+        )
         self.assertTrue(all(not record["cwd_has_git"] for record in records))
         self.assertTrue(all(not record["plugin_has_git"] for record in records))
         self.assertTrue(all(not record["plugin_has_results"] for record in records))
@@ -287,7 +290,9 @@ class AdapterTests(unittest.TestCase):
             self.assertIn(flag, args)
         self.assertEqual(args[args.index("--sandbox") + 1], "read-only")
         self.assertFalse(record["cwd_has_git"])
-        self.assertEqual(record["cwd"], record["configured_cwd"])
+        self.assertEqual(
+            Path(record["cwd"]).resolve(), Path(record["configured_cwd"]).resolve()
+        )
         self.assertTrue(record["schema_exists"])
         self.assertTrue(record["sqlite_home"].startswith(record["home"]))
         self.assertNotEqual(record["home"], str(Path.home()))

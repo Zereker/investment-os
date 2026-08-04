@@ -22,7 +22,6 @@ Usage:
   python3 scripts/fetch_etf_data.py --scenario current      # + combined @ Cash15/SPYM51/QQQM28/SOXX6
   python3 scripts/fetch_etf_data.py --scenario final-void   # + combined @ voided 15% end-state (reference)
   python3 scripts/fetch_etf_data.py --weights spym=0.492,qqqm=0.195,soxx=0.078,cash=0.235
-  python3 scripts/fetch_etf_data.py --scenario current --markdown   # snapshot block for skills/using-investment-os/references/records/lookthrough-YYYY-MM-DD.md
 
 Output quality is labeled per source. This tool reports facts and guardrail
 comparisons only; it never changes the Registry and never authorizes trades.
@@ -144,7 +143,6 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--scenario", choices=sorted(SCENARIOS), help="preset portfolio weights")
     ap.add_argument("--weights", help="custom weights, e.g. spym=0.49,qqqm=0.20,soxx=0.08,cash=0.23")
-    ap.add_argument("--markdown", action="store_true", help="emit snapshot block for skills/using-investment-os/references/records/lookthrough-YYYY-MM-DD.md")
     args = ap.parse_args()
 
     funds: dict[str, dict] = {}
@@ -214,21 +212,6 @@ def main() -> None:
         for t, v in top_issuers:
             flag = " ≥10 FREEZE" if v >= GUARD_ISSUER_FREEZE else (" >8 WARN" if v > GUARD_ISSUER_WARN else "")
             print(f"     {t:<12}{v:6.2f}%{flag}")
-
-        if args.markdown:
-            print("\n---8<--- 保存为 skills/using-investment-os/references/records/lookthrough-YYYY-MM-DD.md ---")
-            print(f"# Look-through Check — {date.today().isoformat()}\n")
-            print(f"- observed_at: {date.today().isoformat()}")
-            print(f"- 组合权重 w: " + ", ".join(f"{k}={v:.1%}" for k, v in weights.items()))
-            for sym in ("SPYM", "QQQM", "SOXX"):
-                f = funds[sym]
-                print(f"- {sym}: {f['src']} / source_as_of {f['as_of']} / quality {f['quality']}")
-            print(f"- Semi_combined(已知下界) = {semi_known:.1f}% ｜ 未覆盖尾部 ≤{tail:.1f}pp ｜ 结论: "
-                  + ("倾斜新增须IC" if semi_known >= GUARD_SEMI_IC else "见上界分析"))
-            print("- IT_combined = 手工填写（官方行业表加权）｜ 结论:")
-            print("- Top issuers combined: " + ", ".join(f"{t} {v:.1f}%" for t, v in top_issuers[:5]))
-            print("- 未分类/近似处理说明: QQQM/SOXX 仅 top-25（聚合源）；SPYM 官方全量")
-            print("- 总结论: PASS / WARN / FREEZE-TILT / DATA INCOMPLETE（人工判定）")
 
     if errors:
         sys.exit(1)
