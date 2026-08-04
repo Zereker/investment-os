@@ -1,6 +1,6 @@
 # 操作手册（Operating Manual）
 
-本文件是 Investment OS 全部操作流程的唯一权威：每日复盘与日报、周度复盘、月度流程、季度流程、年度审核、部署框架、状态重建与交易前决策清单。投资参数与阈值以 `00-constitution.md` 为唯一权威；本文件与其冲突时以宪法为准。
+本文件是 Investment OS 全部操作流程的唯一权威：每日复盘与日报、周度行为检查点、月度流程、季度流程、年度审核、部署框架、状态重建与交易前决策清单。投资参数与阈值以 `00-constitution.md` 为唯一权威；本文件与其冲突时以宪法为准。
 
 ---
 
@@ -229,51 +229,11 @@ Investment OS 永不替代该确认。
 
 ---
 
-## 第二部分：周度复盘（Weekly Review Workflow）
+## 第二部分：周度行为检查点（Weekly Behavior Checkpoint）
 
-周度复盘用于确认 Investment OS 是否可靠运行、整理月度流程输入并暴露需要修复的问题。它不创造交易信号，不修改目标配置，也不替代月度、季度或年度治理。
+周度检查点只以**行为模式**为对象回看一周，不重复每日复盘与月度流程各自覆盖的账户、配置与数据检查（依据见 [source repository research](https://github.com/Zereker/investment-os/blob/master/Research/2026-08-04-weekly-review-compression.md)）。它不创造交易信号，不修改目标配置，也不替代月度、季度或年度治理。
 
-### A. 输入
-
-- 本周 Daily Review 记录
-- 复盘时重新读取的 IBKR Account Summary、Balances、Positions、Open Orders
-- 最新有效的穿透核查记录（`records/lookthrough-YYYY-MM-DD.md`）
-- 登记表（`00-constitution.md`）
-- 本周成交、未完成订单和异常记录
-- 当前转型计划（`00-constitution.md`）的阶段状态
-
-若实时 IBKR 数据未完整读取，周报标记为 `DATA INCOMPLETE`，不得给出新的 BUY / SELL 建议。
-
-### B. 账户完整性
-
-- Net Liquidation、Cash、Settled Cash 与 Gross Position Value 的周内变化
-- Positions 是否出现未解释的数量、成本或合约变化
-- 是否存在融资借款、重复订单、异常碎股或零数量残留
-- Open Orders 是否仍与现行计划一致
-- Daily Review 是否有缺失、失败或使用历史快照冒充实时数据
-
-### C. 配置与转型
-
-- Cash / SPYM / QQQM / SOXX / Legacy 的当前权重，以及 `A_actual`、`A_stage`、`A_execution_cap`、`A_basis`、`U`（定义与阈值见 `00-constitution.md`）
-- SOXX列示生命周期`Hold | Frozen | Exit Review`
-- 与宪法的Cash、QQQM、`SPYM + SOXX + Stage Reserve`袖套和硬上限差异
-- SPYM回撤`DD`、回撤档位状态与本周期已执行的回撤部署
-- 本月累计固定投入、战略基线 \(B\) 与回撤部署
-- 是否出现只能靠季度/年度治理处理的结构性偏差
-
-周度复盘只标记偏差，不因一周波动临时再平衡。SOXX持有状态本身不产生`IC REVIEW`；**提高倾斜**候选只有满足登记表提高倾斜闸门（当季手工核查 + 实时账户 + 完整IC）才可进入`IC REVIEW`。**回补至目标**走月度例行路径，不产生`IC REVIEW`，只在月度流程第 4 步评估。
-
-### D. 数据质量
-
-- IBKR 账户数据是否保持 Green
-- SPYM、QQQM、SOXX 价格的来源、`source_as_of` 与刷新状态
-- 穿透持仓与行业数据是否足够支持新增 Alpha 审查
-- Yellow / Red 字段及其影响范围
-- 是否需要新增数据快照、修复解析或更新 Data Registry
-
-缺失值不得用旧值或估算值填补，也不得据此产生任何新增结论。
-
-### E. 行为与执行
+### A. 行为与执行
 
 - 本周是否有未经过相应交易路径的账户操作
 - 是否出现追涨、接飞刀、盘中临时起意或规则漂移
@@ -282,16 +242,11 @@ Investment OS 永不替代该确认。
 - SOXX 是否出现未批准追加；回撤部署是否严格按档执行
 - 实际执行是否与批准的方向、数量、限价和有效期一致
 - 多数日子的 `HOLD` 是否被当作有效结果
+- Research 边界：本周新增研究是否全部留在源码仓库的 [source repository research](https://github.com/Zereker/investment-os/tree/master/Research/)；是否有研究指标被误写入 Production 输出
 
-### F. Research 边界
+### B. 工作项输出
 
-- 本周新增研究是否全部留在源码仓库的 [source repository research](https://github.com/Zereker/investment-os/tree/master/Research/)
-- 是否有研究指标被误写入 Production 输出
-- 需要升级为正式 Proposal 的问题，仅记录标题、证据缺口和负责人；不得在周报中直接生效
-
-### G. 周度输出
-
-周报只允许形成以下工作项：
+周度检查点只允许形成以下工作项：
 
 - `NO ACTION`：系统正常，无额外动作。
 - `MONTHLY INPUT`：记录到下次月度流程，不提前交易。
