@@ -33,6 +33,12 @@ The plugin distribution has a separate SemVer read from `.plugin-version` and co
 
 **Plugin distribution version is not an Investment OS policy version.** Policy history belongs in `Decision-Log.md`; defects belong in `BUGLOG.md`; concrete code history belongs in commits and pull requests.
 
+## Release procedure
+
+1. A distribution change (anything under `plugins/investment-os/`) bumps `.plugin-version` and the three manifests in the same PR.
+2. After that PR merges, push an annotated tag `v<version>` at the merge commit on the default branch. The tag is the provenance record: auditors resolve version → tag → commit offline.
+3. Backfilled: `v0.5.0` and `v0.5.1` are tagged at their introducing merge commits. Versions before 0.5.0 predate the plugin-native layout and were never released as installable distributions (`0.1.0` was never tagged, per Decision-Log 2026-08-02); they intentionally carry no tags.
+
 ## Invariants
 
 1. The repository default-branch HEAD is the only policy authority.

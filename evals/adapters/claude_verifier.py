@@ -231,6 +231,12 @@ def main() -> int:
                 "verifier_session_id": verified_session,
                 "session_identity_verified": True,
                 "different_harness": False,
+                # Truthful: this verifier runs with the caller's HOME. Tools
+                # are disabled and the cwd is neutral, but host-level claude
+                # config can reach the judge, so a same-harness sweep stays
+                # NOT VERIFIED at the aggregate gate by design.
+                "isolated_home": False,
+                "host_config_inherited": True,
                 "different_model": MODEL != os.environ.get("EVAL_ACTOR_MODEL", "claude-sonnet-5"),
                 "verifier_model": MODEL,
                 "neutral_working_directory": True,

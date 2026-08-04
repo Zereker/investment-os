@@ -18,6 +18,7 @@ import os
 import shlex
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -30,15 +31,44 @@ ROOT = Path(__file__).resolve().parent
 NOT_VERIFIED_EXIT = 3
 
 
-def run_command(command: str, stdin: str, timeout: int) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        shlex.split(command),
-        input=stdin,
-        text=True,
-        capture_output=True,
-        timeout=timeout,
-        check=False,
-    )
+def run_command(command: str, stdin: str, timeout: int, label: str) -> subprocess.CompletedProcess[str]:
+    try:
+        return subprocess.run(
+            shlex.split(command),
+            input=stdin,
+            text=True,
+            capture_output=True,
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        # TimeoutExpired is not a RuntimeError: uncaught it used to escape as a
+        # raw traceback, skipping the designed failure paths and discarding the
+        # partial output. Preserve the evidence, then fail through the same
+        # protocol-failure route as any other adapter error.
+        def as_text(value: Any) -> str:
+            if isinstance(value, bytes):
+                return value.decode("utf-8", "replace")
+            return value or ""
+
+        evidence = subprocess.CompletedProcess(
+            exc.cmd, -1, as_text(exc.stdout),
+            as_text(exc.stderr) + f"\n[{label} timed out after {timeout}s]",
+        )
+        persist_process_evidence(label, evidence)
+        raise RuntimeError(f"{label} command timed out after {timeout}s") from exc
+
+
+def git_head() -> str | None:
+    """Best-effort product commit for provenance; None outside a git checkout."""
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True,
+            capture_output=True, timeout=10, check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    return result.stdout.strip() or None if result.returncode == 0 else None
 
 
 def persist_process_evidence(label: str, result: subprocess.CompletedProcess[str]) -> None:
@@ -149,7 +179,8 @@ def main() -> None:
     parser.add_argument("--actor-command", required=True, help="independent actor adapter reading JSON from stdin")
     parser.add_argument("--verifier-command", help="independent verifier adapter reading JSON from stdin")
     parser.add_argument("--actor-only", action="store_true", help="debug actor without claiming verification")
-    parser.add_argument("--timeout", type=int, default=900)
+    parser.add_argument("--timeout", type=int, default=3600,
+                        help="per-phase timeout in seconds, applied to the actor and the verifier separately")
     parser.add_argument("--output", type=Path, help="optional synthetic result JSON path")
     args = parser.parse_args()
 
@@ -175,7 +206,7 @@ def main() -> None:
         "require_single_persistent_session": len(turns) > 1,
     }
     try:
-        actor_process = run_command(args.actor_command, json.dumps(actor_input), args.timeout)
+        actor_process = run_command(args.actor_command, json.dumps(actor_input), args.timeout, "actor-adapter")
         persist_process_evidence("actor-adapter", actor_process)
         actor_result = parse_json_output("actor", actor_process)
         validate_actor_result(actor_result, len(turns))
@@ -186,6 +217,13 @@ def main() -> None:
         "status": "NOT VERIFIED" if args.actor_only else "PENDING VERIFICATION",
         "scenario": scenario,
         "actor": actor_result,
+        # Provenance: stored results used to carry no timestamp or product
+        # commit, so a stale file left by a failed run read as fresh evidence.
+        "generated": {
+            "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "product_head": git_head(),
+            "phase_timeout_seconds": args.timeout,
+        },
     }
     if args.actor_only:
         persist(args.output, payload)
@@ -204,7 +242,7 @@ def main() -> None:
         },
     }
     try:
-        verifier_process = run_command(args.verifier_command, json.dumps(verifier_input), args.timeout)
+        verifier_process = run_command(args.verifier_command, json.dumps(verifier_input), args.timeout, "verifier-adapter")
         persist_process_evidence("verifier-adapter", verifier_process)
         verifier_result = parse_json_output("verifier", verifier_process)
         validate_verifier_result(verifier_result, scenario, actor_result["session_id"])

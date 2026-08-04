@@ -81,12 +81,24 @@ TIERS = ((0.10, "T1", 0.0150),
 ABSOLUTE_FLOOR = 0.0     # cash never goes below this (+U) via drawdown deployment
 LADDER = sum(t[2] for t in TIERS)   # 15pp: the whole cash position is ammunition
 PLAN_END = (2028, 12)  # strategic baseline planned completion month
+# A fetched close older than this cannot define today's drawdown tier; the
+# registry localizes the failure: a stale series only pauses tier evaluation.
+MAX_DD_AGE_DAYS = 7
 
 
 def months_remaining(today: date) -> int:
     """R: monthly execution slots left through PLAN_END inclusive, minimum 1."""
     n = (PLAN_END[0] - today.year) * 12 + (PLAN_END[1] - today.month) + 1
     return max(n, 1)
+
+
+def dd_series_is_fresh(last_day: str, today: date) -> bool:
+    """True when the series' last close is recent enough to define today's tier."""
+    try:
+        last = date.fromisoformat(str(last_day)[:10])
+    except ValueError:
+        return False
+    return 0 <= (today - last).days <= MAX_DD_AGE_DAYS
 
 
 def fetch_drawdown(symbol: str = "spym") -> tuple[float, str, str]:
@@ -515,6 +527,13 @@ def self_test() -> None:
                 lookthrough_current=True)
     assert r["restore"] == 0.0, "restore fired while SOXX sits above the hard cap"
 
+    # 12'. a stale fetched series must not define today's tier
+    assert dd_series_is_fresh("2026-07-30", date(2026, 8, 1)), "2-day-old close wrongly stale"
+    assert dd_series_is_fresh("2026-07-25", date(2026, 8, 1)), "boundary 7-day close wrongly stale"
+    assert not dd_series_is_fresh("2026-07-24", date(2026, 8, 1)), "8-day-old close wrongly fresh"
+    assert not dd_series_is_fresh("garbage", date(2026, 8, 1)), "unparseable date wrongly fresh"
+    assert not dd_series_is_fresh("2026-09-01", date(2026, 8, 1)), "future-dated close wrongly fresh"
+
     # 11. the restore never competes with the Core channels: with U carved out of
     # both S and the drawdown floor, adding a restore must leave D/B/tranche alone
     args = (100_000, 30_000, 30_000, 15_000, 3_000, 3_000, 0.28, set(), d0)
@@ -546,7 +565,7 @@ def self_test() -> None:
     assert r["restore"] > 0, "piercing fixture must produce a restore candidate"
     assert not r["floor_ok"], "a floor-piercing trade escaped the gate"
 
-    print("monthly_execution self-test passed (14 invariants)")
+    print("monthly_execution self-test passed (15 invariants)")
 
 
 def main() -> int:
@@ -617,6 +636,14 @@ def main() -> int:
             print(f"警告：回撤序列拉取失败（{exc}）——本月不评估分档，D / B 不受影响\n",
                   file=sys.stderr)
             dd = None
+        else:
+            print("提示：DD 来自聚合源（Yellow）；生产触发以 IBKR/官方序列的 --dd 为准",
+                  file=sys.stderr)
+            if not dd_series_is_fresh(dd_as_of, today):
+                print(f"警告：回撤序列最后收盘 {dd_as_of} 超过 {MAX_DD_AGE_DAYS} 天"
+                      "——按注册表局部化规则，本月不评估分档，D / B 不受影响\n",
+                      file=sys.stderr)
+                dd = None
 
     tiers_known = args.tiers_executed is not None
     executed = set()

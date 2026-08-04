@@ -187,7 +187,10 @@ def main() -> int:
                 env=env,
                 text=True,
                 capture_output=True,
-                timeout=args.timeout + 30,
+                # run.py applies --timeout to the actor and the verifier
+                # SEPARATELY; an outer budget of timeout+30 killed legitimate
+                # runs halfway through the verifier phase.
+                timeout=2 * args.timeout + 60,
                 check=False,
             )
             returncode: int | None = completed.returncode
