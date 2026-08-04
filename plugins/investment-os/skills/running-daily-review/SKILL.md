@@ -1,20 +1,24 @@
 ---
 name: running-daily-review
-description: Use when the user asks what happened in the live portfolio today, what needs attention, or what actions are currently authorized under Production rules.
+description: Use when the user asks what happened in the live portfolio today, what needs attention, or what actions are currently appropriate.
 ---
 
 # Running Daily Review
 
-**REQUIRED SUB-SKILLS:** use `reconstructing-portfolio-state` and `enforcing-behavioral-controls` first.
+Use fresh authoritative account and market inputs. Load `reconstructing-portfolio-state` and `enforcing-behavioral-controls` when the requested review depends on live positions or a possible transaction.
 
-Read the current daily workflow and report contract from the policy files distributed with this skill. Use only fresh authoritative runtime inputs and current executable mirrors.
+The review is a portfolio decision report, not a general market-news digest. Mention news only when it materially changes the portfolio thesis, policy interpretation, risk, or next action. Do not fill the report with headlines that do not change the decision.
 
-The deterministic daily engine must produce a validated `DecisionPacket` before any Markdown or LLM presentation. The packet is authoritative for runtime status, decision, calculations, eligible channels, blockers, next conditions, and execution authority. A renderer may explain or format those fields; it must not recompute, upgrade, downgrade, omit, or replace them.
+Keep verified facts and calculations separate from LLM judgment. Code remains authoritative for broker state, account reconciliation, arithmetic, data availability, authorization and execution status. The LLM selects relevant evidence, interprets the portfolio context, compares alternatives and forms the recommendation.
 
-Pass every required source as an explicit capability record with `status`, `source`, and endpoint-level `observed_at`. An unavailable source carries `null`, not `0`, `{}`, or `[]`; explicit unavailability is a valid `DecisionPacket` outcome, not permission to invent a value. Keep live last prices separate from the last completed daily close, and derive drawdown only from the latter and its dated ATH close.
+The result should answer five things:
 
-Produce the repository-defined daily sections from that packet, clearly separating facts, rule interpretation, candidates, blockers, and next observation conditions. A candidate requires operation-specific owner authorization before execution; it is not standing approval or an order.
+1. What materially changed?
+2. What is the current portfolio state?
+3. What does it mean for the portfolio?
+4. What is the current recommendation or blocker?
+5. What specific condition should be watched next?
 
-If any required state, market input, execution state, or control gate is incomplete, the packet must carry the current fail-closed status and stop new transaction candidates. Never substitute an old report, manual figures, or renderer judgment for the machine decision.
+`HOLD` is a complete successful result. Do not manufacture activity. If missing facts prevent a responsible transaction recommendation, say `DATA INCOMPLETE` for that decision while still explaining what is known and what evidence is missing.
 
-Treat an unavailable alert inventory as `DATA INCOMPLETE`, while an authoritative successful read may legitimately return an empty list. Missing look-through data localizes to the tilt-restore channel. Inspect standing broker automations when the adapter exposes them; an enabled automation that can add an out-of-universe security is a control blocker, but the agent must not change the broker setting.
+A recommendation is not execution authority. Any broker write requires an exact current-session owner authorization and authoritative read-back verification.
