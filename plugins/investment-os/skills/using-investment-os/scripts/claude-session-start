@@ -6,7 +6,7 @@ PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 SKILL_PATH="${PLUGIN_ROOT}/skills/using-investment-os/SKILL.md"
 
 if [ ! -f "$SKILL_PATH" ]; then
-  printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"Investment OS bootstrap unavailable: using-investment-os skill is missing. Do not perform formal Investment OS work."}}\n'
+  printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"Investment OS bootstrap unavailable: the canonical using-investment-os skill is missing. Do not perform formal Investment OS work."}}\n'
   exit 0
 fi
 
@@ -22,5 +22,5 @@ escape_json() {
 }
 
 escaped=$(escape_json "$content")
-context="<INVESTMENT_OS_BOOTSTRAP>\nInvestment OS is installed. Resolve every policy file and deterministic script from this installed plugin distribution, not from the current working directory or a runtime network fetch. Before portfolio, transaction, research, or system-governance work, follow the using-investment-os router below and load every required domain skill. Missing broker or market capability must fail closed.\n\n${escaped}\n</INVESTMENT_OS_BOOTSTRAP>"
+context="<INVESTMENT_OS_BOOTSTRAP>\nInvestment OS is installed as one canonical rule skill. Resolve every policy file and internal deterministic script from this installed plugin distribution, not from the current working directory or a runtime network fetch. Missing broker or market capability must fail closed only the affected path. Follow the canonical skill below.\n\n${escaped}\n</INVESTMENT_OS_BOOTSTRAP>"
 printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' "$context"
