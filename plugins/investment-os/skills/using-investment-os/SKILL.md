@@ -65,7 +65,7 @@ Resolve this installed distribution from this `SKILL.md`, never from the user's 
 - `references/02-data-contract.md` — required sources, freshness, and data gates;
 - `references/03-journal.md` — approved lessons and durable operating context.
 
-The installed files are the session authority. Do not clone, fetch, or substitute another checkout at runtime. Use `references/claude-code-tools.md` or `references/codex-tools.md` only to map the same rules to the current harness.
+The installed files are the session authority. Do not clone, fetch, or substitute another checkout at runtime. Use the capabilities actually available in the current harness; missing required capabilities block only the affected path.
 
 ## Tasks
 
