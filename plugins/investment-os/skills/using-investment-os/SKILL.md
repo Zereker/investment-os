@@ -19,12 +19,14 @@ Resolve packaged files relative to this `SKILL.md`, never relative to the user's
 
 Choose one primary workflow:
 
-- live portfolio or daily status → `running-daily-review`
+- live portfolio or daily status, including the terse command `Daily` → `running-daily-review`
 - monthly contribution or routine funding → `running-monthly-review`
 - proposed transaction → `evaluating-transaction-candidates`
 - authorized broker write → `execution-runtime`
 - new asset, indicator, exception, or policy idea → `routing-investment-research`
 - repository, privacy, CI, or production-readiness review → `auditing-investment-os`
+
+Treat `Daily` as a complete request when live account capabilities are available. Do not ask what the user means or require them to restate the workflow; run the ordinary Daily Review. Ask only when a genuinely required account, policy, or capability input cannot be resolved.
 
 Load supporting skills only when the selected workflow needs them. Live account work normally needs `broker-runtime` and `reconstructing-portfolio-state`; transaction work normally needs `enforcing-behavioral-controls`; drawdown validation is loaded only when drawdown affects the decision. Do not load every adjacent skill by default and do not create a new skill when an existing workflow can absorb the procedure.
 
