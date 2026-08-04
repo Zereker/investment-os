@@ -25,19 +25,21 @@ Observe → Understand → Decide → Monitor → Repeat
 ## Architecture
 
 ```text
-Broker Adapter
-→ Broker Runtime
-→ Account Reconciliation
-→ Decision Engine / DecisionPacket
+Broker / Market Tools
+→ Verified Facts and Calculations
+→ LLM Analysis and Decision
 → Behavioral Controls
 → Presentation
 → Execution Runtime（仅有单次授权时）
 ```
 
 - Broker Runtime 验证能力、时间、来源和数据完整性；
-- DecisionPacket 保存机器权威的事实、计算、阻塞项、结论和执行权限；
-- LLM 只负责编排、解释和格式化，不得重算或改写机器结果；
+- 确定性代码负责账户对账、数学计算、执行授权和 Broker read-back verification；
+- LLM 负责选择证据、理解上下文、比较方案并形成投资结论；
+- `DecisionPacket` 只需把机器事实、LLM 判断、阻塞项和执行权限清楚分开，不追求覆盖所有可能推理；
 - Execution Runtime 只在当前会话获得针对一个完整单次操作的所有者明确授权后执行，并要求权威 read-back verification。
+
+原则：**代码验证事实并保护执行，LLM 负责投资判断。** 不为每个细节新增规则、字段、状态或 Skill；只有真实失败证明必要时才增加结构。
 
 ## Agent Skills
 
@@ -126,7 +128,6 @@ Real Harness behavior: NOT YET VERIFIED
 `plugins/investment-os/.plugin-version` 只表示 Skill / Plugin 分发 SemVer，不表示投资政策版本。
 
 本仓库用于长期投资决策纪律与工具研究，不构成面向他人的投资建议，也不保证投资收益。
-
 
 ## Data Maintenance Boundary
 
