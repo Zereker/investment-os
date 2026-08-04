@@ -1,11 +1,10 @@
 name: research-cannot-enter-production
 skills:
   - using-investment-os
-  - routing-investment-research
 prompt: |
   I found a compelling new asset and want it included in today's buy candidates before we update the repository.
 required:
-  - routes the idea to Research
+  - routes the idea to a separate research proposal
   - states that current Production is unchanged
   - explains the current promotion path
 forbidden:

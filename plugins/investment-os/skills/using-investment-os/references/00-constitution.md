@@ -21,7 +21,7 @@
 
 ### 结构性现金的显式决策
 
-15% 现金不是公理。它相对满仓同组合的预期成本约为每年 0.45–0.75 个百分点、20 年终值约低 9–14%（量化依据见 [source repository research](https://github.com/Zereker/investment-os/blob/master/Research/2026-07-31-v4-Evidence-and-Proposal.md)）。系统有意支付该成本以换取：
+15% 现金不是公理。它相对满仓同组合的预期成本约为每年 0.45–0.75 个百分点、20 年终值约低 9–14%。系统有意支付该成本以换取：
 
 1. 回撤部署弹药——由本宪法的回撤部署条款机械化执行；
 2. 行为缓冲——避免因波动被迫交易；
@@ -209,7 +209,7 @@ SPYM、SOXX实际持仓和未完成阶段储备共同构成57%袖套；只有在
 
 - SOXX 是一只被动半导体行业 ETF。持有它是有硬上限的行业/周期倾斜（beta），不是 alpha；系统按此命名与治理。
 - SOXX 永久硬上限为总组合 **6%**（`A_stage=6%` 即最终上限）。
-- v3.4 曾设定的 10% / 12.5% / 15% 治理阶段自 v4.0 起作废。依据：2026-07 实测合并穿透显示，SOXX=15% 时组合半导体暴露约 31.7%、信息技术约 47.4%，在系统自身护栏下不可达（证据见 [source repository research](https://github.com/Zereker/investment-os/blob/master/Research/2026-07-31-v4-Evidence-and-Proposal.md)）。
+- v3.4 曾设定的 10% / 12.5% / 15% 治理阶段自 v4.0 起作废。依据：2026-07 实测合并穿透显示，SOXX=15% 时组合半导体暴露约 31.7%、信息技术约 47.4%，在系统自身护栏下不可达。
 - 当前执行上限 `A_execution_cap=3%`；执行上限按 3%→4.5%→6% 逐档推进，每次只推进一档，且不得高于 `A_stage`。
 - 其他板块倾斜与个股新增授权均为 0%；未来任何半导体个股或基金必须与 SOXX 共用同一 6% 预算。
 - 价格触发、回撤或研究完成不自动推进执行档，也不自动授权买入。
@@ -232,7 +232,7 @@ SPYM、SOXX实际持仓和未完成阶段储备共同构成57%袖套；只有在
 
 任一项不满足时回补额为 `0`，结论为 `HOLD` 或 `DATA INCOMPLETE`，**不得降级为「先买一部分」**。
 
-**提高倾斜仍须完整 IC**，本宪法登记表部分的五步闸门不变。回补上限 `min(A_execution_cap, A_stage)` 不因回补走例行路径而放宽；本条不新增任何资金、不放宽任何上限。（依据见 [source repository research](https://github.com/Zereker/investment-os/blob/master/Research/2026-08-01-soxx-restore-vs-increase.md)）
+**提高倾斜仍须完整 IC**，本宪法登记表部分的五步闸门不变。回补上限 `min(A_execution_cap, A_stage)` 不因回补走例行路径而放宽；本条不新增任何资金、不放宽任何上限。
 
 | SOXX执行档 | SPYM目标端点 |
 |---:|---:|
@@ -272,11 +272,11 @@ SPYM 目标端点由 `57%−A_basis` 给出；`A_stage` 固定为 6%，故 SPYM 
 
 各档释放**梯度定额**（1:2:3:4），只进入 SPYM / QQQM 正缺口；四档合计 15pp，把 15% 现金目标**全部部署**至绝对下限 `0+U`。**绝对下限 `0+U` 是硬停，任何情形不得突破——现金可以归零，但不得为负。**
 
-**`DD` 超过 25% 后不再解锁任何档位。** 弹药在 T4 处打光，现金停在 `0+U`，此后只用外部新增资金逐月重建。继续下跌**不产生**新的部署授权，也**不得借款加仓**——这不是遗漏，是 v4.6 的明确决定（依据见 [source repository research](https://github.com/Zereker/investment-os/blob/master/Research/2026-08-01-drawdown-four-tier.md)）。
+**`DD` 超过 25% 后不再解锁任何档位。** 弹药在 T4 处打光，现金停在 `0+U`，此后只用外部新增资金逐月重建。继续下跌**不产生**新的部署授权，也**不得借款加仓**——这不是遗漏，是 v4.6 的明确决定。
 
-定额释放使**跌得越深买得越多，且每笔落在不同价位**；本条款不判断谷底，只按跌幅机械递增（「全部部署」为何必须改为定额的论证见 [source repository research](https://github.com/Zereker/investment-os/blob/master/Research/2026-08-01-drawdown-tranching.md)）。
+定额释放使**跌得越深买得越多，且每笔落在不同价位**；本条款不判断谷底，只按跌幅机械递增。
 
-梯度 1:2:3:4 的选型依据——对等额与 1:2:4:8 的十年回放对比、加权入场回报与收益贡献、浅回撤中投出更少的已知代价——见 [source repository research](https://github.com/Zereker/investment-os/blob/master/Research/2026-08-01-drawdown-four-tier.md)。
+梯度 1:2:3:4 在浅回撤中投出更少、在深回撤中投入更多，这是系统接受的取舍。
 
 #### 归零与「不使用融资」红线的衔接
 
@@ -292,17 +292,17 @@ SPYM 目标端点由 `57%−A_basis` 给出；`A_stage` 固定为 6%，故 SPYM 
 - 部署走月度例行路径的全部数据与执行检查（实时 IBKR、无融资、无冲突订单、只买正缺口）；除 `DD` 达档外不引入任何其他判断项。
 - 现金此后只用外部新增资金逐月重建至 `15%+U`，不得为重建现金卖出持仓。
 - 本条款不使用杠杆、不预测底部、不因继续下跌而追加档位之外的部署。
-- v4.3 曾存在的「T1 在 10% 消耗后，10%–25% 区间无额外解锁」这一代价已消除——该区间由 T2（15%）、T3（20%）、T4（25%）逐档覆盖。触发线下调的取舍与证伪回路仍见 [source repository research](https://github.com/Zereker/investment-os/blob/master/Research/2026-08-01-t1-threshold-10pct.md)。
+- v4.3 曾存在的「T1 在 10% 消耗后，10%–25% 区间无额外解锁」这一代价已消除——该区间由 T2（15%）、T3（20%）、T4（25%）逐档覆盖。
 
-终点 25% 与归零的依据——六档利用率 58% → 四档 81%、旧 6% 下限从未被单独论证、入场质量与收益贡献的量化——见 [source repository research](https://github.com/Zereker/investment-os/blob/master/Research/2026-08-01-drawdown-four-tier.md)。
+终点 25% 与归零是系统对弹药利用率、入场质量和现金机会成本作出的显式取舍。
 
 **已知风险**：该数据窗口最深只到 34.3%，不含 2008 型深跌（标普约 −56%）。本设计在 `DD` 25% 时现金已归零，此后无论跌多深都没有部署授权，也不借款。这是自觉承担的取舍，证伪条件见提案第 6 节。
 
 #### 为什么触发口径只用 SPYM
 
-本条款动用的是作为危机弹药的结构性现金——四档梯度合计 15 个百分点的 NAV，把 15% 现金目标全部部署至绝对下限 `0+U`，其中 12 个百分点位于常态现金下限 `12%+U` 以下（依据见 [source repository research](https://github.com/Zereker/investment-os/blob/master/Research/2026-08-01-drawdown-four-tier.md)）。弹药有限，因此触发必须是**广谱市场信号**；SPYM 代表美国大盘，是本组合的广谱代表。
+本条款动用的是作为危机弹药的结构性现金——四档梯度合计 15 个百分点的 NAV，把 15% 现金目标全部部署至绝对下限 `0+U`，其中 12 个百分点位于常态现金下限 `12%+U` 以下。弹药有限，因此触发必须是**广谱市场信号**；SPYM 代表美国大盘，是本组合的广谱代表。
 
-Core 之间的**相对**移动不使用本条款，由目标权重自动吸收：某只 Core 跌幅大于另一只时，其实际权重跌破目标即产生正缺口，`D` 与 `B` 每月优先流向缺口更大的标的，无门槛、无需触发。回撤部署只在广谱深跌时**额外**解锁下限以下的现金（单一 Core 回撤而 SPYM 未达档时「由再平衡吸收」的实测佐证见 [source repository research](https://github.com/Zereker/investment-os/blob/master/Research/2026-08-01-drawdown-vs-rebalancing-scope.md)）。
+Core 之间的**相对**移动不使用本条款，由目标权重自动吸收：某只 Core 跌幅大于另一只时，其实际权重跌破目标即产生正缺口，`D` 与 `B` 每月优先流向缺口更大的标的，无门槛、无需触发。回撤部署只在广谱深跌时**额外**解锁下限以下的现金；单一 Core 回撤而 SPYM 未达档时由再平衡吸收。
 
 ### Core标的原则
 
@@ -401,7 +401,7 @@ v4.0 起本部分治理的对象改称**自主板块倾斜（Sector Tilt / Satel
 
 ### SOXX 唯一载体
 
-SOXX 是唯一自主倾斜载体；硬上限、执行档推进与个股 0% 授权以本宪法目标配置部分为权威表述。封顶依据（2026-07 实测）：SOXX=6% 时组合合并半导体暴露已约 24%、SOXX=15% 时约 32%，后者在系统自身护栏下不可达。证据见 [source repository research](https://github.com/Zereker/investment-os/blob/master/Research/2026-07-31-v4-Evidence-and-Proposal.md)。
+SOXX 是唯一自主倾斜载体；硬上限、执行档推进与个股 0% 授权以本宪法目标配置部分为权威表述。封顶依据（2026-07 实测）：SOXX=6% 时组合合并半导体暴露已约 24%、SOXX=15% 时约 32%，后者在系统自身护栏下不可达。
 
 ### 提高倾斜与回补至目标
 
@@ -469,7 +469,7 @@ IC 批准当日有效，隔日重走流程。不再使用机器验证的 Add Can
 
 - 回补上限：`min(A_execution_cap, A_stage) − A_actual`，按 NAV 折算；上限不因走例行路径而放宽。
 - 计算辅助：`python3 skills/running-monthly-review/scripts/monthly_execution.py --lookthrough-current`。**不传该标志即视为无当季有效核查**，回补输出 `0` 并标 `DATA INCOMPLETE`。
-- 首次真实回补必须在 Journal 记录回补前后 `A_actual`、`U`、当季核查日期与结论、交易后合并半导体暴露（证伪回路见 [source repository research](https://github.com/Zereker/investment-os/blob/master/Research/2026-08-01-soxx-restore-vs-increase.md)）。
+- 首次真实回补必须在 Journal 记录回补前后 `A_actual`、`U`、当季核查日期与结论、交易后合并半导体暴露。
 
 当前 `A_actual` 高于 6% 永久硬上限，`U=0`，回补额恒为 `0`；本节是前瞻性规则，不授权任何交易。
 
