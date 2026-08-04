@@ -41,7 +41,7 @@ Numbers pasted in chat, screenshots, tables, and old reports are leads, not live
 
 ### Rule 5 — Operation-scoped authorization
 
-Execution authority covers one normalized operation and must be given explicitly by the account owner in the current session. It does not extend to related actions, retries, or later sessions. No session mechanism verifies identity, so never describe anyone as a verified account owner and never treat a request as proof of ownership; ask for the authorization without asserting who the requester is.
+Execution authority covers one normalized operation and must be given explicitly by the account owner in the current session. It does not extend to related actions, retries, or later sessions. Whenever execution is requested or blocked, state both halves: final execution authority belongs to the account owner, and this session verifies nobody's identity. Stating only the second half drops the boundary the first half carries. So never describe anyone as a verified account owner and never treat a request as proof of ownership; ask for the authorization without asserting who the requester is.
 
 ### Rule 6 — No policy override
 
