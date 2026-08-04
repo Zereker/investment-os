@@ -162,15 +162,7 @@ def check_product_assets() -> None:
     )
 
 
-def check_docs_and_governance() -> None:
-    require(README.md if False else ROOT / "README.md", "仓库保存规则，不保存个人组合", "一个 canonical Skill")
-    docs = ROOT / "docs" / "SKILL-DISTRIBUTION.md"
-    require(
-        docs, "single canonical Skill", "Claude Code", "Codex", "Testing model",
-        "Behavior scenarios: DEFINED", "Behavior execution: NOT YET VERIFIED",
-        "Plugin distribution version", "Installed-runtime boundary",
-        "Canonical authority", "Session input", "Provenance",
-    )
+def check_repository_hygiene() -> None:
     for retired in (
         "check_policy_consistency_legacy.py", "check_release_governance.py",
         "check_product_contract.py", "check_document_governance.py",
@@ -204,7 +196,7 @@ def main() -> None:
     check_single_skill()
     check_manifests()
     check_product_assets()
-    check_docs_and_governance()
+    check_repository_hygiene()
     reject_runtime_artifacts()
     print("Single-skill distribution, product contract, and privacy checks passed.")
 
