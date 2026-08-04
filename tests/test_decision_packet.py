@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from runtime_paths import SCRIPT_DIRS
-from decision_packet import DecisionPacket, assert_renderer_preserves
+from decision_packet import DecisionPacket
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = SCRIPT_DIRS["daily"] / "daily_brief.py"
@@ -53,15 +53,15 @@ def unavailable(data: dict, source: str, field: str) -> None:
     data[field] = None
 
 
-def run(data: dict, *, packet_json: bool) -> subprocess.CompletedProcess[str]:
-    command = [sys.executable, str(SCRIPT)]
-    if packet_json:
-        command.append("--packet-json")
-    return subprocess.run(command, input=json.dumps(data), text=True, capture_output=True, cwd=ROOT)
+def run(data: dict) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, str(SCRIPT)], input=json.dumps(data),
+        text=True, capture_output=True, cwd=ROOT,
+    )
 
 
 def packet_for(data: dict) -> dict:
-    result = run(data, packet_json=True)
+    result = run(data)
     assert result.returncode == 0, result.stderr + result.stdout
     return json.loads(result.stdout)
 
@@ -78,11 +78,6 @@ def main() -> None:
     # Identical input produces exactly the same machine packet.
     assert packet_for(payload()) == packet_data
 
-    prose = run(payload(), packet_json=False)
-    assert prose.returncode == 0
-    assert f"Decision Status: **{packet_data['decision']}**" in prose.stdout
-    assert f"Execution authority: {packet_data['execution_authority']}" in prose.stdout
-
     packet = DecisionPacket(
         schema_version=packet_data["schema_version"], workflow=packet_data["workflow"],
         as_of=packet_data["as_of"], runtime_status=packet_data["runtime_status"],
@@ -96,17 +91,6 @@ def main() -> None:
         execution_authority=packet_data["execution_authority"],
     )
     packet.validate()
-    try:
-        assert_renderer_preserves(packet, {
-            "schema_version": packet.schema_version, "workflow": packet.workflow,
-            "as_of": packet.as_of, "runtime_status": packet.runtime_status,
-            "decision": "HOLD", "execution_authority": packet.execution_authority,
-        })
-    except ValueError as exc:
-        assert "renderer changed authoritative field: decision" in str(exc)
-    else:
-        raise AssertionError("renderer was allowed to change decision")
-
     # Explicit unavailability is a valid packet outcome, not a CLI/protocol error.
     missing_orders = payload()
     unavailable(missing_orders, "open_orders", "open_orders")

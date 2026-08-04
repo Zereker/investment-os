@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a fail-closed Daily Brief from normalized, capability-aware JSON.
+"""Build a fail-closed daily decision packet from capability-aware JSON.
 
 Unavailable data is represented by an explicit source status and a null value.
 That is a valid runtime outcome and therefore still produces a DecisionPacket.
@@ -22,7 +22,7 @@ sys.path.insert(0, str(PLUGIN_ROOT / "skills" / "running-monthly-review" / "scri
 sys.path.insert(0, str(PLUGIN_ROOT / "skills" / "validating-drawdown-state" / "scripts"))
 from account_reconciliation import reconcile_nav  # noqa: E402
 from alert_pointer_check import check as check_alert_pointer  # noqa: E402
-from decision_packet import DecisionPacket, assert_renderer_preserves  # noqa: E402
+from decision_packet import DecisionPacket  # noqa: E402
 from monthly_execution import TIERS, compute, portfolio_state  # noqa: E402
 
 UNIVERSE = ("SPYM", "QQQM", "SOXX")
@@ -358,71 +358,6 @@ def build_packet(payload: dict[str, Any]) -> DecisionPacket:
     return packet
 
 
-def _pct(value: Any) -> str:
-    return "N/A" if value is None else f"{value:.2%}"
-
-
-def _weight(amount: Any, nav: Any) -> str:
-    return "N/A" if amount is None or nav in (None, 0) else _pct(amount / nav)
-
-
-def render_packet(packet: DecisionPacket) -> str:
-    packet.validate()
-    facts, calc = packet.facts, packet.calculations
-    nav, positions = facts["nav"], facts["positions"] or {}
-    lines = [
-        "# Investment OS — Daily Brief", f"As of: {packet.as_of}", "",
-        "## 1. Executive Summary", f"- Decision Status: **{packet.decision}**",
-        "- Production universe: SPYM / QQQM / SOXX only.",
-        f"- SPYM completed-close drawdown: {_pct(facts['drawdown'])}.",
-        f"- Open orders: {facts['open_order_count'] if facts['open_order_count'] is not None else 'N/A'}.", "",
-        "## 2. Account Health",
-    ]
-    lines.extend(f"- {name}: {entry['status']} ({entry.get('source') or 'no authoritative source'})" for name, entry in packet.source_status.items())
-    lines.extend([
-        f"- Reconciliation difference: {_pct(facts['reconciliation_weight'])} of NAV.",
-        f"- Status: {packet.runtime_status}", "", "## 3. Portfolio State",
-        f"- Cash: {_weight(facts['cash'], nav)}",
-        f"- SPYM: {_weight(positions.get('SPYM'), nav)} | positive gap {_weight(calc['gap_spym'], nav)}",
-        f"- QQQM: {_weight(positions.get('QQQM'), nav)} | positive gap {_weight(calc['gap_qqqm'], nav)}",
-        f"- SOXX: {_weight(positions.get('SOXX'), nav)} | execution cap 3% | hard cap 6%",
-        "- Out-of-Universe: " + (", ".join(facts["out_of_universe"]) + "（只披露，不产生新增候选）" if facts["out_of_universe"] else "None"),
-        "", "## 4. Channel Status",
-    ])
-    lines.extend(f"- {name}: {status}; amount {_weight(calc.get(name), nav)} of NAV." for name, status in packet.channel_status.items())
-    lines.extend(["", "## 5. What Is Allowed Today"])
-    if packet.decision == "DATA INCOMPLETE":
-        lines.append("- DATA INCOMPLETE：停止新的购买候选。")
-    elif packet.eligible_channels:
-        lines.extend(
-            f"- BUY CANDIDATE — {item['name']}：{item['channel']}，授权上限约 {_pct(item['nav_weight'])} of NAV；仍须所有者确认。"
-            for item in packet.eligible_channels
-        )
-    else:
-        lines.append("- HOLD：没有标的获得新的购买授权。")
-    lines.extend([
-        "", "## 6. Why Not the Others",
-        "- Other securities remain outside the closed Production universe.",
-        "", "## 7. Attention Items",
-    ])
-    lines.extend([f"- {item}" for item in packet.attention_items] or ["- None."])
-    lines.extend(f"- Blocking: {item}" for item in packet.blocking_issues)
-    lines.extend(["", "## 8. Next Observation Conditions"])
-    lines.extend([f"- {item}" for item in packet.next_conditions] or ["- None."])
-    lines.extend(["", "## 9. Execution Boundary", f"Execution authority: {packet.execution_authority}. This renderer cannot place or format an order."])
-    metadata = {
-        "schema_version": packet.schema_version, "workflow": packet.workflow,
-        "as_of": packet.as_of, "runtime_status": packet.runtime_status,
-        "decision": packet.decision, "execution_authority": packet.execution_authority,
-    }
-    assert_renderer_preserves(packet, metadata)
-    return "\n".join(lines)
-
-
-def render(payload: dict[str, Any]) -> str:
-    return render_packet(build_packet(payload))
-
-
 def synthetic_payload() -> dict[str, Any]:
     observed = "2030-01-15T20:00:00+00:00"
     available = {"status": "available", "source": "synthetic-adapter", "observed_at": observed}
@@ -462,17 +397,20 @@ def self_test() -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--self-test", action="store_true")
-    parser.add_argument("--packet-json", action="store_true", help="emit DecisionPacket JSON instead of prose")
     args = parser.parse_args()
     if args.self_test:
         self_test()
         return
     try:
         packet = build_packet(json.load(sys.stdin))
-        print(json.dumps(packet.as_dict(), ensure_ascii=False, sort_keys=True) if args.packet_json else render_packet(packet))
+        print(json.dumps(packet.as_dict(), ensure_ascii=False, sort_keys=True))
     except (InputError, json.JSONDecodeError, KeyError, ValueError) as exc:
-        print("# Investment OS — Daily Brief\n\nDecision Status: **DATA INCOMPLETE**")
-        print(f"\nInput protocol error: {exc}")
+        print(json.dumps({
+            "runtime_status": "DATA INCOMPLETE",
+            "decision": "DATA INCOMPLETE",
+            "blocking_issues": [f"input protocol error: {exc}"],
+            "execution_authority": "NONE",
+        }, ensure_ascii=False, sort_keys=True))
         raise SystemExit(2)
 
 
