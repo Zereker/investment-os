@@ -5,6 +5,8 @@ description: Use when the user asks what happened in the live portfolio today, w
 
 # Running Daily Review
 
+`Daily` is the canonical short command for this workflow. Treat it as a complete request for the ordinary live portfolio review; do not ask the user to expand it when the required runtime capabilities can be resolved.
+
 Use fresh authoritative account and market inputs. Load supporting skills only when live positions, controls, or a possible transaction make them necessary.
 
 The review behaves like a restrained long-term CIO:
