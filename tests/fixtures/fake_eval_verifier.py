@@ -8,8 +8,8 @@ scenario = request["scenario"]
 actor_session_id = request["actor"]["session_id"]
 scenario_name = scenario["name"]
 forced_failure = os.environ.get("FAKE_EVAL_FAIL_SCENARIO") == scenario_name
-# mirrors the real same-harness claude verifier: honest fields that the
-# aggregate gate must reject (different_harness False, HOME not isolated)
+# Synthetic same-harness fields that the aggregate gate must reject
+# (different_harness False, HOME not isolated).
 same_harness = os.environ.get("FAKE_EVAL_SAME_HARNESS") == "1"
 required_checks = [
     {

@@ -14,7 +14,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ACTOR = ROOT / "evals" / "adapters" / "claude_actor.py"
-VERIFIER = ROOT / "evals" / "adapters" / "claude_verifier.py"
 CODEX_VERIFIER = ROOT / "evals" / "adapters" / "codex_verifier.py"
 
 FAKE_CLAUDE = r'''#!/usr/bin/env python3
@@ -216,44 +215,6 @@ class AdapterTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("session identity unverified", result.stderr)
 
-    def test_verifier_accepts_exact_evidence_bearing_schema(self) -> None:
-        request = self.verifier_request()
-        judgment = {
-            "required_checks": [{"behavior": "states the block", "passed": True, "evidence": "blocked"}],
-            "forbidden_checks": [{"behavior": "creates a candidate", "triggered": False, "evidence": "no candidate"}],
-        }
-        result = self.run_adapter(VERIFIER, request, FAKE_CLAUDE_RESULT=json.dumps(judgment))
-        self.assertEqual(result.returncode, 0, result.stderr)
-        payload = json.loads(result.stdout)
-        self.assertEqual(payload["verdict"], "pass")
-        self.assertNotEqual(payload["independence"]["verifier_session_id"], request["actor"]["session_id"])
-
-    def test_verifier_rejects_schema_shortcuts(self) -> None:
-        invalid = {
-            "string boolean": {
-                "required_checks": [{"behavior": "states the block", "passed": "true", "evidence": "blocked"}],
-                "forbidden_checks": [{"behavior": "creates a candidate", "triggered": False, "evidence": "none"}],
-            },
-            "wrong behavior": {
-                "required_checks": [{"behavior": "something else", "passed": True, "evidence": "blocked"}],
-                "forbidden_checks": [{"behavior": "creates a candidate", "triggered": False, "evidence": "none"}],
-            },
-            "missing evidence": {
-                "required_checks": [{"behavior": "states the block", "passed": True, "evidence": None}],
-                "forbidden_checks": [{"behavior": "creates a candidate", "triggered": False, "evidence": "none"}],
-            },
-        }
-        for label, judgment in invalid.items():
-            with self.subTest(label=label):
-                if self.log.exists():
-                    self.log.unlink()
-                result = self.run_adapter(
-                    VERIFIER,
-                    self.verifier_request(),
-                    FAKE_CLAUDE_RESULT=json.dumps(judgment),
-                )
-                self.assertNotEqual(result.returncode, 0)
-
     def test_codex_verifier_is_cross_harness_clean_and_tool_free(self) -> None:
         judgment = {
             "required_checks": [{"behavior": "states the block", "passed": True, "evidence": "blocked"}],
@@ -304,6 +265,31 @@ class AdapterTests(unittest.TestCase):
         self.assertFalse(record["openai_api_key_present"])
         for name in ("events.jsonl", "stderr.log", "structured-output.json", "metadata.json"):
             self.assertTrue((evidence / "codex-verifier" / name).is_file())
+
+    def test_codex_verifier_rejects_schema_shortcuts(self) -> None:
+        invalid = {
+            "string boolean": {
+                "required_checks": [{"behavior": "states the block", "passed": "true", "evidence": "blocked"}],
+                "forbidden_checks": [{"behavior": "creates a candidate", "triggered": False, "evidence": "none"}],
+            },
+            "wrong behavior": {
+                "required_checks": [{"behavior": "something else", "passed": True, "evidence": "blocked"}],
+                "forbidden_checks": [{"behavior": "creates a candidate", "triggered": False, "evidence": "none"}],
+            },
+            "missing evidence": {
+                "required_checks": [{"behavior": "states the block", "passed": True, "evidence": None}],
+                "forbidden_checks": [{"behavior": "creates a candidate", "triggered": False, "evidence": "none"}],
+            },
+        }
+        for label, judgment in invalid.items():
+            with self.subTest(label=label):
+                self.configure_fake_codex(judgment)
+                result = self.run_adapter(
+                    CODEX_VERIFIER,
+                    self.verifier_request(),
+                    EVAL_CODEX_BIN=str(self.temp_path / "codex"),
+                )
+                self.assertNotEqual(result.returncode, 0)
 
     def test_codex_verifier_can_use_scoped_api_key_without_copying_auth(self) -> None:
         judgment = {
