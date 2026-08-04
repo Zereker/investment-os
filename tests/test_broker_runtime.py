@@ -15,6 +15,16 @@ NOW = datetime(2026, 8, 2, 8, 0, tzinfo=timezone.utc)
 
 
 def runtime() -> dict:
+    capabilities = {
+        "account_summary": "available",
+        "balances": "available",
+        "positions": "available",
+        "open_orders": "available",
+        "cash_transactions": "available",
+        "market_inputs": "available",
+        "alert_inventory": "available",
+        "standing_automations": "available",
+    }
     return {
         "identity": {"account_id": "SYNTHETIC", "account_type": "paper"},
         "snapshot": {
@@ -23,13 +33,10 @@ def runtime() -> dict:
             "timezone": "UTC",
             "currency_basis": "USD",
         },
-        "capabilities": {
-            "account_summary": "available",
-            "balances": "available",
-            "positions": "available",
-            "open_orders": "available",
-            "cash_transactions": "available",
-            "market_inputs": "available",
+        "capabilities": capabilities,
+        "observations": {
+            name: {"source": "synthetic-adapter", "observed_at": NOW.isoformat()}
+            for name in capabilities
         },
         "account_summary": {"net_liquidation": 100000},
         "balances": {"cash": 15000},
@@ -37,6 +44,8 @@ def runtime() -> dict:
         "open_orders": [],
         "cash_transactions": [],
         "market_inputs": {},
+        "alert_inventory": [],
+        "standing_automations": [],
         "reconciliation": {"status": "PASS", "issues": []},
     }
 
@@ -56,14 +65,17 @@ def main() -> None:
 
     missing_positions = runtime()
     missing_positions["capabilities"]["positions"] = "unavailable"
+    missing_positions["positions"] = None
     check_case(missing_positions, ["positions", "balances"], "DATA INCOMPLETE", "positions is unavailable")
 
     missing_orders = runtime()
     missing_orders["capabilities"]["open_orders"] = "unavailable"
+    missing_orders["open_orders"] = None
     check_case(missing_orders, ["open_orders"], "DATA INCOMPLETE", "open_orders is unavailable")
 
     missing_cash_transactions = runtime()
     missing_cash_transactions["capabilities"]["cash_transactions"] = "unavailable"
+    missing_cash_transactions["cash_transactions"] = None
     check_case(
         missing_cash_transactions,
         ["cash_transactions"],
@@ -77,7 +89,44 @@ def main() -> None:
 
     conflicting = runtime()
     conflicting["capabilities"]["balances"] = "conflicting"
+    conflicting["balances"] = None
     check_case(conflicting, ["balances"], "DATA INCOMPLETE", "balances is conflicting")
+
+    missing_alert_inventory = runtime()
+    missing_alert_inventory["capabilities"]["alert_inventory"] = "unavailable"
+    missing_alert_inventory["alert_inventory"] = None
+    check_case(
+        missing_alert_inventory,
+        ["alert_inventory"],
+        "DATA INCOMPLETE",
+        "alert_inventory is unavailable",
+    )
+
+    disguised_missing_alerts = runtime()
+    disguised_missing_alerts["capabilities"]["alert_inventory"] = "unavailable"
+    check_case(
+        disguised_missing_alerts,
+        ["alert_inventory"],
+        "DATA INCOMPLETE",
+        "must use null",
+    )
+
+    stale_endpoint = runtime()
+    stale_endpoint["observations"]["positions"]["observed_at"] = (
+        NOW - timedelta(minutes=20)
+    ).isoformat()
+    check_case(stale_endpoint, ["positions"], "DATA INCOMPLETE", "observation positions is stale")
+
+    skewed = runtime()
+    skewed["observations"]["positions"]["observed_at"] = (
+        NOW - timedelta(minutes=6)
+    ).isoformat()
+    check_case(
+        skewed,
+        ["positions", "balances"],
+        "DATA INCOMPLETE",
+        "not a coherent snapshot",
+    )
 
     cli = subprocess.run(
         [sys.executable, str(SCRIPT), "--require", "positions", "--max-age-seconds", "999999999"],

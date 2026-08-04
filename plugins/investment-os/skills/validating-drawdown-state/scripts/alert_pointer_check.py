@@ -9,7 +9,11 @@ writes account state to disk.
 Required JSON fields:
   ath_close: positive number
   tiers_executed: ordered or unordered list containing current-cycle tier names
-  alerts: list of normalized active drawdown alerts
+  alert_inventory_status: available / unavailable / stale / conflicting
+
+When alert_inventory_status is available, `alerts` must be a list of normalized
+active drawdown alerts. An empty list then means an authoritative successful read,
+not an unavailable capability.
 
 Each alert object must contain:
   symbol, field, operator, price, enabled
@@ -58,7 +62,7 @@ def expected_pointer(ath_close: float, tiers_executed: set[str]) -> dict[str, An
 
 
 def validate(payload: dict[str, Any]) -> dict[str, Any]:
-    missing = sorted({"ath_close", "tiers_executed", "alerts"} - payload.keys())
+    missing = sorted({"ath_close", "tiers_executed", "alert_inventory_status"} - payload.keys())
     if missing:
         raise InputError("missing fields: " + ", ".join(missing))
 
@@ -72,6 +76,23 @@ def validate(payload: dict[str, Any]) -> dict[str, Any]:
         raise InputError("tiers_executed contains an unknown tier")
     tiers = set(tiers_raw)
 
+    inventory_status = str(payload["alert_inventory_status"]).lower()
+    if inventory_status not in {"available", "unavailable", "stale", "conflicting"}:
+        raise InputError("alert_inventory_status is invalid")
+    if inventory_status != "available":
+        if payload.get("alerts") in ([], {}):
+            raise InputError(
+                "unavailable alert inventory must not be represented as an empty collection"
+            )
+        return {
+            "ath_close": ath,
+            "tiers_executed": tiers,
+            "alert_inventory_status": inventory_status,
+            "alerts": None,
+        }
+
+    if "alerts" not in payload:
+        raise InputError("available alert inventory requires alerts")
     alerts_raw = payload["alerts"]
     if not isinstance(alerts_raw, list):
         raise InputError("alerts must be a list")
@@ -93,19 +114,40 @@ def validate(payload: dict[str, Any]) -> dict[str, Any]:
             "id": str(raw.get("id", "N/A")),
         })
 
-    return {"ath_close": ath, "tiers_executed": tiers, "alerts": alerts}
+    return {
+        "ath_close": ath,
+        "tiers_executed": tiers,
+        "alert_inventory_status": inventory_status,
+        "alerts": alerts,
+    }
 
 
 def check(payload: dict[str, Any], tolerance: float = 0.011) -> dict[str, Any]:
     state = validate(payload)
     expected = expected_pointer(state["ath_close"], state["tiers_executed"])
+    if state["alert_inventory_status"] != "available":
+        return {
+            "status": "DATA INCOMPLETE",
+            "expected": expected,
+            "actual": None,
+            "inventory_status": state["alert_inventory_status"],
+            "issues": [
+                f"alert inventory is {state['alert_inventory_status']}; pointer not verified"
+            ],
+        }
     active = [a for a in state["alerts"] if a["enabled"]]
     issues: list[str] = []
 
     if expected is None:
         if active:
             issues.append("drawdown ladder is exhausted but an active alert still exists")
-        return {"status": "PASS" if not issues else "WARN", "expected": None, "actual": active, "issues": issues}
+        return {
+            "status": "PASS" if not issues else "WARN",
+            "expected": None,
+            "actual": active,
+            "inventory_status": "available",
+            "issues": issues,
+        }
 
     if len(active) != 1:
         issues.append(f"expected exactly one active drawdown alert, found {len(active)}")
@@ -127,6 +169,7 @@ def check(payload: dict[str, Any], tolerance: float = 0.011) -> dict[str, Any]:
         "status": "PASS" if not issues else "WARN",
         "expected": expected,
         "actual": active,
+        "inventory_status": "available",
         "issues": issues,
     }
 
@@ -138,7 +181,9 @@ def render(result: dict[str, Any]) -> str:
         lines.append("Expected: no active alert; drawdown ladder exhausted.")
     else:
         lines.append(f"Expected: {expected['tier']} at {expected['price']:.2f}.")
-    if result["actual"]:
+    if result["actual"] is None:
+        lines.append(f"Actual: alert inventory {result['inventory_status']}.")
+    elif result["actual"]:
         for alert in result["actual"]:
             lines.append(
                 f"Actual: id={alert['id']} {alert['symbol']} {alert['field']} "
@@ -158,6 +203,7 @@ def self_test() -> None:
     base = {
         "ath_close": 100.0,
         "tiers_executed": [],
+        "alert_inventory_status": "available",
         "alerts": [{
             "id": "synthetic",
             "symbol": "SPYM",
@@ -186,6 +232,23 @@ def self_test() -> None:
     exhausted = {**base, "tiers_executed": [name for _, name, _ in TIERS], "alerts": []}
     if check(exhausted)["status"] != "PASS":
         raise AssertionError("exhausted ladder should require no alert")
+
+    unavailable = {
+        "ath_close": 100.0,
+        "tiers_executed": [],
+        "alert_inventory_status": "unavailable",
+        "alerts": None,
+    }
+    if check(unavailable)["status"] != "DATA INCOMPLETE":
+        raise AssertionError("unavailable alert inventory must fail closed")
+
+    disguised = {**unavailable, "alerts": []}
+    try:
+        check(disguised)
+    except InputError:
+        pass
+    else:
+        raise AssertionError("unavailable alert inventory was allowed to masquerade as empty")
 
     print("alert pointer self-test: PASS")
 

@@ -25,12 +25,15 @@ REQUIRED_SECTIONS = {
     "identity",
     "snapshot",
     "capabilities",
+    "observations",
     "account_summary",
     "balances",
     "positions",
     "open_orders",
     "cash_transactions",
     "market_inputs",
+    "alert_inventory",
+    "standing_automations",
     "reconciliation",
 }
 
@@ -39,9 +42,14 @@ REQUIRED_SECTIONS = {
 class ValidationResult:
     status: str
     blocking_issues: tuple[str, ...]
+    observation_skew_seconds: float | None = None
 
     def as_dict(self) -> dict[str, Any]:
-        return {"runtime_status": self.status, "blocking_issues": list(self.blocking_issues)}
+        return {
+            "runtime_status": self.status,
+            "blocking_issues": list(self.blocking_issues),
+            "observation_skew_seconds": self.observation_skew_seconds,
+        }
 
 
 def _parse_timestamp(value: Any) -> datetime | None:
@@ -101,12 +109,47 @@ def validate_runtime(
         capabilities = {}
         issues.append("capabilities must be an object")
 
-    for name in required_capabilities:
+    required = tuple(required_capabilities)
+    observations = runtime.get("observations")
+    if not isinstance(observations, dict):
+        observations = {}
+        issues.append("observations must be an object")
+
+    current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    observed_times: list[datetime] = []
+    for name in required:
         state = capabilities.get(name)
         if state not in VALID_CAPABILITY_STATES:
             issues.append(f"required capability {name} is not declared")
         elif state != "available":
             issues.append(f"required capability {name} is {state}")
+            if runtime.get(name) in ([], {}, 0, 0.0, ""):
+                issues.append(
+                    f"unavailable capability {name} must use null, not an empty or zero value"
+                )
+        else:
+            if runtime.get(name) is None:
+                issues.append(f"available capability {name} has no value")
+            observation = observations.get(name)
+            if not isinstance(observation, dict):
+                issues.append(f"available capability {name} has no observation metadata")
+                continue
+            if not observation.get("source"):
+                issues.append(f"observation {name}.source is required")
+            observed_at = _parse_timestamp(observation.get("observed_at"))
+            if observed_at is None:
+                issues.append(
+                    f"observation {name}.observed_at must be an ISO-8601 timezone-aware timestamp"
+                )
+                continue
+            age = (current - observed_at).total_seconds()
+            if age < -5:
+                issues.append(f"observation {name} timestamp is in the future")
+            elif age > max_age_seconds:
+                issues.append(
+                    f"observation {name} is stale ({int(age)}s old; limit {max_age_seconds}s)"
+                )
+            observed_times.append(observed_at)
 
     snapshot = runtime.get("snapshot")
     if not isinstance(snapshot, dict):
@@ -116,7 +159,6 @@ def validate_runtime(
         if timestamp is None:
             issues.append("snapshot.as_of must be an ISO-8601 timezone-aware timestamp")
         else:
-            current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
             age = (current - timestamp).total_seconds()
             if age < -5:
                 issues.append("snapshot timestamp is in the future")
@@ -157,8 +199,17 @@ def validate_runtime(
             if not actual.passed:
                 issues.append(actual.issue or "actual reconciliation failed")
 
+    observation_skew = None
+    if observed_times:
+        observation_skew = (max(observed_times) - min(observed_times)).total_seconds()
+        if observation_skew > max_age_seconds:
+            issues.append(
+                "required capability observations are not a coherent snapshot "
+                f"({int(observation_skew)}s skew; limit {max_age_seconds}s)"
+            )
+
     status = "PASS" if not issues else "DATA INCOMPLETE"
-    return ValidationResult(status, tuple(issues))
+    return ValidationResult(status, tuple(issues), observation_skew)
 
 
 def main() -> int:

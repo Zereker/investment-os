@@ -138,30 +138,94 @@ def restore_candidate(a_actual: float, reserve: float, nav: float,
     return max(min(reserve, headroom), 0.0) * nav
 
 
-def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed, today,
-            lookthrough_current=False):
-    """Everything the monthly workflow needs. Pure function of its inputs."""
+def portfolio_state(nav, cash, spym, qqqm, soxx, today,
+                    lookthrough_current=False):
+    """Return allocation facts that remain valid before funding inputs exist.
+
+    Daily review uses this subset when a broker capability is unavailable. It
+    deliberately contains no funding-channel authorization: contribution,
+    drawdown-cycle state and order gates still belong to the full computation.
+    """
     a_actual = soxx / nav
     a_basis = max(a_actual, A_STAGE)
-    reserve = max(A_STAGE - a_actual, 0.0)          # U
+    reserve = max(A_STAGE - a_actual, 0.0)
     restore = restore_candidate(a_actual, reserve, nav, lookthrough_current)
-
     spym_target = nav * (SLEEVE_57 - a_basis)
     qqqm_target = nav * QQQM_TARGET
     gap_spym = max(spym_target - spym, 0.0)
     gap_qqqm = max(qqqm_target - qqqm, 0.0)
-    g0 = gap_spym + gap_qqqm                        # G_0
+    return {
+        "a_actual": a_actual,
+        "a_basis": a_basis,
+        "reserve": reserve,
+        "restore": restore,
+        "spym_target": spym_target,
+        "qqqm_target": qqqm_target,
+        "gap_spym": gap_spym,
+        "gap_qqqm": gap_qqqm,
+        "g0": gap_spym + gap_qqqm,
+        "r": months_remaining(today),
+        "cash": cash,
+    }
 
-    d = min(contribution, g0)                       # D = min(F, G_0)
-    # D is allocated to the larger gap first
+
+def routine_channels(nav, cash, state, contribution):
+    """Compute Routine DCA and Strategic Baseline from authoritative F.
+
+    Kept separate so Daily Review can calculate these channels without
+    inventing drawdown-cycle inputs that are independently unavailable.
+    """
+    gap_spym = state["gap_spym"]
+    gap_qqqm = state["gap_qqqm"]
+    d = min(contribution, state["g0"])
     d_spym, d_qqqm = allocate(d, gap_spym, gap_qqqm)
-    cash_after_d = cash - d                         # C
-    g = (gap_spym - d_spym) + (gap_qqqm - d_qqqm)   # G
+    cash_after_d = cash - d
+    g = (gap_spym - d_spym) + (gap_qqqm - d_qqqm)
+    s = max(cash_after_d - (CASH_TARGET + state["reserve"]) * nav, 0.0)
+    b = min(s / state["r"], g) if state["r"] else 0.0
+    b_spym, b_qqqm = allocate(
+        b, gap_spym - d_spym, gap_qqqm - d_qqqm
+    )
+    return {
+        "d": d,
+        "d_spym": d_spym,
+        "d_qqqm": d_qqqm,
+        "cash_after_d": cash_after_d,
+        "g": g,
+        "s": s,
+        "b": b,
+        "b_spym": b_spym,
+        "b_qqqm": b_qqqm,
+    }
 
-    r = months_remaining(today)
-    s = max(cash_after_d - (CASH_TARGET + reserve) * nav, 0.0)   # S
-    b = min(s / r, g) if r else 0.0                              # B
-    b_spym, b_qqqm = allocate(b, gap_spym - d_spym, gap_qqqm - d_qqqm)
+
+def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed, today,
+            lookthrough_current=False):
+    """Everything the monthly workflow needs. Pure function of its inputs."""
+    state = portfolio_state(
+        nav, cash, spym, qqqm, soxx, today, lookthrough_current
+    )
+    a_actual = state["a_actual"]
+    a_basis = state["a_basis"]
+    reserve = state["reserve"]
+    restore = state["restore"]
+    spym_target = state["spym_target"]
+    qqqm_target = state["qqqm_target"]
+    gap_spym = state["gap_spym"]
+    gap_qqqm = state["gap_qqqm"]
+    g0 = state["g0"]
+
+    routine = routine_channels(nav, cash, state, contribution)
+    d = routine["d"]
+    d_spym = routine["d_spym"]
+    d_qqqm = routine["d_qqqm"]
+    cash_after_d = routine["cash_after_d"]
+    g = routine["g"]
+    r = state["r"]
+    s = routine["s"]
+    b = routine["b"]
+    b_spym = routine["b_spym"]
+    b_qqqm = routine["b_qqqm"]
 
     released_w, floor_w, consumed = tier_release(dd, executed, reserve)
     cash_after_db = cash_after_d - b

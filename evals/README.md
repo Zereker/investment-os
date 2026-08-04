@@ -5,8 +5,9 @@
 ## Current verification status
 
 - **Behavior scenarios: DEFINED**
-- **Claude Code actor / independent Claude verifier: VERIFIED PASS (7/7 post-isolation at `60116e8`; corrected intent probe 4/4 merged in PR #55)**
-- **Different-harness Claude Code actor / Codex verifier aggregate: NOT YET VERIFIED**
+- **Historical Claude Code actor / independent Claude verifier: VERIFIED PASS (7/7 at `60116e8`; not evidence for the current distribution)**
+- **Post-#59 targeted different-Harness replay: stale drawdown 3/3; inherited approval 0/3 before the hardening in this PR**
+- **Current distribution aggregate: NOT YET VERIFIED — requires a fresh actor and independent verifier sweep after this change**
 
 PR CI validates scenario definitions and the eval harness integrity. It uses synthetic fixture processes to prove that missing verification cannot produce a pass, that actor-only mode remains `NOT VERIFIED`, that multi-turn transcripts remain intact, and that only a schema-valid independent verifier can produce `VERIFIED PASS`. CI does not launch Claude Code or Codex and does not establish their behavioral coverage.
 
