@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 """Test executable policy mathematics and the public-repository privacy boundary."""
 
+from __future__ import annotations
+
 from math import isfinite, nan, inf
 from pathlib import Path
 import importlib.util
 import re
+import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 CONSTITUTION = "plugins/investment-os/skills/using-investment-os/references/00-constitution.md"
+sys.path.insert(0, str(ROOT / "plugins" / "investment-os" / "skills" / "using-investment-os" / "scripts"))
 
 STAGES = (0.06,)  # v4.0: 6% is the permanent hard cap; 10/12.5/15% stages are void
 EXECUTION_CAPS = (0.03, 0.045, 0.06)
@@ -174,7 +178,7 @@ def mirror_tests() -> None:
     canonical values above. This replaces the old first-and-last-line string
     pins, which could not see a corrupted middle tier."""
     monthly = load_runtime_module(
-        "plugins/investment-os/skills/running-monthly-review/scripts/monthly_execution.py")
+        "plugins/investment-os/skills/using-investment-os/scripts/monthly_execution.py")
     tiers = tuple((trigger, tranche) for trigger, _name, tranche in monthly.TIERS)
     if tiers != DRAWDOWN_TIERS:
         raise AssertionError(f"monthly_execution.TIERS diverged: {tiers}")

@@ -8,14 +8,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PLUGIN_ROOT = ROOT / "plugins" / "investment-os"
 SKILLS = PLUGIN_ROOT / "skills"
+SCRIPTS = SKILLS / "using-investment-os" / "scripts"
 
 SCRIPT_DIRS = {
-    "broker": SKILLS / "broker-runtime" / "scripts",
-    "reconciliation": SKILLS / "reconstructing-portfolio-state" / "scripts",
-    "monthly": SKILLS / "running-monthly-review" / "scripts",
-    "drawdown": SKILLS / "validating-drawdown-state" / "scripts",
-    "execution": SKILLS / "execution-runtime" / "scripts",
+    "broker": SCRIPTS,
+    "reconciliation": SCRIPTS,
+    "monthly": SCRIPTS,
+    "drawdown": SCRIPTS,
+    "execution": SCRIPTS,
 }
 
-for path in SCRIPT_DIRS.values():
-    sys.path.insert(0, str(path))
+sys.path.insert(0, str(SCRIPTS))

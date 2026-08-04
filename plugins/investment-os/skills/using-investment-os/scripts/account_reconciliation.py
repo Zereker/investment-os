@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Shared deterministic NAV reconciliation for broker and decision runtimes."""
+"""Shared deterministic NAV reconciliation."""
 
 from __future__ import annotations
 

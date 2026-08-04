@@ -28,11 +28,8 @@ import argparse
 import json
 import math
 import sys
-from pathlib import Path
 from typing import Any
 
-PLUGIN_ROOT = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(PLUGIN_ROOT / "skills" / "running-monthly-review" / "scripts"))
 from monthly_execution import TIERS  # noqa: E402
 
 

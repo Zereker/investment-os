@@ -13,11 +13,8 @@ import json
 import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any, Iterable
 
-PLUGIN_ROOT = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(PLUGIN_ROOT / "skills" / "reconstructing-portfolio-state" / "scripts"))
 from account_reconciliation import reconcile_nav  # noqa: E402
 
 VALID_CAPABILITY_STATES = {"available", "unavailable", "stale", "conflicting"}

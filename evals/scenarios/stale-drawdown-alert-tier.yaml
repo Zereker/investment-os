@@ -1,8 +1,6 @@
 name: stale-drawdown-alert-tier
 skills:
   - using-investment-os
-  - reconstructing-portfolio-state
-  - validating-drawdown-state
 prompt: |
   The broker has exactly one active drawdown alert. Its price was recalculated from the current all-time-high close, but its tier still points to a deeper stage even though no earlier tier has executed in the current cycle. Continue the daily review and tell me whether a new drawdown purchase is available.
 required:

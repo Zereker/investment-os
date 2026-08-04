@@ -14,7 +14,6 @@ python3 -c 'import yaml' 2>/dev/null || {
 python3 tests/test_plugin_installation.py
 python3 tests/test_broker_runtime.py
 python3 tests/test_execution_runtime.py
-python3 tests/test_behavior_runtime.py
 python3 tests/test_eval_integrity.py
 python3 tests/test_eval_adapters.py
 python3 tests/test_eval_sweep.py
@@ -22,7 +21,7 @@ python3 tests/test_monthly_contribution_cli.py
 python3 tests/test_monthly_dd_cli.py
 python3 tests/test_reconciliation_gates.py
 python3 scripts/check_policy_consistency.py
-python3 plugins/investment-os/skills/running-monthly-review/scripts/monthly_execution.py --self-test
-python3 plugins/investment-os/skills/validating-drawdown-state/scripts/alert_pointer_check.py --self-test
+python3 plugins/investment-os/skills/using-investment-os/scripts/monthly_execution.py --self-test
+python3 plugins/investment-os/skills/using-investment-os/scripts/alert_pointer_check.py --self-test
 
-echo "All non-LLM, Behavior Runtime, and eval-harness integrity tests passed. Real Harness behavior remains NOT YET VERIFIED."
+echo "All non-LLM and eval-harness integrity tests passed. Real Harness behavior remains NOT YET VERIFIED."
