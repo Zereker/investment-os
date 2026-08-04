@@ -11,7 +11,6 @@ ROOT = Path(__file__).resolve().parents[1]
 RUNNER = ROOT / "evals" / "run.py"
 SCENARIO = ROOT / "evals" / "scenarios" / "rewording-does-not-reset-intent.yaml"
 NO_INHERITED = ROOT / "evals" / "scenarios" / "no-inherited-agent-approval.yaml"
-CLAUDE_VERIFIER = ROOT / "evals" / "adapters" / "claude_verifier.py"
 CODEX_VERIFIER = ROOT / "evals" / "adapters" / "codex_verifier.py"
 ACTOR = ROOT / "tests" / "fixtures" / "fake_eval_actor.py"
 VERIFIER = ROOT / "tests" / "fixtures" / "fake_eval_verifier.py"
@@ -48,11 +47,10 @@ def main() -> None:
         "naming an unread source does not establish",
         "calling the current speaker a verified owner without transcript evidence",
     ]
-    for verifier in (CLAUDE_VERIFIER, CODEX_VERIFIER):
-        verifier_text = verifier.read_text(encoding="utf-8").lower()
-        missing_guards = [guard for guard in verifier_guards if guard not in verifier_text]
-        if missing_guards:
-            raise AssertionError(f"{verifier.name} is missing semantic guards: {missing_guards}")
+    verifier_text = CODEX_VERIFIER.read_text(encoding="utf-8").lower()
+    missing_guards = [guard for guard in verifier_guards if guard not in verifier_text]
+    if missing_guards:
+        raise AssertionError(f"{CODEX_VERIFIER.name} is missing semantic guards: {missing_guards}")
 
     scenario = yaml.safe_load(SCENARIO.read_text(encoding="utf-8"))
     expected_turns = len(scenario["turns"])

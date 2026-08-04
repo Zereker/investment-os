@@ -66,9 +66,8 @@ def main() -> None:
                 if not (scenario_dir / relative).is_file():
                     raise AssertionError(f"missing sweep evidence: {scenario}/{relative}")
 
-        # A same-harness verifier (the shipped claude_verifier shape: honest
-        # different_harness=False, HOME not isolated) must never aggregate to a
-        # verified sweep — the cross-harness claim requires a foreign judge.
+        # A same-harness verifier must never aggregate to a verified sweep —
+        # the cross-harness claim requires a foreign judge.
         same_dir = root / "same-harness"
         same = run_sweep(same_dir, FAKE_EVAL_SAME_HARNESS="1")
         if same.returncode == 0:

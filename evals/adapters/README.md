@@ -7,17 +7,7 @@ sessions behind `--actor-command` and `--verifier-command`.
 
 ## Commands
 
-Verified run (the only kind that can produce `VERIFIED PASS`):
-
-```bash
-python3 evals/run.py <scenario> \
-  --actor-command 'python3 evals/adapters/claude_actor.py' \
-  --verifier-command 'python3 evals/adapters/claude_verifier.py' \
-  --timeout 2400 \
-  --output evals/results/claude-code-actor__claude-code-verifier/<scenario>.json
-```
-
-Preferred cross-harness run (Claude Code actor, independent Codex verifier):
+Verified run (Claude Code actor, independent Codex verifier):
 
 ```bash
 python3 evals/run.py <scenario> \
@@ -72,11 +62,11 @@ timeout covers the whole actor command, not one turn.
 | Clean actor session | A fresh UUID is minted per run and passed with `--session-id`. Without it the CLI can reuse the invoking session, which would silently void the whole run. |
 | One persistent session across turns | Turn 1 uses `--session-id`; later turns `--resume` that same id. |
 | Installed-distribution authority | The actor runs from a disposable copy of the plugin with `.git` and prior eval results excluded. It cannot resolve a repository commit at runtime or learn from recorded answers. |
-| Separate verifier process and session | Each verifier is a separate process. Claude verifies the requested fresh UUID; Codex reports a new ephemeral thread id from its JSONL event stream. The runner rejects either id if it equals the actor's. |
+| Separate verifier process and session | Codex runs as a separate process and reports a new ephemeral thread id from its JSONL event stream. The runner rejects it if it equals the actor's. |
 | Verifier not contaminated by the system under test | It runs in a neutral temporary directory with no plugin or Skill loaded. It judges from the rubric and transcript only. |
 | Host-state isolation | The Codex verifier runs under a new HOME/XDG/TMPDIR tree with an allowlisted environment. Only the selected authentication material is seeded; host config and prior sessions are absent. |
 | Different harness preferred | `codex_verifier.py` supplies the preferred Claude Code actor / Codex verifier pairing and reports `different_harness: true`. |
-| Disclosed harness metadata | Adapters report model, tooling, session identity and isolation in result JSON. Same-harness Claude verification remains available and is disclosed as `different_harness: false`. |
+| Disclosed harness metadata | Adapters report model, tooling, session identity and isolation in result JSON. |
 
 ## Why an eval run cannot touch the real account
 
@@ -89,7 +79,6 @@ structural:
 - the actor is restricted to read-only tools (`Read`, `Grep`, `Glob`, `Skill`) plus the distribution's
   deterministic Python scripts; direct writes, unrestricted shell and network fetches are denied, and
   any script-side files are confined to the disposable copy;
-- the Claude verifier gets no tools at all;
 - the Codex verifier runs ephemeral and read-only with user config, project rules, MCP servers and
   web search disabled, and rejects the run if its JSONL trace contains a tool item.
 
@@ -101,14 +90,12 @@ published rules are the system under test.
 | Variable | Default | Meaning |
 |---|---|---|
 | `EVAL_ACTOR_MODEL` | `claude-sonnet-5` | actor model |
-| `EVAL_VERIFIER_MODEL` | `claude-opus-5` | verifier model; differing from the actor strengthens independence |
 | `EVAL_CODEX_BIN` | `codex` | Codex CLI executable or absolute path |
 | `EVAL_CODEX_VERIFIER_MODEL` | `gpt-5.6-sol` | Codex verifier model |
 | `EVAL_CODEX_VERIFIER_REASONING_EFFORT` | `medium` | Codex verifier reasoning effort |
 | `EVAL_CODEX_AUTH_MODE` | `auto` | `auto`, `subscription`, or `api-key`; auto prefers an explicitly exported API key and otherwise uses Codex login auth |
 | `EVAL_CODEX_AUTH_FILE` | Codex login path | optional subscription `auth.json` source override |
 | `EVAL_ACTOR_TIMEOUT` | `600` | per-turn timeout, seconds; a timeout loses the run rather than producing a result |
-| `EVAL_VERIFIER_TIMEOUT` | `600` | verifier timeout, seconds |
 | `EVAL_CODEX_VERIFIER_TIMEOUT` | `600` | Codex verifier timeout, seconds |
 | `EVAL_PLUGIN_DIR` | repo root | Investment OS plugin source copied into the disposable actor distribution |
 | `EVAL_EVIDENCE_DIR` | unset | optional local directory for exact adapter/CLI evidence; set automatically by `run_all.py` |
