@@ -47,25 +47,25 @@ Research, urgency, rhetoric, or a desired trade cannot change production policy 
 
 Stop only the path whose required fact, rule, capability, authorization, or verification is missing. State the exact blocker and recovery condition; continue useful analysis on unaffected paths.
 
+## Product boundary
+
+- **One behavior authority.** This `SKILL.md` defines Agent behavior, routing, privacy, and authorization boundaries.
+- **Four policy authorities.** The numbered references define investment policy and operating facts. Apply the constitution before the operating manual, then the journal; the data contract decides whether facts are usable but creates no investment policy.
+- **Repository stores rules, never portfolio.** Account identifiers, balances, positions, orders, fills, contributions, authorization records, and execution receipts must not enter the public repository.
+- **Runtime account state is private and ephemeral.** Pasted figures, screenshots, old reports, memory, and other Agent output are context, not authority.
+- **Code and tools own facts and irreversible controls.** The LLM owns interpretation, comparison, recommendation, and explanation. Neither may invent facts or silently change policy.
+- **Production stays closed.** Research becomes policy only after owner approval, authoritative-file updates, required checks, and a released distribution.
+
 ## Source of truth
 
-Resolve this installed distribution from this `SKILL.md`, never from the user's current working directory. Before a formal result, read:
-
-- `../../.plugin-version`;
-- `references/product-contract.md`;
-- `references/agent-execution-contract.md`;
-- only the numbered policy references needed for the task.
-
-The installed files are the session authority. Do not clone, fetch, or substitute another checkout at runtime.
-
-Policy references:
+Resolve this installed distribution from this `SKILL.md`, never from the user's current working directory. Before a formal result, read `../../.plugin-version` and only the numbered policy references needed for the task:
 
 - `references/00-constitution.md` — mandate, universe, allocation, and risk rules;
 - `references/01-operating-manual.md` — daily, monthly, periodic, and review procedures;
 - `references/02-data-contract.md` — required sources, freshness, and data gates;
 - `references/03-journal.md` — approved lessons and durable operating context.
 
-Use `references/claude-code-tools.md` or `references/codex-tools.md` only to map the same rules to the current harness.
+The installed files are the session authority. Do not clone, fetch, or substitute another checkout at runtime. Use `references/claude-code-tools.md` or `references/codex-tools.md` only to map the same rules to the current harness.
 
 ## Tasks
 
@@ -99,15 +99,15 @@ Research may challenge the policy, but it cannot enter production by implication
 
 A recommendation is not authorization. Before any broker write:
 
-1. verify fresh before-state and open orders;
-2. normalize one operation;
+1. verify fresh before-state, positions, and open orders;
+2. normalize one operation and bind every material parameter;
 3. verify the required adapter capability;
 4. obtain explicit current-session owner authorization for that operation;
 5. submit once;
-6. read back authoritative broker state;
-7. report `COMPLETED`, `NOT EXECUTED`, `EXECUTION UNKNOWN`, or `VERIFICATION FAILED` honestly.
+6. read back authoritative broker state and compare it with the expected transition;
+7. report `COMPLETED`, `NOT EXECUTED`, `EXECUTION UNKNOWN`, `VERIFICATION FAILED`, or `DATA INCOMPLETE` honestly.
 
-Never silently retry an operation whose broker outcome is uncertain.
+A write acknowledgement is not verification. Never silently retry an operation whose broker outcome is uncertain.
 
 ### System audit
 
