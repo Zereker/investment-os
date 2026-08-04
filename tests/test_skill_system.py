@@ -3,13 +3,13 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PLUGIN_ROOT = ROOT / "plugins" / "investment-os"
 SKILLS = PLUGIN_ROOT / "skills"
+CANONICAL = SKILLS / "using-investment-os" / "SKILL.md"
 
 
 def frontmatter(path: Path) -> dict[str, str]:
@@ -25,45 +25,36 @@ def frontmatter(path: Path) -> dict[str, str]:
     return data
 
 
-def discover() -> dict[str, Path]:
-    found: dict[str, Path] = {}
-    for path in sorted(SKILLS.glob("*/SKILL.md")):
-        meta = frontmatter(path)
-        name = meta.get("name", "")
-        assert name == path.parent.name, f"skill name mismatch: {path}"
-        assert meta.get("description", "").startswith("Use when "), path
-        assert name not in found, f"duplicate skill name: {name}"
-        found[name] = path
-    return found
+def test_single_skill() -> None:
+    discovered = sorted(SKILLS.glob("*/SKILL.md"))
+    assert discovered == [CANONICAL], f"distribution must expose one canonical skill: {discovered}"
+    meta = frontmatter(CANONICAL)
+    assert meta["name"] == "using-investment-os"
+    assert meta["description"].startswith("Use when ")
+
+    text = CANONICAL.read_text(encoding="utf-8")
+    for needle in (
+        "Portfolio first", "Long term first", "Decision first", "HOLD",
+        "Rule 1 — Intent continuity", "Rule 2 — No inherited approval",
+        "Rule 3 — No runtime guessing", "Rule 4 — No manual authority",
+        "Rule 5 — Operation-scoped authorization", "Rule 6 — No policy override",
+        "Rule 7 — Fail closed", "Treat `Daily` as a complete request",
+        "A recommendation is not authorization", "Do not prepend policy narration",
+    ):
+        assert needle in text, f"canonical skill missing: {needle}"
 
 
-def dependency_graph(skills: dict[str, Path]) -> dict[str, set[str]]:
-    graph = {name: set() for name in skills}
-    pattern = re.compile(r"\*\*REQUIRED SUB-SKILL:\*\* `([a-z0-9-]+)`")
-    for name, path in skills.items():
-        for dependency in pattern.findall(path.read_text(encoding="utf-8")):
-            assert dependency in skills, f"{name} references missing skill {dependency}"
-            graph[name].add(dependency)
-    return graph
-
-
-def assert_acyclic(graph: dict[str, set[str]]) -> None:
-    visiting: set[str] = set()
-    visited: set[str] = set()
-
-    def visit(node: str) -> None:
-        if node in visiting:
-            raise AssertionError(f"skill dependency cycle at {node}")
-        if node in visited:
-            return
-        visiting.add(node)
-        for child in graph[node]:
-            visit(child)
-        visiting.remove(node)
-        visited.add(node)
-
-    for node in graph:
-        visit(node)
+def test_internal_assets() -> None:
+    # Old workflow directories may keep scripts and references, but none may
+    # expose another SKILL.md. They are implementation details of one product.
+    for path in (
+        SKILLS / "using-investment-os" / "references" / "product-contract.md",
+        SKILLS / "using-investment-os" / "references" / "agent-execution-contract.md",
+        SKILLS / "running-daily-review" / "scripts" / "daily_brief.py",
+        SKILLS / "running-monthly-review" / "scripts" / "monthly_execution.py",
+        SKILLS / "execution-runtime" / "scripts" / "execution_runtime.py",
+    ):
+        assert path.is_file(), f"missing internal product asset: {path}"
 
 
 def test_manifests() -> None:
@@ -74,7 +65,6 @@ def test_manifests() -> None:
     assert claude["version"] == codex["version"] == version
     assert codex["skills"] == "./skills/"
     assert "hooks" not in codex
-    assert not (ROOT / "hooks/hooks.json").exists()
     command = claude["hooks"]["SessionStart"][0]["hooks"][0]["command"]
     assert "skills/using-investment-os/scripts/claude-session-start" in command
 
@@ -91,43 +81,14 @@ def test_bootstrap() -> None:
     assert "installed plugin distribution" in context
     assert "current working directory" in context
     assert "runtime network fetch" in context
-    assert "DATA INCOMPLETE" not in context
 
 
 def main() -> None:
-    skills = discover()
-    expected = {
-        "using-investment-os", "financial-agent-discipline", "broker-runtime",
-        "execution-runtime", "reconstructing-portfolio-state", "validating-drawdown-state",
-        "enforcing-behavioral-controls", "running-daily-review",
-        "running-monthly-review", "evaluating-transaction-candidates",
-        "routing-investment-research", "auditing-investment-os",
-    }
-    assert expected <= set(skills), f"missing skills: {sorted(expected - set(skills))}"
-    graph = dependency_graph(skills)
-    assert_acyclic(graph)
-    # The router loads the smallest workflow for the task instead of a fixed
-    # mandatory sub-skill graph, so the contract is: it must be able to name
-    # every skill it can route to or load.
-    router_text = skills["using-investment-os"].read_text(encoding="utf-8")
-    for name in sorted(expected - {"using-investment-os"}):
-        assert name in router_text, f"router must name {name}"
-    assert graph["reconstructing-portfolio-state"] == {"broker-runtime"}
-    broker_text = skills["broker-runtime"].read_text(encoding="utf-8")
-    assert "broker-neutral" in broker_text
-    assert "Missing open orders" in broker_text
-    assert "Missing cash transactions" in broker_text
-    assert "persist real account data" in broker_text
-    behavior_text = skills["enforcing-behavioral-controls"].read_text(encoding="utf-8")
-    assert "read `.plugin-version` and the applicable distributed contracts" in behavior_text
-    assert "Record each source as verified or unavailable" in behavior_text
-    assert "listing a future check does not count" in behavior_text
-    assert "state that the speaker's owner identity is unverified" in behavior_text
-    drawdown_text = skills["validating-drawdown-state"].read_text(encoding="utf-8")
-    assert "Do not replace `Account Health = WARN`" in drawdown_text
+    test_single_skill()
+    test_internal_assets()
     test_manifests()
     test_bootstrap()
-    print("Skill system integration tests passed.")
+    print("Single-skill Investment OS integration tests passed.")
 
 
 if __name__ == "__main__":

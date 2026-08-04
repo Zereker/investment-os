@@ -1,7 +1,7 @@
 {
   "name": "investment-os",
-  "version": "0.6.5",
-  "description": "Policy-driven portfolio review and investment-system audit workflows using the policy files distributed with this plugin and fresh authoritative runtime state.",
+  "version": "0.7.0",
+  "description": "A rules-first long-term investment agent distributed as one canonical skill with fresh authoritative runtime state.",
   "author": {
     "name": "Zereker",
     "url": "https://github.com/Zereker"
@@ -19,8 +19,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Investment OS",
-    "shortDescription": "Policy-driven portfolio reviews and system audits",
-    "longDescription": "Use Investment OS to review a live investment account, determine what current repository rules authorize, route policy proposals, and audit reliability without persisting private portfolio state.",
+    "shortDescription": "One rules-first long-term investment Agent",
+    "longDescription": "Use one canonical Investment OS skill to review a live portfolio, make policy-grounded investment judgments, separate research from Production, and keep broker execution under explicit owner authority.",
     "developerName": "Zereker",
     "category": "Finance",
     "capabilities": [
@@ -29,7 +29,7 @@
     ],
     "defaultPrompt": [
       "Daily",
-      "Audit the current Investment OS repository and runtime readiness."
+      "Audit the current Investment OS distribution and runtime readiness."
     ],
     "websiteURL": "https://github.com/Zereker/investment-os",
     "privacyPolicyURL": "https://github.com/Zereker/investment-os/blob/master/plugins/investment-os/skills/using-investment-os/references/product-contract.md",
