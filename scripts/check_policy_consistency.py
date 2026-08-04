@@ -204,7 +204,7 @@ def mirror_tests() -> None:
     monthly = load_runtime_module(
         "plugins/investment-os/skills/running-monthly-review/scripts/monthly_execution.py")
     drill = load_runtime_module(
-        "plugins/investment-os/skills/validating-drawdown-state/scripts/drawdown_drill.py")
+        "Research/tools/drawdown_drill.py")
 
     for label, module in (("monthly_execution", monthly), ("drawdown_drill", drill)):
         tiers = tuple((trigger, tranche) for trigger, _name, tranche in module.TIERS)
@@ -386,6 +386,10 @@ def retired_files_gate() -> None:
         # retired in v4.2: four Red inputs that cannot go Green, and a
         # historical-percentile requirement no source can satisfy
         "02-Operating-System/ETF-Valuation-Framework.md",
+        # retired from the plugin in the runtime slim (v0.5.1): the drill's
+        # mission is complete (mechanism proven, evidence in Research/, constants
+        # mirror-tested); it lives on as Research/tools/drawdown_drill.py
+        "plugins/investment-os/skills/validating-drawdown-state/scripts/drawdown_drill.py",
         # retired in the 29->9 rules-first consolidation (v0.5.0)
         "plugins/investment-os/skills/using-investment-os/references/01-target-allocation.md",
         "plugins/investment-os/skills/using-investment-os/references/02-deployment-framework.md",
@@ -395,10 +399,7 @@ def retired_files_gate() -> None:
         if (ROOT / stale).exists():
             raise AssertionError(f"retired file resurfaced: {stale}")
 
-    drawdown_drill = (
-        "plugins/investment-os/skills/validating-drawdown-state/scripts/"
-        "drawdown_drill.py"
-    )
+    drawdown_drill = "Research/tools/drawdown_drill.py"
     require(drawdown_drill, "references/02-data-contract.md")
     forbid(drawdown_drill, "references/08-data-registry.md")
 

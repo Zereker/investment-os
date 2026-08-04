@@ -3,7 +3,7 @@
 mirror of the published funding rules.
 
 Why this exists: the thresholds have an executable mirror (check_policy_consistency.py)
-and the drawdown state machine has a drill (drawdown_drill.py), but the *funding
+and the drawdown state machine has a drill (Research/tools/drawdown_drill.py), but the *funding
 computation* had none. Every month it was hand-derived from the docs, which is slow
 (the target is 20 minutes) and lets two agents reach two different answers. This
 closes that gap: same inputs -> same answer, every time.

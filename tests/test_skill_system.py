@@ -116,10 +116,6 @@ def main() -> None:
     assert "Missing open orders" in broker_text
     assert "Missing cash transactions" in broker_text
     assert "persist real account data" in broker_text
-    execution_text = skills["execution-runtime"].read_text(encoding="utf-8")
-    assert "single-operation-current-session" in execution_text
-    assert "read back authoritative broker state" in execution_text
-    assert "no silent retry" in execution_text
     behavior_text = skills["enforcing-behavioral-controls"].read_text(encoding="utf-8")
     assert "read `.plugin-version` and the applicable distributed contracts" in behavior_text
     assert "Record each source as verified or unavailable" in behavior_text

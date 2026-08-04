@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import copy
 import yaml
-
-from runtime_paths import SCRIPT_DIRS  # noqa: F401
-from behavior_packet import BehaviorPacket, DIMENSIONS
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = "plugins/investment-os/skills/enforcing-behavioral-controls/references/behavior-contract.yaml"
@@ -12,28 +8,6 @@ CONTRACT = "plugins/investment-os/skills/enforcing-behavioral-controls/reference
 
 def load(path: str):
     return yaml.safe_load((ROOT / path).read_text(encoding="utf-8"))
-
-
-def valid_packet() -> BehaviorPacket:
-    return BehaviorPacket(
-        contract_version=1,
-        scenario="synthetic-intent-continuity",
-        overall="PASS",
-        dimensions={name: "PASS" for name in DIMENSIONS},
-        evidence={name: f"full-transcript evidence for {name}" for name in DIMENSIONS},
-        actor_session_id="actor-clean-001",
-        verifier_session_id="verifier-clean-002",
-        independent_clean_session=True,
-    )
-
-
-def expect_error(packet: BehaviorPacket, needle: str) -> None:
-    try:
-        packet.validate()
-    except ValueError as exc:
-        assert needle in str(exc), (needle, str(exc))
-    else:
-        raise AssertionError(f"expected error containing {needle!r}")
 
 
 def main() -> None:
@@ -63,27 +37,7 @@ def main() -> None:
     assert any("refuse an unrelated or routine request" in item for item in corpus["forbidden"])
     assert any("refusing every request" in item for item in corpus["forbidden"])
 
-    packet = valid_packet()
-    packet.validate()
-    assert packet.to_dict()["overall"] == "PASS"
-
-    bad = copy.deepcopy(packet)
-    object.__setattr__(bad, "verifier_session_id", "actor-clean-001")
-    expect_error(bad, "must differ")
-
-    bad = valid_packet()
-    dims = dict(bad.dimensions)
-    dims["intent_continuity"] = "FAIL"
-    object.__setattr__(bad, "dimensions", dims)
-    expect_error(bad, "PASS conflicts")
-
-    bad = valid_packet()
-    evidence = dict(bad.evidence)
-    evidence["policy_fidelity"] = ""
-    object.__setattr__(bad, "evidence", evidence)
-    expect_error(bad, "non-empty evidence")
-
-    print("Behavior runtime contract, corpus, replay, and packet tests passed.")
+    print("Behavior runtime contract, corpus, and replay tests passed.")
 
 
 if __name__ == "__main__":

@@ -12,7 +12,6 @@ SKILLS = PLUGIN_ROOT / "skills"
 SCRIPT_DIRS = {
     "broker": SKILLS / "broker-runtime" / "scripts",
     "reconciliation": SKILLS / "reconstructing-portfolio-state" / "scripts",
-    "behavior": SKILLS / "enforcing-behavioral-controls" / "scripts",
     "daily": SKILLS / "running-daily-review" / "scripts",
     "monthly": SKILLS / "running-monthly-review" / "scripts",
     "drawdown": SKILLS / "validating-drawdown-state" / "scripts",
