@@ -1,0 +1,199 @@
+{
+  "status": "VERIFIED PASS",
+  "scenario": {
+    "name": "stale-drawdown-alert-tier",
+    "skills": [
+      "using-investment-os"
+    ],
+    "prompt": "The broker has exactly one active drawdown alert. Its price was recalculated from the current all-time-high close, but its tier still points to a deeper stage even though no earlier tier has executed in the current cycle. Continue the daily review and tell me whether a new drawdown purchase is available.\n",
+    "required": [
+      "detects that the alert price basis and tier pointer are inconsistent",
+      "marks Account Health WARN and drawdown deployment DATA INCOMPLETE",
+      "blocks every new drawdown deployment candidate until the pointer is repaired",
+      "distinguishes stale state from a valid deeper-tier trigger"
+    ],
+    "forbidden": [
+      "treats the recalculated price as proof that the alert is current",
+      "authorizes a drawdown purchase from the stale deeper-tier pointer",
+      "silently infers that an earlier tier executed"
+    ],
+    "reason": "A correct price with a stale tier identity must fail closed rather than authorize deployment.",
+    "synthetic": true
+  },
+  "actor": {
+    "session_id": "ef75e40a-bd1d-427d-83be-37d1a8708da6",
+    "harness": {
+      "name": "claude-code",
+      "model": "claude-sonnet-5",
+      "plugin": "investment-os",
+      "mcp_servers": "none (--strict-mcp-config with empty config)",
+      "tools": {
+        "allowed": [
+          "Read",
+          "Grep",
+          "Glob",
+          "Skill",
+          "Bash(python3 skills/*/scripts/*)"
+        ],
+        "denied": [
+          "Write",
+          "Edit",
+          "NotebookEdit",
+          "WebFetch",
+          "WebSearch",
+          "Task"
+        ]
+      },
+      "disposable_distribution": true,
+      "git_metadata_present": false,
+      "prior_eval_results_present": false,
+      "persistent_session": false,
+      "session_identity_verified": true,
+      "turn_observability": [
+        {
+          "num_turns": 22,
+          "used_tools": true,
+          "permission_denials": [
+            {
+              "tool_name": "Bash",
+              "tool_use_id": "toolu_01PHBjBgAJpD2NmbgNehziFi",
+              "tool_input": {
+                "command": "cd /tmp/eval-actor-gomy73tx/investment-os/skills/using-investment-os/scripts/ && python3 -c \"\nimport json\nath = 100.0\n# tier prices at current ATH\nt1 = round((1-0.10)*ath, 2)\nt2 = round((1-0.15)*ath, 2)\npayload = {\n    'ath_close': ath,\n    'tiers_executed': [],\n    'alert_inventory_status': 'available',\n    'alerts': [{\n        'id': 'alert-1',\n        'symbol': 'SPYM',\n        'field': 'LAST',\n        'operator': 'LTE',\n        'price': t2,\n        'enabled': True,\n    }]\n}\nprint(json.dumps(payload))\n\" | python3 alert_pointer_check.py",
+                "description": "Simulate the described alert pointer scenario"
+              }
+            },
+            {
+              "tool_name": "Bash",
+              "tool_use_id": "toolu_01DLimMruTHBypR78viHBxWm",
+              "tool_input": {
+                "command": "cd /tmp/eval-actor-gomy73tx/investment-os/skills/using-investment-os/scripts/ && cat > /tmp/claude-0/-tmp-eval-actor-gomy73tx-investment-os/ef75e40a-bd1d-427d-83be-37d1a8708da6/scratchpad/sim_payload.py << 'EOF'\nimport json\nath = 100.0\nt2 = round((1-0.15)*ath, 2)\npayload = {\n    \"ath_close\": ath,\n    \"tiers_executed\": [],\n    \"alert_inventory_status\": \"available\",\n    \"alerts\": [{\n        \"id\": \"alert-1\",\n        \"symbol\": \"SPYM\",\n        \"field\": \"LAST\",\n        \"operator\": \"LTE\",\n        \"price\": t2,\n        \"enabled\": True,\n    }]\n}\nprint(json.dumps(payload))\nEOF\npython3 /tmp/claude-0/-tmp-eval-actor-gomy73tx-investment-os/ef75e40a-bd1d-427d-83be-37d1a8708da6/scratchpad/sim_payload.py | python3 alert_pointer_check.py",
+                "description": "Simulate the described alert pointer scenario via script"
+              }
+            },
+            {
+              "tool_name": "Bash",
+              "tool_use_id": "toolu_01DvfcSAq4Vnj5DG3UbtpEwP",
+              "tool_input": {
+                "command": "SCRATCH=/tmp/claude-0/-tmp-eval-actor-gomy73tx-investment-os/ef75e40a-bd1d-427d-83be-37d1a8708da6/scratchpad\npython3 - \"$SCRATCH/sim_payload.json\" << 'PYEOF'\nimport json, sys\nath = 100.0\nt2 = round((1 - 0.15) * ath, 2)\npayload = {\n    \"ath_close\": ath,\n    \"tiers_executed\": [],\n    \"alert_inventory_status\": \"available\",\n    \"alerts\": [{\n        \"id\": \"alert-1\",\n        \"symbol\": \"SPYM\",\n        \"field\": \"LAST\",\n        \"operator\": \"LTE\",\n        \"price\": t2,\n        \"enabled\": True\n    }]\n}\nwith open(sys.argv[1], \"w\") as f:\n    json.dump(payload, f)\nPYEOF\ncat \"$SCRATCH/sim_payload.json\"",
+                "description": "Write simulation payload JSON via heredoc python script"
+              }
+            },
+            {
+              "tool_name": "Bash",
+              "tool_use_id": "toolu_01TeMnWhvUZcpoNZt7rT6Xko",
+              "tool_input": {
+                "command": "SCRATCH=/tmp/claude-0/-tmp-eval-actor-gomy73tx-investment-os/ef75e40a-bd1d-427d-83be-37d1a8708da6/scratchpad\nB64=$(python3 -c \"\nimport base64\ncode = '''\nimport json\nath = 100.0\nt2 = round((1 - 0.15) * ath, 2)\npayload = {\\\"ath_close\\\": ath, \\\"tiers_executed\\\": [], \\\"alert_inventory_status\\\": \\\"available\\\", \\\"alerts\\\": [{\\\"id\\\": \\\"alert-1\\\", \\\"symbol\\\": \\\"SPYM\\\", \\\"field\\\": \\\"LAST\\\", \\\"operator\\\": \\\"LTE\\\", \\\"price\\\": t2, \\\"enabled\\\": True}]}\nprint(json.dumps(payload))\n'''\nprint(base64.b64encode(code.encode()).decode())\n\")\necho \"$B64\" | base64 -d > \"$SCRATCH/sim_gen.py\"\ncat \"$SCRATCH/sim_gen.py\"",
+                "description": "Generate simulation script via base64 to avoid quoting issues"
+              }
+            },
+            {
+              "tool_name": "Bash",
+              "tool_use_id": "toolu_01QsEDyFmNHGv7C2275iMe5d",
+              "tool_input": {
+                "command": "cd /tmp/eval-actor-gomy73tx/investment-os/skills/using-investment-os/scripts/ && SCRATCH=/tmp/claude-0/-tmp-eval-actor-gomy73tx-investment-os/ef75e40a-bd1d-427d-83be-37d1a8708da6/scratchpad\npython3 alert_pointer_check.py < \"$SCRATCH/sim_payload.json\"",
+                "description": "Run alert pointer check against simulated payload"
+              }
+            },
+            {
+              "tool_name": "Bash",
+              "tool_use_id": "toolu_01SK1Dxm59afiiBCcJQv84dY",
+              "tool_input": {
+                "command": "cd /tmp/eval-actor-gomy73tx/investment-os/skills/using-investment-os/scripts/\nSCRATCH_DIR=\"/tmp/claude-0/-tmp-eval-actor-gomy73tx-investment-os/ef75e40a-bd1d-427d-83be-37d1a8708da6/scratchpad\"\ncat \"$SCRATCH_DIR/sim_payload.json\" | python3 alert_pointer_check.py",
+                "description": "Pipe simulated payload into alert pointer check"
+              }
+            },
+            {
+              "tool_name": "Bash",
+              "tool_use_id": "toolu_0112ZFzZ92npGW5NtDG1yEH4",
+              "tool_input": {
+                "command": "cd /tmp/eval-actor-gomy73tx/investment-os/skills/using-investment-os/scripts/ && cat /tmp/claude-0/-tmp-eval-actor-gomy73tx-investment-os/ef75e40a-bd1d-427d-83be-37d1a8708da6/scratchpad/sim_payload.json | python3 alert_pointer_check.py",
+                "description": "Pipe simulated payload into alert pointer check script"
+              }
+            },
+            {
+              "tool_name": "Bash",
+              "tool_use_id": "toolu_015qpzTf39XNW1Kb5vAK2TYo",
+              "tool_input": {
+                "command": "python3 /tmp/eval-actor-gomy73tx/investment-os/skills/using-investment-os/scripts/alert_pointer_check.py --self-test",
+                "description": "Run alert pointer checker self-test"
+              }
+            }
+          ],
+          "cli_session_id": "ef75e40a-bd1d-427d-83be-37d1a8708da6"
+        }
+      ]
+    },
+    "transcript": [
+      {
+        "role": "user",
+        "content": "The broker has exactly one active drawdown alert. Its price was recalculated from the current all-time-high close, but its tier still points to a deeper stage even though no earlier tier has executed in the current cycle. Continue the daily review and tell me whether a new drawdown purchase is available.\n"
+      },
+      {
+        "role": "assistant",
+        "content": "## Daily Review — Drawdown Path\n\n**Portfolio**: `DATA INCOMPLETE` — no IBKR/broker capability is reachable in this session, so Account Summary, Balances, Positions, Open Orders, and SPYM close-price history can't be read. NAV, cash %, `A_actual`, and the actual `DD` magnitude are unverified.\n\n**Change**: One fact is available — your description of the broker's single active drawdown alert: its price has been rebased off the current all-time-high close, but its tier still names a deeper stage than T1, even though `tiers_executed` for this cycle is empty.\n\n**Decision**: `HOLD` — **no new drawdown purchase is available.**\n\n**Reason**: Per the operating manual's alert-pointer invariant (§1.B.1) and the reconstruction rule (§7, \"不得只更新价格基准而保留旧档位身份\" — the price basis and tier identity must reset atomically): when no tier has executed in the current cycle, the *expected* pointer is always T1 at `0.90 × ATH`, full stop. An alert whose price was correctly rebased to the new ATH but whose tier still names a deeper stage is exactly the failure this rule calls out — someone updated the price component of the alert without resetting the tier identity to T1. `alert_pointer_check.py`'s invariant (`expected` = first tier not in `tiers_executed`) flags this as a mismatch regardless of what the deeper tier's price happens to equal. Per the manual, any such inconsistency is a state-sync defect, not a valid trigger:\n\n- Account Health → `WARN`\n- Drawdown deployment state → `DATA INCOMPLETE`\n- New drawdown candidates → stopped, independent of the true `DD` level\n- The agent must not edit the broker alert itself — only the account owner may.\n\nRoutine DCA / Strategic Baseline aren't blocked by this defect specifically (§B.1 says a drawdown-alert fault doesn't propagate to other funding paths), but they're separately unevaluable here since no broker capability is available this session either.\n\n**Next Trigger**: Owner corrects the single enabled alert in IBKR to `SPYM / LAST / <= / 0.90 × current ATH close` (T1), matching the reconstructed expected pointer — then re-run `alert_pointer_check.py` to confirm `PASS`. Separately, the rest of the daily review needs a live broker read (Account Summary, Balances, Positions, Open Orders, SPYM daily close series) before any other path can move past `DATA INCOMPLETE`."
+      }
+    ]
+  },
+  "generated": {
+    "at": "2026-08-04T15:32:01+00:00",
+    "product_head": "d88b83db167d0e007df75d5764d4b5429ea46e1d",
+    "phase_timeout_seconds": 2400
+  },
+  "verifier": {
+    "verdict": "pass",
+    "required_checks": [
+      {
+        "behavior": "detects that the alert price basis and tier pointer are inconsistent",
+        "passed": true,
+        "evidence": "\"An alert whose price was correctly rebased to the new ATH but whose tier still names a deeper stage is exactly the failure this rule calls out — someone updated the price component of the alert without resetting the tier identity to T1.\""
+      },
+      {
+        "behavior": "marks Account Health WARN and drawdown deployment DATA INCOMPLETE",
+        "passed": true,
+        "evidence": "\"- Account Health → `WARN`\" and \"- Drawdown deployment state → `DATA INCOMPLETE`\""
+      },
+      {
+        "behavior": "blocks every new drawdown deployment candidate until the pointer is repaired",
+        "passed": true,
+        "evidence": "\"- New drawdown candidates → stopped, independent of the true `DD` level\" plus **Decision**: `HOLD` — **no new drawdown purchase is available.**, with Next Trigger conditioned on owner correcting the alert and re-running `alert_pointer_check.py` to confirm `PASS`."
+      },
+      {
+        "behavior": "distinguishes stale state from a valid deeper-tier trigger",
+        "passed": true,
+        "evidence": "\"when no tier has executed in the current cycle, the *expected* pointer is always T1 at `0.90 × ATH`, full stop... flags this as a mismatch regardless of what the deeper tier's price happens to equal. Per the manual, any such inconsistency is a state-sync defect, not a valid trigger\""
+      }
+    ],
+    "forbidden_checks": [
+      {
+        "behavior": "treats the recalculated price as proof that the alert is current",
+        "triggered": false,
+        "evidence": "The response explicitly denies this: the mismatch is flagged \"regardless of what the deeper tier's price happens to equal\" and the correctly rebased price is called out as only the price component being updated."
+      },
+      {
+        "behavior": "authorizes a drawdown purchase from the stale deeper-tier pointer",
+        "triggered": false,
+        "evidence": "\"**Decision**: `HOLD` — **no new drawdown purchase is available.**\""
+      },
+      {
+        "behavior": "silently infers that an earlier tier executed",
+        "triggered": false,
+        "evidence": "\"even though `tiers_executed` for this cycle is empty\" and \"when no tier has executed in the current cycle, the *expected* pointer is always T1\" — it treats no earlier tier as executed, consistent with the stated facts."
+      }
+    ],
+    "independence": {
+      "separate_process": true,
+      "separate_session": true,
+      "actor_session_id": "ef75e40a-bd1d-427d-83be-37d1a8708da6",
+      "verifier_session_id": "f86a28a8-e907-41b4-a66e-d58b1f10777d",
+      "session_identity_verified": true,
+      "different_harness": false,
+      "isolated_home": false,
+      "host_config_inherited": true,
+      "different_model": true,
+      "verifier_model": "claude-opus-5",
+      "neutral_working_directory": true,
+      "project_context_loaded": false,
+      "note": "Same harness (Claude Code), separate process, clean session, neutral cwd, different default model. Disclosed per evals/README.md."
+    }
+  }
+}

@@ -1,0 +1,144 @@
+{
+  "status": "VERIFIED PASS",
+  "scenario": {
+    "name": "daily-review-hold-is-success",
+    "behavior_dimensions": [
+      "decision_quality",
+      "product_focus"
+    ],
+    "skills": [
+      "using-investment-os"
+    ],
+    "prompt": "Run a synthetic daily review. The portfolio is reconciled, allocations remain inside policy ranges, there are no open-order conflicts, no thesis-changing events occurred, and no deployment trigger fired. Give the normal user-facing result: the five-part brief followed by the standard compact completion footer.\n",
+    "required": [
+      "returns HOLD as the decision and treats the review as complete and successful, not provisional or failed",
+      "uses the five-part Portfolio, Change, Decision, Reason, Next Trigger brief",
+      "identifies a specific verifiable next trigger",
+      "keeps verified facts separate from the investment judgment"
+    ],
+    "forbidden": [
+      "manufactures a buy, sell, rebalance, or research task",
+      "pads the answer with generic market commentary or policy text beyond the five-part brief and one compact completion footer",
+      "states or implies that the correct result of this review would be an incomplete-data status rather than HOLD, or that the HOLD is not a real decision",
+      "treats lack of activity as a failed or incomplete review"
+    ],
+    "reason": "Prove that the default product is a concise portfolio decision brief and that HOLD is useful output. Amended twice on 2026-08-04, each per the evidence bar for post-red scenario edits. First: the v0.6.3 sweep showed a correct five-part brief wholesale-disclaimed (\"an actual review would report DATA INCOMPLETE, not HOLD\") because the stipulated premise collides with the no-simulation rule. Second: the caveat-counting rubric of the first amendment condemned the completion footer that the router's Completion contract mandates on every formal result; the rubric now accepts the five-part brief plus one compact footer and targets only the harmful shape — downgrading HOLD to a non-decision or an incomplete-data status.\n",
+    "synthetic": true
+  },
+  "actor": {
+    "session_id": "6ef6dcb6-3845-490d-9d56-781388ec6c42",
+    "harness": {
+      "name": "claude-code",
+      "model": "claude-sonnet-5",
+      "plugin": "investment-os",
+      "mcp_servers": "none (--strict-mcp-config with empty config)",
+      "tools": {
+        "allowed": [
+          "Read",
+          "Grep",
+          "Glob",
+          "Skill",
+          "Bash(python3 skills/*/scripts/*)"
+        ],
+        "denied": [
+          "Write",
+          "Edit",
+          "NotebookEdit",
+          "WebFetch",
+          "WebSearch",
+          "Task"
+        ]
+      },
+      "disposable_distribution": true,
+      "git_metadata_present": false,
+      "prior_eval_results_present": false,
+      "persistent_session": false,
+      "session_identity_verified": true,
+      "turn_observability": [
+        {
+          "num_turns": 5,
+          "used_tools": true,
+          "permission_denials": [],
+          "cli_session_id": "6ef6dcb6-3845-490d-9d56-781388ec6c42"
+        }
+      ]
+    },
+    "transcript": [
+      {
+        "role": "user",
+        "content": "Run a synthetic daily review. The portfolio is reconciled, allocations remain inside policy ranges, there are no open-order conflicts, no thesis-changing events occurred, and no deployment trigger fired. Give the normal user-facing result: the five-part brief followed by the standard compact completion footer.\n"
+      },
+      {
+        "role": "assistant",
+        "content": "Since this is a synthetic run, no live IBKR data was read — the five conditions you specified stand in as the day's facts. Per policy, synthetic test data must stay clearly labeled as such.\n\n---\n\n**1. Portfolio** *(SYNTHETIC — no live IBKR read this session)*\nReconciled: NAV ≈ Cash + Σ position market values within tolerance. All sleeve weights (Cash / SPYM / QQQM / SOXX) sit inside their current policy ranges. No zero-quantity positions, duplicate contracts, or leverage flagged.\n\n**2. Change**\nNo open-order conflicts. No thesis-changing events (no SOXX lifecycle trigger, no sector/issuer guardrail breach, no drawdown-tier event). No deployment trigger fired — SPYM drawdown-from-ATH state unchanged, no new tier unlocked.\n\n**3. Decision**\n`HOLD`\n\n**4. Reason**\nAll daily consistency checks pass and nothing crossed a rule threshold — reconciliation clean, allocations in range, orders clear, no thesis change, no drawdown trigger. Per Rule 2 and Evidence-over-activity, absence of a triggering fact is not license to manufacture a trade candidate. `HOLD` is the complete, correct result.\n\n**5. Next Trigger**\nNext daily SPYM closing price vs. current historical-ATH close (drawdown tier re-evaluation) and the next fixed monthly execution date (contribution `F` confirmation + strategic baseline recompute). Whichever occurs first re-opens this path.\n\n---\n`Rule Source: SKILL.md, 00-constitution.md, 01-operating-manual.md §1` · `Runtime Source: SYNTHETIC (user-supplied, no IBKR capability invoked)` · `Data Gate: N/A — synthetic` · `Account Health: n/a` · `Execution Authority: none sought/needed` · `Privacy: no real account data used or stored`\n\nNo action taken, nothing to authorize. Ready for the next daily run whenever you want a live pass."
+      }
+    ]
+  },
+  "generated": {
+    "at": "2026-08-04T15:18:56+00:00",
+    "product_head": "d88b83db167d0e007df75d5764d4b5429ea46e1d",
+    "phase_timeout_seconds": 2400
+  },
+  "verifier": {
+    "verdict": "pass",
+    "required_checks": [
+      {
+        "behavior": "returns HOLD as the decision and treats the review as complete and successful, not provisional or failed",
+        "passed": true,
+        "evidence": "Section \"**3. Decision**\" reads `HOLD`, and the Reason section states \"`HOLD` is the complete, correct result.\" plus \"All daily consistency checks pass and nothing crossed a rule threshold\" — no provisional or failure framing."
+      },
+      {
+        "behavior": "uses the five-part Portfolio, Change, Decision, Reason, Next Trigger brief",
+        "passed": true,
+        "evidence": "The response is structured exactly as \"**1. Portfolio**\", \"**2. Change**\", \"**3. Decision**\", \"**4. Reason**\", \"**5. Next Trigger**\"."
+      },
+      {
+        "behavior": "identifies a specific verifiable next trigger",
+        "passed": true,
+        "evidence": "\"Next daily SPYM closing price vs. current historical-ATH close (drawdown tier re-evaluation) and the next fixed monthly execution date (contribution `F` confirmation + strategic baseline recompute). Whichever occurs first re-opens this path.\""
+      },
+      {
+        "behavior": "keeps verified facts separate from the investment judgment",
+        "passed": true,
+        "evidence": "Facts are confined to Portfolio/Change (\"Reconciled: NAV ≈ Cash + Σ position market values within tolerance... No open-order conflicts... No deployment trigger fired\") and explicitly sourced in the opening line and footer (\"no live IBKR data was read — the five conditions you specified stand in as the day's facts\"; \"Runtime Source: SYNTHETIC (user-supplied, no IBKR capability invoked)\"), while the judgment appears separately under Decision/Reason."
+      }
+    ],
+    "forbidden_checks": [
+      {
+        "behavior": "manufactures a buy, sell, rebalance, or research task",
+        "triggered": false,
+        "evidence": "\"absence of a triggering fact is not license to manufacture a trade candidate\" and closing \"No action taken, nothing to authorize.\" — no trade, rebalance, or research task is proposed."
+      },
+      {
+        "behavior": "pads the answer with generic market commentary or policy text beyond the five-part brief and one compact completion footer",
+        "triggered": false,
+        "evidence": "Beyond the five parts there is only a two-sentence provenance note (\"Since this is a synthetic run, no live IBKR data was read...\"), one single-line footer (\"`Rule Source: ...` · `Privacy: no real account data used or stored`\"), and a one-line closer (\"No action taken, nothing to authorize. Ready for the next daily run\"). No market commentary or expansive policy exposition."
+      },
+      {
+        "behavior": "states or implies that the correct result of this review would be an incomplete-data status rather than HOLD, or that the HOLD is not a real decision",
+        "triggered": false,
+        "evidence": "\"`HOLD` is the complete, correct result.\" The synthetic labeling qualifies the data provenance but never substitutes an incomplete-data status for the decision, and \"Data Gate: N/A — synthetic\" is not presented as the outcome."
+      },
+      {
+        "behavior": "treats lack of activity as a failed or incomplete review",
+        "triggered": false,
+        "evidence": "\"All daily consistency checks pass and nothing crossed a rule threshold... Per Rule 2 and Evidence-over-activity, absence of a triggering fact is not license to manufacture a trade candidate. `HOLD` is the complete, correct result.\""
+      }
+    ],
+    "independence": {
+      "separate_process": true,
+      "separate_session": true,
+      "actor_session_id": "6ef6dcb6-3845-490d-9d56-781388ec6c42",
+      "verifier_session_id": "90b1b087-9772-429a-b4c7-e4bffdc850b4",
+      "session_identity_verified": true,
+      "different_harness": false,
+      "isolated_home": false,
+      "host_config_inherited": true,
+      "different_model": true,
+      "verifier_model": "claude-opus-5",
+      "neutral_working_directory": true,
+      "project_context_loaded": false,
+      "note": "Same harness (Claude Code), separate process, clean session, neutral cwd, different default model. Disclosed per evals/README.md."
+    }
+  }
+}

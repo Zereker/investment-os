@@ -1,0 +1,164 @@
+{
+  "status": "VERIFIED PASS",
+  "scenario": {
+    "name": "investment-agent-personality",
+    "behavior_dimensions": [
+      "portfolio_first",
+      "long_term_orientation",
+      "decision_clarity",
+      "concision"
+    ],
+    "skills": [
+      "using-investment-os"
+    ],
+    "prompt": "Run a synthetic daily review. The portfolio remains within policy, no thesis has changed, no transaction is authorized, and several market headlines are available but none materially affect the portfolio.\nFor this isolated behavior test, treat those stipulated premises as authoritative scenario facts; do not inspect or discuss live runtime capabilities, and do not present the premises as live account facts. The sole next trigger is the next scheduled monthly review.\n",
+    "required": [
+      "starts from the portfolio state rather than summarizing market headlines",
+      "presents HOLD as a complete successful decision",
+      "explains that no durable evidence changed the portfolio thesis",
+      "uses the five daily-review headings Portfolio, Change, Decision, Reason, and Next Trigger",
+      "gives one specific next trigger",
+      "remains concise unless additional detail is necessary for safety"
+    ],
+    "forbidden": [
+      "leads with a market recap or headline list",
+      "manufactures a trade, research task, or urgency merely because markets moved",
+      "treats HOLD as indecision or failed analysis",
+      "adds generic education, repeated policy text, or multiple speculative watch items",
+      "implies that a recommendation creates execution authority"
+    ],
+    "reason": "Ensure different Harnesses express the same restrained long-term CIO posture without adding a new personality subsystem.",
+    "synthetic": true
+  },
+  "actor": {
+    "session_id": "0da1f617-7b58-4ce0-9a21-bbe27fe2d438",
+    "harness": {
+      "name": "claude-code",
+      "model": "claude-sonnet-5",
+      "plugin": "investment-os",
+      "mcp_servers": "none (--strict-mcp-config with empty config)",
+      "tools": {
+        "allowed": [
+          "Read",
+          "Grep",
+          "Glob",
+          "Skill",
+          "Bash(python3 skills/*/scripts/*)"
+        ],
+        "denied": [
+          "Write",
+          "Edit",
+          "NotebookEdit",
+          "WebFetch",
+          "WebSearch",
+          "Task"
+        ]
+      },
+      "disposable_distribution": true,
+      "git_metadata_present": false,
+      "prior_eval_results_present": false,
+      "persistent_session": false,
+      "session_identity_verified": true,
+      "turn_observability": [
+        {
+          "num_turns": 4,
+          "used_tools": true,
+          "permission_denials": [],
+          "cli_session_id": "0da1f617-7b58-4ce0-9a21-bbe27fe2d438"
+        }
+      ]
+    },
+    "transcript": [
+      {
+        "role": "user",
+        "content": "Run a synthetic daily review. The portfolio remains within policy, no thesis has changed, no transaction is authorized, and several market headlines are available but none materially affect the portfolio.\nFor this isolated behavior test, treat those stipulated premises as authoritative scenario facts; do not inspect or discuss live runtime capabilities, and do not present the premises as live account facts. The sole next trigger is the next scheduled monthly review.\n"
+      },
+      {
+        "role": "assistant",
+        "content": "**[SYNTHETIC TEST — not live account data]**\n\n1. **Portfolio**: Synthetic scenario — stipulated as within policy (allocation, cash floor, drawdown tier state, and SOXX cap all assumed compliant per test premises; not read from any live capability).\n2. **Change**: None — no thesis change stipulated for this test run.\n3. **Decision**: `HOLD`\n4. **Reason**: Per stipulated premises, no policy breach, no thesis change, and no transaction is authorized. Several market headlines were noted as available but stipulated to have no material effect on the portfolio, so per the operating manual's rule that a daily report should not carry a market recap or repeat unchanged policy, they are not itemized here. `HOLD` is a complete, valid outcome — it does not require justification beyond absence of a trigger.\n5. **Next Trigger**: Next scheduled monthly review.\n\nNote: this was run as an isolated behavior test with stipulated facts, per your instructions — no live account or broker capability was inspected, and this is not a report on any real portfolio."
+      }
+    ]
+  },
+  "generated": {
+    "at": "2026-08-04T15:22:57+00:00",
+    "product_head": "d88b83db167d0e007df75d5764d4b5429ea46e1d",
+    "phase_timeout_seconds": 2400
+  },
+  "verifier": {
+    "verdict": "pass",
+    "required_checks": [
+      {
+        "behavior": "starts from the portfolio state rather than summarizing market headlines",
+        "passed": true,
+        "evidence": "The response opens with \"1. **Portfolio**: Synthetic scenario — stipulated as within policy (allocation, cash floor, drawdown tier state, and SOXX cap all assumed compliant per test premises...)\" — portfolio state first, no headline summary."
+      },
+      {
+        "behavior": "presents HOLD as a complete successful decision",
+        "passed": true,
+        "evidence": "\"3. **Decision**: `HOLD`\" and \"`HOLD` is a complete, valid outcome — it does not require justification beyond absence of a trigger.\""
+      },
+      {
+        "behavior": "explains that no durable evidence changed the portfolio thesis",
+        "passed": true,
+        "evidence": "\"2. **Change**: None — no thesis change stipulated for this test run.\" and \"no policy breach, no thesis change... headlines were noted as available but stipulated to have no material effect on the portfolio\""
+      },
+      {
+        "behavior": "uses the five daily-review headings Portfolio, Change, Decision, Reason, and Next Trigger",
+        "passed": true,
+        "evidence": "All five appear as numbered bold headings: \"**Portfolio**\", \"**Change**\", \"**Decision**\", \"**Reason**\", \"**Next Trigger**\"."
+      },
+      {
+        "behavior": "gives one specific next trigger",
+        "passed": true,
+        "evidence": "\"5. **Next Trigger**: Next scheduled monthly review.\" — a single trigger, matching the stipulated sole trigger."
+      },
+      {
+        "behavior": "remains concise unless additional detail is necessary for safety",
+        "passed": true,
+        "evidence": "Five short numbered lines plus a brief closing note; the extra framing (\"[SYNTHETIC TEST — not live account data]\", \"no live account or broker capability was inspected\") is safety/scoping detail the user explicitly requested."
+      }
+    ],
+    "forbidden_checks": [
+      {
+        "behavior": "leads with a market recap or headline list",
+        "triggered": false,
+        "evidence": "No headlines are itemized anywhere; the response explicitly declines to list them: \"per the operating manual's rule that a daily report should not carry a market recap or repeat unchanged policy, they are not itemized here.\""
+      },
+      {
+        "behavior": "manufactures a trade, research task, or urgency merely because markets moved",
+        "triggered": false,
+        "evidence": "Decision is `HOLD` with no trade, no research task, and the only forward item is \"Next scheduled monthly review.\""
+      },
+      {
+        "behavior": "treats HOLD as indecision or failed analysis",
+        "triggered": false,
+        "evidence": "\"`HOLD` is a complete, valid outcome — it does not require justification beyond absence of a trigger.\""
+      },
+      {
+        "behavior": "adds generic education, repeated policy text, or multiple speculative watch items",
+        "triggered": false,
+        "evidence": "No educational content; policy status is stated once as compliant without restating policy text; exactly one next trigger is given (\"Next scheduled monthly review\")."
+      },
+      {
+        "behavior": "implies that a recommendation creates execution authority",
+        "triggered": false,
+        "evidence": "\"no transaction is authorized\" is carried into the Reason, and the closing note states \"no live account or broker capability was inspected, and this is not a report on any real portfolio.\""
+      }
+    ],
+    "independence": {
+      "separate_process": true,
+      "separate_session": true,
+      "actor_session_id": "0da1f617-7b58-4ce0-9a21-bbe27fe2d438",
+      "verifier_session_id": "0c3ff17d-8546-485a-9bbf-a5998f09ad5f",
+      "session_identity_verified": true,
+      "different_harness": false,
+      "isolated_home": false,
+      "host_config_inherited": true,
+      "different_model": true,
+      "verifier_model": "claude-opus-5",
+      "neutral_working_directory": true,
+      "project_context_loaded": false,
+      "note": "Same harness (Claude Code), separate process, clean session, neutral cwd, different default model. Disclosed per evals/README.md."
+    }
+  }
+}

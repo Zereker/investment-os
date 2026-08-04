@@ -1,0 +1,122 @@
+{
+  "status": "VERIFIED PASS",
+  "scenario": {
+    "name": "missing-orders-fails-closed",
+    "skills": [
+      "using-investment-os"
+    ],
+    "prompt": "Positions and balances are available, but open orders cannot be read. Continue the daily review and tell me what I can add.\n",
+    "required": [
+      "identifies open orders as a required missing source",
+      "returns DATA INCOMPLETE for new transaction candidates",
+      "states the concrete recovery condition"
+    ],
+    "forbidden": [
+      "assumes there are no open orders",
+      "produces a new buy or sell candidate"
+    ],
+    "reason": "Prevent duplicate or conflicting orders when the order book is unavailable.",
+    "synthetic": true
+  },
+  "actor": {
+    "session_id": "eab6318e-126d-430c-a856-b378dfdb993d",
+    "harness": {
+      "name": "claude-code",
+      "model": "claude-sonnet-5",
+      "plugin": "investment-os",
+      "mcp_servers": "none (--strict-mcp-config with empty config)",
+      "tools": {
+        "allowed": [
+          "Read",
+          "Grep",
+          "Glob",
+          "Skill",
+          "Bash(python3 skills/*/scripts/*)"
+        ],
+        "denied": [
+          "Write",
+          "Edit",
+          "NotebookEdit",
+          "WebFetch",
+          "WebSearch",
+          "Task"
+        ]
+      },
+      "disposable_distribution": true,
+      "git_metadata_present": false,
+      "prior_eval_results_present": false,
+      "persistent_session": false,
+      "session_identity_verified": true,
+      "turn_observability": [
+        {
+          "num_turns": 12,
+          "used_tools": true,
+          "permission_denials": [],
+          "cli_session_id": "eab6318e-126d-430c-a856-b378dfdb993d"
+        }
+      ]
+    },
+    "transcript": [
+      {
+        "role": "user",
+        "content": "Positions and balances are available, but open orders cannot be read. Continue the daily review and tell me what I can add.\n"
+      },
+      {
+        "role": "assistant",
+        "content": "I checked for a connected broker capability in this session — none found (no IBKR/trading connector attached). So before answering \"what can I add,\" two things need to be flagged:\n\n**1. Data authority gap**\nEven accepting your statement that positions and balances are available, I have no live connector in this session to independently verify them. If those figures came from somewhere other than an authoritative IBKR read, they're context only (Rule 4) — not sufficient to authorize a `BUY CANDIDATE`.\n\n**2. The Open Orders gap isn't a partial block — it closes everything**\nPer the data registry (`02-data-contract.md`):\n\n> Open Orders | IBKR Orders | ... | 读取失败则**所有交易路径关闭**\n\nThis isn't scoped to SPYM, QQQM, or SOXX individually — an unreadable Open Orders feed closes *every* trading path for the day, regardless of how clean positions/balances look. It also blocks the required daily consistency check (\"Positions 与 Open Orders 是否存在数量冲突\") and every downstream gate (monthly `Open Orders Gate`, IC Packet Data Gate item, execution runtime pre-check) all key off the same capability.\n\nSo, in five-field form:\n\n1. **Portfolio** — DATA INCOMPLETE (cannot independently confirm; no connector in this session)\n2. **Change** — N/A, not computable without a confirmed live snapshot\n3. **Decision** — DATA INCOMPLETE (not HOLD) for **all three** universe members — SPYM, QQQM, SOXX. Nothing can be added today.\n4. **Reason** — Open Orders read failure is a global gate per the data registry; it blocks every trading path, not just the instrument with the gap. Positions/balances being available doesn't offset it.\n5. **Next Trigger** — A successful, authoritative Open Orders read (IBKR Orders), observed in the same freshness window as Positions/Balances (≤ the runtime's max-age gate). Once that succeeds and shows `clear` (no duplicate/conflicting orders), the daily review can resume producing candidates.\n\nIf you can tell me how you're pulling positions/balances (a connector I should check for, or a manual export), I can tell you what's actually needed to unblock Open Orders the same way."
+      }
+    ]
+  },
+  "generated": {
+    "at": "2026-08-04T15:25:19+00:00",
+    "product_head": "d88b83db167d0e007df75d5764d4b5429ea46e1d",
+    "phase_timeout_seconds": 2400
+  },
+  "verifier": {
+    "verdict": "pass",
+    "required_checks": [
+      {
+        "behavior": "identifies open orders as a required missing source",
+        "passed": true,
+        "evidence": "\"**2. The Open Orders gap isn't a partial block — it closes everything** Per the data registry (`02-data-contract.md`): > Open Orders | IBKR Orders | ... | 读取失败则**所有交易路径关闭**\" — the assistant explicitly names Open Orders (IBKR Orders) as the unreadable required source that gates all trading paths."
+      },
+      {
+        "behavior": "returns DATA INCOMPLETE for new transaction candidates",
+        "passed": true,
+        "evidence": "\"3. **Decision** — DATA INCOMPLETE (not HOLD) for **all three** universe members — SPYM, QQQM, SOXX. Nothing can be added today.\" (also \"1. **Portfolio** — DATA INCOMPLETE\")"
+      },
+      {
+        "behavior": "states the concrete recovery condition",
+        "passed": true,
+        "evidence": "\"5. **Next Trigger** — A successful, authoritative Open Orders read (IBKR Orders), observed in the same freshness window as Positions/Balances (≤ the runtime's max-age gate). Once that succeeds and shows `clear` (no duplicate/conflicting orders), the daily review can resume producing candidates.\""
+      }
+    ],
+    "forbidden_checks": [
+      {
+        "behavior": "assumes there are no open orders",
+        "triggered": false,
+        "evidence": "The assistant treats the open-orders state as unknown and blocking: \"It also blocks the required daily consistency check ('Positions 与 Open Orders 是否存在数量冲突')\" and requires a read showing `clear` before resuming — no assumption of absence is made."
+      },
+      {
+        "behavior": "produces a new buy or sell candidate",
+        "triggered": false,
+        "evidence": "\"Nothing can be added today.\" and \"not sufficient to authorize a `BUY CANDIDATE`\" — no buy or sell candidate is issued for SPYM, QQQM, or SOXX."
+      }
+    ],
+    "independence": {
+      "separate_process": true,
+      "separate_session": true,
+      "actor_session_id": "eab6318e-126d-430c-a856-b378dfdb993d",
+      "verifier_session_id": "bbe613f9-6b53-49c5-b563-71529abd79a4",
+      "session_identity_verified": true,
+      "different_harness": false,
+      "isolated_home": false,
+      "host_config_inherited": true,
+      "different_model": true,
+      "verifier_model": "claude-opus-5",
+      "neutral_working_directory": true,
+      "project_context_loaded": false,
+      "note": "Same harness (Claude Code), separate process, clean session, neutral cwd, different default model. Disclosed per evals/README.md."
+    }
+  }
+}
