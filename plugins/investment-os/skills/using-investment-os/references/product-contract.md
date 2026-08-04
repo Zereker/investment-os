@@ -132,35 +132,13 @@ LLM 位于 orchestration 与 presentation 层。它可以调用工具、解释�
 
 主要产品是 `Investment Daily Report`，规范见 `01-operating-manual.md` 日报契约部分。每日巡检不是每日交易；`HOLD` 是完整且成功的结果。
 
-每日巡检必须从受信任 Broker Adapter 获取并验证：
-
-- Account Summary；
-- Balances；
-- Positions；
-- Open Orders；
-- 任务所需市场输入与警报状态；
-- Cash Transactions（若 Adapter 提供，资金流程需要时）。
-
-巡检必须完成账户对账、融资与负现金检查、异常持仓分类、订单冲突检查、配置与回撤状态计算，并先生成机器权威 `DecisionPacket`，再由确定性 renderer 或 LLM 形成日报。展示层不得改变结论、金额、阻塞项或执行权限。
+每日巡检必须从受信任 Broker Adapter 获取并验证 `01-operating-manual.md` 每日复盘部分列出的全部端点（含 Account Summary、Balances、Positions、Open Orders、市场输入与警报状态、现金活动，及 Adapter 提供时的 Cash Transactions），完成账户对账、融资与负现金检查、异常持仓分类、订单冲突检查、配置与回撤状态计算，并先生成机器权威 `DecisionPacket`，再由确定性 renderer 或 LLM 形成日报。展示层不得改变结论、金额、阻塞项或执行权限。
 
 关键数据缺失时输出 `DATA INCOMPLETE`，停止新的买卖候选。不得用历史报告、旧快照、截图或人工数字替代实时状态。
 
 ## 9. 月度执行
 
-月度流程必须在任何部署公式之前完成：
-
-1. Broker Runtime 能力与时间有效性检查；
-2. NAV、现金与持仓市值的物理对账；
-3. Open Orders 权威检查，且状态必须明确为 `clear`；
-4. 本月实际外部净入金 `F` 的权威来源确认；
-5. 回撤值、已执行档位和其他任务输入的完整性检查。
-
-以下情况均为 `DATA INCOMPLETE`：
-
-- `F` 未知或其数据能力不可用；
-- Open Orders 状态为 `unknown` 或 `conflicting`；
-- 账户对账超出允许容差；
-- 回撤单位、档位状态或其他输入无法验证。
+月度流程必须在任何部署公式之前通过 `01-operating-manual.md` 月度流程部分的全部前置闸门（能力、新鲜度、物理对账、Open Orders 明确为 `clear`、权威 `F`、回撤状态、政策一致）。`F` 未知或其数据能力不可用、订单状态为 `unknown` 或 `conflicting`、对账超出容差、回撤输入无法验证，均为 `DATA INCOMPLETE`。
 
 缺失 `F` 时不得默认为零；没有入金的月份也必须由权威来源明确确认零。若当前 Adapter 不支持 `cash_transactions`，必须如实声明能力缺口，不得倒推或估算。
 

@@ -1,14 +1,14 @@
 # 操作手册（Operating Manual）
 
-本文件是 Investment OS 全部操作流程的唯一权威：每日复盘、日报契约、周度复盘、月度流程、季度流程、年度审核、部署框架、状态重建与交易前决策清单。投资参数与阈值以 `00-constitution.md` 为唯一权威；本文件与其冲突时以宪法为准。
+本文件是 Investment OS 全部操作流程的唯一权威：每日复盘与日报、周度复盘、月度流程、季度流程、年度审核、部署框架、状态重建与交易前决策清单。投资参数与阈值以 `00-constitution.md` 为唯一权威；本文件与其冲突时以宪法为准。
 
 ---
 
-## 第一部分：每日复盘（Daily Review Workflow）
+## 第一部分：每日复盘与日报（Daily Review & Report）
 
-每日复盘的目标是客观记录账户状态、发现异常并执行现行规则，而不是临时创造新策略。
+每日复盘的目标是客观记录账户状态、发现异常并执行现行规则，而不是临时创造新策略。其产出 `Investment Daily Report` 是 Investment OS 的主要日常产品：把可信的运行时数据映射到现行生产规则，帮助账户所有者理解当天发生了什么、哪些动作获得授权、哪些风险需要注意，以及下一观察条件是什么。日报成功的标准不是产生交易，而是产生一个完整、可解释、可复核的结论。`HOLD` 是正常且完整的结果。
 
-### A. 数据读取
+### A. 数据读取（Preconditions）
 
 依次读取并记录每个端点自己的来源与时间戳：
 
@@ -19,10 +19,20 @@
 5. IBKR 当前启用的 SPYM 回撤警报
 6. 现金活动 / 入金记录
 7. 券商常驻自动化（如 DRIP、定投；仅在适配器可读取时）
+8. SPYM、QQQM、SOXX 所需的当前市场价格
+9. SPYM 历史最高收盘与当前回撤序列
+10. 无法从价格推导的运行时状态，例如本回撤周期已执行档位
 
 若任一账户接口失败，账户报告状态为 `DATA INCOMPLETE`。不得用上次快照填充“今日”账户数据。
 
 不可用能力必须表示为 `null`，不得伪装成 `0`、空对象或空数组。只有接口成功读取后，空订单、空警报或空现金活动才是可采信事实。单一编排时间戳不能替代各端点的 `observed_at`。
+
+任何关键输入缺失、过期、币种不明或相互冲突时：
+
+- 报告仍应说明已知事实；
+- `Account Health` 标记为 `DATA INCOMPLETE`；
+- 停止产生新的 `BUY CANDIDATE` 或 `SELL CANDIDATE`；
+- 明确列出缺失项和恢复条件。
 
 ### B. 一致性检查
 
@@ -59,129 +69,7 @@
 - 其他独立例行资金路径是否继续，仍按其自身 Data Gate 判断；
 - 报告 expected、actual、差异与人工修复条件，但不得由 agent 自动修改券商警报。
 
-### C. 标准输出
-
-#### 1. Account Health
-
-- Net Liquidation
-- Cash / Settled Cash
-- Gross Position Value
-- Invested Ratio
-- Cash Ratio
-- Available Funds
-- Margin Loan 状态
-- Drawdown Alert Pointer：`PASS / WARN / DATA INCOMPLETE`
-
-#### 2. Portfolio Allocation
-
-按以下分类汇总：
-
-- Cash
-- Core ETF：SPYM、QQQM
-- 板块倾斜：SOXX，列示生命周期`Hold | Frozen | Exit Review`
-- Restricted / Legacy
-
-同时列出各持仓数量、市值、组合占比、成本和未实现盈亏。
-
-SOXX按登记表（`00-constitution.md`）当前生命周期列示。每日同时报告 `A_actual`、`A_stage`、`A_execution_cap`、`A_basis`、`U`（定义与阈值见 `00-constitution.md`）、SPYM 相对历史最高收盘回撤 `DD` 与回撤档位状态；阶段储备属于现金用途标签，不得重复计入。
-
-#### 3. Open Orders
-
-逐笔列出：
-
-- 标的与方向
-- 数量、已成交、剩余
-- 订单类型、价格、有效期
-- 状态与风险说明
-
-没有订单时明确写 `None`。
-
-#### 4. Daily Changes
-
-- 当日盈亏
-- 新成交
-- 仓位数量变化
-- 现金变化
-
-无法从接口确认时不得推测原因。
-
-#### 5. Risk Check
-
-至少检查：
-
-- 融资借款
-- Cash、QQQM、`SPYM + SOXX + Stage Reserve`袖套
-- SOXX检查当前执行上限3%与6%永久硬上限；漂移超限时确认冻结状态
-- 回撤部署档位是否达标触发（`DD≥10/15/20/25%`，释放 1.5/3/4.5/6pp，四档中本周期未执行者）；`DD` 超过 25% 后无档位可解锁，输出「弹药已尽，无动作」
-- 回撤警报指针是否与 expected pointer 一致；新 ATH 后是否明确退回首档
-- 未完成或重复订单
-- 碎股与零数量残留
-- 真正未经登记的新标的
-- 数据冲突
-
-穿透集中度在季度及任何新增 Alpha 前完整计算；日报只在已有合格快照时标记已知越线，不用旧数据制造交易信号。
-
-#### 5.1 三只 ETF 价格与缺口
-
-只监控 SPYM、QQQM、SOXX，列示当前价格、`observed_at`、当前仓位、动态目标与正缺口。SOXX 另列登记表当前生命周期。
-
-v4.2 起系统不持有估值判断：价格只用于计量、执行与回撤定档，不产生贵/便宜结论，也不生成任何新增资格。
-
-#### 6. Production Decision
-
-只允许以下结论：
-
-- `HOLD`：无生产规则触发，或`Observation / Frozen`仅按既定状态持有
-- `REVIEW`：存在异常，需要人工确认，但不直接交易
-- `BUY CANDIDATE`：现行规则触发，仍需相应月度路径或完整 Trade Gate
-- `SELL CANDIDATE`：现行卖出规则触发，仍需完整 Trade Gate
-- `DATA INCOMPLETE`：关键账户状态或回撤部署状态无法可靠重建
-
-每日复盘本身不等于下单授权。
-
-#### 7. Next Watch
-
-只记录下一次需要观察的客观条件，不新增阈值或指标。警报指针异常时，下一观察条件必须包含：IBKR 中唯一启用警报与 expected pointer 完全一致。
-
-### D. 报告纪律
-
-- 清楚区分实时事实、计算结果、推断和建议。
-- 历史快照必须标注日期。
-- 研究指标只能放在独立的 Research Note，不得混入 Production Decision。
-- 价格涨跌本身不产生 `SELL CANDIDATE`。
-- 无操作是有效结果。
-- agent 只报告警报修复要求，不自动创建、修改或删除 IBKR 警报。
-
----
-
-## 第二部分：日报契约（Investment Daily Report Contract）
-
-### 1. Purpose
-
-`Investment Daily Report` 是 Investment OS 的主要日常产品。它把可信的运行时数据映射到现行生产规则，帮助账户所有者理解当天发生了什么、哪些动作获得授权、哪些风险需要注意，以及下一观察条件是什么。
-
-日报成功的标准不是产生交易，而是产生一个完整、可解释、可复核的结论。`HOLD` 是正常且完整的结果。
-
-### 2. Preconditions
-
-必须依次取得并验证：
-
-1. IBKR Account Summary；
-2. IBKR Balances；
-3. IBKR Positions；
-4. IBKR Open Orders；
-5. SPYM、QQQM、SOXX 所需的当前市场价格；
-6. SPYM 历史最高收盘与当前回撤序列；
-7. 无法从价格推导的运行时状态，例如本回撤周期已执行档位。
-
-任何关键输入缺失、过期、币种不明或相互冲突时：
-
-- 报告仍应说明已知事实；
-- `Account Health` 标记为 `DATA INCOMPLETE`；
-- 停止产生新的 `BUY CANDIDATE` 或 `SELL CANDIDATE`；
-- 明确列出缺失项和恢复条件。
-
-### 3. Decision Pipeline
+### C. Decision Pipeline
 
 日报严格遵循：
 
@@ -191,84 +79,71 @@ Observe → Understand → Decide → Monitor
 
 不得把市场叙事、临时估值、新闻观点或 Research 中未发布的规则插入该流水线。
 
-### 4. Required Output
+### D. 报告输出（Required Output）
 
-#### A. Executive Summary
+#### 1. Executive Summary
 
-最多五行，回答：
+最多五行，回答：今日总状态；是否存在需要立即关注的账户或订单问题；是否存在规则授权的动作候选；最重要的下一观察条件。
 
-- 今日总状态；
-- 是否存在需要立即关注的账户或订单问题；
-- 是否存在规则授权的动作候选；
-- 最重要的下一观察条件。
-
-#### B. Account Health
+#### 2. Account Health
 
 至少包含：
 
 - 数据时间和时区；
 - 四项 IBKR 输入是否成功；
+- Net Liquidation、Cash / Settled Cash、Gross Position Value；
+- Invested Ratio、Cash Ratio、Available Funds；
 - 净值、现金与持仓合计是否可核对；
-- 是否存在负现金、融资、异常币种或无法解释差异；
+- 是否存在负现金、融资借款（Margin Loan 状态）、异常币种或无法解释差异；
+- Drawdown Alert Pointer：`PASS / WARN / DATA INCOMPLETE`；
 - 总状态：`PASS / WARN / DATA INCOMPLETE`。
 
 真实金额只在当前私有会话中显示，永不写入仓库。
 
-#### C. What Happened
+#### 3. What Happened
 
-只陈述事实：
+只陈述事实：主要标的当日价格变化；Daily P&L；持仓数量变化；现金变化；新增、取消或成交订单；与上一有效巡检相比的显著变化。
 
-- 主要标的当日价格变化；
-- Daily P&L；
-- 持仓数量变化；
-- 现金变化；
-- 新增、取消或成交订单；
-- 与上一有效巡检相比的显著变化。
+无法取得上一有效状态时，明确写 `N/A`，不得猜测变化原因；无法从接口确认时不得推测原因。
 
-无法取得上一有效状态时，明确写 `N/A`，不得猜测变化原因。
+#### 4. Portfolio Allocation
 
-#### D. Portfolio Allocation
+按 Cash、Core ETF（SPYM、QQQM）、板块倾斜（SOXX，列示生命周期 `Hold | Frozen | Exit Review`）、Restricted / Legacy 和无法分类持仓汇总，列出：
 
-列出 Cash、SPYM、QQQM、SOXX、Legacy 和无法分类持仓：
+- 各持仓数量、市值、组合占比、成本和未实现盈亏；
+- 当前权重、动态目标或允许区间；
+- 正缺口、超配或漂移状态，及对应规则含义。
 
-- 当前权重；
-- 动态目标或允许区间；
-- 正缺口、超配或漂移状态；
-- 对应规则含义。
+SOXX 按登记表（`00-constitution.md`）当前生命周期列示。每日同时报告 `A_actual`、`A_stage`、`A_execution_cap`、`A_basis`、`U`（定义与阈值见 `00-constitution.md`）、SPYM 相对历史最高收盘回撤 `DD` 与回撤档位状态；阶段储备属于现金用途标签，不得重复计入。事实权重与策略解释必须分开呈现。
 
-事实权重与策略解释必须分开呈现。
+#### 5. Open Orders
 
-#### E. Open Orders
+逐笔列出：标的与方向；数量、已成交、剩余；订单类型、价格、有效期；状态与风险说明。没有订单时明确写 `None`。
 
-列出所有活跃订单并检查：
+并检查：与今日候选是否重复；是否方向冲突；是否可能击穿现金边界；是否过期、部分成交或无法解释；是否需要先处理订单再考虑新动作。
 
-- 与今日候选是否重复；
-- 是否方向冲突；
-- 是否可能击穿现金边界；
-- 是否过期、部分成交或无法解释；
-- 是否需要先处理订单再考虑新动作。
-
-#### F. Risk Check
+#### 6. Risk Check
 
 至少检查：
 
-- SPYM 相对历史最高收盘回撤 `DD`；
-- T1/T2/T3/T4 是否触发、是否已执行；
-- 现金常态区间与危机授权下限；
-- SOXX 实际权重、执行上限和永久硬上限；
-- 未经授权的新标的；
+- 融资借款与负现金；
+- Cash、QQQM、`SPYM + SOXX + Stage Reserve`袖套；现金常态区间与危机授权下限；
+- SOXX 实际权重相对当前执行上限3%与6%永久硬上限；漂移超限时确认冻结状态；
+- SPYM 相对历史最高收盘回撤 `DD`；回撤部署档位是否达标触发（`DD≥10/15/20/25%`，释放 1.5/3/4.5/6pp，四档中本周期未执行者）；`DD` 超过 25% 后无档位可解锁，输出「弹药已尽，无动作」；
+- 回撤警报指针是否与 expected pointer 一致；新 ATH 后是否明确退回首档；
+- 未完成或重复订单；
+- 碎股与零数量残留；
+- 真正未经登记的新标的；
 - 集中度或穿透核查是否过期；
-- 融资、负现金和订单冲突。
+- 数据冲突。
 
-#### G. Decision Eligibility
+穿透集中度在季度及任何新增 Alpha 前完整计算；日报只在已有合格快照时标记已知越线，不用旧数据制造交易信号。
 
-先按资金通道分类，再判断候选：
+只监控 SPYM、QQQM、SOXX 三只 ETF 的价格与缺口：列示当前价格、`observed_at`、当前仓位、动态目标与正缺口；SOXX 另列登记表当前生命周期。v4.2 起系统不持有估值判断：价格只用于计量、执行与回撤定档，不产生贵/便宜结论，也不生成任何新增资格。
 
-- 月度新增投入 `D`；
-- 战略现金迁移 `B`；
-- 回撤部署；
-- SOXX 回补至目标；
-- 完整 IC 路径。
+#### 7. Decision Eligibility
+
+先按资金通道分类，再判断候选：月度新增投入 `D`；战略现金迁移 `B`；回撤部署；SOXX 回补至目标；完整 IC 路径。
 
 每个候选必须说明：
 
@@ -282,33 +157,27 @@ Observe → Understand → Decide → Monitor
 
 日报不得给出可直接提交的订单数量、限价或自动交易指令。
 
-#### H. Production Decision
+#### 8. Production Decision
 
 只使用以下词表：
 
-- `HOLD`：数据与规则正常，但没有新动作；
+- `HOLD`：数据与规则正常，但没有新动作；或 `Observation / Frozen` 仅按既定状态持有；
 - `WAIT`：方向可能成立，但触发条件尚未满足；
-- `BUY CANDIDATE`：现行规则授权进入人工确认；
-- `SELL CANDIDATE`：现行规则授权进入完整人工审查；
-- `REVIEW`：需要非例行人工或 IC 审查；
+- `BUY CANDIDATE`：现行规则授权进入人工确认，仍需相应月度路径或完整 Trade Gate；
+- `SELL CANDIDATE`：现行卖出规则授权进入完整人工审查（完整 Trade Gate）；
+- `REVIEW`：存在异常，需要非例行人工或 IC 审查，但不直接交易；
 - `REJECT`：规则明确不允许；
-- `DATA INCOMPLETE`：关键数据不足，停止新建议。
+- `DATA INCOMPLETE`：关键账户状态或回撤部署状态无法可靠重建，停止新建议。
 
-结论后必须有一段不超过五行的解释，不得只输出标签。
+结论后必须有一段不超过五行的解释，不得只输出标签。每日复盘本身不等于下单授权。
 
-#### I. Attention Items
+#### 9. Attention Items
 
-按严重程度列出：
+按严重程度列出：今天必须处理；本周需要确认；仅观察。没有事项时明确写 `None`。
 
-- 今天必须处理；
-- 本周需要确认；
-- 仅观察。
+#### 10. Next Observation Conditions
 
-没有事项时明确写 `None`。
-
-#### J. Next Observation Conditions
-
-必须给出具体、可验证的下一条件，例如：
+只记录下一次需要观察的客观条件，不新增阈值或指标。必须给出具体、可验证的下一条件，例如：
 
 - SPYM 达到下一回撤档位；
 - 月度资金实际到账；
@@ -318,9 +187,9 @@ Observe → Understand → Decide → Monitor
 - 当季穿透核查完成；
 - 缺失数据恢复。
 
-不得使用“继续关注市场”等不可验证表述。
+不得使用“继续关注市场”等不可验证表述。警报指针异常时，下一观察条件必须包含：IBKR 中唯一启用警报与 expected pointer 完全一致。
 
-### 5. Fact / Interpretation / Decision Separation
+### E. 事实与报告纪律
 
 每项关键结论应按以下结构表达：
 
@@ -331,9 +200,15 @@ Decision: 受控词表结论
 Monitor: 下一观察条件
 ```
 
-预测和推测必须明确标记，且不得作为生产动作授权依据。
+- 预测和推测必须明确标记，且不得作为生产动作授权依据。
+- 清楚区分实时事实、计算结果、推断和建议。
+- 历史快照必须标注日期。
+- 研究指标只能放在独立的 Research Note，不得混入 Production Decision。
+- 价格涨跌本身不产生 `SELL CANDIDATE`。
+- 无操作是有效结果。
+- agent 只报告警报修复要求，不自动创建、修改或删除 IBKR 警报。
 
-### 6. Privacy and Retention
+### F. Privacy and Retention
 
 日报中的真实账户数据只存在于受信任的私有运行时或当前私有会话中。
 
@@ -346,22 +221,15 @@ Monitor: 下一观察条件
 
 需要测试时，只能使用明确标记、不可反推真实账户的 synthetic 数据。
 
-### 7. Human Boundary
+### G. Human Boundary
 
-`BUY CANDIDATE` 和 `SELL CANDIDATE` 不是订单。账户所有者必须在 IBKR 中重新确认：
-
-- 标的和方向；
-- 当前价格；
-- 订单类型与有效期；
-- 数量与现金缓冲；
-- 是否存在重复订单；
-- 交易后权重和现金。
+`BUY CANDIDATE` 和 `SELL CANDIDATE` 不是订单。账户所有者必须在 IBKR 中重新确认：标的和方向；当前价格；订单类型与有效期；数量与现金缓冲；是否存在重复订单；交易后权重和现金。
 
 Investment OS 永不替代该确认。
 
 ---
 
-## 第三部分：周度复盘（Weekly Review Workflow）
+## 第二部分：周度复盘（Weekly Review Workflow）
 
 周度复盘用于确认 Investment OS 是否可靠运行、整理月度流程输入并暴露需要修复的问题。它不创造交易信号，不修改目标配置，也不替代月度、季度或年度治理。
 
@@ -427,14 +295,14 @@ Investment OS 永不替代该确认。
 
 - `NO ACTION`：系统正常，无额外动作。
 - `MONTHLY INPUT`：记录到下次月度流程，不提前交易。
-- `IC REVIEW`：存在真实资金候选，进入交易前决策清单（本手册第九部分），尚未授权下单。
+- `IC REVIEW`：存在真实资金候选，进入交易前决策清单（本手册第八部分），尚未授权下单。
 - `DATA FIX`：先修复数据或流程，Trade Gate 保持关闭。
 
 每项输出必须包含负责人、下一次检查条件和截止到哪个治理窗口；没有工作项时明确写 `None`。
 
 ---
 
-## 第四部分：月度流程（Monthly Workflow）
+## 第三部分：月度流程（Monthly Workflow）
 
 月度流程把权威 Broker Runtime 转化为结构化月度决策。它不接受旧报告、人工贴数或估算替代当前状态，也不因公式可计算就自动形成执行权限。
 
@@ -539,18 +407,7 @@ NAV ≈ Cash + Σ Position Market Values
 
 ### 8. Decision and Execution Boundary
 
-月度脚本输出的是候选与上限，不是 Broker 授权。
-
-实际执行必须经过 `execution-runtime`：
-
-- 当前会话所有者明确授权；
-- 授权绑定一个完整单次操作摘要；
-- capability 可用；
-- 只提交一次；
-- 权威 read-back；
-- 验证实际 Broker 状态与授权操作一致。
-
-候选、公式结果、IC Verdict 或历史批准均不能替代该执行授权。
+月度脚本输出的是候选与上限，不是 Broker 授权。实际执行必须经过 `execution-runtime` 的单次操作授权契约（九项条件见 `product-contract.md` 第 10 节）；候选、公式结果、IC Verdict 或历史批准均不能替代该执行授权。
 
 ### 9. Output
 
@@ -606,7 +463,7 @@ python3 skills/running-monthly-review/scripts/monthly_execution.py \
 
 ---
 
-## 第五部分：季度流程（Quarterly Workflow）
+## 第四部分：季度流程（Quarterly Workflow）
 
 季度审核只处理自主板块倾斜的必要性、穿透集中度和组合级风险，不重新设计 Core，也不因一次涨跌修改宪法。目标用时 30 分钟。
 
@@ -653,7 +510,7 @@ python3 skills/running-monthly-review/scripts/monthly_execution.py \
 
 ---
 
-## 第六部分：年度审核（Annual Review）
+## 第五部分：年度审核（Annual Review）
 
 年度审核是正常情况下唯一允许修改 IPS、目标配置和永久规则的窗口。
 
@@ -694,7 +551,7 @@ python3 skills/running-monthly-review/scripts/monthly_execution.py \
 
 ---
 
-## 第七部分：部署框架（Strategic Baseline and Drawdown Deployment Framework）
+## 第六部分：部署框架（Strategic Baseline and Drawdown Deployment Framework）
 
 > 原则：目标配置决定资金方向和上限；公式决定例行节奏；回撤分档决定危机部署。系统不持有估值判断，也不因价格高低卖出。
 
@@ -735,22 +592,7 @@ B=\min\left(\frac{S}{R},G\right)
 执行宪法回撤部署条款的操作规程：
 
 1. 每日巡检记录 SPYM 收盘价相对历史最高收盘价的回撤 `DD` 与当前回撤周期状态（各档已执行/未执行）。
-2. 触发条件与临时现金下限：
-
-| 档位 | 触发 | 本档释放 | 累计 | 部署后现金 |
-|---:|---|---:|---:|---:|
-| T1 | `DD ≥ 10%` | 1.50pp of NAV | 1.50pp | 13.5% |
-| T2 | `DD ≥ 15%` | 3.00pp | 4.50pp | 10.5% |
-| T3 | `DD ≥ 20%` | 4.50pp | 9.00pp | 6.0% |
-| T4 | `DD ≥ 25%` | 6.00pp | 15.00pp | **0%** |
-
-本次部署额 = \(\min\bigl(\sum_{j\in K} w_j\times V,\ \max(C-(0\%+U)\times V,0),\ \text{Core 正缺口}\bigr)\)，其中 \(K\) 是本次新触发且本周期未执行的档集合，\(w_j\) 是该档的梯度定额（1.5 / 3 / 4.5 / 6 pp）。
-
-三个上界的含义：**梯度定额**（这是分批的实现）、**绝对下限**（`0+U` 硬停）、**只买正缺口**。四档合计 15pp，把 15% 现金目标全部部署至 `0+U`。**本条款不判断谷底，只按跌幅机械递增部署量**（依据见 [source repository research](https://github.com/Zereker/investment-os/blob/master/Research/2026-08-01-drawdown-tranching.md)）。
-
-梯度 1:2:3:4 把 60% 的弹药压在 T3/T4 这两个价格更好的位置，同时把首笔保持在 1.5pp；等额分配的首笔会是 3.75pp，落在证据显示的最差入场点上。
-
-**`DD` 超过 25% 后没有任何可解锁的档位**：弹药在 T4 打光，`DD` 继续加深不产生新的部署授权，现金停在 `0+U`（v4.6 决定，依据与证伪条件见 [source repository research](https://github.com/Zereker/investment-os/blob/master/Research/2026-08-01-drawdown-four-tier.md)）。此时的正确输出是「弹药已尽，无动作」，**不是**寻找规则例外，**也不是借款加仓**——IPS 的无杠杆原则不变。
+2. 档位、触发线、梯度定额与临时现金下限以 `00-constitution.md` 回撤部署节的分档表为唯一权威，本框架不重复该表。本次部署额 = \(\min\bigl(\sum_{j\in K} w_j\times V,\ \max(C-(0\%+U)\times V,0),\ \text{Core 正缺口}\bigr)\)，其中 \(K\) 是本次新触发且本周期未执行的档集合，\(w_j\) 是该档的梯度定额。三个上界的含义：**梯度定额**（这是分批的实现）、**绝对下限**（`0+U` 硬停）、**只买正缺口**。`DD` 超过最深档后没有任何可解锁的档位，此时的正确输出是「弹药已尽，无动作」，**不是**寻找规则例外，**也不是借款加仓**——IPS 的无杠杆原则不变。
 
 3. 每档在同一回撤周期内最多执行一次；SPYM 创出新的历史最高收盘价后周期重置，所有档位恢复可用。
 4. 单日可同时满足多档（如跳空进入 `DD≥25%`），按由浅到深顺序逐档执行，但仍受「每档一次」限制。
@@ -823,7 +665,7 @@ v4.2 起系统不再持有任何估值判断。价格不定义贵或便宜，只
 
 ---
 
-## 第八部分：状态重建规范（Agent 冷启动程序）
+## 第七部分：状态重建规范（Agent 冷启动程序）
 
 本仓库不存储任何账户数据。任何 agent 在任何新会话中,按以下确定性程序从 IBKR + 公开规则现场重建全部运行状态。两个 agent 在同一时点启动必须得到相同结论;无法重建的项一律 `DATA INCOMPLETE`,不猜测、不沿用旧值。
 
@@ -867,7 +709,7 @@ v4.2 起系统不再持有任何估值判断。价格不定义贵或便宜，只
 
 ---
 
-## 第九部分：交易前决策清单（Investment Committee Packet）
+## 第八部分：交易前决策清单（Investment Committee Packet）
 
 任何新板块倾斜、SOXX **提高倾斜**（推进 `A_execution_cap`）、卖出、换仓、规则例外或偏离月度公式的真实资金操作，都必须在下单前完成本清单。不得在成交后补写理由。
 

@@ -244,7 +244,7 @@ def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed, today,
     reserve_after = reserve - restore / nav
     floor_after = (ABSOLUTE_FLOOR if consumed else CASH_FLOOR) + reserve_after
     # A month can legitimately START below the normal floor: the tranches
-    # lowered cash by design, and the deployment framework (01-operating-manual.md §7.2) says it rebuilds
+    # lowered cash by design, and the deployment framework (01-operating-manual.md §6.2) says it rebuilds
     # only from external contributions afterwards, with the Routine DCA
     # explicitly not paused for it. The floor gate therefore checks what THIS
     # month's trades do, not where history left the balance: trades must not
