@@ -4,11 +4,12 @@ history, so the mechanism is proven BEFORE a real crash depends on it.
 
 Why this exists: the 15% structural cash position costs ~0.45-0.75pp/year, and
 its entire justification is the drawdown-deployment clause
-(skills/using-investment-os/references/01-target-allocation.md). That clause had never been executed —
+(skills/using-investment-os/references/00-constitution.md). That clause had never been executed —
 its first live run would have been during a crash, which is the worst possible
 time to discover a state-machine bug.
 
-What it checks (per Constitution + skills/using-investment-os/references/02-deployment-framework.md):
+What it checks (per the Constitution's drawdown clause + the deployment framework in
+skills/using-investment-os/references/01-operating-manual.md):
   - DD is measured against the running historical maximum CLOSE.
   - Tiers: DD >= 10/15/20/25% lower the cash floor to
     13.5/10.5/6/0% (+U) — GRADED tranches of 1.5/3/4.5/6pp from the 15%
@@ -23,7 +24,7 @@ What it checks (per Constitution + skills/using-investment-os/references/02-depl
 
 Scope limit — read this before trusting the result: the drill validates the
 PRICE -> TIER logic only. It does NOT validate the "which tiers were already
-executed" half of skills/using-investment-os/references/02-state-reconstruction.md, which depends on
+executed" half of state reconstruction (skills/using-investment-os/references/01-operating-manual.md), which depends on
 IBKR alerts, journal entries and cash-level self-proof. That half stays unproven
 until a live cycle exercises it.
 
@@ -242,7 +243,7 @@ def report(symbol, rng, series, events, cycles, failures, markdown: bool) -> Non
         print("no gaps, ATH reset, deterministic replay, release helper consistent")
     print("\nscope: validates price->tier logic only. The 'which tiers already executed'")
     print("reconstruction (IBKR alerts + journal + cash-level self-proof) stays unproven")
-    print("until a live cycle exercises it. See skills/using-investment-os/references/02-state-reconstruction.md.")
+    print("until a live cycle exercises it. See skills/using-investment-os/references/01-operating-manual.md (state reconstruction).")
 
 
 def main() -> int:

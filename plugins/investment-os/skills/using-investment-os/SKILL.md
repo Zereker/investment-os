@@ -11,10 +11,12 @@ Investment OS is a composable skill system. Select every required domain skill b
 
 ## Installed distribution root
 
-Resolve packaged files relative to this `SKILL.md`, never relative to the user's current working directory. The plugin root is `../..` from `skills/using-investment-os/`. Verify that `../../.plugin-version`, `references/project-contract.md`, `references/production-contract.md`, and `references/agent-execution-contract.md` exist before formal work. Resolve each deterministic tool from the `scripts/` directory of the Skill that owns it. Do not clone, fetch, or substitute another Investment OS checkout at runtime.
+Resolve packaged files relative to this `SKILL.md`, never relative to the user's current working directory. The plugin root is `../..` from `skills/using-investment-os/`. Verify that `../../.plugin-version`, `references/product-contract.md`, and `references/agent-execution-contract.md` exist before formal work. Resolve each deterministic tool from the `scripts/` directory of the Skill that owns it. Do not clone, fetch, or substitute another Investment OS checkout at runtime.
 
 ## Route
 
+- Every task, before domain work:
+  - **REQUIRED SUB-SKILL:** `financial-agent-discipline`
 - Live portfolio or daily status:
   - **REQUIRED SUB-SKILL:** `broker-runtime`
   - **REQUIRED SUB-SKILL:** `reconstructing-portfolio-state`
@@ -46,7 +48,7 @@ Resolve packaged files relative to this `SKILL.md`, never relative to the user's
 
 ## Mandatory start
 
-1. Read `references/agent-execution-contract.md`, `references/project-contract.md`, and `references/production-contract.md` relative to this skill.
+1. Read `references/agent-execution-contract.md` and `references/product-contract.md` relative to this skill, and apply the `financial-agent-discipline` rules to the whole session.
 2. Load the applicable numbered policy references listed below. Do not load research or repository files as Production authority.
 3. Establish the policy source for this session from `../../.plugin-version` plus the references just read, and carry it into every formal result as required by **Completion** below. The runtime rule is simple: what shipped is what executes; whether a distribution is current is a release concern rather than a runtime network lookup.
 4. Load only the domain skills required for the task.
@@ -59,14 +61,11 @@ Resolve packaged files relative to this `SKILL.md`, never relative to the user's
 
 Apply the numbered authority in this order and load only the files relevant to the task:
 
-- IPS: `references/00-investment-policy-statement.md`
-- Constitution: `references/01-investment-universe.md`, `references/01-target-allocation.md`
-- Operating System: `references/02-annual-review.md`, `references/02-daily-report-contract.md`, `references/02-daily-review.md`, `references/02-decision-checklist.md`, `references/02-deployment-framework.md`, `references/02-monthly-workflow.md`, `references/02-quarterly-workflow.md`, `references/02-state-reconstruction.md`, `references/02-weekly-review.md`
-- Transition: `references/03-transition-plan.md`
-- Alpha controls: `references/04-alpha-framework.md`, `references/04-position-registry.md`
-- Journal: `references/05-investment-journal.md`
-- Lessons: `references/06-lessons-learned.md`
-- Data contract: `references/08-data-operations.md`, `references/08-data-registry.md`, `references/08-data-dictionary.md`, `references/08-data-quality.md`, `references/08-lookthrough-check.md`, and applicable `references/08-YYYY-MM-DD-lookthrough-check.md` records
+- Constitution: `references/00-constitution.md` — IPS, investment universe, target allocation, transition plan, sector-tilt framework, position registry
+- Operating Manual: `references/01-operating-manual.md` — daily/weekly/monthly/quarterly/annual workflows, daily report contract, deployment framework, state reconstruction, decision checklist
+- Data Contract: `references/02-data-contract.md` — data operations, source registry, quality gate, field dictionary, look-through manual check
+- Journal: `references/03-journal.md` — investment journal and lessons learned
+- Look-through records: applicable `references/records/lookthrough-YYYY-MM-DD.md` files
 
 ## Harness mapping
 

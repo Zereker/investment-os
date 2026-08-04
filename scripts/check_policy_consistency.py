@@ -1,10 +1,28 @@
 #!/usr/bin/env python3
-"""Fail CI when Production policy formulas, state or guardrails diverge (v4.0)."""
+"""Fail CI when Production policy formulas, state or guardrails diverge.
+
+Scope (rules-first, v0.5.0): this checker holds EXECUTABLE invariants only —
+policy math property tests, a real constant-mirror comparison against the
+shipped runtime modules, the public-repo privacy gate, a frozen-live-state
+regex, retired-file resurfacing, and a small curated list of known-stale
+vocabulary that must never return to the consolidated rule files. The old
+~100 require/forbid pins on living prose were retired with the 29->9 rule
+consolidation: they asserted that sentences existed, not that behavior was
+correct, and they broke on every innocuous rewording.
+"""
 
 from math import isfinite, nan, inf
 from pathlib import Path
+import importlib.util
+import re
 
 ROOT = Path(__file__).resolve().parents[1]
+CONSTITUTION = "plugins/investment-os/skills/using-investment-os/references/00-constitution.md"
+OPERATING_MANUAL = "plugins/investment-os/skills/using-investment-os/references/01-operating-manual.md"
+DATA_CONTRACT = "plugins/investment-os/skills/using-investment-os/references/02-data-contract.md"
+JOURNAL = "plugins/investment-os/skills/using-investment-os/references/03-journal.md"
+RULE_FILES = (CONSTITUTION, OPERATING_MANUAL, DATA_CONTRACT, JOURNAL)
+
 STAGES = (0.06,)  # v4.0: 6% is the permanent hard cap; 10/12.5/15% stages are void
 EXECUTION_CAPS = (0.03, 0.045, 0.06)
 CURRENT_STAGE = 0.06
@@ -18,9 +36,13 @@ CURRENT_EXECUTION_CAP = 0.03
 # never independently justified, just the tail of v4.0's 10/8/6 sequence.
 DRAWDOWN_TIERS = ((0.10, 0.0150), (0.15, 0.0300), (0.20, 0.0450), (0.25, 0.0600))
 DRAWDOWN_TRIGGERS = tuple(t for t, _ in DRAWDOWN_TIERS)
+TIER_NAMES = ("T1", "T2", "T3", "T4")
 LADDER = sum(w for _, w in DRAWDOWN_TIERS)   # 15pp: all of the cash is ammunition
 ABSOLUTE_FLOOR = 0.0     # drawdown deployment never takes cash below this (+U)
 NORMAL_CASH_FLOOR = 0.12
+CASH_TARGET = 0.15
+QQQM_TARGET = 0.28
+SLEEVE = 0.57
 
 
 def read(path: str) -> str:
@@ -62,10 +84,10 @@ def allocation(actual: float, stage: float, execution_cap: float) -> dict[str, f
     basis = max(actual, stage)
     reserve = max(stage - actual, 0.0)
     targets = {
-        "cash_base": 0.15,
+        "cash_base": CASH_TARGET,
         "stage_reserve": reserve,
-        "qqqm": 0.28,
-        "spym": 0.57 - basis,
+        "qqqm": QQQM_TARGET,
+        "spym": SLEEVE - basis,
         "soxx": actual,
     }
     if not all(0.0 <= value <= 1.0 for value in targets.values()):
@@ -148,7 +170,7 @@ def drawdown_tests() -> None:
     if abs(drawdown_release(0.30, executed={0.10}) - 0.1350) > 1e-12:
         raise AssertionError("deeper tiers must stay available after shallower executed")
     # the tranches take cash from the 15% target exactly to the absolute floor
-    if abs(LADDER + ABSOLUTE_FLOOR - 0.15) > 1e-12:
+    if abs(LADDER + ABSOLUTE_FLOOR - CASH_TARGET) > 1e-12:
         raise AssertionError("ladder does not span the 15% target down to the floor")
     if ABSOLUTE_FLOOR >= NORMAL_CASH_FLOOR:
         raise AssertionError("the crisis floor must sit below the normal floor")
@@ -167,7 +189,41 @@ def drawdown_tests() -> None:
         raise AssertionError("drawdown triggers must deepen monotonically")
 
 
-import re
+def load_runtime_module(rel_path: str):
+    path = ROOT / rel_path
+    spec = importlib.util.spec_from_file_location(path.stem, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def mirror_tests() -> None:
+    """Compare the ACTUAL constants of the shipped runtime modules against the
+    canonical values above. This replaces the old first-and-last-line string
+    pins, which could not see a corrupted middle tier."""
+    monthly = load_runtime_module(
+        "plugins/investment-os/skills/running-monthly-review/scripts/monthly_execution.py")
+    drill = load_runtime_module(
+        "plugins/investment-os/skills/validating-drawdown-state/scripts/drawdown_drill.py")
+
+    for label, module in (("monthly_execution", monthly), ("drawdown_drill", drill)):
+        tiers = tuple((trigger, tranche) for trigger, _name, tranche in module.TIERS)
+        if tiers != DRAWDOWN_TIERS:
+            raise AssertionError(f"{label}.TIERS diverged from the canonical ladder: {tiers}")
+        names = tuple(name for _t, name, _w in module.TIERS)
+        if names != TIER_NAMES:
+            raise AssertionError(f"{label}.TIERS names diverged: {names}")
+        if module.ABSOLUTE_FLOOR != ABSOLUTE_FLOOR:
+            raise AssertionError(f"{label}.ABSOLUTE_FLOOR diverged: {module.ABSOLUTE_FLOOR}")
+
+    if monthly.CASH_TARGET != CASH_TARGET or monthly.CASH_FLOOR != NORMAL_CASH_FLOOR:
+        raise AssertionError("monthly_execution cash constants diverged")
+    if monthly.QQQM_TARGET != QQQM_TARGET or monthly.SLEEVE_57 != SLEEVE:
+        raise AssertionError("monthly_execution sleeve constants diverged")
+    if monthly.A_STAGE != CURRENT_STAGE or monthly.A_EXECUTION_CAP != CURRENT_EXECUTION_CAP:
+        raise AssertionError("monthly_execution tilt constants diverged")
+    if drill.NORMAL_CASH_FLOOR != NORMAL_CASH_FLOOR:
+        raise AssertionError("drawdown_drill.NORMAL_CASH_FLOOR diverged")
 
 
 PRIVACY_PATTERNS = (
@@ -244,57 +300,17 @@ def benchmark_interest_tests() -> None:
         raise AssertionError("NAV scale applied incorrectly")
 
 
-def main() -> None:
-    dictionary = "plugins/investment-os/skills/using-investment-os/references/08-data-dictionary.md"
-    require(
-        dictionary,
-        r"SPYM \(57\%-A_{basis}\)",
-        r"\(D_{max}=\min(F,G_0)\)",
-        r"\(S=\max(C-(15\%+U)\times V,0)\)",
-        r"C_{B,m,0}=15\%\times V_{B,m,0}",
-        r"r^{model}_{cash,m}=I_{B,m}/C_{B,m,0}",
-        "本金固定为月初值，因此利息不在月内复利",
-        "它不得在当月内参与计息，也不得被重复确认为收益",
-        "drawdown_from_ath",
-        "drawdown_tier_state",
-    )
-    forbid(
-        dictionary,
-        r"SPYM \(57\%-A\)",
-        r"\(S=\max(C-15\%\times V,0)\)",
-        r"C_{B,d}=15\%\times V_{B,d}",
-        r"C_{B,m,d}=C^-_{B,m,d}+i_{B,m,d}",
-        "合法集合为6%、10%、12.5%、15%",
-        # v4.1: the daily recursion and its posted/unposted split are retired
-        r"P^*_{B,d}",
-        r"i_{B,d}=E_{B,d}",
-        "次月第三个工作日",
-    )
+def stale_vocabulary_gate() -> None:
+    """Known-stale rule text must never return to the consolidated rule files.
 
-    active_files = [
-        "README.md", "plugins/investment-os/skills/using-investment-os/references/production-contract.md",
-        "plugins/investment-os/skills/using-investment-os/references/00-investment-policy-statement.md",
-        "plugins/investment-os/skills/using-investment-os/references/01-target-allocation.md",
-        "plugins/investment-os/skills/using-investment-os/references/02-daily-review.md",
-        "plugins/investment-os/skills/using-investment-os/references/02-decision-checklist.md",
-        "plugins/investment-os/skills/using-investment-os/references/02-monthly-workflow.md",
-        "plugins/investment-os/skills/using-investment-os/references/02-weekly-review.md",
-        "plugins/investment-os/skills/using-investment-os/references/02-quarterly-workflow.md",
-        "plugins/investment-os/skills/using-investment-os/references/02-deployment-framework.md",
-        "plugins/investment-os/skills/using-investment-os/references/03-transition-plan.md",
-        "plugins/investment-os/skills/using-investment-os/references/04-alpha-framework.md",
-        "plugins/investment-os/skills/using-investment-os/references/04-position-registry.md",
-        "plugins/investment-os/skills/using-investment-os/references/08-data-operations.md",
-        "plugins/investment-os/skills/using-investment-os/references/08-data-registry.md",
-        "plugins/investment-os/skills/using-investment-os/references/08-data-quality.md",
-        "plugins/investment-os/skills/using-investment-os/references/08-data-dictionary.md",
-        "plugins/investment-os/skills/using-investment-os/references/08-lookthrough-check.md",
-    ]
-    # v3.x machinery must not resurface in active rules
-    for path in active_files:
+    This is a curated regression guard (BUG-014's class: stale numbers in an
+    authoritative document), NOT a prose-preservation patrol. Add a needle only
+    when a real stale-text defect was found and fixed.
+    """
+    for path in RULE_FILES:
         forbid(
             path,
-            "Approved / Frozen",
+            # v3.x machinery
             "Add Candidate Packet的",
             "validate_lookthrough_packet",
             "10%、12.5%与15%",
@@ -303,312 +319,57 @@ def main() -> None:
             "长期硬上限与最终治理阶段15%",
             "Bundle v1.4",
             "Bundle v1.5",
-            # v4.2 retired the valuation subsystem. The old BUG-007 guard asserted
-            # "N/A must not block B"; with no valuation gate at all that holds by
-            # construction, so the guard becomes: the vocabulary must not return.
+            # v4.2 retired the valuation subsystem; the vocabulary must not return
             "CHEAP",
             "VERY EXPENSIVE",
             "Forward P/E",
             "战术加速",
             "ETF-Valuation-Framework",
+            "Valuation Score",
+            "Opportunity Score",
+            # v4.6 retired the deep tiers
+            "`DD ≥ 30%`",
+            "`DD ≥ 35%`",
+            '"T5"',
+            '"T6"',
+            # the v4.4 ammunition text (9pp ending at 6%+U) shipped one release
+            # behind the tier table in the same file; it must never come back
+            "合计 9 个百分点",
+            "降至 T4 的 `6%+U`",
+            # every figure in the constitution must be traceable to Research/
+            "24.1%",
         )
-
+    # the numeric tier table in the constitution must match the canonical ladder
     require(
-        "plugins/investment-os/skills/using-investment-os/references/04-position-registry.md",
-        "3%→4.5%→6%",
-        r"当前\(A_{execution\_cap}=3\%\)",
-        "永久硬上限",
-        "同一次IC不得既推进执行档又执行交易",
-        "08-lookthrough-check.md",
-        "不自动卖出",
-        # v4.5: the two paths must stay named and separately gated
-        "提高倾斜闸门",
-        "回补至目标",
-        "完整 IC",
-        "`min(A_execution_cap, A_stage) − A_actual`",
-        "不传该标志即视为无当季有效核查",
+        CONSTITUTION,
+        "T1 | `DD ≥ 10%` | 1.50pp",
+        "T2 | `DD ≥ 15%` | 3.00pp",
+        "T3 | `DD ≥ 20%` | 4.50pp",
+        "T4 | `DD ≥ 25%` | 6.00pp",
+        "`0+U`",
     )
-    require(
-        "plugins/investment-os/skills/using-investment-os/references/01-target-allocation.md",
-        "永久硬上限为总组合 **6%**",
-        "10% / 12.5% / 15% 治理阶段自 v4.0 起作废",
-        "回撤部署（Drawdown Deployment）",
-        "T1 | `DD ≥ 10%` | 1.50pp", "T4 | `DD ≥ 25%` | 6.00pp",
-        "`0+U`", "梯度", "行为缓冲",
-        # v4.6: the ladder ends at 25% and that must stay stated, not implied
-        "**`DD` 超过 25% 后不再解锁任何档位。**",
-        "为什么终点是 25% 而不是 35%",
-        "每一档在同一轮回撤周期内最多执行一次",
-        "除 `DD` 达档外不引入任何其他判断项",
-        "只用外部新增资金逐月重建",
-        "18% 半导体",
-        "SPYM / QQQM 例行路径不受此项单独阻断",
-        "广谱市场信号",
-        # v4.5: "追加" split into restore (routine path) and tilt increase (full IC).
-        # Both definitions and the restore's five constraints live here.
-        "回补至目标 vs 提高倾斜",
-        "**回补至目标（Restore-to-target）**",
-        "**提高倾斜（Tilt increase）**",
-        "回补走月度例行路径",
-        "**提高倾斜仍须完整 IC**",
-        "资金只来自 `U`",
-        "不得降级为「先买一部分」",
-        r"交易后 `A_actual ≤ min(A_execution_cap, A_stage)`",
-    )
-    # the restore must never be describable as raising the cap — that is the one
-    # thing it is defined not to do, and the whole split collapses if it drifts
-    forbid(
-        "plugins/investment-os/skills/using-investment-os/references/01-target-allocation.md",
-        "回补可提高 `A_execution_cap`",
-        "回补时推进执行档",
-    )
-    require(
-        "plugins/investment-os/skills/using-investment-os/references/02-deployment-framework.md",
-        "与再平衡的分工",
-        "由再平衡吸收",
-    )
-    require(
-        "Research/2026-08-01-drawdown-vs-rebalancing-scope.md",
-        "由再平衡吸收",
-        "未采纳",
-    )
-    require(
-        "plugins/investment-os/skills/using-investment-os/references/00-investment-policy-statement.md",
-        "SB-1 满仓政策组合",
-        "SB-2 单一基金",
-        "0.45–0.75",
-        "不按 alpha 命名或考核",
-    )
-    require(
-        "Research/alpha/SOXX.md",
-        "Incomplete — INDEX METHODOLOGY EVIDENCE",
-        "NYSE Semiconductor Index",
-    )
-    forbid(
-        "Research/alpha/SOXX.md",
-        "indexes.nasdaq.com",
-        "前三大权重上限分别为12%、10%、8%",
-    )
-    require(
-        "Research/2026-08-01-valuation-subsystem-retirement.md",
-        "已批准",
-        "历史百分位是真正的死结",
-    )
-    require("Decision-Log.md", "v4.2 估值子系统整体退役", "v4.3 回撤部署 T1 触发线由 15% 下调至 10%")
-    require(
-        "Research/2026-08-01-t1-threshold-10pct.md",
-        "已批准",
-        "反对证据",
-        "证伪回路",
-    )
-    require("plugins/investment-os/skills/using-investment-os/references/01-target-allocation.md", "由 T2（15%）、T3（20%）、T4（25%）逐档覆盖")
-    # the retired deep tiers must not survive anywhere in the active rules
-    for path in ("plugins/investment-os/skills/using-investment-os/references/01-target-allocation.md",
-                 "plugins/investment-os/skills/using-investment-os/references/02-deployment-framework.md",
-                 "plugins/investment-os/skills/using-investment-os/references/02-state-reconstruction.md",
-                 "plugins/investment-os/skills/validating-drawdown-state/scripts/drawdown_drill.py", "plugins/investment-os/skills/running-monthly-review/scripts/monthly_execution.py"):
-        forbid(path, "`DD ≥ 30%`", "`DD ≥ 35%`", '"T5"', '"T6"')
-    # the v4.4 ammunition text (9pp ending at 6%+U) must not survive in the
-    # constitution either — BUG-014's pattern is stale numbers in prose, and
-    # this exact paragraph shipped one release behind the tier table above it
-    forbid(
-        "plugins/investment-os/skills/using-investment-os/references/01-target-allocation.md",
-        "合计 9 个百分点",
-        "降至 T4 的 `6%+U`",
-        # every figure in the constitution must be traceable to Research/;
-        # 24.1% never was (the four-tier proposal carries 22.5 / 26.7 / 10.96 / 11.60)
-        "24.1%",
-    )
-    require(
-        "plugins/investment-os/skills/using-investment-os/references/01-target-allocation.md",
-        "合计 15 个百分点的 NAV",
-    )
-    require(
-        "Research/2026-08-01-drawdown-four-tier.md",
-        "已批准", "证伪回路", "未采纳",
-        # the case against must stay on the page, not just the case for
-        "2008 型深跌无弹药", "行为缓冲在最深档消失",
-        # 6% was never justified — that finding is why the floor moved to zero
-        "6% 从未被单独论证过",
-        # leverage was raised and declined; the analysis must stay retrievable
-        "关于杠杆：明确不做", "强制平仓不是现实风险",
-    )
-    # the IPS's no-leverage principle must survive this release untouched
-    require("plugins/investment-os/skills/using-investment-os/references/00-investment-policy-statement.md", "不接受无上限的行业、杠杆或流动性风险")
-    require("Decision-Log.md", "v4.6 回撤阶梯改为四档梯度，25% 处把现金全部投出")
-    require(
-        "Research/2026-08-01-drawdown-tranching.md",
-        "已批准",
-        "证伪回路",
-        "分批本身就是「不知道谷底在哪」的正确答案",
-    )
-    require("Decision-Log.md", "v4.4 回撤部署改为六档等额分批")
-    require("plugins/investment-os/skills/using-investment-os/references/02-state-reconstruction.md", "已执行档数")
-    require(
-        "Research/2026-08-01-benchmark-cash-model-simplification.md",
-        "已批准",
-        "不得使用实际账户的单位现金收益率",
-    )
-    require(
-        "plugins/investment-os/skills/using-investment-os/references/02-state-reconstruction.md",
-        "不存储任何账户数据",
-        "现金水位自证",
-        "恰好一个",
-        "T1 `0.90×`",
-        "隐私边界",
-    )
-    require(
-        "plugins/investment-os/skills/routing-investment-research/scripts/fetch_etf_data.py",
-        "holdings-daily-us-en-spym.xlsx",
-        "stockanalysis.com",
-        "never authorizes trades",
-        "GUARD_SEMI_IC = 15.0",
-    )
-    require(
-        "plugins/investment-os/skills/using-investment-os/references/08-lookthrough-check.md",
-        "fetch_etf_data.py",
-    )
-    require(
-        "plugins/investment-os/skills/running-monthly-review/scripts/monthly_execution.py",
-        "NEVER places or formats an executable order",
-        "NEVER writes account figures to disk",
-        # the calculator mirrors the rules; its constants must match this file
-        'TIERS = ((0.10, "T1", 0.0150),',
-        '(0.25, "T4", 0.0600))',
-        "ABSOLUTE_FLOOR = 0.0     # cash never goes below",
-        "CASH_FLOOR = 0.12",
-        "CASH_TARGET = 0.15",
-        "QQQM_TARGET = 0.28",
-        "A_STAGE = 0.06",
-        "A_EXECUTION_CAP = 0.03",
-        "def self_test",
-        # v4.5: the restore is capped by the execution cap and fails closed
-        "def restore_candidate",
-        "if not lookthrough_current:",
-        "headroom = min(A_EXECUTION_CAP, A_STAGE) - a_actual",
-    )
-    require(
-        "plugins/investment-os/skills/using-investment-os/references/01-target-allocation.md",
-        "Research/2026-08-01-soxx-restore-vs-increase.md",
-    )
-    require(
-        "Research/2026-08-01-soxx-restore-vs-increase.md",
-        "已批准",
-        "反对论据",
-        "证伪回路",
-        "未采纳",
-        "看 `A_execution_cap` 动没动",
-    )
-    require("Decision-Log.md", "v4.5 「回补至目标」与「提高倾斜」拆分")
-    require(
-        "plugins/investment-os/skills/using-investment-os/references/02-monthly-workflow.md",
-        "lookthrough-current",
-        "回补",
-        "提高倾斜",
-    )
-    require("plugins/investment-os/skills/using-investment-os/references/production-contract.md", "回补至目标", "提高倾斜")
-    require("plugins/investment-os/skills/using-investment-os/references/04-alpha-framework.md", "提高倾斜标准", "回补至目标标准")
-    require(
-        "plugins/investment-os/skills/using-investment-os/references/02-deployment-framework.md",
-        "本框架的三条通道只买 SPYM / QQQM",
-    )
-    require("plugins/investment-os/skills/using-investment-os/references/claude-code-entry.md", "monthly_execution.py")
-    require("plugins/investment-os/skills/using-investment-os/references/02-monthly-workflow.md", "monthly_execution.py")
-    require(
-        "plugins/investment-os/skills/validating-drawdown-state/scripts/drawdown_drill.py",
-        "never authorizes trades",
-        # the drill's tiers must mirror DRAWDOWN_TIERS above, or the drill
-        # would be validating a state machine the Constitution does not have
-        'TIERS = ((0.10, "T1", 0.0150),',
-        '(0.25, "T4", 0.0600))',
-        "ABSOLUTE_FLOOR = 0.0     # cash never goes below",
-        "check_invariants",
-    )
-    require(
-        "Research/2026-08-01-drawdown-deployment-drill.md",
-        "七项不变量全部成立",
-        "在真实周期跑过之前仍属未验证状态",
-    )
-    require(
-        "plugins/investment-os/skills/using-investment-os/references/02-deployment-framework.md",
-        "drawdown_drill.py",
-        "未验证",
-    )
-    require(
-        "plugins/investment-os/skills/using-investment-os/references/02-deployment-framework.md",
-        "回撤部署（Drawdown Deployment）",
-        "`DD ≥ 10%`", "`DD ≥ 15%`", "`DD ≥ 20%`", "`DD ≥ 25%`",
-        "没有任何可解锁的档位",
-        "不引入任何其他判断项",
-        "每档在同一回撤周期内最多执行一次",
-    )
-    require(
-        "plugins/investment-os/skills/using-investment-os/references/08-lookthrough-check.md",
-        "15 分钟",
-        "只增不改",
-        "不自动改变 Registry",
-        "PASS / WARN / FREEZE-TILT / DATA INCOMPLETE",
-    )
-    for path in (
-        "README.md",
-        "plugins/investment-os/skills/using-investment-os/references/production-contract.md",
-        "plugins/investment-os/skills/using-investment-os/references/02-daily-review.md",
-        "plugins/investment-os/skills/using-investment-os/references/02-monthly-workflow.md",
-        "plugins/investment-os/skills/using-investment-os/references/02-deployment-framework.md",
-        "plugins/investment-os/skills/using-investment-os/references/02-weekly-review.md",
-        "plugins/investment-os/skills/using-investment-os/references/03-transition-plan.md",
-    ):
-        forbid(path, "Valuation Score", "Opportunity Score")
-    # retired v3.x mechanisms survive only as one-line archive entries in the history files
-    for path in ("BUGLOG.md", "Decision-Log.md"):
-        require(path, "Bundle v1.4")
-    require("Decision-Log.md", "v3.x 决策存档")
-    require("BUGLOG.md", "已退役机制缺陷存档")
     # git history was rebuilt to a single commit: no document may send readers there
-    for path in ("README.md", "plugins/investment-os/skills/using-investment-os/references/claude-code-entry.md"):
+    for path in ("README.md",
+                 "plugins/investment-os/skills/using-investment-os/references/claude-code-entry.md"):
         forbid(path, "查 git 历史")
-    # live account state must never be frozen into rule files (red line 2).
-    # Target the pattern "A_actual ... N%" specifically — a bare percentage is
-    # legitimate elsewhere (price premiums, drawdown depths, guardrail lines).
-    # "A_actual 约 7.8%" is a frozen observation; "A_actual 高于 6%" references the
-    # cap and is legitimate. The approximation marker is what distinguishes them.
+
+
+def frozen_state_gate() -> None:
+    """Live account state must never be frozen into rule files (red line 2).
+
+    Target the pattern "A_actual ... N%" specifically — a bare percentage is
+    legitimate elsewhere (price premiums, drawdown depths, guardrail lines).
+    "A_actual 约 7.8%" is a frozen observation; "A_actual 高于 6%" references the
+    cap and is legitimate. The approximation marker is what distinguishes them.
+    """
     frozen_state = re.compile(r"A_actual[^。\n]{0,12}?(?:约|≈|大约)\s*\d+(?:\.\d+)?\s*%")
-    for path in ("plugins/investment-os/skills/using-investment-os/references/04-position-registry.md",
-                 "Decision-Log.md", "plugins/investment-os/skills/using-investment-os/references/01-target-allocation.md"):
+    for path in (CONSTITUTION, "Decision-Log.md"):
         hit = frozen_state.search(read(path))
         if hit:
             raise AssertionError(f"{path}: frozen A_actual value: {hit.group()!r}")
-    require(
-        "README.md",
-        "仓库不维护重复的中央证券数据库",
-        "普通数据变化不更新项目",
-    )
-    require(
-        "plugins/investment-os/skills/using-investment-os/references/production-contract.md",
-        "仓库不维护行情、ETF成分、issuer或GICS中央数据库",
-        "普通巡检不写仓库",
-    )
-    require(
-        "Decision-Log.md",
-        "运行时多源数据与决策留证",
-        "删除仓库中的中央issuer/GICS全量表",
-        "v4.0 证据驱动的结构修正与简化",
-    )
-    require(
-        "Research/2026-07-31-v4-Evidence-and-Proposal.md",
-        "18.2%", "24.2%", "31.7%",
-        "半导体 15% 护栏在 SOXX=0 时即被 Core 自身突破",
-    )
-    require(
-        ".github/workflows/policy-consistency.yml",
-        "python3 scripts/check_policy_consistency.py",
-    )
-    forbid(
-        ".github/workflows/policy-consistency.yml",
-        "validate_lookthrough_packet",
-        "test_lookthrough_adversarial",
-        "check_lookthrough_history",
-    )
+
+
+def retired_files_gate() -> None:
     for stale in (
         "scripts/validate_lookthrough_packet.py",
         "scripts/parse_lookthrough_sources.py",
@@ -625,18 +386,27 @@ def main() -> None:
         # retired in v4.2: four Red inputs that cannot go Green, and a
         # historical-percentile requirement no source can satisfy
         "02-Operating-System/ETF-Valuation-Framework.md",
+        # retired in the 29->9 rules-first consolidation (v0.5.0)
+        "plugins/investment-os/skills/using-investment-os/references/01-target-allocation.md",
+        "plugins/investment-os/skills/using-investment-os/references/02-deployment-framework.md",
+        "plugins/investment-os/skills/using-investment-os/references/project-contract.md",
+        "plugins/investment-os/skills/using-investment-os/references/production-contract.md",
     ):
         if (ROOT / stale).exists():
             raise AssertionError(f"retired file resurfaced: {stale}")
-    forbid("plugins/investment-os/skills/using-investment-os/references/03-transition-plan.md", r"现金、\(A\)、目标缺口")
 
-    privacy_gate()
 
+def main() -> None:
     if CURRENT_EXECUTION_CAP > CURRENT_STAGE:
         raise AssertionError("current execution cap exceeds current stage")
     allocation_tests()
     drawdown_tests()
+    mirror_tests()
     benchmark_interest_tests()
+    stale_vocabulary_gate()
+    frozen_state_gate()
+    retired_files_gate()
+    privacy_gate()
     print("Policy consistency checks passed.")
 
 

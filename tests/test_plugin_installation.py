@@ -88,8 +88,12 @@ def main() -> None:
         for relative in (
             ".plugin-version",
             "skills/using-investment-os/references/agent-execution-contract.md",
-            "skills/using-investment-os/references/project-contract.md",
-            "skills/using-investment-os/references/production-contract.md",
+            "skills/using-investment-os/references/product-contract.md",
+            "skills/using-investment-os/references/00-constitution.md",
+            "skills/using-investment-os/references/01-operating-manual.md",
+            "skills/using-investment-os/references/02-data-contract.md",
+            "skills/using-investment-os/references/03-journal.md",
+            "skills/financial-agent-discipline/SKILL.md",
             "skills/broker-runtime/scripts/broker_runtime.py",
             "skills/running-daily-review/scripts/decision_packet.py",
         ):
@@ -126,8 +130,7 @@ def main() -> None:
         for relative in (
             "../../.plugin-version",
             "references/agent-execution-contract.md",
-            "references/project-contract.md",
-            "references/production-contract.md",
+            "references/product-contract.md",
         ):
             assert (router_dir / relative).resolve().is_file(), relative
 
