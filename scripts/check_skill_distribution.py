@@ -141,7 +141,7 @@ def check_product_assets() -> None:
     )
     require(
         SKILLS / "running-daily-review" / "scripts" / "daily_brief.py",
-        "DATA INCOMPLETE", "build_packet", "render_packet", "--packet-json",
+        "DATA INCOMPLETE", "build_packet", "packet.as_dict()", "json.dumps",
     )
     require(
         SKILLS / "execution-runtime" / "scripts" / "execution_runtime.py",

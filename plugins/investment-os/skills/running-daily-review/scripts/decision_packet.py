@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Structured decision boundary between deterministic engines and presentation.
-
-A DecisionPacket contains the complete machine decision. Renderers may explain or
-format it, but must not recompute or mutate decision status, amounts, blockers, or
-execution authority.
-"""
+"""Validated deterministic facts, controls, and candidate limits for the Agent."""
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
@@ -78,18 +73,3 @@ class DecisionPacket:
     def as_dict(self) -> dict[str, Any]:
         self.validate()
         return asdict(self)
-
-
-def assert_renderer_preserves(packet: DecisionPacket, rendered_metadata: dict[str, Any]) -> None:
-    """Reject a renderer that changes machine-authoritative fields."""
-    expected = {
-        "schema_version": packet.schema_version,
-        "workflow": packet.workflow,
-        "as_of": packet.as_of,
-        "runtime_status": packet.runtime_status,
-        "decision": packet.decision,
-        "execution_authority": packet.execution_authority,
-    }
-    for key, value in expected.items():
-        if rendered_metadata.get(key) != value:
-            raise ValueError(f"renderer changed authoritative field: {key}")
