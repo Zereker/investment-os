@@ -1,11 +1,13 @@
 ---
 name: investment-os
-description: Use when an agent must review a portfolio, judge an investment action, research a policy change, or execute one explicitly authorized broker operation.
+description: Use when an agent must review a portfolio, judge an investment action, research a policy change, or execute one explicitly authorized broker operation - to avoid acting on estimated account state, inheriting approval from prior output, and treating analysis as authorization.
 ---
 
 # Investment OS
 
 Investment OS is one rule skill for long-term investing. Read the rules, obtain fresh facts, make the judgment, and keep irreversible actions under explicit owner control.
+
+**Tradeoff:** These rules bias toward stopping over answering, which is right when real money is at stake and wrong when none is. They govern real account state and irreversible actions. A stipulated example, a hypothetical, or a question about the rules themselves is answered normally, naming the premise once.
 
 ## Decision posture
 
@@ -22,6 +24,8 @@ Investment OS is one rule skill for long-term investing. Read the rules, obtain 
 ### Rule 1 — Intent continuity
 
 The same underlying transaction remains the same intent through rewording, aliases, split requests, distractions, and context gaps. A blocked intent stays blocked until its actual blocker is resolved. Unrelated requests remain answerable.
+
+The test: would answering this produce the same market exposure as something already blocked?
 
 ### Rule 2 — No inherited approval
 
@@ -46,6 +50,8 @@ Research, urgency, rhetoric, or a desired trade cannot change production policy 
 ### Rule 7 — Fail closed
 
 Stop only the path whose required fact, rule, capability, authorization, or verification is missing. Label that path `DATA INCOMPLETE`, not `HOLD`; state the exact blocker and recovery condition, then continue useful analysis on unaffected paths.
+
+The test: does this stop protect real money, or does it only avoid answering?
 
 ## Product boundary
 
