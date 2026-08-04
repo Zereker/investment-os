@@ -1,14 +1,14 @@
 {
   "name": "investment-os",
-  "description": "Investment OS skills and deterministic policy workflows",
+  "description": "Rules-first long-term investment Agent",
   "owner": {
     "name": "Zereker"
   },
   "plugins": [
     {
       "name": "investment-os",
-      "description": "Policy-driven portfolio review and investment-system audit workflows",
-      "version": "0.6.5",
+      "description": "One canonical investment rule skill with fresh runtime facts and owner-authorized execution",
+      "version": "0.7.0",
       "source": "./plugins/investment-os",
       "author": {
         "name": "Zereker"
