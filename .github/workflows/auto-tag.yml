@@ -1,0 +1,52 @@
+name: Auto tag release versions
+
+# Every released `.plugin-version` gets an annotated tag `v<version>` at the
+# first-parent master commit that introduced it — the tag maps a distribution
+# version to its source commit (see Decision-Log, standing decisions). Runs on
+# every push to master to tag the newly merged version, and on manual dispatch
+# to backfill any missing historical tags from git history. Versions below
+# 0.5.0 predate the plugin-native layout, were never released, and stay
+# untagged by decision (Decision-Log 2026-08-02).
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  auto-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository with full history and tags
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Tag every released version missing a tag
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          created=0
+          # Oldest-first walk of first-parent master commits that touched the
+          # version file: the first commit carrying a given version is the
+          # introducing commit and owns its tag.
+          for commit in $(git log --first-parent --reverse --format=%H origin/master -- plugins/investment-os/.plugin-version); do
+            version=$(git show "$commit:plugins/investment-os/.plugin-version" 2>/dev/null | tr -d '[:space:]') || continue
+            case "$version" in (*[!0-9.]*|"") continue ;; esac
+            # Skip pre-0.5.0: sort -V puts the smaller version first.
+            [ "$(printf '%s\n0.5.0\n' "$version" | sort -V | head -1)" = "0.5.0" ] || continue
+            if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
+              continue
+            fi
+            git tag -a "v$version" -m "investment-os $version" "$commit"
+            echo "tagged v$version at $commit"
+            created=$((created + 1))
+          done
+          if [ "$created" -gt 0 ]; then
+            git push origin --tags
+          fi
+          echo "created $created tag(s)"
