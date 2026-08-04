@@ -6,9 +6,9 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PLUGIN_ROOT = ROOT / "plugins" / "investment-os"
+PLUGIN_ROOT = ROOT
 SKILLS = PLUGIN_ROOT / "skills"
-SCRIPTS = SKILLS / "using-investment-os" / "scripts"
+SCRIPTS = SKILLS / "investment-os" / "scripts"
 
 SCRIPT_DIRS = {
     "broker": SCRIPTS,

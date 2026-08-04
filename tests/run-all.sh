@@ -21,7 +21,7 @@ python3 tests/test_monthly_contribution_cli.py
 python3 tests/test_monthly_dd_cli.py
 python3 tests/test_reconciliation_gates.py
 python3 scripts/check_policy_consistency.py
-python3 plugins/investment-os/skills/using-investment-os/scripts/monthly_execution.py --self-test
-python3 plugins/investment-os/skills/using-investment-os/scripts/alert_pointer_check.py --self-test
+python3 skills/investment-os/scripts/monthly_execution.py --self-test
+python3 skills/investment-os/scripts/alert_pointer_check.py --self-test
 
 echo "All non-LLM and eval-harness integrity tests passed. Real Harness behavior remains NOT YET VERIFIED."

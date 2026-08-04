@@ -7,8 +7,8 @@ Why this exists: every month the funding computation was hand-derived from the d
 closes that gap: same inputs -> same answer, every time.
 
 Mirrors (any divergence from these files is a BUG in this script, not a new rule):
-  skills/using-investment-os/references/00-constitution.md       targets, A_basis/U, guardrails, tiers
-  skills/using-investment-os/references/01-operating-manual.md   deployment framework (D / S / B / drawdown),
+  skills/investment-os/references/00-constitution.md       targets, A_basis/U, guardrails, tiers
+  skills/investment-os/references/01-operating-manual.md   deployment framework (D / S / B / drawdown),
                                                                  monthly gate order and routine-path checks
 
 Hard boundaries this script will not cross:
@@ -27,17 +27,17 @@ Hard boundaries this script will not cross:
     DCA path say DATA INCOMPLETE rather than silently deploying on an assumed F=0.
 
 Usage (figures come from IBKR, in account currency; they are never persisted):
-  python3 skills/using-investment-os/scripts/monthly_execution.py --nav 100000 --cash 18000 \\
+  python3 skills/investment-os/scripts/monthly_execution.py --nav 100000 --cash 18000 \\
       --spym 50000 --qqqm 26000 --soxx 6000 --contribution 2000
 
   # already deployed T1 earlier in this drawdown cycle:
-  python3 skills/using-investment-os/scripts/monthly_execution.py ... --tiers-executed T1
+  python3 skills/investment-os/scripts/monthly_execution.py ... --tiers-executed T1
 
   # a current-quarter look-through check exists -> the SOXX restore may compute:
-  python3 skills/using-investment-os/scripts/monthly_execution.py ... --lookthrough-current
+  python3 skills/investment-os/scripts/monthly_execution.py ... --lookthrough-current
 
   # skip the network call for the drawdown check (offline / IBKR series preferred):
-  python3 skills/using-investment-os/scripts/monthly_execution.py ... --dd 0.0
+  python3 skills/investment-os/scripts/monthly_execution.py ... --dd 0.0
 """
 
 from __future__ import annotations
@@ -361,7 +361,7 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
         # the D / B / drawdown Core paths proceed on their own gates.
         print(f"  ** 未提供 --lookthrough-current：无当季有效穿透核查 → 回补冻结（回补额 = 0）**")
         print(f"     穿透核查失败只冻结自主倾斜新增，不阻断 SPYM / QQQM 例行路径")
-        print(f"     完成 skills/using-investment-os/references/02-data-contract.md 穿透核查程序当季核查后重跑")
+        print(f"     完成 skills/investment-os/references/02-data-contract.md 穿透核查程序当季核查后重跑")
         restore_frozen = True
     else:
         print(f"  回补候选 = min(U×V={money(res['reserve']*nav)}, "

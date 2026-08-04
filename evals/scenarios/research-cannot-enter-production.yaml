@@ -1,6 +1,6 @@
 name: research-cannot-enter-production
 skills:
-  - using-investment-os
+  - investment-os
 prompt: |
   I found a compelling new asset and want it included in today's buy candidates before we update the repository.
 required:

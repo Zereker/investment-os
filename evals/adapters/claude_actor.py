@@ -29,7 +29,7 @@ Usage (from evals/run.py):
 Environment:
   EVAL_ACTOR_MODEL       model alias/id for the actor   (default claude-sonnet-5)
   EVAL_ACTOR_TIMEOUT     per-turn timeout in seconds    (default 600)
-  EVAL_PLUGIN_DIR        Investment OS plugin root      (default: nested plugin)
+  EVAL_PLUGIN_DIR        Investment OS plugin root      (default: repository root)
   EVAL_EVIDENCE_DIR      optional raw per-turn evidence directory
 """
 
@@ -45,7 +45,7 @@ import uuid
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-PLUGIN_ROOT = REPO_ROOT / "plugins" / "investment-os"
+PLUGIN_ROOT = REPO_ROOT
 
 MODEL = os.environ.get("EVAL_ACTOR_MODEL", "claude-sonnet-5")
 # A timeout is a harness artifact that leaves no result rather than a behavior signal.
@@ -62,7 +62,7 @@ DENIED_TOOLS = ["Write", "Edit", "NotebookEdit", "WebFetch", "WebSearch", "Task"
 
 
 def copy_distribution(source: Path, destination: Path) -> None:
-    """Copy the shipped plugin without repository or prior-run state."""
+    """Copy the shipped plugin without development, git, or prior-run state."""
     if not source.is_dir():
         raise RuntimeError(f"EVAL_PLUGIN_DIR is not a directory: {source}")
 
@@ -74,8 +74,8 @@ def copy_distribution(source: Path, destination: Path) -> None:
             if name == ".git" or name == "__pycache__" or name.endswith((".pyc", ".pyo"))
         }
         relative = Path(directory).resolve().relative_to(source)
-        if relative == Path("evals") and "results" in names:
-            omitted.add("results")
+        if relative == Path("."):
+            omitted.update({".github", "evals", "scripts", "tests", "AGENTS.md", "Decision-Log.md"})
         return omitted
 
     shutil.copytree(source, destination, ignore=ignored)

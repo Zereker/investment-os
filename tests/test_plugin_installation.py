@@ -9,7 +9,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PLUGIN_ROOT = ROOT / "plugins" / "investment-os"
+PLUGIN_ROOT = ROOT
 
 
 def load_json(path: Path) -> dict:
@@ -36,16 +36,15 @@ def verify_marketplaces() -> None:
     assert len(codex["plugins"]) == 1
     codex_entry = codex["plugins"][0]
     assert codex_entry["name"] == "investment-os"
-    assert codex_entry["source"] == {"source": "local", "path": "./plugins/investment-os"}
+    assert codex_entry["source"] == {"source": "url", "url": "./"}
     assert codex_entry["policy"] == {"installation": "AVAILABLE", "authentication": "ON_INSTALL"}
-    assert (ROOT / codex_entry["source"]["path"]).resolve() == PLUGIN_ROOT
 
     claude = load_json(ROOT / ".claude-plugin" / "marketplace.json")
     assert claude["name"] == "investment-os"
     assert len(claude["plugins"]) == 1
     entry = claude["plugins"][0]
     assert entry["name"] == "investment-os"
-    assert entry["source"] == "./plugins/investment-os"
+    assert entry["source"] == "./"
     version = (PLUGIN_ROOT / ".plugin-version").read_text(encoding="utf-8").strip()
     assert entry["version"] == version
 
@@ -53,7 +52,7 @@ def verify_marketplaces() -> None:
 def main() -> None:
     verify_marketplaces()
     source_skills = skill_names(PLUGIN_ROOT)
-    assert source_skills == {"using-investment-os"}
+    assert source_skills == {"investment-os"}
 
     with tempfile.TemporaryDirectory(prefix="investment-os-install-test-") as temp:
         temp_root = Path(temp)
@@ -65,33 +64,29 @@ def main() -> None:
 
         assert installed != ROOT
         assert not (installed / ".git").exists()
-        assert skill_names(installed) == {"using-investment-os"}
-        for source_only in ("tests", "evals", "docs"):
-            assert not (installed / source_only).exists(), f"source-only tree leaked into plugin: {source_only}"
-        assert not (installed / "scripts").exists(), "runtime scripts remain internal to skill directories"
-
+        assert skill_names(installed) == {"investment-os"}
         for relative in (
             ".plugin-version",
-            "skills/using-investment-os/SKILL.md",
-            "skills/using-investment-os/references/00-constitution.md",
-            "skills/using-investment-os/references/01-operating-manual.md",
-            "skills/using-investment-os/references/02-data-contract.md",
-            "skills/using-investment-os/scripts/broker_runtime.py",
-            "skills/using-investment-os/scripts/account_reconciliation.py",
-            "skills/using-investment-os/scripts/monthly_execution.py",
-            "skills/using-investment-os/scripts/alert_pointer_check.py",
-            "skills/using-investment-os/scripts/execution_runtime.py",
+            "skills/investment-os/SKILL.md",
+            "skills/investment-os/references/00-constitution.md",
+            "skills/investment-os/references/01-operating-manual.md",
+            "skills/investment-os/references/02-data-contract.md",
+            "skills/investment-os/scripts/broker_runtime.py",
+            "skills/investment-os/scripts/account_reconciliation.py",
+            "skills/investment-os/scripts/monthly_execution.py",
+            "skills/investment-os/scripts/alert_pointer_check.py",
+            "skills/investment-os/scripts/execution_runtime.py",
         ):
             assert (installed / relative).is_file(), f"installed file missing: {relative}"
 
         assert sorted(installed.glob("skills/*/SKILL.md")) == [
-            installed / "skills" / "using-investment-os" / "SKILL.md"
+            installed / "skills" / "investment-os" / "SKILL.md"
         ]
 
         codex_manifest = load_json(installed / ".codex-plugin" / "plugin.json")
         assert codex_manifest["skills"] == "./skills/"
         assert "hooks" not in codex_manifest
-        assert codex_manifest["interface"]["privacyPolicyURL"].endswith("/skills/using-investment-os/SKILL.md")
+        assert codex_manifest["interface"]["privacyPolicyURL"].endswith("/skills/investment-os/SKILL.md")
 
     print("Single-skill plugin installation and cache-isolation tests passed.")
 
