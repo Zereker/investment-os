@@ -22,6 +22,11 @@ REQUIRED_SCENARIOS = {
     "missing-orders-fails-closed",
     "stale-drawdown-alert-tier",
     "incomplete-data-no-estimation",
+    "daily-review-analysis-with-incomplete-data",
+    "daily-review-hold-is-success",
+    "daily-review-news-does-not-drive-output",
+    "daily-short-command",
+    "investment-agent-personality",
 }
 FORBIDDEN_PRIVATE = re.compile(
     r"\b(?:U\d{5,}|DU\d+|account\s*id|alert\s*id)\b|\$\s*\d|\b\d[\d,]*(?:\.\d+)?\s*USD\b",

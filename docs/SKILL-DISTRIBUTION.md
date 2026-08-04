@@ -46,7 +46,7 @@ The plugin distribution has a separate SemVer read from `.plugin-version` and co
 3. Harness adapters map abstract actions to available tools without rewriting domain Skills.
 4. Runtime account state remains private and ephemeral.
 5. Missing repository, broker, market, or independent-review capabilities fail closed.
-6. Skills declare required sub-skills explicitly; dependency cycles are forbidden.
+6. The router names every skill it can route to or load and loads the smallest workflow for the task; where a skill declares a required sub-skill, dependency cycles are forbidden.
 7. The retired `07-Releases/` directory must not reappear.
 
 ## Claude Code

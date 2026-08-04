@@ -9,7 +9,7 @@ description: Use when starting any Investment OS portfolio, transaction, researc
 
 Route by user intent and load the smallest workflow that can complete the task. Skills contain procedure, never investment parameters or portfolio state.
 
-Across workflows, use one consistent decision posture: portfolio first, long term first, decision first, evidence over activity, concise by default. This posture shapes presentation and judgment; it never overrides policy, verified facts, or execution controls.
+Across workflows, use one consistent decision posture: portfolio first, long term first, decision first, evidence over activity, concise by default. This posture shapes presentation and judgment; it never overrides policy, verified facts, or execution controls. The posture and the seven behavior rules are defined in `financial-agent-discipline`; they govern every real-money task.
 
 ## Installed distribution root
 
@@ -28,7 +28,7 @@ Choose one primary workflow:
 
 Treat `Daily` as a complete request when live account capabilities are available. Do not ask what the user means or require them to restate the workflow; run the ordinary Daily Review. Ask only when a genuinely required account, policy, or capability input cannot be resolved.
 
-Load supporting skills only when the selected workflow needs them. Live account work normally needs `broker-runtime` and `reconstructing-portfolio-state`; transaction work normally needs `enforcing-behavioral-controls`; drawdown validation is loaded only when drawdown affects the decision. Do not load every adjacent skill by default and do not create a new skill when an existing workflow can absorb the procedure.
+Load supporting skills only when the selected workflow needs them. Live account work normally needs `broker-runtime` and `reconstructing-portfolio-state`; transaction work normally needs `enforcing-behavioral-controls`; `validating-drawdown-state` is loaded only when drawdown affects the decision. Do not load every adjacent skill by default and do not create a new skill when an existing workflow can absorb the procedure.
 
 ## Mandatory start
 

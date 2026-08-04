@@ -2,6 +2,23 @@
 
 本文件记录改变系统方向或产生长期影响的决定。日常定投不逐笔记录。
 
+## 2026-08-04 — 所有者裁决：LLM 负责投资判断为预期设计，套件对齐收编
+
+### 决定
+
+- 认可近期合入的方向为产品预期设计：**代码验证事实并保护执行，LLM 负责投资判断**。北极星由「相同输入得到相同结论」改为「结论可解释、证据可追溯、执行可验证」。投资判断长在 Skill 与规则里，不为每个分析细节新增代码、字段、状态机或 Skill。
+- 收编而非回卷：canonical suite 对齐新契约——router 点名 `validating-drawdown-state` 与 `financial-agent-discipline`；`test_skill_system` 的强制子技能图断言改为「router 必须能点名其路由或加载的全部 Skill」；注册五个新行为场景（daily-review-analysis-with-incomplete-data、daily-review-hold-is-success、daily-review-news-does-not-drive-output、daily-short-command、investment-agent-personality）；`check_product_contract` 改钉新契约的承重句（LLM 判断边界、非机械北极星、IC 结论非 Broker 授权、默认分支 HEAD 规范来源、不可变分发快照、`F` 不得默认为零）。被改写句子的职能已有新家者不复原：旧制例外与 `02-*`>`03-*` 顺序钉在宪法，来源义务及其后果钉在 `financial-agent-discipline`。
+- 操作手册指向产品契约第 10 节的「九项条件」改为不带计数的「授权条件」（该节现为七项，计数指针已陈旧）。
+- 证伪回路：clean-session 行为 eval 是该边界的探测器。若真实 Harness 扫描显示 LLM 判断不可解释、不可追溯或绕过执行门，本裁决回 Research 重审。Real Harness behavior 仍为 NOT YET VERIFIED。
+
+### 规则净增减（复杂度规则要求）
+
+投资参数、阈值、公式、授权语义零变更。router 增两句点名散文；测试与检查器为钉子替换（净约 ±0）；行为场景注册 +5。
+
+### 非交易声明
+
+本决定只把测试、检查器与文档对齐到已裁决的产品边界，不改变任何投资参数、阈值、公式或授权语义，不授权任何订单。
+
 ## 2026-08-04 — 三档真删规则裁决：周度压缩批准，Benchmark 简化与季度并问未采纳
 
 ### 决定

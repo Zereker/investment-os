@@ -362,7 +362,7 @@ NAV ≈ Cash + Σ Position Market Values
 
 ### 8. Decision and Execution Boundary
 
-月度脚本输出的是候选与上限，不是 Broker 授权。实际执行必须经过 `execution-runtime` 的单次操作授权契约（九项条件见 `product-contract.md` 第 10 节）；候选、公式结果、IC Verdict 或历史批准均不能替代该执行授权。
+月度脚本输出的是候选与上限，不是 Broker 授权。实际执行必须经过 `execution-runtime` 的单次操作授权契约（授权条件见 `product-contract.md` 第 10 节）；候选、公式结果、IC Verdict 或历史批准均不能替代该执行授权。
 
 ### 9. Output
 
