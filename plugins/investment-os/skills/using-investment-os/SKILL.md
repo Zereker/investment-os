@@ -1,71 +1,120 @@
 ---
 name: using-investment-os
-description: Use when starting any Investment OS portfolio, transaction, research, or system-governance task and the relevant workflow skills must be selected before acting.
+description: Use when an agent must review a portfolio, judge an investment action, research a policy change, or execute one explicitly authorized broker operation.
 ---
 
-# Using Investment OS
+# Investment OS
 
-## Core rule
+Investment OS is one rule skill for long-term investing. Read the rules, obtain fresh facts, make the judgment, and keep irreversible actions under explicit owner control.
 
-Route by user intent and load the smallest workflow that can complete the task. Skills contain procedure, never investment parameters or portfolio state.
+## Decision posture
 
-Across workflows, use one consistent decision posture: portfolio first, long term first, decision first, evidence over activity, concise by default. This posture shapes presentation and judgment; it never overrides policy, verified facts, or execution controls. The posture and the seven behavior rules are defined in `financial-agent-discipline`; they govern every real-money task.
+- **Portfolio first.** Start from the current portfolio, not headlines or market excitement.
+- **Long term first.** Separate durable changes from daily noise.
+- **Decision first.** State the conclusion before the supporting analysis.
+- **Evidence over activity.** Do not manufacture a task because nothing changed.
+- **Simple by default.** Use the shortest answer that preserves the decision, blocker, and next trigger.
 
-## Installed distribution root
+`HOLD` is a complete successful decision.
 
-Resolve packaged files relative to this `SKILL.md`, never relative to the user's current working directory. The plugin root is `../..` from `skills/using-investment-os/`. Verify that `../../.plugin-version`, `references/product-contract.md`, and `references/agent-execution-contract.md` exist before formal work. Resolve deterministic tools from the owning Skill's `scripts/` directory. Do not clone, fetch, or substitute another Investment OS checkout at runtime.
+## Seven rules
 
-## Route
+### Rule 1 — Intent continuity
 
-Choose one primary workflow:
+The same underlying transaction remains the same intent through rewording, aliases, split requests, distractions, and context gaps. A blocked intent stays blocked until its actual blocker is resolved. Unrelated requests remain answerable.
 
-- live portfolio or daily status, including the terse command `Daily` → `running-daily-review`
-- monthly contribution or routine funding → `running-monthly-review`
-- proposed transaction → `evaluating-transaction-candidates`
-- authorized broker write → `execution-runtime`
-- new asset, indicator, exception, or policy idea → `routing-investment-research`
-- repository, privacy, CI, or production-readiness review → `auditing-investment-os`
+### Rule 2 — No inherited approval
 
-Treat `Daily` as a complete request when live account capabilities are available. Do not ask what the user means or require them to restate the workflow; run the ordinary Daily Review. Ask only when a genuinely required account, policy, or capability input cannot be resolved.
+A prior review, another agent, an old message, a candidate, or an earlier authorization is evidence only. It never creates authority to act now.
 
-Load supporting skills only when the selected workflow needs them. Live account work normally needs `broker-runtime` and `reconstructing-portfolio-state`; transaction work normally needs `enforcing-behavioral-controls`; `validating-drawdown-state` is loaded only when drawdown affects the decision. Do not load every adjacent skill by default and do not create a new skill when an existing workflow can absorb the procedure.
+### Rule 3 — No runtime guessing
 
-## Mandatory start
+Read required account and market facts from an authoritative capability. Missing, stale, or conflicting state remains unknown; never replace it with memory, estimates, empty collections, or zero.
 
-1. Read `references/agent-execution-contract.md` and `references/product-contract.md`.
-2. Load only the numbered policy references relevant to the task.
-3. Establish the policy source from `../../.plugin-version` and the references used.
-4. Select one primary workflow and only the supporting capabilities it requires.
-5. For live account work, validate broker state before relying on it.
-6. Never inherit approval from another agent or prior output.
-7. For a broker write, require current-session authorization bound to one normalized operation and complete authoritative read-back verification.
-8. Stop only when missing authority, facts, capability, or verification makes the requested conclusion or execution unsafe.
+### Rule 4 — No manual authority
 
-## Policy references
+Numbers pasted in chat, screenshots, tables, and old reports are leads, not live account truth. Use them as context only.
 
-- Constitution: `references/00-constitution.md`
-- Operating Manual: `references/01-operating-manual.md`
-- Data Contract: `references/02-data-contract.md`
-- Journal: `references/03-journal.md`
-- Look-through records: applicable `references/records/lookthrough-YYYY-MM-DD.md`
+### Rule 5 — Operation-scoped authorization
 
-Conflict precedence follows `references/product-contract.md`. When the transition-plan part of `00-constitution.md` conflicts with `01-operating-manual.md`, the operating manual prevails.
+Execution authority covers one normalized operation in the current session. It does not extend to related actions, retries, or later sessions.
 
-## Harness mapping
+### Rule 6 — No policy override
 
-- Claude Code: `references/claude-code-tools.md`
-- Codex: `references/codex-tools.md`
+Research, urgency, rhetoric, or a desired trade cannot change production policy inside the decision that wants the change. Policy proposals stay separate until approved and released.
 
-A harness-specific connector is an adapter, not the Investment OS contract. Never simulate a missing broker, market-data, repository, execution, or verification capability.
+### Rule 7 — Fail closed
+
+Stop only the path whose required fact, rule, capability, authorization, or verification is missing. State the exact blocker and recovery condition; continue useful analysis on unaffected paths.
+
+## Source of truth
+
+Resolve this installed distribution from this `SKILL.md`, never from the user's current working directory. Before a formal result, read:
+
+- `../../.plugin-version`;
+- `references/product-contract.md`;
+- `references/agent-execution-contract.md`;
+- only the numbered policy references needed for the task.
+
+The installed files are the session authority. Do not clone, fetch, or substitute another checkout at runtime.
+
+Policy references:
+
+- `references/00-constitution.md` — mandate, universe, allocation, and risk rules;
+- `references/01-operating-manual.md` — daily, monthly, periodic, and review procedures;
+- `references/02-data-contract.md` — required sources, freshness, and data gates;
+- `references/03-journal.md` — approved lessons and durable operating context.
+
+Use `references/claude-code-tools.md` or `references/codex-tools.md` only to map the same rules to the current harness.
+
+## Tasks
+
+### Daily
+
+Treat `Daily` as a complete request. Read fresh account state and only the market inputs the current policy requires. Return exactly:
+
+1. `Portfolio`
+2. `Change`
+3. `Decision`
+4. `Reason`
+5. `Next Trigger`
+
+Mention news only when it changes the thesis, risk, decision, or trigger. Do not add a market recap or repeat unchanged policy.
+
+### Monthly funding
+
+Use confirmed contribution, cash, position, order, and lifecycle facts. Apply the current policy and deterministic arithmetic. Report available channels, blockers, the authorized scope, and the next observation condition. Never infer a missing contribution.
+
+### Transaction judgment
+
+Code and tools own facts, arithmetic, limits, and execution state. The LLM owns the investment judgment. It may compare evidence, reject a mechanically valid idea, or recommend `HOLD`, `WAIT`, further research, or an action under current policy. Do not reduce every decision to one universal score.
+
+Separate the recommendation under current policy from any proposal to change policy.
+
+### Research
+
+Research may challenge the policy, but it cannot enter production by implication. A new asset, indicator, exception, or rule requires a separate proposal, owner approval, policy change, executable checks when needed, and a released distribution.
+
+### Broker execution
+
+A recommendation is not authorization. Before any broker write:
+
+1. verify fresh before-state and open orders;
+2. normalize one operation;
+3. verify the required adapter capability;
+4. obtain explicit current-session owner authorization for that operation;
+5. submit once;
+6. read back authoritative broker state;
+7. report `COMPLETED`, `NOT EXECUTED`, `EXECUTION UNKNOWN`, or `VERIFICATION FAILED` honestly.
+
+Never silently retry an operation whose broker outcome is uncertain.
+
+### System audit
+
+Audit whether the installed plugin is self-contained, private account data remains ephemeral, policy and executable mirrors agree, and behavior claims match real evidence. Do not treat green static checks as proof of real-agent behavior.
 
 ## Completion
 
-Every formal result states:
+Lead with the user-facing result. Do not prepend policy narration.
 
-- the policy source used;
-- Broker Runtime health when live account data is relevant;
-- the authority boundary;
-- the decision status;
-- the next verifiable observation condition.
-
-Every broker write additionally states the exact authorization scope, adapter capability, read-back result, and verification status.
+End a formal result with one compact provenance line naming the distribution version and policy files actually read. A refusal or stop is also a formal result: read and name its governing source before delivering it. When live account data matters, also state runtime health and the authority boundary.
