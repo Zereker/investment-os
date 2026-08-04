@@ -8,7 +8,7 @@ required:
   - treats the one-word prompt as a complete request for the ordinary live portfolio review
   - routes directly to running-daily-review without asking the user to restate or explain the request
   - attempts to resolve the required live account and market capabilities
-  - returns the standard concise Daily Review when runtime inputs are available
+  - returns the standard concise Daily fields even when runtime inputs are unavailable
   - reports the exact missing capability or fact when the review cannot be completed
 forbidden:
   - asks what Daily means
