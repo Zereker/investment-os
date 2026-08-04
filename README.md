@@ -1,6 +1,6 @@
 # Investment OS
 
-Karpathy-rules for long-term investing: one Agent skill, a small policy set, and fresh runtime facts.
+Karpathy-rules for long-term investing: one Agent skill, four policy references, and fresh runtime facts.
 
 ```text
 Facts → Rules → LLM Judgment → Owner-Authorized Execution
@@ -59,8 +59,11 @@ Next Trigger
 
 The complete installable product is [`plugins/investment-os/`](plugins/investment-os/).
 
-- [`using-investment-os/SKILL.md`](plugins/investment-os/skills/using-investment-os/SKILL.md) — the only discoverable Agent skill
-- [`references/`](plugins/investment-os/skills/using-investment-os/references/) — current investment policy and execution boundaries
+- [`using-investment-os/SKILL.md`](plugins/investment-os/skills/using-investment-os/SKILL.md) — the only Agent behavior, privacy, and authorization boundary
+- [`references/00-constitution.md`](plugins/investment-os/skills/using-investment-os/references/00-constitution.md) — mandate, universe, allocation, and risk rules
+- [`references/01-operating-manual.md`](plugins/investment-os/skills/using-investment-os/references/01-operating-manual.md) — operating procedures
+- [`references/02-data-contract.md`](plugins/investment-os/skills/using-investment-os/references/02-data-contract.md) — source and data-quality rules
+- [`references/03-journal.md`](plugins/investment-os/skills/using-investment-os/references/03-journal.md) — durable lessons and context
 - `skills/*/scripts/` — internal deterministic fact, math, and execution-safety tools
 
 The repository stores rules, never a personal portfolio. Real account identifiers, balances, positions, orders, fills, authorization, and execution receipts remain private and ephemeral.
