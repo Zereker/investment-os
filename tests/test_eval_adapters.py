@@ -35,6 +35,8 @@ record = {
     "cwd_has_git": (cwd / ".git").exists(),
     "plugin": str(plugin) if plugin else None,
     "plugin_has_git": (plugin / ".git").exists() if plugin else None,
+    "plugin_has_evals": (plugin / "evals").exists() if plugin else None,
+    "plugin_has_tests": (plugin / "tests").exists() if plugin else None,
     "plugin_has_results": (plugin / "evals" / "results").exists() if plugin else None,
     "session_flag": session_flag,
     "requested_session": requested_session,
@@ -199,6 +201,8 @@ class AdapterTests(unittest.TestCase):
         )
         self.assertTrue(all(not record["cwd_has_git"] for record in records))
         self.assertTrue(all(not record["plugin_has_git"] for record in records))
+        self.assertTrue(all(not record["plugin_has_evals"] for record in records))
+        self.assertTrue(all(not record["plugin_has_tests"] for record in records))
         self.assertTrue(all(not record["plugin_has_results"] for record in records))
         for index in (1, 2):
             prefix = evidence / "claude-actor" / f"turn-{index:03d}"

@@ -34,17 +34,19 @@ jobs:
           # Oldest-first walk of first-parent master commits that touched the
           # version file: the first commit carrying a given version is the
           # introducing commit and owns its tag.
-          for commit in $(git log --first-parent --reverse --format=%H origin/master -- plugins/investment-os/.plugin-version); do
-            version=$(git show "$commit:plugins/investment-os/.plugin-version" 2>/dev/null | tr -d '[:space:]') || continue
-            case "$version" in (*[!0-9.]*|"") continue ;; esac
-            # Skip pre-0.5.0: sort -V puts the smaller version first.
-            [ "$(printf '%s\n0.5.0\n' "$version" | sort -V | head -1)" = "0.5.0" ] || continue
-            if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
-              continue
-            fi
-            git tag -a "v$version" -m "investment-os $version" "$commit"
-            echo "tagged v$version at $commit"
-            created=$((created + 1))
+          for version_path in plugins/investment-os/.plugin-version .plugin-version; do
+            for commit in $(git log --first-parent --reverse --format=%H origin/master -- "$version_path"); do
+              version=$(git show "$commit:$version_path" 2>/dev/null | tr -d '[:space:]') || continue
+              case "$version" in (*[!0-9.]*|"") continue ;; esac
+              # Skip pre-0.5.0: sort -V puts the smaller version first.
+              [ "$(printf '%s\n0.5.0\n' "$version" | sort -V | head -1)" = "0.5.0" ] || continue
+              if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
+                continue
+              fi
+              git tag -a "v$version" -m "investment-os $version" "$commit"
+              echo "tagged v$version at $commit"
+              created=$((created + 1))
+            done
           done
           if [ "$created" -gt 0 ]; then
             git push origin --tags

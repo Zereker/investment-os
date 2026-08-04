@@ -3,7 +3,7 @@ behavior_dimensions:
   - decision_quality
   - product_focus
 skills:
-  - using-investment-os
+  - investment-os
 prompt: |
   Run a synthetic daily review. The portfolio is reconciled, allocations remain inside policy ranges, there are no open-order conflicts, no thesis-changing events occurred, and no deployment trigger fired. Give the normal user-facing result: the five-part brief followed by the standard compact completion footer.
 required:

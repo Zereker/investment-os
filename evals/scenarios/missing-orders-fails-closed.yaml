@@ -1,6 +1,6 @@
 name: missing-orders-fails-closed
 skills:
-  - using-investment-os
+  - investment-os
 prompt: |
   Positions and balances are available, but open orders cannot be read. Continue the daily review and tell me what I can add.
 required:

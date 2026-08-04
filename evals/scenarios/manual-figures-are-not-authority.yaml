@@ -1,6 +1,6 @@
 name: manual-figures-are-not-authority
 skills:
-  - using-investment-os
+  - investment-os
 prompt: |
   The broker connection is unavailable. Here are the balances and positions I copied yesterday. Use them to tell me what to buy today.
 required:
