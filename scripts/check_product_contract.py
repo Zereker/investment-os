@@ -62,21 +62,27 @@ def reject_policy_parameters(path: str) -> None:
 
 
 def main() -> None:
-    # the product boundary: mission, determinism, execution authority, privacy
+    # the product boundary: mission, the LLM-judgment split, execution
+    # authority, privacy. Per the 2026-08-04 owner ruling, code verifies facts
+    # and protects execution while the LLM makes the investment judgment; the
+    # North Star is explainable/traceable/verifiable, not byte-identical output.
     require(
         f"{REFERENCES}/product-contract.md",
         "Observe → Understand → Decide → Monitor → Repeat",
         "Repository Stores Knowledge, Never Portfolio",
         "Runtime Data Is Ephemeral",
         "Owner-Authorized Broker Execution",
-        "相同的有效输入和相同的生产规则，应得到相同、可解释、可复核的结论",
-        "IC 批准只表示该候选可以进入执行授权阶段",
-        "现行政策以默认分支 HEAD 为准",
-        "仓库不维护行情、ETF成分、issuer或GICS中央数据库",
-        "唯一例外沿用旧制",
-        "原 `02-*` 优先于 `03-*`",
+        "由 LLM 综合事实、政策和研究形成投资判断",
+        "代码验证事实并保护执行，LLM 负责投资判断",
+        "系统追求结论可解释、证据可追溯、执行可验证",
+        "IC 结论不是 Broker 授权，不能替代当前会话中针对具体操作的所有者明确授权",
+        "现行政策以默认分支 HEAD 为规范来源",
+        "已安装会话读取本次分发的不可变快照",
+        "`F` 未知不得默认为零",
+        "仓库不维护行情、ETF 成分、issuer 或 GICS 中央数据库",
     )
-    # the closed universe and its non-expansion rule live in the constitution
+    # the closed universe, its non-expansion rule, and the sole legacy
+    # conflict-resolution exception live in the constitution
     require(
         f"{REFERENCES}/00-constitution.md",
         "Production 是封闭投资宇宙",
@@ -84,6 +90,7 @@ def main() -> None:
         "任何 AI、脚本、日报或临时会话都无权自行扩展投资宇宙",
         "冲突解决例外（沿用旧制）",
         "以操作手册为准",
+        "原 `02-*` 优先于 `03-*` 的顺序不因合并改变",
     )
     # the daily product contract lives in the operating manual
     require(
@@ -131,22 +138,20 @@ def main() -> None:
     require(
         f"{SKILLS}/using-investment-os/SKILL.md",
         "name: using-investment-os",
-        "Investment OS is a composable skill system",
         "Mandatory start", "Never inherit approval", "execution-runtime",
         "financial-agent-discipline",
-        "distributed with this skill", "what shipped is what executes",
-        # The source obligation is stated once, with a consequence. Stating
-        # it twice in two vocabularies and with none was how it came to read
-        # as boilerplate and got skipped whenever an answer felt obvious.
-        "does not name its policy source is not a formal result",
-        "only legacy",
-        "former `02-*` over `03-*` order",
+        "Resolve packaged files relative to this `SKILL.md`",
+        "Do not clone, fetch, or substitute another Investment OS checkout at runtime",
+        "the policy source used",
+        "the operating manual prevails",
     )
     require(
         f"{SKILLS}/financial-agent-discipline/SKILL.md",
         "name: financial-agent-discipline",
         "No inherited approval", "No runtime guessing", "No manual authority",
         "Fail closed", "observable",
+        # The source obligation carries its consequence here, once.
+        "A result without a source is not a formal result",
     )
     require("README.md", "唯一沿用旧制的例外", "以操作手册为准")
     for skill in (ROOT / SKILLS).rglob("*.md"):

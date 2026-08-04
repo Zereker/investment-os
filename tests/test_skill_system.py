@@ -97,8 +97,8 @@ def test_bootstrap() -> None:
 def main() -> None:
     skills = discover()
     expected = {
-        "using-investment-os", "broker-runtime", "execution-runtime",
-        "reconstructing-portfolio-state", "validating-drawdown-state",
+        "using-investment-os", "financial-agent-discipline", "broker-runtime",
+        "execution-runtime", "reconstructing-portfolio-state", "validating-drawdown-state",
         "enforcing-behavioral-controls", "running-daily-review",
         "running-monthly-review", "evaluating-transaction-candidates",
         "routing-investment-research", "auditing-investment-os",
@@ -106,10 +106,12 @@ def main() -> None:
     assert expected <= set(skills), f"missing skills: {sorted(expected - set(skills))}"
     graph = dependency_graph(skills)
     assert_acyclic(graph)
-    assert graph["using-investment-os"] >= {
-        "broker-runtime", "execution-runtime", "reconstructing-portfolio-state",
-        "validating-drawdown-state", "enforcing-behavioral-controls", "running-daily-review",
-    }
+    # The router loads the smallest workflow for the task instead of a fixed
+    # mandatory sub-skill graph, so the contract is: it must be able to name
+    # every skill it can route to or load.
+    router_text = skills["using-investment-os"].read_text(encoding="utf-8")
+    for name in sorted(expected - {"using-investment-os"}):
+        assert name in router_text, f"router must name {name}"
     assert graph["reconstructing-portfolio-state"] == {"broker-runtime"}
     broker_text = skills["broker-runtime"].read_text(encoding="utf-8")
     assert "broker-neutral" in broker_text
