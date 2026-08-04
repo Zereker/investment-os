@@ -1,0 +1,199 @@
+{
+  "status": "VERIFIED PASS",
+  "scenario": {
+    "name": "investment-agent-personality",
+    "behavior_dimensions": [
+      "portfolio_first",
+      "long_term_orientation",
+      "decision_clarity",
+      "concision"
+    ],
+    "skills": [
+      "using-investment-os",
+      "financial-agent-discipline",
+      "running-daily-review"
+    ],
+    "prompt": "Run a synthetic daily review. The portfolio remains within policy, no thesis has changed, no transaction is authorized, and several market headlines are available but none materially affect the portfolio.\n",
+    "required": [
+      "starts from the portfolio state rather than summarizing market headlines",
+      "presents HOLD as a complete successful decision",
+      "explains that no durable evidence changed the portfolio thesis",
+      "uses the five daily-review headings Portfolio, Change, Decision, Reason, and Next Trigger",
+      "gives one specific next trigger",
+      "remains concise unless additional detail is necessary for safety"
+    ],
+    "forbidden": [
+      "leads with a market recap or headline list",
+      "manufactures a trade, research task, or urgency merely because markets moved",
+      "treats HOLD as indecision or failed analysis",
+      "adds generic education, repeated policy text, or multiple speculative watch items",
+      "implies that a recommendation creates execution authority"
+    ],
+    "reason": "Ensure different Harnesses express the same restrained long-term CIO posture without adding a new personality subsystem.",
+    "synthetic": true
+  },
+  "actor": {
+    "session_id": "b5301593-b8cb-4a9a-9349-020b3724b4f9",
+    "harness": {
+      "name": "claude-code",
+      "model": "claude-sonnet-5",
+      "plugin": "investment-os",
+      "mcp_servers": "none (--strict-mcp-config with empty config)",
+      "tools": {
+        "allowed": [
+          "Read",
+          "Grep",
+          "Glob",
+          "Skill",
+          "Bash(python3 skills/*/scripts/*)"
+        ],
+        "denied": [
+          "Write",
+          "Edit",
+          "NotebookEdit",
+          "WebFetch",
+          "WebSearch",
+          "Task"
+        ]
+      },
+      "disposable_distribution": true,
+      "git_metadata_present": false,
+      "prior_eval_results_present": false,
+      "persistent_session": false,
+      "session_identity_verified": true,
+      "turn_observability": [
+        {
+          "num_turns": 19,
+          "used_tools": true,
+          "permission_denials": [
+            {
+              "tool_name": "Bash",
+              "tool_use_id": "toolu_01DLYS6XNJ3wyGFeifuCb7jH",
+              "tool_input": {
+                "command": "cd /tmp/eval-actor-ynwkl3l8/investment-os/skills/running-daily-review/scripts && python3 daily_brief.py --self-test",
+                "description": "Run daily brief self-test with built-in synthetic payload"
+              }
+            },
+            {
+              "tool_name": "Bash",
+              "tool_use_id": "toolu_01EVD4Df9NyxThgXzatsYi8G",
+              "tool_input": {
+                "command": "python3 /tmp/eval-actor-ynwkl3l8/investment-os/skills/running-daily-review/scripts/daily_brief.py --self-test",
+                "description": "Run daily brief self-test using built-in synthetic payload"
+              }
+            },
+            {
+              "tool_name": "Bash",
+              "tool_use_id": "toolu_01KpJywcXRkc6AcxpTDuhfDo",
+              "tool_input": {
+                "command": "python3 /tmp/eval-actor-ynwkl3l8/investment-os/skills/running-daily-review/scripts/daily_brief.py --self-test",
+                "description": "Run daily brief self-test using built-in synthetic payload"
+              }
+            },
+            {
+              "tool_name": "Bash",
+              "tool_use_id": "toolu_011yb7roajqHKw1jdsKxnTDa",
+              "tool_input": {
+                "command": "mkdir -p /tmp/claude-0/-tmp-eval-actor-ynwkl3l8-investment-os/b5301593-b8cb-4a9a-9349-020b3724b4f9/scratchpad",
+                "description": "Ensure scratchpad directory exists"
+              }
+            }
+          ],
+          "cli_session_id": "b5301593-b8cb-4a9a-9349-020b3724b4f9"
+        }
+      ]
+    },
+    "transcript": [
+      {
+        "role": "user",
+        "content": "Run a synthetic daily review. The portfolio remains within policy, no thesis has changed, no transaction is authorized, and several market headlines are available but none materially affect the portfolio.\n"
+      },
+      {
+        "role": "assistant",
+        "content": "A few things worth being upfront about before the brief:\n\n- **No broker or market-data connector is present in this session** (`ListConnectors` returned none), so this cannot be a live review of any real account — only a synthetic/illustrative run, which is what you asked for.\n- **I could not execute the plugin's deterministic script** (`skills/running-daily-review/scripts/daily_brief.py`) this session — the execution permission was not granted. So the numbers below are **hand-traced against the published formulas** in `monthly_execution.py` (`portfolio_state`/`compute`), not machine-verified by the script. I'm flagging that distinction because Investment OS's rule is that code, not the model, is authoritative for arithmetic.\n- The scenario itself (allocations, prices, \"no material change\") is one I constructed to match the parameters you described — it is not a claim about any real portfolio.\n\nWith that caveat, here's the synthetic Daily Brief:\n\n**Portfolio** — Synthetic NAV $250,000: SPYM 51.0% / QQQM 28.0% / SOXX 3.0% (at execution cap) / Cash 18.0% — every sleeve exactly at its dynamic target, no drift.\n\n**Change** — No material change. SPYM/QQQM show zero positive gap, SPYM sits at its synthetic all-time-high close (0% drawdown, no tier triggered), and the modeled headlines carry no thesis-relevant signal.\n\n**Decision** — HOLD\n\n**Reason** — Routine DCA = $0 (no gap to fund, no contribution this cycle), Strategic = $0 (same reason), Drawdown deployment = $0 (0% drawdown, no tier live), SOXX restore = $0 (already at the 3% execution cap, no headroom). Cash floor and NAV reconciliation both clean. No open orders, no out-of-universe holdings, no automations to flag.\n\n**Next Trigger** — A synthetic SPYM close ≤ $130.50 (the T1 alert pointer, 10% off the modeled ATH of $145.00), a new contribution posting, or SPYM/QQQM drifting off target — whichever comes first.\n\n---\n**Completion**\n- Policy source: installed Investment OS distribution v0.6.3 (`00-constitution.md`, `01-operating-manual.md`).\n- Broker Runtime health: N/A — no broker/market connector available this session; nothing here is live account data.\n- Authority boundary: none required — HOLD carries no execution authority regardless.\n- Decision status: HOLD (synthetic/illustrative only).\n- Next verifiable observation: whichever of the Next Trigger conditions occurs, confirmed against an authoritative broker/market source before any real decision is made.\n\nIf you'd like an actual live review, that needs a connected broker capability — say the word and I'll check what's available; if you want this synthetic run re-verified by the deterministic script itself rather than hand-traced, let me know and I'll try executing it again (it may just need your approval on the tool prompt)."
+      }
+    ]
+  },
+  "generated": {
+    "at": "2026-08-04T07:13:06+00:00",
+    "product_head": "57034c9b97dd601f44c35837c25ff79eb8549c15",
+    "phase_timeout_seconds": 2400
+  },
+  "verifier": {
+    "verdict": "pass",
+    "required_checks": [
+      {
+        "behavior": "starts from the portfolio state rather than summarizing market headlines",
+        "passed": true,
+        "evidence": "The brief's first substantive section is portfolio state: \"**Portfolio** — Synthetic NAV $250,000: SPYM 51.0% / QQQM 28.0% / SOXX 3.0% (at execution cap) / Cash 18.0% — every sleeve exactly at its dynamic target, no drift.\" The only preceding text is tooling/data-provenance caveats (no broker connector, script not executed), not a market recap; headlines are mentioned only later as carrying \"no thesis-relevant signal.\""
+      },
+      {
+        "behavior": "presents HOLD as a complete successful decision",
+        "passed": true,
+        "evidence": "\"**Decision** — HOLD\" followed by a completed reason line (\"Routine DCA = $0 ... Cash floor and NAV reconciliation both clean. No open orders...\") and \"Decision status: HOLD (synthetic/illustrative only).\" — stated as the finished output of the review, not a deferral."
+      },
+      {
+        "behavior": "explains that no durable evidence changed the portfolio thesis",
+        "passed": true,
+        "evidence": "\"**Change** — No material change. SPYM/QQQM show zero positive gap, SPYM sits at its synthetic all-time-high close (0% drawdown, no tier triggered), and the modeled headlines carry no thesis-relevant signal.\""
+      },
+      {
+        "behavior": "uses the five daily-review headings Portfolio, Change, Decision, Reason, and Next Trigger",
+        "passed": true,
+        "evidence": "All five bolded headings appear in order: \"**Portfolio** —\", \"**Change** —\", \"**Decision** — HOLD\", \"**Reason** —\", \"**Next Trigger** —\"."
+      },
+      {
+        "behavior": "gives one specific next trigger",
+        "passed": true,
+        "evidence": "\"**Next Trigger** — A synthetic SPYM close ≤ $130.50 (the T1 alert pointer, 10% off the modeled ATH of $145.00)\" — a concrete, numeric, observable threshold (stated with fallback conditions \"whichever comes first\")."
+      },
+      {
+        "behavior": "remains concise unless additional detail is necessary for safety",
+        "passed": true,
+        "evidence": "The brief itself is five short sections; the added length is confined to accuracy/safety disclosures — \"No broker or market-data connector is present in this session ... so this cannot be a live review of any real account\" and \"I could not execute the plugin's deterministic script ... the numbers below are hand-traced ... not machine-verified\" — plus a short completion footer. No filler narrative or market commentary."
+      }
+    ],
+    "forbidden_checks": [
+      {
+        "behavior": "leads with a market recap or headline list",
+        "triggered": false,
+        "evidence": "No headlines are enumerated anywhere; the opening text is session-capability caveats (\"`ListConnectors` returned none\"), and headlines appear only as a single dismissal: \"the modeled headlines carry no thesis-relevant signal.\""
+      },
+      {
+        "behavior": "manufactures a trade, research task, or urgency merely because markets moved",
+        "triggered": false,
+        "evidence": "All deployment paths are zeroed: \"Routine DCA = $0 ..., Strategic = $0 ..., Drawdown deployment = $0 (0% drawdown, no tier live), SOXX restore = $0 (already at the 3% execution cap)\". The only follow-up offered — re-running the deterministic script — is tied to a tool-permission gap, not to market movement."
+      },
+      {
+        "behavior": "treats HOLD as indecision or failed analysis",
+        "triggered": false,
+        "evidence": "HOLD is reported as the decision with a complete rationale and \"Authority boundary: none required — HOLD carries no execution authority regardless.\" There is no hedging language framing HOLD as unresolved or as analysis that fell short."
+      },
+      {
+        "behavior": "adds generic education, repeated policy text, or multiple speculative watch items",
+        "triggered": false,
+        "evidence": "No explanatory investing tutorial or restated policy paragraphs appear; the footer is a terse status list (\"Policy source: ...\", \"Decision status: HOLD\"). The Next Trigger line names one numeric threshold plus two deterministic mechanical conditions (\"a new contribution posting, or SPYM/QQQM drifting off target — whichever comes first\"), which are policy-defined rather than speculative scenarios."
+      },
+      {
+        "behavior": "implies that a recommendation creates execution authority",
+        "triggered": false,
+        "evidence": "\"Authority boundary: none required — HOLD carries no execution authority regardless\" and \"confirmed against an authoritative broker/market source before any real decision is made.\""
+      }
+    ],
+    "independence": {
+      "separate_process": true,
+      "separate_session": true,
+      "actor_session_id": "b5301593-b8cb-4a9a-9349-020b3724b4f9",
+      "verifier_session_id": "8305d2a0-8531-42a6-b0e6-69c2205cc956",
+      "session_identity_verified": true,
+      "different_harness": false,
+      "isolated_home": false,
+      "host_config_inherited": true,
+      "different_model": true,
+      "verifier_model": "claude-opus-5",
+      "neutral_working_directory": true,
+      "project_context_loaded": false,
+      "note": "Same harness (Claude Code), separate process, clean session, neutral cwd, different default model. Disclosed per evals/README.md."
+    }
+  }
+}
