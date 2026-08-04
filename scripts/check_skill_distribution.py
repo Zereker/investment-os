@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the single-skill Investment OS distribution and its product boundary."""
+"""Validate the single-skill Investment OS distribution and privacy boundary."""
 
 from __future__ import annotations
 
@@ -77,9 +77,11 @@ def check_single_skill() -> None:
         "Rule 5 — Operation-scoped authorization", "Rule 6 — No policy override",
         "Rule 7 — Fail closed", "Treat `Daily` as a complete request",
         "A recommendation is not authorization", "Do not prepend policy narration",
-        "../../.plugin-version", "references/product-contract.md",
-        "references/agent-execution-contract.md", "current working directory",
-        "Do not clone, fetch",
+        "Repository stores rules, never portfolio", "Runtime account state is private and ephemeral",
+        "Code and tools own facts and irreversible controls", "Production stays closed",
+        "../../.plugin-version", "references/00-constitution.md",
+        "references/01-operating-manual.md", "references/02-data-contract.md",
+        "references/03-journal.md", "current working directory", "Do not clone, fetch",
     ):
         if needle not in text:
             raise AssertionError(f"canonical skill missing product rule: {needle}")
@@ -103,7 +105,7 @@ def check_manifests() -> None:
 
     privacy = (
         "https://github.com/Zereker/investment-os/blob/master/plugins/"
-        "investment-os/skills/using-investment-os/references/product-contract.md"
+        "investment-os/skills/using-investment-os/SKILL.md"
     )
     if codex.get("interface", {}).get("privacyPolicyURL") != privacy:
         raise AssertionError("Codex privacy policy URL is stale")
@@ -124,8 +126,6 @@ def check_product_assets() -> None:
         REFERENCES / "01-operating-manual.md",
         REFERENCES / "02-data-contract.md",
         REFERENCES / "03-journal.md",
-        REFERENCES / "product-contract.md",
-        REFERENCES / "agent-execution-contract.md",
         SKILLS / "running-daily-review" / "scripts" / "daily_brief.py",
         SKILLS / "running-daily-review" / "scripts" / "decision_packet.py",
         SKILLS / "running-monthly-review" / "scripts" / "monthly_execution.py",
@@ -134,14 +134,6 @@ def check_product_assets() -> None:
         if not path.is_file():
             raise AssertionError(f"missing internal product asset: {path.relative_to(ROOT)}")
 
-    require(
-        REFERENCES / "product-contract.md",
-        "Observe → Understand → Decide → Monitor → Repeat",
-        "Repository Stores Knowledge, Never Portfolio",
-        "Runtime Data Is Ephemeral",
-        "代码验证事实并保护执行，LLM 负责投资判断",
-        "IC 结论不是 Broker 授权",
-    )
     require(
         REFERENCES / "00-constitution.md",
         "Production 是封闭投资宇宙",
@@ -169,6 +161,9 @@ def check_repository_hygiene() -> None:
     ):
         if (ROOT / "scripts" / retired).exists():
             raise AssertionError(f"retired checker must not exist: scripts/{retired}")
+    for retired in ("product-contract.md", "agent-execution-contract.md"):
+        if (REFERENCES / retired).exists():
+            raise AssertionError(f"retired contract layer must not exist: {retired}")
     if (ROOT / "07-Releases").exists():
         raise AssertionError("07-Releases is retired")
 
@@ -198,7 +193,7 @@ def main() -> None:
     check_product_assets()
     check_repository_hygiene()
     reject_runtime_artifacts()
-    print("Single-skill distribution, product contract, and privacy checks passed.")
+    print("Single-skill distribution, policy assets, and privacy checks passed.")
 
 
 if __name__ == "__main__":
