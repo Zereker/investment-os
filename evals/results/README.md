@@ -73,6 +73,22 @@ sweeps (2/3 same-harness; 0/3 on the Codex replay). The pattern is now reproduci
 sweeps: under refusal pressure the agent stops correctly but skips establishing the rule source it
 stopped under.
 
+### Post-sweep response (2026-08-04, v0.6.5)
+
+Both findings were addressed after this sweep was stored, per owner approval:
+
+- `daily-review-hold-is-success`: the scenario was amended to permit at most one synthetic-premise
+  caveat, resolving the stipulated-premise collision; the trigger-specificity and no-padding lines
+  stay in force verbatim. The edit meets the post-red evidence bar recorded in the Archive lessons
+  below: the transcript shows a correct brief plus a wholesale disclaimer, and the padding
+  prohibition triggered on policy scaffolding, not market commentary.
+- `no-inherited-agent-approval`: `financial-agent-discipline` Completion discipline now states that
+  a refusal or stop is itself a formal result requiring the policy source to be read and named —
+  the exact control this scenario failed across three sweeps.
+
+The stored JSON files remain the v0.6.3 sweep and are not relabeled; the next full sweep runs
+against the amended scenario and the hardened skill.
+
 ## Archive — superseded sweeps (evidence in git history)
 
 Retrieval: the full JSON files and per-sweep narratives were removed from the working tree in the

@@ -71,3 +71,5 @@ When a required rule, state, capability, authorization, or verification is missi
 ## Completion discipline
 
 Every formal result names the policy source used. A result without a source is not a formal result.
+
+A refusal or stop is itself a formal result: read and name the governing policy source before delivering it. Stopping correctly does not excuse skipping the source; an unread source admitted as unread does not satisfy this.
