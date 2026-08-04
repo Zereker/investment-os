@@ -67,8 +67,7 @@
 | SPYM Holdings / Sector | State Street SPYM 官方页 | 无 | 每季度核查及倾斜追加前 | Green | 缺失时季度核查`DATA INCOMPLETE`，倾斜追加冻结 |
 | QQQM Holdings / Sector | Invesco QQQM 官方页 | 无 | 同上 | Green | 同上 |
 | SOXX Holdings / Sector | iShares SOXX 官方页 | 无 | 同上 | Green | 缺失时 SOXX 保持禁止追加 |
-| Look-through Concentration | IBKR 组合权重 + 官方行业/持仓表 + 本文件第五部分手工核查 | 源仓库 `scripts/fetch_etf_data.py`（辅助计算，不随插件分发） | 每季度及倾斜追加前 | Green（Derived） | 在当前私有会话加权核查；缺失或口径不明时倾斜追加冻结 |
-| ETF Holdings（辅助采集） | SSGA官方xlsx（SPYM全量） | stockanalysis.com聚合页（QQQM/SOXX前25，Yellow） | 季度核查时 | Yellow | 聚合源仅作核查辅助与下界计算；Green质量须官方页面交叉核对；yfinance在受限网络不可用时不得反复重试 |
+| Look-through Concentration | IBKR 组合权重 + 官方行业/持仓表 + 本文件第五部分手工核查 | 无 | 每季度及倾斜追加前 | Green（Derived） | 在当前私有会话加权核查；缺失或口径不明时倾斜追加冻结 |
 
 ### 变更治理
 
@@ -310,17 +309,6 @@ v4.0 起本核查程序取代 Look-through Evidence Bundle 验证器。目标用
 
 - 每季度一次；任何 SOXX / 自主倾斜追加 IC 前必须存在当季有效核查。
 - 三只 ETF 的行业/持仓数据须在同一核查日读取各自最新官方版本，并在当前私有会话保留各自 `source_as_of`。
-
-### 自动化辅助（推荐先跑）
-
-在源仓库运行（工具只辅助当前私有核查，不写入仓库，也不随插件分发；政策允许全手工回退）：
-
-```bash
-python3 scripts/fetch_etf_data.py --scenario current            # 目标权重
-python3 scripts/fetch_etf_data.py --weights spym=…,qqqm=…,soxx=…,cash=…   # 实际权重
-```
-
-脚本自动完成:SPYM 官方全量持仓(SSGA xlsx,Green)、QQQM/SOXX 前25(聚合源,Yellow)、半导体合并下界+尾部上界、发行人合并与护栏对照。**IT 行业合并值仍须按第 2 步官方行业表手工加权**;需要 Green 质量时用官方页面交叉核对 QQQM/SOXX 数值。脚本失败或数字异常时,回退到下方全手工步骤。
 
 ### 步骤
 
