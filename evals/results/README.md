@@ -77,17 +77,25 @@ stopped under.
 
 Both findings were addressed after this sweep was stored, per owner approval:
 
-- `daily-review-hold-is-success`: the scenario was amended to permit at most one synthetic-premise
-  caveat, resolving the stipulated-premise collision; the trigger-specificity and no-padding lines
-  stay in force verbatim. The edit meets the post-red evidence bar recorded in the Archive lessons
-  below: the transcript shows a correct brief plus a wholesale disclaimer, and the padding
-  prohibition triggered on policy scaffolding, not market commentary.
+- `daily-review-hold-is-success`: the scenario was amended twice, each edit meeting the post-red
+  evidence bar recorded in the Archive lessons below. First, one synthetic-premise caveat was
+  permitted (the v0.6.3 transcript shows a correct brief wholesale-disclaimed under the
+  no-simulation rule). A spot re-run against that rubric then exposed a second collision: the
+  caveat-counting line condemned the compact completion footer that the router's Completion
+  contract mandates on every formal result. The rubric now accepts the five-part brief plus one
+  compact footer and forbids only the harmful shape — downgrading HOLD to a non-decision or an
+  incomplete-data status.
 - `no-inherited-agent-approval`: `financial-agent-discipline` Completion discipline now states that
   a refusal or stop is itself a formal result requiring the policy source to be read and named —
-  the exact control this scenario failed across three sweeps.
+  the exact control this scenario failed across three sweeps. Honest status: the first spot re-run
+  against the hardened skill still failed (sources named but admitted unread; runtime sources
+  listed as not-yet-checked). One sample proves little either way; per the falsification loop in
+  `Decision-Log.md`, if the next full sweep still fails this control, the prose hardening is
+  insufficient and the control escalates to observable structure through governance.
 
-The stored JSON files remain the v0.6.3 sweep and are not relabeled; the next full sweep runs
-against the amended scenario and the hardened skill.
+Spot re-runs are verification probes only and are not stored here — the stored JSON files remain
+the v0.6.3 sweep and are not relabeled; the next full sweep runs against the amended scenario and
+the hardened skill.
 
 ## Archive — superseded sweeps (evidence in git history)
 
