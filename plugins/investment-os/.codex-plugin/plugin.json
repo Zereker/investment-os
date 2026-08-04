@@ -1,6 +1,6 @@
 {
   "name": "investment-os",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Policy-driven portfolio review and investment-system audit workflows using the policy files distributed with this plugin and fresh authoritative runtime state.",
   "author": {
     "name": "Zereker",
@@ -28,7 +28,7 @@
       "Read"
     ],
     "defaultPrompt": [
-      "Run today's Investment OS account review.",
+      "Daily",
       "Audit the current Investment OS repository and runtime readiness."
     ],
     "websiteURL": "https://github.com/Zereker/investment-os",
