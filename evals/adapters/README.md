@@ -1,10 +1,13 @@
-# 评测框架适配器
+# Eval Harness Adapters
 
-`evals/run.py` 是 harness 中立的：它校验协议、重新计算判定，并在没有独立 verifier 时拒绝报告通过。它有意不知道该怎么启动一个 agent。这些适配器就是缺掉的另一半——把真实的 Claude Code 与 Codex 会话接到 `--actor-command` 与 `--verifier-command` 后面的具体命令。
+`evals/run.py` is harness-neutral: it validates the protocol, recomputes the verdict and refuses to
+report a pass without an independent verifier. It deliberately does not know how to launch an agent.
+These adapters are that missing half — the concrete commands that put real Claude Code and Codex
+sessions behind `--actor-command` and `--verifier-command`.
 
-## 命令
+## Commands
 
-已验证运行（Claude Code actor，独立 Codex verifier）：
+Verified run (Claude Code actor, independent Codex verifier):
 
 ```bash
 python3 evals/run.py <scenario> \
@@ -14,9 +17,17 @@ python3 evals/run.py <scenario> \
   --output evals/results/claude-code-actor__codex-verifier/<scenario>.json
 ```
 
-Codex 命令需要已认证的 Codex CLI 或 `OPENAI_API_KEY`。适配器为每次 verifier 调用新建一个可写 HOME。订阅模式下它校验宿主的 `~/.codex/auth.json`，以不跟随链接的方式按 `0600` 复制进一次性 HOME，并随临时目录一起删除该副本。它从不继承宿主的 Codex 配置、插件、skill、会话或规则。API-key 模式下只传入密钥和一个很小的环境白名单。该白名单在存在时还会保留受管运行时的 `HTTP_PROXY`、`HTTPS_PROXY`、`ALL_PROXY`、`NO_PROXY`、`SSL_CERT_FILE` 与 `REQUESTS_CA_BUNDLE`，且不写入证据。这让 verifier 在经批准的代理后面保持联网能力，同时维持与宿主状态的隔离。
+The Codex command requires either an authenticated Codex CLI or `OPENAI_API_KEY`. The adapter creates
+a new writable HOME for every verifier invocation. In subscription mode it validates the host
+`~/.codex/auth.json`, copies it without following links into the throwaway HOME at mode `0600`, and
+deletes that copy with the temporary directory. It never inherits host Codex config, plugins, skills,
+sessions or rules. In API-key mode it passes only the key and a small environment allowlist.
+The allowlist also preserves the managed runtime's `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`,
+`NO_PROXY`, `SSL_CERT_FILE`, and `REQUESTS_CA_BUNDLE` values when present, without recording them in
+evidence. This keeps the verifier network-capable behind an approved proxy while retaining host-state
+isolation.
 
-全量注册扫描（唯一能产出聚合 `VERIFIED PASS` 的命令）：
+Full registered sweep (the only command that can produce an aggregate `VERIFIED PASS`):
 
 ```bash
 RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -27,60 +38,76 @@ python3 evals/run_all.py \
   --output-dir "evals/artifacts/claude-code-actor__codex-verifier/${RUN_ID}"
 ```
 
-输出目录中每个场景各含一份结果、适配器 stdout/stderr 原文与 Codex JSONL，最后是 `aggregate.json`。`run_all.py` 遇到失败会继续跑，但只有在每个注册场景都是 schema 合法的 `VERIFIED PASS`、每份结果文件都存在、且全扫描范围内 actor 与 verifier 的会话身份都唯一时，才零退出。运行目录必须是新建或空目录；陈旧输出会被拒绝，而不是被覆盖或误当作本次调用的证据。
+The output directory contains one result plus exact adapter stdout/stderr and Codex JSONL per
+scenario, followed by `aggregate.json`. `run_all.py` continues after failures but exits zero only
+when every registered scenario is a schema-valid `VERIFIED PASS`, every result file exists and all
+actor and verifier session identities are unique across the sweep.
+The run directory must be new or empty; stale outputs are rejected rather than overwritten or
+mistaken for evidence from the current invocation.
 
-Actor 冒烟运行（仅供调试；恒为非零退出并报告 `NOT VERIFIED`）：
+Actor smoke run (debugging only; always exits non-zero and reports `NOT VERIFIED`):
 
 ```bash
 python3 evals/run.py <scenario> \
   --actor-command 'python3 evals/adapters/claude_actor.py' --actor-only
 ```
 
-多轮场景会跑掉若干个真实会话量级的轮次。给 `--timeout` 留足余量：runner 的超时覆盖整条 actor 命令，不是单轮。
+Multi-turn scenarios run several real sessions' worth of turns. Give `--timeout` room: the runner
+timeout covers the whole actor command, not one turn.
 
-## 这些适配器为何满足独立性契约
+## Why these adapters satisfy the independence contract
 
-| 契约要求 | 如何满足 |
+| Contract requirement | How it is met |
 |---|---|
-| 干净的 actor 会话 | 每次运行生成全新 UUID 并用 `--session-id` 传入。没有它，CLI 可能复用调用方会话，从而静默作废整轮运行。 |
-| 跨轮次的单一持久会话 | 第 1 轮用 `--session-id`，后续轮次 `--resume` 同一个 id。 |
-| 以已安装分发为权威 | actor 跑在插件的一次性副本上，排除 `.git` 与既往评测结果。它无法在运行时解析仓库 commit，也无法从已记录的答案中学习。 |
-| verifier 独立进程与会话 | Codex 作为独立进程运行，并从其 JSONL 事件流报告一个新的临时 thread id。若与 actor 相同，runner 拒绝该结果。 |
-| verifier 不被被测系统污染 | 它跑在中立的临时目录中，不加载任何插件或 Skill，只依据评分标准与 transcript 判定。 |
-| 与宿主状态隔离 | Codex verifier 在全新的 HOME/XDG/TMPDIR 树下、以白名单环境运行。只植入选定的认证材料；宿主配置与既往会话一律不存在。 |
-| 优先使用不同 harness | `codex_verifier.py` 提供首选的 Claude Code actor / Codex verifier 组合，并报告 `different_harness: true`。 |
-| 如实披露 harness 元数据 | 适配器在结果 JSON 中报告模型、工具、会话身份与隔离状态。 |
+| Clean actor session | A fresh UUID is minted per run and passed with `--session-id`. Without it the CLI can reuse the invoking session, which would silently void the whole run. |
+| One persistent session across turns | Turn 1 uses `--session-id`; later turns `--resume` that same id. |
+| Installed-distribution authority | The actor runs from a disposable copy of the plugin with `.git` and prior eval results excluded. It cannot resolve a repository commit at runtime or learn from recorded answers. |
+| Separate verifier process and session | Codex runs as a separate process and reports a new ephemeral thread id from its JSONL event stream. The runner rejects it if it equals the actor's. |
+| Verifier not contaminated by the system under test | It runs in a neutral temporary directory with no plugin or Skill loaded. It judges from the rubric and transcript only. |
+| Host-state isolation | The Codex verifier runs under a new HOME/XDG/TMPDIR tree with an allowlisted environment. Only the selected authentication material is seeded; host config and prior sessions are absent. |
+| Different harness preferred | `codex_verifier.py` supplies the preferred Claude Code actor / Codex verifier pairing and reports `different_harness: true`. |
+| Disclosed harness metadata | Adapters report model, tooling, session identity and isolation in result JSON. |
 
-## 为什么一次评测运行碰不到真实账户
+## Why an eval run cannot touch the real account
 
-场景是合成的，但那只是文本层面的属性。这些适配器把隔离做成结构性的：
+Scenarios are synthetic, but that is a property of the text. These adapters make the isolation
+structural:
 
-- `--strict-mcp-config` 配空的 `--mcp-config`，让两个进程**完全没有任何 MCP server**，因此会话里根本不存在可调用的券商连接器；
-- actor 跑在一次性、无 git 的插件分发副本中，既往评测结果已被移除；
-- actor 被限制为只读工具（`Read`、`Grep`、`Glob`、`Skill`）加分发自带的确定性 Python 脚本；直接写入、无限制 shell 与网络抓取一律拒绝，脚本产生的任何文件都被限制在一次性副本内；
-- Codex verifier 以临时且只读方式运行，用户配置、项目规则、MCP server 与网页搜索全部关闭；若其 JSONL 轨迹中出现工具调用项，该轮运行即被拒绝。
+- `--strict-mcp-config` with an empty `--mcp-config` gives both processes **no MCP servers at all**,
+  so no broker connector exists in the session to be called;
+- the actor runs inside a disposable, git-less plugin distribution with prior eval results removed;
+- the actor is restricted to read-only tools (`Read`, `Grep`, `Glob`, `Skill`) plus the distribution's
+  deterministic Python scripts; direct writes, unrestricted shell and network fetches are denied, and
+  any script-side files are confined to the disposable copy;
+- the Codex verifier runs ephemeral and read-only with user config, project rules, MCP servers and
+  web search disabled, and rejects the run if its JSONL trace contains a tool item.
 
-actor 仍然通过 `--plugin-dir` 加载 Investment OS 插件——因为它的 canonical Skill 与已发布规则正是被测系统本身。
+The actor still loads the Investment OS plugin via `--plugin-dir`, because its canonical Skill and
+published rules are the system under test.
 
-## 环境变量
+## Environment
 
-| 变量 | 默认值 | 含义 |
+| Variable | Default | Meaning |
 |---|---|---|
-| `EVAL_ACTOR_MODEL` | `claude-sonnet-5` | actor 模型 |
-| `EVAL_CODEX_BIN` | `codex` | Codex CLI 可执行文件或绝对路径 |
-| `EVAL_CODEX_VERIFIER_MODEL` | `gpt-5.6-sol` | Codex verifier 模型 |
-| `EVAL_CODEX_VERIFIER_REASONING_EFFORT` | `medium` | Codex verifier 推理强度 |
-| `EVAL_CODEX_AUTH_MODE` | `auto` | `auto`、`subscription` 或 `api-key`；auto 优先使用显式导出的 API key，否则使用 Codex 登录认证 |
-| `EVAL_CODEX_AUTH_FILE` | Codex 登录路径 | 可选的订阅 `auth.json` 来源覆盖 |
-| `EVAL_ACTOR_TIMEOUT` | `600` | 单轮超时（秒）；超时使该轮运行作废，而不是产出一个结果 |
-| `EVAL_CODEX_VERIFIER_TIMEOUT` | `600` | Codex verifier 超时（秒） |
-| `EVAL_PLUGIN_DIR` | 仓库根目录 | 被复制进一次性 actor 分发的 Investment OS 插件源 |
-| `EVAL_EVIDENCE_DIR` | 未设置 | 可选的本地目录，用于存放适配器/CLI 原始证据；由 `run_all.py` 自动设置 |
+| `EVAL_ACTOR_MODEL` | `claude-sonnet-5` | actor model |
+| `EVAL_CODEX_BIN` | `codex` | Codex CLI executable or absolute path |
+| `EVAL_CODEX_VERIFIER_MODEL` | `gpt-5.6-sol` | Codex verifier model |
+| `EVAL_CODEX_VERIFIER_REASONING_EFFORT` | `medium` | Codex verifier reasoning effort |
+| `EVAL_CODEX_AUTH_MODE` | `auto` | `auto`, `subscription`, or `api-key`; auto prefers an explicitly exported API key and otherwise uses Codex login auth |
+| `EVAL_CODEX_AUTH_FILE` | Codex login path | optional subscription `auth.json` source override |
+| `EVAL_ACTOR_TIMEOUT` | `600` | per-turn timeout, seconds; a timeout loses the run rather than producing a result |
+| `EVAL_CODEX_VERIFIER_TIMEOUT` | `600` | Codex verifier timeout, seconds |
+| `EVAL_PLUGIN_DIR` | repo root | Investment OS plugin source copied into the disposable actor distribution |
+| `EVAL_EVIDENCE_DIR` | unset | optional local directory for exact adapter/CLI evidence; set automatically by `run_all.py` |
 
-## 一份结果能证明什么、不能证明什么
+## What a result does and does not prove
 
-一个 `VERIFIED PASS` 覆盖的是**一个场景、一组 harness、一次运行**。它证明该行为在这个场景的压力下成立，不证明系统整体已被验证。其他场景的行为主张在真正跑过并记录之前一律悬空。
+A `VERIFIED PASS` covers **one scenario, one harness pair, one run**. It is evidence that the
+behavior held under that scenario's pressure, not that the system is verified in general. Behavior
+claims for other scenarios remain open until they are actually run and recorded.
 
-`evals/results/` 下的结果按构造即为合成的——actor 没有券商访问权限，账户数字进不了 transcript。绝不要把 `--output` 指向非合成的运行。
+Results under `evals/results/` are synthetic by construction — the actor has no broker access and no
+account figures can enter a transcript. Never point `--output` at a non-synthetic run.
 
-真实模型运行属于受信任的本地操作，不属于公开 CI。`evals/artifacts/` 已被 Git 忽略；分享原始 transcript 与日志前请先审阅，并且绝不提交或粘贴认证文件。
+Live model runs are trusted-local operations, not public CI. `evals/artifacts/` is ignored by Git;
+review raw transcripts and logs before sharing them, and never commit or paste authentication files.

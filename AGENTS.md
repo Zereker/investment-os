@@ -1,10 +1,34 @@
-# 源仓库入口
+# Source Repository Entry
 
-本仓库开发 Investment OS 插件。改动产品前，从 `skills/investment-os/SKILL.md` 开始，
-只阅读本次改动真正需要的编号政策 references。
+This repository develops the Investment OS plugin. Before changing the product,
+start from `skills/investment-os/SKILL.md` and read
+only the numbered policy references required by the change.
 
-仓库根目录既是插件根目录，也是开发面。运行时规则、流程与确定性工具都在
-`skills/investment-os/` 下。不要另建第二份运行时政策副本。
+The repository root is both the plugin root and development surface. Runtime
+rules, procedures, and deterministic tools live under `skills/investment-os/`.
+Do not create a second copy of runtime policy.
 
-使用分支与 Pull Request，运行 `bash tests/run-all.sh`，守住隐私边界；
-纯实现类工作中不得改变投资政策。
+Use a branch and pull request, run `bash tests/run-all.sh`, preserve the privacy
+boundary, and do not change investment policy inside implementation-only work.
+
+## Language boundary
+
+The repository is English except for the investment policy layer, which is
+Chinese. The split follows the reader, not preference:
+
+| Layer | Language | Reader |
+|---|---|---|
+| `skills/investment-os/SKILL.md`, eval scenarios, `evals/`, code, tests, docs | English | the agent and the verifier |
+| `skills/investment-os/references/*`, `Decision-Log.md` | Chinese | the owner |
+
+Two reasons hold this line. Behavior rules bind through naming the exact
+failing phrasing, and the only configuration with a full green sweep is English
+rules and scenarios over Chinese policy references. And the owner is the final
+authority on their own investment law: policy they cannot read directly is
+policy whose interpretation has moved to whoever reads it for them.
+
+Do not translate either layer into the other's language. Status vocabulary
+(`DATA INCOMPLETE`, `HOLD`, `WAIT`, `COMPLETED`, `NOT EXECUTED`,
+`EXECUTION UNKNOWN`, `VERIFICATION FAILED`, `WARN`, and the five daily fields)
+stays English on both sides, because the deterministic scripts print those
+strings and the rubrics check them literally.
