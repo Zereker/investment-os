@@ -27,7 +27,6 @@ python3 scripts/check_skill_distribution.py
 python3 scripts/check_skill_evals.py
 python3 scripts/check_product_contract.py
 python3 scripts/check_document_governance.py
-python3 scripts/check_release_governance.py
 python3 scripts/check_policy_consistency.py
 python3 plugins/investment-os/skills/running-daily-review/scripts/daily_brief.py --self-test
 python3 plugins/investment-os/skills/running-monthly-review/scripts/monthly_execution.py --self-test

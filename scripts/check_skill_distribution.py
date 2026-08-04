@@ -170,7 +170,27 @@ def main() -> None:
         if needle not in docs:
             raise AssertionError(f"distribution docs missing: {needle}")
 
-    print("Composable skill distribution checks passed.")
+    # release governance (merged from check_release_governance.py, v0.5.1)
+    if (ROOT / "scripts" / "check_policy_consistency_legacy.py").exists():
+        raise AssertionError("legacy policy checker must not exist")
+    checker = (ROOT / "scripts" / "check_policy_consistency.py").read_text(encoding="utf-8")
+    for forbidden in ("ast.NodeTransformer", "exec(compile", "check_policy_consistency_legacy.py"):
+        if forbidden in checker:
+            raise AssertionError(f"policy checker must execute directly; found {forbidden!r}")
+    if (ROOT / "07-Releases").exists():
+        raise AssertionError(
+            "07-Releases is retired; durable decisions belong in Decision-Log.md "
+            "and distribution releases belong in Git tags/GitHub Releases")
+    decision_log = (ROOT / "Decision-Log.md").read_text(encoding="utf-8")
+    for needle in (
+        "Skill 分发版本与政策版本解耦",
+        "真实 Agent 行为 Eval 尚未验证",
+        "07-Releases",
+    ):
+        if needle not in decision_log:
+            raise AssertionError(f"Decision-Log.md missing governance decision: {needle}")
+
+    print("Composable skill distribution and release governance checks passed.")
 
 
 if __name__ == "__main__":

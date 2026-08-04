@@ -2,7 +2,7 @@
 
 - 日期：2026-08-01
 - 性质：机制验证记录，非规则提案。本文不改变任何阈值；若后续要调整档位，须另走正式提案。
-- 工具：`scripts/drawdown_drill.py`
+- 工具：`Research/tools/drawdown_drill.py`
 - 数据：stockanalysis.com SPYM / SPY 日收盘，2016-08-02 → 2026-07-31，2,513 个交易日（Yellow，聚合源；生产触发须用 IBKR 或官方序列）
 
 ## 1. 为什么做这件事
@@ -67,9 +67,9 @@ SPYM 十年最大回撤为 **34.31%**（2020-03-23），T3 的触发线是 35%�
 ## 6. 复现方式
 
 ```bash
-python3 scripts/drawdown_drill.py                 # SPYM 十年重放 + 不变量检查
-python3 scripts/drawdown_drill.py --symbol spy    # 指数交叉验证
-python3 scripts/drawdown_drill.py --markdown      # 输出可粘贴的记录块
+python3 Research/tools/drawdown_drill.py                 # SPYM 十年重放 + 不变量检查
+python3 Research/tools/drawdown_drill.py --symbol spy    # 指数交叉验证
+python3 Research/tools/drawdown_drill.py --markdown      # 输出可粘贴的记录块
 ```
 
 脚本在任一不变量失败时返回退出码 1；数据拉取失败时返回 2 并输出 `DATA INCOMPLETE`，不猜测、不沿用旧值。

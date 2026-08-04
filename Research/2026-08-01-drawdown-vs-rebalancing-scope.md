@@ -3,7 +3,7 @@
 - 日期：2026-08-01
 - 性质：查证记录，非规则提案。本文不改变任何阈值、公式或触发口径。
 - 起因：所有者问「前段时间 QQQM 回撤 10%，这个能捕获到吗？这种情况我们加仓不？」
-- 工具：`scripts/drawdown_drill.py`；数据源 stockanalysis.com 日收盘（Yellow，聚合源）
+- 工具：`Research/tools/drawdown_drill.py`；数据源 stockanalysis.com 日收盘（Yellow，聚合源）
 
 ## 1. 结论先说
 
@@ -26,7 +26,7 @@
 
 关键验证：**问题不是「盯错标的」，是「没到档」。**
 
-`python3 scripts/drawdown_drill.py --symbol qqqm`（QQQM 自 2020-10-14 上市起 1,455 个交易日）：
+`python3 Research/tools/drawdown_drill.py --symbol qqqm`（QQQM 自 2020-10-14 上市起 1,455 个交易日）：
 
 | 触发日 | 档位 | DD | 周期起点 |
 |---|---|---:|---|
@@ -75,8 +75,8 @@ Core 正缺口合计约 1.10pp of NAV，且全部在 QQQM——本月资金基�
 ## 7. 复现方式
 
 ```bash
-python3 scripts/drawdown_drill.py --symbol qqqm    # 第 3 节的重放结果
-python3 scripts/drawdown_drill.py                  # SPYM 口径对照
+python3 Research/tools/drawdown_drill.py --symbol qqqm    # 第 3 节的重放结果
+python3 Research/tools/drawdown_drill.py                  # SPYM 口径对照
 ```
 
 第 2 节与第 4 节的数字由同源日收盘序列计算，可按上述口径独立复算。
