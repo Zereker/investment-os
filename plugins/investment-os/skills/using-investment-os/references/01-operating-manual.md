@@ -90,7 +90,7 @@ Investment OS 永不替代该确认。
 
 ## 第二部分：周度行为检查点（Weekly Behavior Checkpoint）
 
-周度检查点只以**行为模式**为对象回看一周，不重复每日复盘与月度流程各自覆盖的账户、配置与数据检查（依据见 [source repository research](https://github.com/Zereker/investment-os/blob/master/Research/2026-08-04-weekly-review-compression.md)）。它不创造交易信号，不修改目标配置，也不替代月度、季度或年度治理。
+周度检查点只以**行为模式**为对象回看一周，不重复每日复盘与月度流程各自覆盖的账户、配置与数据检查。它不创造交易信号，不修改目标配置，也不替代月度、季度或年度治理。
 
 ### A. 行为与执行
 
@@ -101,7 +101,7 @@ Investment OS 永不替代该确认。
 - SOXX 是否出现未批准追加；回撤部署是否严格按档执行
 - 实际执行是否与批准的方向、数量、限价和有效期一致
 - 多数日子的 `HOLD` 是否被当作有效结果
-- Research 边界：本周新增研究是否全部留在源码仓库的 [source repository research](https://github.com/Zereker/investment-os/tree/master/Research/)；是否有研究指标被误写入 Production 输出
+- Research 边界：本周新增研究是否保持为独立提案；是否有未发布的研究指标被误写入 Production 输出
 
 ### B. 工作项输出
 
@@ -419,7 +419,7 @@ B=\min\left(\frac{S}{R},G\right)
 
 #### 2.1 机制验证状态
 
-源码仓库研究工具 `Research/tools/drawdown_drill.py` 用 SPYM 十年真实收盘重放本状态机，七项不变量全部成立（记录见源码仓库研究档案）。**已验证**：价格 → 档位判定、每档每周期一次、由浅到深、新高重置、确定性重放。**未验证**：本手册状态重建部分第 4 步「本周期各档是否已执行」的三信号交叉重建——它依赖 Journal、IBKR 成交与警报指针，无法离线验证，在真实周期跑过之前保持未验证状态。
+现行执行脚本的自测与政策一致性检查覆盖价格 → 档位判定、每档每周期一次、由浅到深和确定性计算。**未验证**：本手册状态重建部分第 4 步「本周期各档是否已执行」的三信号交叉重建——它依赖 Journal、IBKR 成交与警报指针，无法离线验证，在真实周期跑过之前保持未验证状态。
 
 首次真实触发时，除按上述步骤执行外，还必须记录状态重建过程本身是否给出了正确档位，作为该半部分的验证证据。
 
@@ -441,7 +441,7 @@ B=\min\left(\frac{S}{R},G\right)
 - 当前价格：计算市值、仓位、缺口和订单数量。
 - 历史最高收盘回撤：驱动回撤部署分档；同时辅助限价与分批时点。
 
-v4.2 起系统不再持有任何估值判断。价格不定义贵或便宜，只用于计量、执行与回撤定档；没有任何资金通道以估值等级为条件（依据见 [source repository research](https://github.com/Zereker/investment-os/blob/master/Research/2026-08-01-valuation-subsystem-retirement.md)）。
+v4.2 起系统不再持有任何估值判断。价格不定义贵或便宜，只用于计量、执行与回撤定档；没有任何资金通道以估值等级为条件。
 
 ### 4. Core 内部资金方向
 

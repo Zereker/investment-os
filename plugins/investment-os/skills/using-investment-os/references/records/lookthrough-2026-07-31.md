@@ -2,7 +2,7 @@
 
 - observed_at: 2026-07-31（美股 7/31 收盘后）
 - 组合权重 w：本次按目标情景 cash=15% / SPYM=51% / QQQM=28% / SOXX=6% 计算（实际权重需 IBKR,本环境无接口;实际权重版本待日常运行环境复算）
-- 采集方式：`python3 skills/routing-investment-research/scripts/fetch_etf_data.py --scenario current --markdown` + 官方页面行业表交叉核对
+- 采集方式：`python3 scripts/fetch_etf_data.py --scenario current --markdown` + 官方页面行业表交叉核对
 
 ## 来源
 

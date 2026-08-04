@@ -2,9 +2,7 @@
 """Compute the month's funding decision from live account inputs — an executable
 mirror of the published funding rules.
 
-Why this exists: the thresholds have an executable mirror (check_policy_consistency.py)
-and the drawdown state machine has a drill (Research/tools/drawdown_drill.py), but the *funding
-computation* had none. Every month it was hand-derived from the docs, which is slow
+Why this exists: every month the funding computation was hand-derived from the docs, which is slow
 (the target is 20 minutes) and lets two agents reach two different answers. This
 closes that gap: same inputs -> same answer, every time.
 

@@ -18,11 +18,11 @@ Data layers (proven to work in the AI execution sandbox, 2026-07-31):
              an unrestricted machine; do not assume it works here.
 
 Usage:
-  python3 skills/routing-investment-research/scripts/fetch_etf_data.py                         # per-fund data only
-  python3 skills/routing-investment-research/scripts/fetch_etf_data.py --scenario current      # + combined @ Cash15/SPYM51/QQQM28/SOXX6
-  python3 skills/routing-investment-research/scripts/fetch_etf_data.py --scenario final-void   # + combined @ voided 15% end-state (reference)
-  python3 skills/routing-investment-research/scripts/fetch_etf_data.py --weights spym=0.492,qqqm=0.195,soxx=0.078,cash=0.235
-  python3 skills/routing-investment-research/scripts/fetch_etf_data.py --scenario current --markdown   # snapshot block for skills/using-investment-os/references/records/lookthrough-YYYY-MM-DD.md
+  python3 scripts/fetch_etf_data.py                         # per-fund data only
+  python3 scripts/fetch_etf_data.py --scenario current      # + combined @ Cash15/SPYM51/QQQM28/SOXX6
+  python3 scripts/fetch_etf_data.py --scenario final-void   # + combined @ voided 15% end-state (reference)
+  python3 scripts/fetch_etf_data.py --weights spym=0.492,qqqm=0.195,soxx=0.078,cash=0.235
+  python3 scripts/fetch_etf_data.py --scenario current --markdown   # snapshot block for skills/using-investment-os/references/records/lookthrough-YYYY-MM-DD.md
 
 Output quality is labeled per source. This tool reports facts and guardrail
 comparisons only; it never changes the Registry and never authorizes trades.

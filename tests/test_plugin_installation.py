@@ -66,7 +66,7 @@ def main() -> None:
         assert installed != ROOT
         assert not (installed / ".git").exists()
         assert skill_names(installed) == {"using-investment-os"}
-        for source_only in ("tests", "evals", "Research", "docs"):
+        for source_only in ("tests", "evals", "docs"):
             assert not (installed / source_only).exists(), f"source-only tree leaked into plugin: {source_only}"
         assert not (installed / "scripts").exists(), "runtime scripts remain internal to skill directories"
 
