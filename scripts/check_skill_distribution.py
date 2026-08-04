@@ -109,6 +109,12 @@ def main() -> None:
         raise AssertionError("Codex manifest must distribute ./skills/")
     if "hooks" in codex:
         raise AssertionError("Codex manifest must rely on native Skill discovery without a hooks field")
+    expected_privacy_url = (
+        "https://github.com/Zereker/investment-os/blob/master/plugins/"
+        "investment-os/skills/using-investment-os/references/product-contract.md"
+    )
+    if codex.get("interface", {}).get("privacyPolicyURL") != expected_privacy_url:
+        raise AssertionError("Codex manifest privacy policy URL must target product-contract.md")
     if (ROOT / "hooks" / "hooks.json").exists():
         raise AssertionError("Codex must not auto-discover the Claude SessionStart hook")
 

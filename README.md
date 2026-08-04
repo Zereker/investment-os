@@ -119,7 +119,7 @@ Real Harness behavior: NOT YET VERIFIED
 
 ## Authority and Versioning
 
-具体投资规则发生冲突时，按插件 references 中的编号顺序执行：`00-constitution.md` → `01-operating-manual.md` → `03-journal.md`；`02-data-contract.md` 约束数据可用性，不创造投资参数。
+具体投资规则发生冲突时，按插件 references 中的编号顺序执行：`00-constitution.md` → `01-operating-manual.md` → `03-journal.md`；唯一沿用旧制的例外是宪法转型计划部分与操作手册冲突时仍以操作手册为准。`02-data-contract.md` 约束数据可用性，不创造投资参数。
 
 聊天记录、旧报告、旧 Skill 摘要和 `Research/` 不具有现行规则效力。现行政策以默认分支 HEAD 为准。
 

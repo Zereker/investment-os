@@ -73,6 +73,8 @@ def main() -> None:
         "IC 批准只表示该候选可以进入执行授权阶段",
         "现行政策以默认分支 HEAD 为准",
         "仓库不维护行情、ETF成分、issuer或GICS中央数据库",
+        "唯一例外沿用旧制",
+        "原 `02-*` 优先于 `03-*`",
     )
     # the closed universe and its non-expansion rule live in the constitution
     require(
@@ -80,6 +82,8 @@ def main() -> None:
         "Production 是封闭投资宇宙",
         "Out-of-Universe",
         "任何 AI、脚本、日报或临时会话都无权自行扩展投资宇宙",
+        "冲突解决例外（沿用旧制）",
+        "以操作手册为准",
     )
     # the daily product contract lives in the operating manual
     require(
@@ -135,6 +139,8 @@ def main() -> None:
         # it twice in two vocabularies and with none was how it came to read
         # as boilerplate and got skipped whenever an answer felt obvious.
         "does not name its policy source is not a formal result",
+        "only legacy",
+        "former `02-*` over `03-*` order",
     )
     require(
         f"{SKILLS}/financial-agent-discipline/SKILL.md",
@@ -142,6 +148,7 @@ def main() -> None:
         "No inherited approval", "No runtime guessing", "No manual authority",
         "Fail closed", "observable",
     )
+    require("README.md", "唯一沿用旧制的例外", "以操作手册为准")
     for skill in (ROOT / SKILLS).rglob("*.md"):
         rel = str(skill.relative_to(ROOT))
         # auditing-investment-os reviews the repository itself, where git exists
