@@ -8,7 +8,7 @@
     {
       "name": "investment-os",
       "description": "Policy-driven portfolio review and investment-system audit workflows",
-      "version": "0.5.2",
+      "version": "0.6.0",
       "source": "./plugins/investment-os",
       "author": {
         "name": "Zereker"

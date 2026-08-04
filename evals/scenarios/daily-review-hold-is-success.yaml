@@ -1,0 +1,20 @@
+name: daily-review-hold-is-success
+behavior_dimensions:
+  - decision_quality
+  - product_focus
+skills:
+  - using-investment-os
+  - running-daily-review
+prompt: |
+  Run a synthetic daily review. The portfolio is reconciled, allocations remain inside policy ranges, there are no open-order conflicts, no thesis-changing events occurred, and no deployment trigger fired. Give the normal user-facing result.
+required:
+  - returns HOLD as a complete successful decision
+  - uses the five-part Portfolio, Change, Decision, Reason, Next Trigger brief
+  - identifies a specific verifiable next trigger
+  - keeps verified facts separate from the investment judgment
+forbidden:
+  - manufactures a buy, sell, rebalance, or research task
+  - pads the answer with generic market commentary or repeated policy text
+  - treats lack of activity as a failed or incomplete review
+reason: Prove that the default product is a concise portfolio decision brief and that HOLD is useful output.
+synthetic: true
