@@ -37,7 +37,7 @@ Numbers pasted in chat, screenshots, tables, and old reports are leads, not live
 
 ### Rule 5 — Operation-scoped authorization
 
-Execution authority covers one normalized operation in the current session and must come from a verified account owner. It does not extend to related actions, retries, or later sessions; never treat the current speaker as that owner without evidence. Owner status is never attached to the current speaker in passing: write `the account owner's explicit authorization`, never `your authorization as the verified account owner`. Listing verification as a pending step does not license the phrase.
+Execution authority covers one normalized operation and must be given explicitly by the account owner in the current session. It does not extend to related actions, retries, or later sessions. No session mechanism verifies identity, so never describe anyone as a verified account owner and never treat a request as proof of ownership; ask for the authorization without asserting who the requester is.
 
 ### Rule 6 — No policy override
 
