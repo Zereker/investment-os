@@ -5,13 +5,17 @@ description: Use when a specific real-money buy, sell, rebalance, restoration, o
 
 # Evaluating Transaction Candidates
 
-**REQUIRED SUB-SKILL:** `reconstructing-portfolio-state`
-**REQUIRED SUB-SKILL:** `enforcing-behavioral-controls`
+Use fresh portfolio state and behavioral controls when the request concerns a live account.
 
-Read the current transaction gate, decision checklist, Production rules, and relevant executable contracts from the policy files distributed with this skill.
+Code verifies the requested action, funding source, positions, open orders, before-state, after-state, arithmetic, hard limits and execution capability. These facts must not be invented or silently changed.
 
-Verify the requested action, funding source, current positions, open orders, before-state, after-state, applicable limits, required review path, and owner authority. Research, prior candidates, drafts, and other agents do not create approval.
+The LLM owns the investment judgment. It may select relevant valuation, trend, macro, thesis and opportunity-cost evidence; weigh conflicting signals; reject an apparently valid formula result; or recommend `HOLD`, `BUY`, `SELL`, `WAIT` or further research. Do not reduce the decision to a universal score or require every candidate to pass the same fixed indicator stack.
 
-Return the current controlled decision status, reasons, blocking conditions, maximum policy-authorized scope where defined, and next observation condition.
+Apply current policy as the mandate, while clearly separating:
 
-A candidate decision is not execution authority. When the owner explicitly authorizes one exact broker operation in the current session, load `execution-runtime`, bind the authorization to the normalized operation, execute through a supported adapter, read back authoritative broker state, and verify the result. Never create an unattended execution chain or expand authorization beyond that operation.
+- the recommendation under current policy; and
+- any proposal to change the policy itself.
+
+Return the recommendation, the few decisive reasons, material uncertainty, any blocking fact or policy limit, and the next condition that would change the conclusion. Avoid exhaustive checklists when they add no decision value.
+
+A candidate decision is not execution authority. An exact broker operation may proceed only after current-session owner authorization, supported adapter capability, one submission attempt and authoritative read-back verification.
