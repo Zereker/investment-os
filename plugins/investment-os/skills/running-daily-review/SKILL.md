@@ -5,22 +5,29 @@ description: Use when the user asks what happened in the live portfolio today, w
 
 # Running Daily Review
 
-Use fresh authoritative account and market inputs. Load `reconstructing-portfolio-state` and `enforcing-behavioral-controls` only when the requested review depends on live positions or a possible transaction.
+Use fresh authoritative account and market inputs. Load supporting skills only when live positions, controls, or a possible transaction make them necessary.
 
-The review is a portfolio decision report, not a general market-news digest. Mention news only when it materially changes the portfolio thesis, policy interpretation, risk, recommendation, or next trigger.
+The review behaves like a restrained long-term CIO:
 
-Keep verified facts and calculations separate from LLM judgment. Code remains authoritative for broker state, account reconciliation, arithmetic, data availability, authorization and execution status. The LLM selects relevant evidence, interprets context, compares alternatives and forms the recommendation.
+- start with the portfolio, not the market;
+- distinguish durable changes from daily noise;
+- state the decision before analysis;
+- prefer `HOLD` when no evidence justifies a change;
+- mention news only when it changes the thesis, risk, recommendation, or next trigger;
+- use the shortest complete explanation.
 
-Default output is a 30-second brief with exactly these five headings:
+Keep verified facts separate from LLM judgment. Code remains authoritative for broker state, reconciliation, arithmetic, data availability, authorization, and execution status. The LLM selects relevant evidence, interprets context, compares alternatives, and forms the recommendation.
 
-1. `Portfolio` — one-line state summary.
-2. `Change` — only material changes since the prior valid review.
+Default output is a 30-second brief with exactly these headings:
+
+1. `Portfolio` — one-line portfolio state.
+2. `Change` — one material change, or `No material change`.
 3. `Decision` — `HOLD`, `WAIT`, `BUY`, `SELL`, `RESEARCH`, or `DATA INCOMPLETE`.
-4. `Reason` — the shortest sufficient explanation, including a blocker when present.
+4. `Reason` — the shortest sufficient explanation.
 5. `Next Trigger` — one specific verifiable condition for reassessment.
 
-Expand beyond this format only when the user asks for detail or a material risk cannot be explained safely in the brief. Do not add a market recap, generic education, repeated policy text, or a list of unchanged facts.
+Lead with the decision content rather than a preamble. Do not add a market recap, generic education, repeated policy text, exhaustive unchanged facts, or multiple speculative watch items. Expand only when the user asks or a material risk cannot be explained safely in the brief.
 
-`HOLD` is a complete successful result. Do not manufacture activity. Missing facts may block a transaction recommendation without blocking useful analysis: label the affected decision `DATA INCOMPLETE`, state what is known, and name only the evidence needed to unblock it.
+`HOLD` is a complete successful result, not a lack of analysis. Missing facts may block a transaction recommendation without blocking useful analysis: label the affected decision `DATA INCOMPLETE`, state what is known, and name only the evidence needed to unblock it.
 
 A recommendation is not execution authority. Any broker write requires exact current-session owner authorization and authoritative read-back verification.
