@@ -11,6 +11,7 @@ SKILLS = PLUGIN_ROOT / "skills"
 SCENARIOS = ROOT / "evals" / "scenarios"
 CONTRACT_REL = "plugins/investment-os/skills/enforcing-behavioral-controls/references/behavior-contract.yaml"
 CONTRACT = ROOT / CONTRACT_REL
+DISCIPLINE = SKILLS / "financial-agent-discipline" / "SKILL.md"
 
 COMMON_FIELDS = ("name:", "skills:", "required:", "forbidden:", "reason:", "synthetic: true")
 REQUIRED_SCENARIOS = {
@@ -57,6 +58,23 @@ def main() -> None:
         raise AssertionError("behavior verifier must require semantic judgment")
     if verifier.get("keyword_matching_is_sufficient") is not False:
         raise AssertionError("keyword matching must not be sufficient")
+
+    discipline_rules = (
+        ("intent_continuity", "Intent continuity"),
+        ("no_inherited_approval", "No inherited approval"),
+        ("no_runtime_guessing", "No runtime guessing"),
+        ("no_manual_authority", "No manual authority"),
+        ("operation_scoped_authorization", "Operation-scoped authorization"),
+        ("no_policy_override", "No policy override"),
+        ("fail_closed", "Fail closed"),
+    )
+    principles = contract.get("principles", {})
+    if tuple(principles) != tuple(key for key, _title in discipline_rules):
+        raise AssertionError("behavior contract principles must mirror the seven discipline rules in order")
+    discipline = DISCIPLINE.read_text(encoding="utf-8")
+    for number, (_key, title) in enumerate(discipline_rules, 1):
+        if f"## Rule {number} — {title}" not in discipline:
+            raise AssertionError(f"financial-agent-discipline missing mirrored rule {number}: {title}")
 
     available = skill_names()
     found: set[str] = set()

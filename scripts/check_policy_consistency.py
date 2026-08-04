@@ -395,6 +395,13 @@ def retired_files_gate() -> None:
         if (ROOT / stale).exists():
             raise AssertionError(f"retired file resurfaced: {stale}")
 
+    drawdown_drill = (
+        "plugins/investment-os/skills/validating-drawdown-state/scripts/"
+        "drawdown_drill.py"
+    )
+    require(drawdown_drill, "references/02-data-contract.md")
+    forbid(drawdown_drill, "references/08-data-registry.md")
+
 
 def main() -> None:
     if CURRENT_EXECUTION_CAP > CURRENT_STAGE:

@@ -67,6 +67,11 @@ Apply the numbered authority in this order and load only the files relevant to t
 - Journal: `references/03-journal.md` — investment journal and lessons learned
 - Look-through records: applicable `references/records/lookthrough-YYYY-MM-DD.md` files
 
+Conflict precedence follows `references/product-contract.md`. Its only legacy
+exception remains unchanged: when the transition-plan part of
+`00-constitution.md` conflicts with `01-operating-manual.md`, the operating
+manual prevails (the former `02-*` over `03-*` order).
+
 ## Harness mapping
 
 Use the mapping for the running environment without changing domain skill content:

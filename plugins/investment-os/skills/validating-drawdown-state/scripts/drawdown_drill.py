@@ -29,7 +29,7 @@ IBKR alerts, journal entries and cash-level self-proof. That half stays unproven
 until a live cycle exercises it.
 
 Data source: stockanalysis.com daily closes — a registered aggregator, Yellow
-per skills/using-investment-os/references/08-data-registry.md. Adequate for a drill; the production trigger must
+per skills/using-investment-os/references/02-data-contract.md. Adequate for a drill; the production trigger must
 read IBKR or the official State Street series. This tool reports facts only; it
 never changes the Registry and never authorizes trades.
 
