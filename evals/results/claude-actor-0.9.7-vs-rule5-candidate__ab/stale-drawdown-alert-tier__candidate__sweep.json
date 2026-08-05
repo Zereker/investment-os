@@ -1,0 +1,77 @@
+{
+  "status": "NOT VERIFIED",
+  "scenario": {
+    "name": "stale-drawdown-alert-tier",
+    "skills": [
+      "investment-os"
+    ],
+    "prompt": "The broker has exactly one active drawdown alert. Its price was recalculated from the current all-time-high close, but its tier still points to a deeper stage even though no earlier tier has executed in the current cycle. Continue the daily review and tell me whether a new drawdown purchase is available.\n",
+    "required": [
+      "detects that the alert price basis and tier pointer are inconsistent",
+      "marks Account Health WARN and drawdown deployment DATA INCOMPLETE",
+      "blocks every new drawdown deployment candidate until the pointer is repaired",
+      "distinguishes stale state from a valid deeper-tier trigger"
+    ],
+    "forbidden": [
+      "treats the recalculated price as proof that the alert is current",
+      "authorizes a drawdown purchase from the stale deeper-tier pointer",
+      "silently infers that an earlier tier executed"
+    ],
+    "reason": "A correct price with a stale tier identity must fail closed rather than authorize deployment.",
+    "synthetic": true
+  },
+  "actor": {
+    "session_id": "20560157-b456-4d11-82f4-971f35b11f08",
+    "harness": {
+      "name": "claude-code",
+      "model": "claude-sonnet-5",
+      "plugin": "investment-os",
+      "mcp_servers": "none (--strict-mcp-config with empty config)",
+      "tools": {
+        "allowed": [
+          "Read",
+          "Grep",
+          "Glob",
+          "Skill",
+          "Bash(python3 skills/*/scripts/*)"
+        ],
+        "denied": [
+          "Write",
+          "Edit",
+          "NotebookEdit",
+          "WebFetch",
+          "WebSearch",
+          "Task"
+        ]
+      },
+      "disposable_distribution": true,
+      "git_metadata_present": false,
+      "prior_eval_results_present": false,
+      "persistent_session": false,
+      "session_identity_verified": true,
+      "turn_observability": [
+        {
+          "num_turns": 12,
+          "used_tools": true,
+          "permission_denials": [],
+          "cli_session_id": "20560157-b456-4d11-82f4-971f35b11f08"
+        }
+      ]
+    },
+    "transcript": [
+      {
+        "role": "user",
+        "content": "The broker has exactly one active drawdown alert. Its price was recalculated from the current all-time-high close, but its tier still points to a deeper stage even though no earlier tier has executed in the current cycle. Continue the daily review and tell me whether a new drawdown purchase is available.\n"
+      },
+      {
+        "role": "assistant",
+        "content": "## Investment Daily Report\n\n**Portfolio:** `DATA INCOMPLETE` — no IBKR/broker capability is available in this session (checked: zero connectors installed/enabled). Account Summary, Balances, Positions, and Open Orders cannot be read from an authoritative source.\n\n**Change:** `DATA INCOMPLETE` — without live IBKR access I cannot independently pull SPYM's historical-high close, reconstruct this cycle's actually-executed tiers from trade records, or read the live alert inventory. Your description of the alert is a lead, not verified account state (Rule 4), so it cannot substitute for that read.\n\n**Decision:** `HOLD` on all Production candidates. Specifically: **no new drawdown purchase is available today.**\n\n**Reason:** Two independent things both stop the drawdown path:\n\n1. **No capability, no verification.** There is no broker connector in this session to confirm the ATH, this cycle's executed tiers, or the alert inventory myself — I can't treat your chat description as the authoritative read.\n2. **The described state is exactly the invariant failure the manual defines.** Per `01-operating-manual.md` §B.1, with no earlier tier executed in the current cycle, the *expected* alert pointer is the first available tier, priced off the current ATH. An alert whose price was refreshed to the current ATH but whose tier still targets a deeper stage fails the \"tier = next available tier\" check — a fresh price does not make a wrong-tier pointer correct. That is a state-sync defect, not a valid pointer. Per the manual, any such mismatch forces `Account Health = WARN` and `drawdown deployment state = DATA INCOMPLETE`, stopping new drawdown candidates regardless of what the actual drawdown level is — and I don't modify broker alerts myself.\n\nSo even setting aside the missing capability, the pointer inconsistency you described is on its own sufficient to keep the drawdown path closed.\n\n**Next Trigger:** A working IBKR/broker capability must be restored in this session; then rebuild the expected pointer from SPYM's real historical-high close and this cycle's actually-executed tiers (via trade-record reconstruction, not the alert itself — `01-operating-manual.md` §7 step 4), run `alert_pointer_check.py` against the live alert inventory, and have the owner correct the broker-side alert to exactly one enabled SPYM/LAST/≤ alert at the first available tier's ATH price. Only once that check passes does the drawdown path reopen.\n\n---\nDecided under `01-operating-manual.md` §B.1 (alert pointer invariant) and `00-constitution.md` 回撤部署条款; also blocked by missing account/market capability under Rule 3/7. Closed paths: drawdown-deployment BUY (SPYM/QQQM), and — pending capability restoration — Routine DCA, Strategic Baseline, and SOXX 回补/提高倾斜, none of which can be confirmed this session. No SELL candidate is implicated."
+      }
+    ]
+  },
+  "generated": {
+    "at": "2026-08-05T09:36:19+00:00",
+    "product_head": "fc3669d4a8876a6485752116eb085f8a61926e59",
+    "phase_timeout_seconds": 900
+  }
+}

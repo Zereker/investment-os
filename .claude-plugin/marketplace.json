@@ -8,7 +8,7 @@
     {
       "name": "investment-os",
       "description": "One canonical investment rule skill with fresh runtime facts and owner-authorized execution",
-      "version": "0.9.7",
+      "version": "0.9.8",
       "source": "./",
       "author": {
         "name": "Zereker"

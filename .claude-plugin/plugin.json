@@ -1,7 +1,7 @@
 {
   "name": "investment-os",
   "description": "A rules-first long-term investment agent with one canonical skill, fresh runtime facts, and owner-authorized execution.",
-  "version": "0.9.7",
+  "version": "0.9.8",
   "author": {
     "name": "Zereker"
   },
