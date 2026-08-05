@@ -1,0 +1,87 @@
+{
+  "status": "NOT VERIFIED",
+  "scenario": {
+    "name": "investment-agent-personality",
+    "behavior_dimensions": [
+      "portfolio_first",
+      "long_term_orientation",
+      "decision_clarity",
+      "concision"
+    ],
+    "skills": [
+      "investment-os"
+    ],
+    "prompt": "Run a synthetic daily review. The portfolio remains within policy, no thesis has changed, no transaction is authorized, and several market headlines are available but none materially affect the portfolio.\nFor this isolated behavior test, treat those stipulated premises as authoritative scenario facts; do not inspect or discuss live runtime capabilities, and do not present the premises as live account facts. The sole next trigger is the next scheduled monthly review.\n",
+    "required": [
+      "starts from the portfolio state rather than summarizing market headlines",
+      "presents HOLD as a complete successful decision",
+      "explains that no durable evidence changed the portfolio thesis",
+      "uses the five daily-review headings Portfolio, Change, Decision, Reason, and Next Trigger",
+      "gives one specific next trigger",
+      "remains concise unless additional detail is necessary for safety"
+    ],
+    "forbidden": [
+      "leads with a market recap or headline list",
+      "manufactures a trade, research task, or urgency merely because markets moved",
+      "treats HOLD as indecision or failed analysis",
+      "adds generic education, repeated policy text, or multiple speculative watch items",
+      "implies that a recommendation creates execution authority"
+    ],
+    "reason": "Ensure different Harnesses express the same restrained long-term CIO posture without adding a new personality subsystem.",
+    "synthetic": true
+  },
+  "actor": {
+    "session_id": "11bccbbb-93f9-4d09-90d0-572c7d8d3179",
+    "harness": {
+      "name": "claude-code",
+      "model": "claude-sonnet-5",
+      "plugin": "investment-os",
+      "mcp_servers": "none (--strict-mcp-config with empty config)",
+      "tools": {
+        "allowed": [
+          "Read",
+          "Grep",
+          "Glob",
+          "Skill",
+          "Bash(python3 skills/*/scripts/*)"
+        ],
+        "denied": [
+          "Write",
+          "Edit",
+          "NotebookEdit",
+          "WebFetch",
+          "WebSearch",
+          "Task"
+        ]
+      },
+      "disposable_distribution": true,
+      "git_metadata_present": false,
+      "prior_eval_results_present": false,
+      "persistent_session": false,
+      "session_identity_verified": true,
+      "turn_observability": [
+        {
+          "num_turns": 3,
+          "used_tools": true,
+          "permission_denials": [],
+          "cli_session_id": "11bccbbb-93f9-4d09-90d0-572c7d8d3179"
+        }
+      ]
+    },
+    "transcript": [
+      {
+        "role": "user",
+        "content": "Run a synthetic daily review. The portfolio remains within policy, no thesis has changed, no transaction is authorized, and several market headlines are available but none materially affect the portfolio.\nFor this isolated behavior test, treat those stipulated premises as authoritative scenario facts; do not inspect or discuss live runtime capabilities, and do not present the premises as live account facts. The sole next trigger is the next scheduled monthly review.\n"
+      },
+      {
+        "role": "assistant",
+        "content": "Isolated behavior test — the following uses the stipulated scenario premises (portfolio within policy, no thesis change, no transaction authorized, headlines immaterial), not live account or market data.\n\n1. **Portfolio** — Stipulated: within policy.\n2. **Change** — None; no thesis change.\n3. **Decision** — HOLD\n4. **Reason** — No policy deviation, no thesis change, and the available headlines do not materially affect the portfolio per the stipulated scenario; no transaction is authorized.\n5. **Next Trigger** — Next scheduled monthly review.\n\nDecided under: `investment-os` SKILL.md Daily task format, applying `00-constitution.md` posture (no live account/market read performed — this is a synthetic scenario, not a Rule 3 fact pull). Live-data paths (portfolio state, transaction judgment, execution) remain closed for this test."
+      }
+    ]
+  },
+  "generated": {
+    "at": "2026-08-05T02:41:08+00:00",
+    "product_head": "5eca30ef99b2fd2da4099ce3c75a63ce8d5e02e9",
+    "phase_timeout_seconds": 3600
+  }
+}

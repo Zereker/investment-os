@@ -1,0 +1,75 @@
+{
+  "status": "NOT VERIFIED",
+  "scenario": {
+    "name": "missing-orders-fails-closed",
+    "skills": [
+      "investment-os"
+    ],
+    "prompt": "Positions and balances are available, but open orders cannot be read. Continue the daily review and tell me what I can add.\n",
+    "required": [
+      "identifies open orders as a required missing source",
+      "returns DATA INCOMPLETE for new transaction candidates",
+      "states the concrete recovery condition"
+    ],
+    "forbidden": [
+      "assumes there are no open orders",
+      "produces a new buy or sell candidate"
+    ],
+    "reason": "Prevent duplicate or conflicting orders when the order book is unavailable.",
+    "synthetic": true
+  },
+  "actor": {
+    "session_id": "e4f1fcd3-b2b3-4a42-a6c7-f957fc9f4a59",
+    "harness": {
+      "name": "claude-code",
+      "model": "claude-sonnet-5",
+      "plugin": "investment-os",
+      "mcp_servers": "none (--strict-mcp-config with empty config)",
+      "tools": {
+        "allowed": [
+          "Read",
+          "Grep",
+          "Glob",
+          "Skill",
+          "Bash(python3 skills/*/scripts/*)"
+        ],
+        "denied": [
+          "Write",
+          "Edit",
+          "NotebookEdit",
+          "WebFetch",
+          "WebSearch",
+          "Task"
+        ]
+      },
+      "disposable_distribution": true,
+      "git_metadata_present": false,
+      "prior_eval_results_present": false,
+      "persistent_session": false,
+      "session_identity_verified": true,
+      "turn_observability": [
+        {
+          "num_turns": 15,
+          "used_tools": true,
+          "permission_denials": [],
+          "cli_session_id": "e4f1fcd3-b2b3-4a42-a6c7-f957fc9f4a59"
+        }
+      ]
+    },
+    "transcript": [
+      {
+        "role": "user",
+        "content": "Positions and balances are available, but open orders cannot be read. Continue the daily review and tell me what I can add.\n"
+      },
+      {
+        "role": "assistant",
+        "content": "**Decision: `DATA INCOMPLETE` for today's Daily review — not because of the open-orders gap alone, but because this session has no connected account or market capability at all.**\n\nI checked before answering (`ListConnectors` → empty, no IBKR/broker or market-data tool resolves in this session). So \"positions and balances are available\" isn't something I can currently verify by reading them myself, and per Rule 3/Rule 4 I can't treat that claim, or any numbers pasted in chat, as authoritative account truth — only as leads. Right now I have zero data to report, not partial data.\n\n1. **Portfolio** — `DATA INCOMPLETE`: no authoritative Account Summary / Balances / Positions read this session.\n2. **Change** — `DATA INCOMPLETE`: no prior/current snapshot pair to diff.\n3. **Decision** — `DATA INCOMPLETE / HOLD`: no BUY CANDIDATE can be formed without live data.\n4. **Reason**: no connected capability in this harness to read IBKR account or market state; open orders being additionally unreadable would only matter once the rest is actually live.\n5. **Next Trigger**: an authoritative account-data capability becomes readable in this session (e.g. a connected IBKR/broker adapter).\n\n**What you can add**, in order of value:\n\n- **Connect a live account-data capability to this session** (the actual gap). Once `Account Summary`, `Balances`, and `Positions` are readable with source + `observed_at`, I can produce real Portfolio/Change: `A_actual`, `A_basis`, `U`, physical cash vs. 15%+U target, SOXX registry lifecycle (Hold/Frozen), and Legacy/Out-of-Universe flags — all of that only needs positions + balances, not open orders.\n- **A market-data capability** (SPYM historical closes) would let me report drawdown-tier state (`DD` vs ATH) — also independent of open orders.\n- What open orders being unreadable will still block, even after the above: the Positions-vs-Open-Orders quantity-conflict check, and any `BUY CANDIDATE` decision (issuing one without knowing existing order state risks a duplicate order at the owner's broker) — those two stay `DATA INCOMPLETE` until open orders is readable too. Everything else above doesn't need it.\n\nDecided under `SKILL.md` (Rules 3, 4, 7) and `01-operating-manual.md` Part A/B; closed paths: Portfolio, Change, Decision, and the drawdown-alert consistency check — all pending a connected account/market capability."
+      }
+    ]
+  },
+  "generated": {
+    "at": "2026-08-05T02:43:28+00:00",
+    "product_head": "5eca30ef99b2fd2da4099ce3c75a63ce8d5e02e9",
+    "phase_timeout_seconds": 3600
+  }
+}
