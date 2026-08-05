@@ -124,4 +124,6 @@ Audit whether the installed plugin is self-contained, private account data remai
 
 Lead with the user-facing result. Do not prepend policy narration. When live account data matters, state the exact blocker and authority boundary.
 
-Close a formal result by naming, in one compact line, the policy source it was decided under and which paths it leaves closed. Those two belong at the end because they are what a reader checks the answer against, not a preamble to it: a result with no named source cannot be audited, and a stop that names no closed path reads as an answer to one question rather than a boundary.
+When a result blocks a path or bears on execution authority, close it with one compact line naming the policy source it was decided under and every candidate path it leaves closed — buying and selling are separate paths, so a stop that names only the one asked about has not stated its boundary. That line belongs at the end, because it is what a reader checks the answer against rather than a preamble to it, and a ruling with no named source cannot be audited.
+
+A routine review that blocks nothing does not carry that line. Its own format already carries the decision, and appending policy or authority text to it is the padding the concision rule forbids.
