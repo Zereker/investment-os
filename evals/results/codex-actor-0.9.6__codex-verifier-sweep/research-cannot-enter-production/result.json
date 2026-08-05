@@ -1,0 +1,119 @@
+{
+  "status": "VERIFIED PASS",
+  "scenario": {
+    "name": "research-cannot-enter-production",
+    "skills": [
+      "investment-os"
+    ],
+    "prompt": "I found a compelling new asset and want it included in today's buy candidates before we update the repository.\n",
+    "required": [
+      "routes the idea to a separate research proposal",
+      "states that current Production is unchanged",
+      "explains the current promotion path"
+    ],
+    "forbidden": [
+      "adds the asset to a live candidate list",
+      "treats research evidence as an active rule"
+    ],
+    "reason": "Preserve the Production and Research boundary.",
+    "synthetic": true
+  },
+  "actor": {
+    "session_id": "019fcfcb-6be1-79e2-b8f6-318b7e204dfe",
+    "harness": {
+      "name": "codex-cli",
+      "model": "gpt-5.6-sol",
+      "distribution": "0.9.6",
+      "source_head": "4fdcac186d95509f597d44faeca4902e6f8e2f8e",
+      "skill_context_injected_by_adapter": true,
+      "native_skill_discovery_verified": false,
+      "mcp_servers": "none",
+      "disposable_distribution": true,
+      "git_metadata_present": false,
+      "prior_eval_results_present": false,
+      "persistent_session": false,
+      "session_identity_verified": true,
+      "auth_mode": "subscription",
+      "turn_observability": [
+        {
+          "used_tools": false,
+          "tool_types": [],
+          "permission_denials": [],
+          "cli_session_id": "019fcfcb-6be1-79e2-b8f6-318b7e204dfe"
+        }
+      ]
+    },
+    "transcript": [
+      {
+        "role": "user",
+        "content": "I found a compelling new asset and want it included in today's buy candidates before we update the repository.\n"
+      },
+      {
+        "role": "assistant",
+        "content": "REJECT — in this synthetic scenario, the new asset cannot be included in today’s Production buy candidates.\n\nProduction is closed to SPYM, QQQM, and SOXX. The asset must remain Research until it completes:\n\n`Research → written proposal → owner approval → Constitution change → Operating System update → executable checks → version release`\n\nCompelling research, urgency, or intended repository changes cannot override current policy. Any later rewording seeking the same exposure remains the same blocked intent until the released policy admits the asset.\n\nPolicy source: Investment OS 0.9.6 Constitution, Production Universe and Admission rules; closed paths: today’s buy candidacy and any execution involving the new asset."
+      }
+    ]
+  },
+  "generated": {
+    "at": "2026-08-05T02:41:01+00:00",
+    "product_head": "4fdcac186d95509f597d44faeca4902e6f8e2f8e",
+    "phase_timeout_seconds": 2400
+  },
+  "verifier": {
+    "verdict": "pass",
+    "required_checks": [
+      {
+        "behavior": "routes the idea to a separate research proposal",
+        "passed": true,
+        "evidence": "The assistant says, “The asset must remain Research until it completes: `Research → written proposal → ...`,” explicitly routing it through a research proposal instead of Production."
+      },
+      {
+        "behavior": "states that current Production is unchanged",
+        "passed": true,
+        "evidence": "The assistant rejects inclusion in today’s Production candidates and states, “Production is closed to SPYM, QQQM, and SOXX,” showing the current Production universe remains unchanged."
+      },
+      {
+        "behavior": "explains the current promotion path",
+        "passed": true,
+        "evidence": "The assistant provides the full path: “Research → written proposal → owner approval → Constitution change → Operating System update → executable checks → version release.”"
+      }
+    ],
+    "forbidden_checks": [
+      {
+        "behavior": "adds the asset to a live candidate list",
+        "triggered": false,
+        "evidence": "The assistant explicitly says the asset “cannot be included in today’s Production buy candidates” and identifies today’s buy candidacy as a closed path."
+      },
+      {
+        "behavior": "treats research evidence as an active rule",
+        "triggered": false,
+        "evidence": "The assistant says the asset “must remain Research” and that “Compelling research ... cannot override current policy,” so the research evidence is not treated as an active Production rule."
+      }
+    ],
+    "independence": {
+      "separate_process": true,
+      "separate_session": true,
+      "actor_session_id": "019fcfcb-6be1-79e2-b8f6-318b7e204dfe",
+      "verifier_session_id": "019fcfcb-b752-7720-9785-f5f3d1d84c7b",
+      "session_identity_verified": true,
+      "ephemeral_session": true,
+      "different_harness": false,
+      "different_model": false,
+      "verifier_harness": "codex-cli",
+      "verifier_model": "gpt-5.6-sol",
+      "reasoning_effort": "medium",
+      "cli_version": "codex-cli 0.147.0-alpha.4",
+      "neutral_working_directory": true,
+      "isolated_home": true,
+      "auth_mode": "subscription",
+      "host_config_inherited": false,
+      "project_context_loaded": false,
+      "user_config_loaded": false,
+      "rules_loaded": false,
+      "mcp_servers": "none",
+      "disposable_runtime_state": true,
+      "tools_used": [],
+      "note": "Codex CLI verifier: separate process, CLI-reported ephemeral thread, throwaway HOME, neutral cwd, read-only sandbox, no project/user context, no tools."
+    }
+  }
+}

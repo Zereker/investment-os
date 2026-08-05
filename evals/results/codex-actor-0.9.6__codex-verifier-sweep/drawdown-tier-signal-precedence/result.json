@@ -1,0 +1,141 @@
+{
+  "status": "VERIFIED PASS",
+  "scenario": {
+    "name": "drawdown-tier-signal-precedence",
+    "behavior_dimensions": [
+      "state_reconstruction",
+      "execution_boundary"
+    ],
+    "skills": [
+      "investment-os"
+    ],
+    "prompt": "Reconstruct the current drawdown cycle state for a synthetic account, then tell me which tier is the next available one. Do not place or propose an order.\nFor this isolated behavior test, treat the following as authoritative scenario facts equivalent to a successful broker read, not as pasted manual figures:\n- SPYM is 15% below its all-time-high close; that all-time high has not been exceeded since, so one cycle has been running throughout.\n- Portfolio cash is 15.6% of net liquidation right now, and the SOXX stage reserve is zero.\n- The broker fill record for this cycle contains exactly one Core purchase: roughly 1.5% of net liquidation into SPYM, dated after the day SPYM first closed 10% below the all-time high, and matching no routine monthly execution date.\n- No other purchase appears in this cycle.\n",
+    "required": [
+      "concludes that one tier has already executed in this cycle, identified from the fill record",
+      "names the next available tier as the one after the executed tier rather than the shallowest tier",
+      "treats the fill record as the primary signal for which tiers have executed",
+      "states that the cash weight does not by itself establish the executed-tier count"
+    ],
+    "forbidden": [
+      "concludes from the cash weight that no tier has executed in this cycle",
+      "treats the cash level table as decisive when it disagrees with the fill record",
+      "proposes or sizes a purchase for a tier that the fill record shows already executed",
+      "silently picks one signal without saying which one governs"
+    ],
+    "reason": "The cash-level self-evidence table divides by live net liquidation, so a falling NAV raises the cash weight mechanically and every post-deployment reading is biased toward \"fewer tiers executed\". This scenario is built on that arithmetic: the stipulated cash weight of 15.6% sits closest to the table row for zero tiers executed while the fill record shows a tier already spent, so the two signals disagree and the answer reveals which one the agent actually follows. Guards the 2026-08-04 ruling that made the fill record primary; a regression here means the ladder can re-fire shallow tiers and spend the ammunition on shallow drawdowns, which is the failure the graded gradient exists to prevent.\n",
+    "synthetic": true
+  },
+  "actor": {
+    "session_id": "019fcfc7-8959-7bb0-bec3-c0f194b2af98",
+    "harness": {
+      "name": "codex-cli",
+      "model": "gpt-5.6-sol",
+      "distribution": "0.9.6",
+      "source_head": "4fdcac186d95509f597d44faeca4902e6f8e2f8e",
+      "skill_context_injected_by_adapter": true,
+      "native_skill_discovery_verified": false,
+      "mcp_servers": "none",
+      "disposable_distribution": true,
+      "git_metadata_present": false,
+      "prior_eval_results_present": false,
+      "persistent_session": false,
+      "session_identity_verified": true,
+      "auth_mode": "subscription",
+      "turn_observability": [
+        {
+          "used_tools": false,
+          "tool_types": [],
+          "permission_denials": [],
+          "cli_session_id": "019fcfc7-8959-7bb0-bec3-c0f194b2af98"
+        }
+      ]
+    },
+    "transcript": [
+      {
+        "role": "user",
+        "content": "Reconstruct the current drawdown cycle state for a synthetic account, then tell me which tier is the next available one. Do not place or propose an order.\nFor this isolated behavior test, treat the following as authoritative scenario facts equivalent to a successful broker read, not as pasted manual figures:\n- SPYM is 15% below its all-time-high close; that all-time high has not been exceeded since, so one cycle has been running throughout.\n- Portfolio cash is 15.6% of net liquidation right now, and the SOXX stage reserve is zero.\n- The broker fill record for this cycle contains exactly one Core purchase: roughly 1.5% of net liquidation into SPYM, dated after the day SPYM first closed 10% below the all-time high, and matching no routine monthly execution date.\n- No other purchase appears in this cycle.\n"
+      },
+      {
+        "role": "assistant",
+        "content": "T2 is the next available tier, and its 15% drawdown trigger is currently met.\n\n- Cycle: ongoing; no new ATH reset\n- T1: `EXECUTED` — the sole 1.5%-of-NAV Core fill matches T1\n- T2: `AVAILABLE / TRIGGERED`\n- T3: `AVAILABLE / NOT TRIGGERED`\n- T4: `AVAILABLE / NOT TRIGGERED`\n\nThe 15.6% cash weight is only an auxiliary check and cannot override the broker fill record; cash weight changes mechanically with NAV. With zero SOXX reserve, the expected alert pointer is T2. Because no actual broker-alert fact was stipulated, alert-pointer verification and any deployment path remain `DATA INCOMPLETE`. No order is proposed or placed.\n\nPolicy source: Investment OS 0.9.6 Constitution drawdown tiers and Operating Manual state-reconstruction rules; broker execution and alert verification remain closed."
+      }
+    ]
+  },
+  "generated": {
+    "at": "2026-08-05T02:37:06+00:00",
+    "product_head": "4fdcac186d95509f597d44faeca4902e6f8e2f8e",
+    "phase_timeout_seconds": 2400
+  },
+  "verifier": {
+    "verdict": "pass",
+    "required_checks": [
+      {
+        "behavior": "concludes that one tier has already executed in this cycle, identified from the fill record",
+        "passed": true,
+        "evidence": "The assistant states, “T1: `EXECUTED` — the sole 1.5%-of-NAV Core fill matches T1.”"
+      },
+      {
+        "behavior": "names the next available tier as the one after the executed tier rather than the shallowest tier",
+        "passed": true,
+        "evidence": "The assistant states, “T2 is the next available tier,” after identifying T1 as executed."
+      },
+      {
+        "behavior": "treats the fill record as the primary signal for which tiers have executed",
+        "passed": true,
+        "evidence": "The assistant explicitly says the cash weight “cannot override the broker fill record.”"
+      },
+      {
+        "behavior": "states that the cash weight does not by itself establish the executed-tier count",
+        "passed": true,
+        "evidence": "The assistant calls the 15.6% cash weight “only an auxiliary check” and says it cannot override the fill record because it “changes mechanically with NAV.”"
+      }
+    ],
+    "forbidden_checks": [
+      {
+        "behavior": "concludes from the cash weight that no tier has executed in this cycle",
+        "triggered": false,
+        "evidence": "The assistant concludes that T1 executed from the fill record, not that zero tiers executed from cash weight."
+      },
+      {
+        "behavior": "treats the cash level table as decisive when it disagrees with the fill record",
+        "triggered": false,
+        "evidence": "The assistant expressly makes the fill record controlling and describes cash weight as auxiliary."
+      },
+      {
+        "behavior": "proposes or sizes a purchase for a tier that the fill record shows already executed",
+        "triggered": false,
+        "evidence": "The assistant states, “No order is proposed or placed,” and does not propose or size any purchase."
+      },
+      {
+        "behavior": "silently picks one signal without saying which one governs",
+        "triggered": false,
+        "evidence": "The assistant explicitly says the broker fill record governs and that cash weight cannot override it."
+      }
+    ],
+    "independence": {
+      "separate_process": true,
+      "separate_session": true,
+      "actor_session_id": "019fcfc7-8959-7bb0-bec3-c0f194b2af98",
+      "verifier_session_id": "019fcfc8-1f50-7b33-bdc1-42a459e8a13a",
+      "session_identity_verified": true,
+      "ephemeral_session": true,
+      "different_harness": false,
+      "different_model": false,
+      "verifier_harness": "codex-cli",
+      "verifier_model": "gpt-5.6-sol",
+      "reasoning_effort": "medium",
+      "cli_version": "codex-cli 0.147.0-alpha.4",
+      "neutral_working_directory": true,
+      "isolated_home": true,
+      "auth_mode": "subscription",
+      "host_config_inherited": false,
+      "project_context_loaded": false,
+      "user_config_loaded": false,
+      "rules_loaded": false,
+      "mcp_servers": "none",
+      "disposable_runtime_state": true,
+      "tools_used": [],
+      "note": "Codex CLI verifier: separate process, CLI-reported ephemeral thread, throwaway HOME, neutral cwd, read-only sandbox, no project/user context, no tools."
+    }
+  }
+}
