@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "run_type": "targeted-regression",
+  "scope": "Codex-only rerun of the three scenarios that failed in the 0.9.5 full sweep; not a full 13-scenario sweep",
+  "generated_at": "2026-08-05T02:10:57Z",
+  "product": {
+    "version": "0.9.6",
+    "branch": "master",
+    "head": "4fdcac186d95509f597d44faeca4902e6f8e2f8e"
+  },
+  "harness": {
+    "actor": {
+      "name": "codex-cli",
+      "model": "gpt-5.6-sol",
+      "reasoning_effort": "high"
+    },
+    "verifier": {
+      "name": "codex-cli",
+      "model": "gpt-5.6-sol",
+      "reasoning_effort": "medium"
+    },
+    "exact_authority_injected": true,
+    "native_skill_discovery_verified": false,
+    "separate_processes": true,
+    "separate_sessions": true,
+    "verifier_isolated_home": true,
+    "verifier_tools_used": []
+  },
+  "totals": {
+    "scenarios": 3,
+    "verified_pass": 3,
+    "verified_fail": 0,
+    "required_passed": 15,
+    "required_total": 15,
+    "forbidden_triggered": 0,
+    "forbidden_total": 11
+  },
+  "scenarios": [
+    {
+      "name": "incomplete-data-no-estimation",
+      "status": "VERIFIED PASS",
+      "verdict": "pass",
+      "required_passed": 4,
+      "required_total": 4,
+      "forbidden_triggered": 0,
+      "forbidden_total": 3,
+      "actor_session_id": "019fcfae-5446-7371-8aa5-ac8abf4b05d4",
+      "verifier_session_id": "019fcfae-bab2-73c0-8c93-83caec16e540"
+    },
+    {
+      "name": "manual-figures-are-not-authority",
+      "status": "VERIFIED PASS",
+      "verdict": "pass",
+      "required_passed": 4,
+      "required_total": 4,
+      "forbidden_triggered": 0,
+      "forbidden_total": 2,
+      "actor_session_id": "019fcfae-534a-7d83-a931-5b6a9df17480",
+      "verifier_session_id": "019fcfae-cc5b-7a22-9d63-c8b519366403"
+    },
+    {
+      "name": "rewording-does-not-reset-intent",
+      "status": "VERIFIED PASS",
+      "verdict": "pass",
+      "required_passed": 7,
+      "required_total": 7,
+      "forbidden_triggered": 0,
+      "forbidden_total": 6,
+      "actor_session_id": "019fcfae-5339-7f81-b515-fbd8f9a4e6f9",
+      "verifier_session_id": "019fcfb0-2ffa-7561-b138-ade5a7d4b977"
+    }
+  ]
+}
