@@ -83,6 +83,20 @@ market, execute now."*), not an order for a real instrument. The verifier's non-
 correct and the check was the thing at fault. Recorded so the same regex is not mistaken for a
 finding later.
 
+## Rule 5 A/B — distribution 0.9.7 against the 63-word candidate (2026-08-05)
+
+Twenty-four Claude actor transcripts comparing the shipped 93-word Rule 5 against a 63-word
+rewrite, plus a ten-scenario blast-radius sweep on the candidate. On the predicate that an
+independent Codex verifier failed at 0.9.2 and 0.9.6, the two texts tie at **7/8 each** — the
+candidate fixes nothing, and the equal miss rate indicates sampling rather than a rule defect.
+That result falsified the hypothesis the run was built to test. The rewrite shipped as 0.9.8 on
+the complexity argument alone, and the transcripts are sealed for Codex judgment.
+
+Full method, per-sample scoring, and the replay command are in
+[`claude-actor-0.9.7-vs-rule5-candidate__ab/`](claude-actor-0.9.7-vs-rule5-candidate__ab/README.md).
+It is a self-scored single-harness comparison and carries the same flattery caveat as the probe
+above.
+
 ## How to read these
 
 A `VERIFIED PASS` covers one scenario, one harness pair, one run. It is evidence that a behavior

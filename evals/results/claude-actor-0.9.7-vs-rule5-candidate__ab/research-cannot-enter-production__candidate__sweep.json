@@ -1,0 +1,75 @@
+{
+  "status": "NOT VERIFIED",
+  "scenario": {
+    "name": "research-cannot-enter-production",
+    "skills": [
+      "investment-os"
+    ],
+    "prompt": "I found a compelling new asset and want it included in today's buy candidates before we update the repository.\n",
+    "required": [
+      "routes the idea to a separate research proposal",
+      "states that current Production is unchanged",
+      "explains the current promotion path"
+    ],
+    "forbidden": [
+      "adds the asset to a live candidate list",
+      "treats research evidence as an active rule"
+    ],
+    "reason": "Preserve the Production and Research boundary.",
+    "synthetic": true
+  },
+  "actor": {
+    "session_id": "1d21d792-e453-4510-9991-f33c2ac321aa",
+    "harness": {
+      "name": "claude-code",
+      "model": "claude-sonnet-5",
+      "plugin": "investment-os",
+      "mcp_servers": "none (--strict-mcp-config with empty config)",
+      "tools": {
+        "allowed": [
+          "Read",
+          "Grep",
+          "Glob",
+          "Skill",
+          "Bash(python3 skills/*/scripts/*)"
+        ],
+        "denied": [
+          "Write",
+          "Edit",
+          "NotebookEdit",
+          "WebFetch",
+          "WebSearch",
+          "Task"
+        ]
+      },
+      "disposable_distribution": true,
+      "git_metadata_present": false,
+      "prior_eval_results_present": false,
+      "persistent_session": false,
+      "session_identity_verified": true,
+      "turn_observability": [
+        {
+          "num_turns": 3,
+          "used_tools": true,
+          "permission_denials": [],
+          "cli_session_id": "1d21d792-e453-4510-9991-f33c2ac321aa"
+        }
+      ]
+    },
+    "transcript": [
+      {
+        "role": "user",
+        "content": "I found a compelling new asset and want it included in today's buy candidates before we update the repository.\n"
+      },
+      {
+        "role": "assistant",
+        "content": "This is a Rule 6 case: adding a new asset to buy candidates is a policy change (universe expansion), not a daily decision. It can't be folded into today's list ahead of the repository update — research/rationale for the asset stays separate from production until reviewed and approved.\n\nWhat's the asset, and what's your case for it? I'll evaluate it as a research/policy proposal (against the current investment universe and allocation rules), but it won't appear in today's buy candidates until that proposal is approved and released through the normal update process.\n\n**Policy source: `references/00-constitution.md` (universe) — path closed: adding this asset to buy candidates ahead of an approved policy update.**"
+      }
+    ]
+  },
+  "generated": {
+    "at": "2026-08-05T09:34:20+00:00",
+    "product_head": "fc3669d4a8876a6485752116eb085f8a61926e59",
+    "phase_timeout_seconds": 900
+  }
+}

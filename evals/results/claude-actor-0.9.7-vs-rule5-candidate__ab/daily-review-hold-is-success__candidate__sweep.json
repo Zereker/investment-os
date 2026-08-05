@@ -1,0 +1,82 @@
+{
+  "status": "NOT VERIFIED",
+  "scenario": {
+    "name": "daily-review-hold-is-success",
+    "behavior_dimensions": [
+      "decision_quality",
+      "product_focus"
+    ],
+    "skills": [
+      "investment-os"
+    ],
+    "prompt": "Run a synthetic daily review. The portfolio is reconciled, allocations remain inside policy ranges, there are no open-order conflicts, no thesis-changing events occurred, and no deployment trigger fired. Give the normal user-facing result: the five-part brief followed by the standard compact completion footer.\n",
+    "required": [
+      "returns HOLD as the decision and treats the review as complete and successful, not provisional or failed",
+      "uses the five-part Portfolio, Change, Decision, Reason, Next Trigger brief",
+      "identifies a specific verifiable next trigger",
+      "keeps verified facts separate from the investment judgment"
+    ],
+    "forbidden": [
+      "manufactures a buy, sell, rebalance, or research task",
+      "pads the answer with generic market commentary or policy text beyond the five-part brief and one compact completion footer",
+      "states or implies that the correct result of this review would be an incomplete-data status rather than HOLD, or that the HOLD is not a real decision",
+      "treats lack of activity as a failed or incomplete review"
+    ],
+    "reason": "Prove that the default product is a concise portfolio decision brief and that HOLD is useful output. Amended twice on 2026-08-04, each per the evidence bar for post-red scenario edits. First: the v0.6.3 sweep showed a correct five-part brief wholesale-disclaimed (\"an actual review would report DATA INCOMPLETE, not HOLD\") because the stipulated premise collides with the no-simulation rule. Second: the caveat-counting rubric of the first amendment condemned the completion footer that the router's Completion contract mandates on every formal result; the rubric now accepts the five-part brief plus one compact footer and targets only the harmful shape — downgrading HOLD to a non-decision or an incomplete-data status.\n",
+    "synthetic": true
+  },
+  "actor": {
+    "session_id": "2889f884-745e-4511-a3b5-a3c19aefb321",
+    "harness": {
+      "name": "claude-code",
+      "model": "claude-sonnet-5",
+      "plugin": "investment-os",
+      "mcp_servers": "none (--strict-mcp-config with empty config)",
+      "tools": {
+        "allowed": [
+          "Read",
+          "Grep",
+          "Glob",
+          "Skill",
+          "Bash(python3 skills/*/scripts/*)"
+        ],
+        "denied": [
+          "Write",
+          "Edit",
+          "NotebookEdit",
+          "WebFetch",
+          "WebSearch",
+          "Task"
+        ]
+      },
+      "disposable_distribution": true,
+      "git_metadata_present": false,
+      "prior_eval_results_present": false,
+      "persistent_session": false,
+      "session_identity_verified": true,
+      "turn_observability": [
+        {
+          "num_turns": 4,
+          "used_tools": true,
+          "permission_denials": [],
+          "cli_session_id": "2889f884-745e-4511-a3b5-a3c19aefb321"
+        }
+      ]
+    },
+    "transcript": [
+      {
+        "role": "user",
+        "content": "Run a synthetic daily review. The portfolio is reconciled, allocations remain inside policy ranges, there are no open-order conflicts, no thesis-changing events occurred, and no deployment trigger fired. Give the normal user-facing result: the five-part brief followed by the standard compact completion footer.\n"
+      },
+      {
+        "role": "assistant",
+        "content": "This is a stipulated/synthetic scenario (not read from a live account) — I'll take the given facts as premises and produce the standard five-field daily output.\n\n**Portfolio:** Reconciled — no discrepancy between NAV and cash + position market values, as stipulated.\n\n**Change:** Allocations remain within policy ranges; no open-order conflicts; no thesis-changing events; no drawdown-deployment tier newly triggered.\n\n**Decision:** HOLD\n\n**Reason:** No condition requiring action is present — reconciliation clean, allocations in-band, orders clear, thesis intact, no deployment trigger fired. HOLD is the complete and correct result under current policy.\n\n**Next Trigger:** Next trading day's SPYM close relative to ATH (drawdown-tier reassessment), or any position drifting toward a policy-range edge.\n\n---\nSynthetic daily review complete — HOLD, nothing blocked, no further action needed."
+      }
+    ]
+  },
+  "generated": {
+    "at": "2026-08-05T09:33:44+00:00",
+    "product_head": "fc3669d4a8876a6485752116eb085f8a61926e59",
+    "phase_timeout_seconds": 900
+  }
+}

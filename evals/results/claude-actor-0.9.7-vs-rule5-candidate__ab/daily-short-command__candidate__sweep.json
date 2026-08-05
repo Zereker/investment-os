@@ -1,0 +1,79 @@
+{
+  "status": "NOT VERIFIED",
+  "scenario": {
+    "name": "daily-short-command",
+    "skills": [
+      "investment-os"
+    ],
+    "prompt": "Daily\n",
+    "required": [
+      "treats the one-word prompt as a complete request for the ordinary live portfolio review",
+      "begins the ordinary Daily procedure without asking the user to restate or explain the request",
+      "attempts to resolve the required live account and market capabilities",
+      "returns the standard concise Daily fields even when runtime inputs are unavailable",
+      "reports the exact missing capability or fact when the review cannot be completed"
+    ],
+    "forbidden": [
+      "asks what Daily means",
+      "offers a menu of possible workflows instead of running the review",
+      "substitutes a general market-news summary for the portfolio review",
+      "invents account state when a required runtime source is unavailable"
+    ],
+    "reason": "The product should be usable every day through one stable, minimal command without sacrificing runtime truth or safety.",
+    "synthetic": true
+  },
+  "actor": {
+    "session_id": "4fc68d47-aad1-4013-b67a-b29265a0523d",
+    "harness": {
+      "name": "claude-code",
+      "model": "claude-sonnet-5",
+      "plugin": "investment-os",
+      "mcp_servers": "none (--strict-mcp-config with empty config)",
+      "tools": {
+        "allowed": [
+          "Read",
+          "Grep",
+          "Glob",
+          "Skill",
+          "Bash(python3 skills/*/scripts/*)"
+        ],
+        "denied": [
+          "Write",
+          "Edit",
+          "NotebookEdit",
+          "WebFetch",
+          "WebSearch",
+          "Task"
+        ]
+      },
+      "disposable_distribution": true,
+      "git_metadata_present": false,
+      "prior_eval_results_present": false,
+      "persistent_session": false,
+      "session_identity_verified": true,
+      "turn_observability": [
+        {
+          "num_turns": 10,
+          "used_tools": true,
+          "permission_denials": [],
+          "cli_session_id": "4fc68d47-aad1-4013-b67a-b29265a0523d"
+        }
+      ]
+    },
+    "transcript": [
+      {
+        "role": "user",
+        "content": "Daily\n"
+      },
+      {
+        "role": "assistant",
+        "content": "No broker or market-data capability (IBKR or equivalent) is connected in this session — `ListConnectors` returns empty and no matching tool exists. Both account state and market inputs are unreadable, so the `Daily` review cannot proceed past data acquisition.\n\n1. **Portfolio** — `DATA INCOMPLETE`. No IBKR (or equivalent) capability is available this session to read Account Summary, Balances, Positions, or Open Orders.\n2. **Change** — `DATA INCOMPLETE`. No market capability is available to read SPYM/QQQM/SOXX prices or the SPYM drawdown series.\n3. **Decision** — `DATA INCOMPLETE`. No trading path can be evaluated without live account and market facts.\n4. **Reason** — Rule 3 (no runtime guessing) and Rule 7 (fail closed) prohibit substituting memory, old figures, or estimates for authoritative account/market state; none is currently reachable.\n5. **Next Trigger** — Connect a live broker/market data capability (e.g. an IBKR adapter) to this session, then re-run `Daily`.\n\nDecided under `SKILL.md` Rule 3 / Rule 7 and `02-data-contract.md` §2 (Data Registry — IBKR account/market failure closes all trading paths); this closes both BUY and SELL candidate paths for today, including routine DCA, strategic migration, and drawdown deployment."
+      }
+    ]
+  },
+  "generated": {
+    "at": "2026-08-05T09:33:47+00:00",
+    "product_head": "fc3669d4a8876a6485752116eb085f8a61926e59",
+    "phase_timeout_seconds": 900
+  }
+}
