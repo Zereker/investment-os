@@ -13,10 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CONSTITUTION = "skills/investment-os/references/00-constitution.md"
 sys.path.insert(0, str(ROOT / "skills" / "investment-os" / "scripts"))
 
-# Four explicit per-ticker targets summing to 100%. The former 57% sleeve
-# (SPYM + SOXX actual + stage reserve) and its A_basis / U derivations are gone:
-# once A_stage was pinned at a constant the sleeve had no remaining degree of
-# freedom, so it only obscured what the SPYM target actually was.
+# Four explicit per-ticker targets summing to 100%.
 TARGETS = {"cash": 0.15, "spym": 0.50, "qqqm": 0.30, "soxx": 0.05}
 # Bands are disclosure and transition-completion criteria, NOT no-trade zones:
 # routine DCA still buys any positive gap with no threshold. SOXX has no band —
@@ -27,11 +24,9 @@ CASH_TARGET = TARGETS["cash"]
 # describes state (a market move may carry cash to 10%); the floor constrains
 # trades (routine buying must not drive cash under it).
 NORMAL_CASH_FLOOR = 0.12
-# Each tier releases a FIXED tranche of NAV. The older "deploy everything above
-# a floor" shape dumped the whole band into the first tier, which is exactly
-# what tranching exists to prevent. Four tiers ending at 25%, GRADED 1:2:3:4 so
-# the first shot stays small while the money lands at the deepest entries, and
-# the ladder spends the cash out entirely.
+# Each tier releases a FIXED tranche of NAV, graded 1:2:3:4 so the first shot
+# stays small while most of the money lands at the deepest entries. The four
+# tranches sum to the cash target, so the ladder spends the cash out entirely.
 DRAWDOWN_TIERS = ((0.10, 0.0150), (0.15, 0.0300), (0.20, 0.0450), (0.25, 0.0600))
 DRAWDOWN_TRIGGERS = tuple(t for t, _ in DRAWDOWN_TIERS)
 TIER_NAMES = ("T1", "T2", "T3", "T4")
@@ -158,8 +153,7 @@ def load_runtime_module(rel_path: str):
 
 def mirror_tests() -> None:
     """Compare the ACTUAL constants of the shipped runtime modules against the
-    canonical values above. This replaces the old first-and-last-line string
-    pins, which could not see a corrupted middle tier."""
+    canonical values above, so a corrupted middle tier cannot slip through."""
     monthly = load_runtime_module(
         "skills/investment-os/scripts/monthly_execution.py")
     tiers = tuple((trigger, tranche) for trigger, _name, tranche in monthly.TIERS)
@@ -212,10 +206,9 @@ def frozen_state_gate() -> None:
     """
     frozen_state = re.compile(
         r"(?:实际权重|当前权重|持仓权重|A_actual)[^。\n]{0,12}?(?:约|≈|大约)\s*\d+(?:\.\d+)?\s*%")
-    for path in (CONSTITUTION, "Decision-Log.md"):
-        hit = frozen_state.search(read(path))
-        if hit:
-            raise AssertionError(f"{path}: frozen weight observation: {hit.group()!r}")
+    hit = frozen_state.search(read(CONSTITUTION))
+    if hit:
+        raise AssertionError(f"{CONSTITUTION}: frozen weight observation: {hit.group()!r}")
 
 
 def main() -> None:

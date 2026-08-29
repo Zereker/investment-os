@@ -2,9 +2,9 @@
 """Compute the month's funding decision from live account inputs — an executable
 mirror of the published funding rules.
 
-Why this exists: every month the funding computation was hand-derived from the docs, which is slow
-(the target is 20 minutes) and lets two agents reach two different answers. This
-closes that gap: same inputs -> same answer, every time.
+Why this exists: hand-deriving the funding computation from the docs is slow
+(the target is 20 minutes) and lets two agents reach two different answers.
+This closes that gap: same inputs -> same answer, every time.
 
 Mirrors (any divergence from these files is a BUG in this script, not a new rule):
   skills/investment-os/references/00-constitution.md       targets, bands, cash floor, tiers
@@ -50,9 +50,8 @@ HISTORY_API = "https://stockanalysis.com/api/symbol/e/{sym}/history?range=10Y&pe
 
 # --- Constitution constants. Changing these here changes nothing in the rules;
 # --- they must be edited in 00-constitution.md first (red line 5).
-# Four explicit per-ticker targets summing to 100%. There is no sleeve, no
-# A_basis and no stage reserve: SOXX is an ordinary holding whose gap is funded
-# by the same channels as the others.
+# Four explicit per-ticker targets summing to 100%. SOXX is an ordinary
+# holding whose gap is funded by the same channels as the others.
 TARGETS = {"cash": 0.15, "spym": 0.50, "qqqm": 0.30, "soxx": 0.05}
 # Bands are disclosure and transition-completion criteria, NOT no-trade zones.
 # SOXX has no band; its criterion is a closed gap.
@@ -60,11 +59,10 @@ BANDS = {"cash": (0.10, 0.20), "spym": (0.45, 0.55), "qqqm": (0.25, 0.35)}
 TICKERS = ("spym", "qqqm", "soxx")
 CASH_TARGET = TARGETS["cash"]
 CASH_FLOOR = 0.12   # risk constraint on trades, not the lower band edge
-# Each tier releases a FIXED tranche of NAV rather than "all cash above a
-# floor" — that older shape dumped the whole band in the first tier, which is
-# what tranching is meant to prevent. Four tiers ending at 25%, GRADED 1:2:3:4:
-# the first shot stays small while most of the money lands at the deepest,
-# best-priced entries. The ladder spends the cash out entirely.
+# Each tier releases a FIXED tranche of NAV, graded 1:2:3:4: the first shot
+# stays small while most of the money lands at the deepest, best-priced
+# entries. The four tranches sum to the cash target, so the ladder spends the
+# cash out entirely.
 TIERS = ((0.10, "T1", 0.0150),
          (0.15, "T2", 0.0300),
          (0.20, "T3", 0.0450),
@@ -425,8 +423,7 @@ def self_test() -> None:
     assert months_remaining(date(2029, 6, 1)) == 1, "R must floor at 1 past the plan end"
     assert months_remaining(date(2026, 8, 1)) == 29, "R miscounted"
 
-    # 10. SOXX is an ordinary holding: its gap is funded by the same channels,
-    # with no look-through gate, no execution cap and no separate restore path.
+    # 10. SOXX is an ordinary holding: its gap is funded by the same channels.
     r = compute(100_000, 20_000, 50_000, 30_000, 2_000, 5_000, 0.0, set(), d0)
     assert abs(r["gaps"]["soxx"] - 3_000) < 1e-6, f"SOXX gap miscomputed: {r['gaps']}"
     assert abs(r["d_alloc"]["soxx"] - 3_000) < 1e-6, \
@@ -484,8 +481,8 @@ def main() -> int:
                     help="权威订单核查结果；只有 clear 允许月度候选，省略即 unknown 并失败关闭")
     ap.add_argument("--today", default=None, help="计算 R 用的日期 YYYY-MM-DD（默认今天）")
     ap.add_argument("--self-test", action="store_true", help="校验算术是否镜像规则")
-    # parse_args, not parse_known_args: a retired flag (--lookthrough-current)
-    # must fail loudly rather than be silently swallowed by the caller.
+    # parse_args, not parse_known_args: an unrecognized flag must fail loudly
+    # rather than be silently swallowed by the caller.
     args = ap.parse_args()
     if args.self_test:
         self_test()

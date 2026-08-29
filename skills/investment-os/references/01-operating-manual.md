@@ -300,7 +300,7 @@ python3 skills/investment-os/scripts/monthly_execution.py \
 2. 明确的问题陈述；
 3. 新规则优于旧规则的证据；
 4. 对税务、成本和行为风险的评估；
-5. Decision Log 记录及新 Release 说明。
+5. 随新 Release 发布，变更理由记录在该次提交与 PR 中。
 
 ### 年度输出
 

@@ -75,7 +75,7 @@ def copy_distribution(source: Path, destination: Path) -> None:
         }
         relative = Path(directory).resolve().relative_to(source)
         if relative == Path("."):
-            omitted.update({".github", "evals", "scripts", "tests", "AGENTS.md", "Decision-Log.md"})
+            omitted.update({".github", "evals", "scripts", "tests", "AGENTS.md"})
         return omitted
 
     shutil.copytree(source, destination, ignore=ignored)
