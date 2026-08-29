@@ -2,11 +2,10 @@ name: Auto tag release versions
 
 # Every released `.plugin-version` gets an annotated tag `v<version>` at the
 # first-parent master commit that introduced it — the tag maps a distribution
-# version to its source commit (see Decision-Log, standing decisions). Runs on
-# every push to master to tag the newly merged version, and on manual dispatch
-# to backfill any missing historical tags from git history. Versions below
-# 0.5.0 predate the plugin-native layout, were never released, and stay
-# untagged by decision (Decision-Log 2026-08-02).
+# version to its source commit. Runs on every push to master to tag the newly
+# merged version, and on manual dispatch to backfill any missing historical
+# tags from git history. Versions below 0.5.0 predate the plugin-native layout,
+# were never released, and stay untagged.
 
 on:
   push:
