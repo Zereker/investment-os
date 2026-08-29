@@ -34,6 +34,9 @@
 | 各标的实际权重与正缺口 | IBKR 市值 / Net Liquidation + 宪法目标权重 | 无 | 每次巡检 | Green（Derived） | 失败则配置计算关闭 |
 | Routine Gap / Purchase \(G_0,D_{max},D\) | 实时 IBKR 数据 + 月度流程 | 无 | 每月 | Green（Derived） | \(D_{max}=\min(F,G_0)\) |
 | SPYM 历史最高收盘与回撤 `DD` | IBKR 历史收盘 | State Street 官方净值序列 | 每次巡检 | Green | 驱动回撤部署分档；数据失败则当日不评估分档，不影响其他路径 |
+| VIX 日收盘 | IBKR 历史收盘 | CBOE 官网 | 每次巡检 | Green | 定义波动日（≥20）供限价单偏好；不进入任何资金闸门 |
+| SPX PE-TTM 与月度历史 | multpl（GAAP as-reported） | 无 | 每次巡检 | Green | **只作披露**；口径必须随数值记录，不同口径不得混算分位 |
+| CNN 恐慌贪婪 | CNN dataviz 接口 | 无 | 每次巡检 | Green | **只作披露**；直接用接口的 `rating`，不自行按数字套档 |
 | SPYM Price | IBKR | State Street SPYM 官方页 | 每次巡检 | Green | 标记价格时间戳 |
 | QQQM Price | IBKR | Invesco QQQM 官方页 | 每次巡检 | Green | 标记价格时间戳 |
 | SOXX Price | IBKR | iShares SOXX 官方页 | 每次巡检 | Green | 标记价格时间戳 |
@@ -88,6 +91,7 @@ Red 数据不得进入依赖该字段的计算。**影响必须按字段局部�
 
 - IBKR 账户、持仓或订单为 Red：全部交易路径关闭，结论 `DATA INCOMPLETE`。
 - SPYM 历史最高收盘序列为 Red：当日不评估回撤部署分档，已执行档位记录不变。
+- 市场背景任一字段为 Red 或不可达：该字段记「缺（原因）」，不阻断任何路径——它本就不是任何闸门的输入。
 
 ### 每次事实读取必须包含
 
