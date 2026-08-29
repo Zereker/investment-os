@@ -24,7 +24,7 @@ Account Summary；Balances；Positions；Open Orders；当前市场输入与回�
 4. **Open Orders Gate**：权威订单状态必须明确为 `clear`；
 5. **Contribution Gate**：本月实际外部净入金 `F` 已由权威来源确认；
 6. **Drawdown State Gate**：回撤值使用小数、档位状态和已执行集合可验证；
-7. **Policy Gate**：现行宪法与转型计划可读取且无冲突。
+7. **Policy Gate**：现行宪法可读取且无冲突。
 
 任一项失败：`DATA INCOMPLETE / HOLD`，并停止新的月度候选。
 
@@ -80,13 +80,18 @@ Account Summary；Balances；Positions；Open Orders；当前市场输入与回�
 python3 skills/investment-os/scripts/monthly_execution.py \
   --nav <NetLiq> --cash <TotalCash> \
   --spym <MarketValue> --qqqm <MarketValue> --soxx <MarketValue> \
+  --legacy <Legacy 持仓合计> \
   --contribution <AuthoritativeF> \
-  --dd <DecimalDrawdown> \
+  --dd <DecimalDrawdown> --dd-as-of <收盘日期> \
   --tiers-executed <none|T1|T1,T2...> \
   --open-orders-status clear
 ```
 
 输入缺失、单位错误、账户不对账、订单状态未知或冲突时，CLI 必须非零退出并输出 `DATA INCOMPLETE`。
+
+`--legacy` 是 Legacy / Out-of-Universe 持仓的市值合计。它**必须**传（有就传，没有留 0）——Legacy 也是持仓，漏掉它对账等式就不成立，账户会被永久卡住。它只进对账与披露，不产生目标、缺口或任何通道资金。
+
+`--dd` 由会话从 IBKR 收盘序列取得后传入，脚本自身不联网；必须同时传 `--dd-as-of`，否则无法确认新鲜度，本月不评估分档。
 
 ### 11. Completion Conditions
 
@@ -154,7 +159,7 @@ B=\min\left(\frac{S}{R},G\right)
 - 下跌本身不是买入理由；回撤部署的理由是「到档」。
 - 不预测最低点，不得把多档合并成一笔判断性下注。
 - 弹药在 `DD` 25% 处按设计打光。此后继续下跌时不得临时创造新档、不得借款。
-- 波动日优先限价单；市价单仅在流动性充足、点差极小且即时成交确有必要时使用。
+- **波动日**（VIX 最后收盘 ≥ 20）优先限价单；市价单仅在流动性充足、点差极小且即时成交确有必要时使用。VIX 只影响订单类型，不改变买不买、买多少——那些仍完全由公式决定。VIX 取不到时按波动日处理（限价单更保守）。
 - 每次例行执行在当前私有会话报告 \(F,V,C_0,G_0,D,C,R,S,G,B\) 和交易后权重。
 - 每次回撤部署额外报告 `DD`、档位与周期状态；成交事实由券商保留。
 - 买入后不因短期反弹追单，也不因继续下跌立即推翻原规则。
@@ -168,6 +173,8 @@ B=\min\left(\frac{S}{R},G\right)
 | 是否位于带宽内 | 待计算 | 待计算 | 不适用 |
 | 正缺口 | 待计算 | 待计算 | 待计算 |
 | 基线分配 | 待计算 | 待计算 | 待计算 |
+
+月度输出同样附 `01-daily.md` 的市场背景块（同一脚本、同一围栏：只作披露，不进入任何闸门）。
 
 另需披露：SPYM 历史最高收盘回撤 `DD` 与各档状态、\(F,V,C_0,G_0,D,C,R,S,G,B\)、回撤部署记录、现金比例与是否位于带宽内、融资借款、未完成订单，以及 Legacy / Out-of-Universe 持仓状态。
 

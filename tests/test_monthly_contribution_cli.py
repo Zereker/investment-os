@@ -19,7 +19,7 @@ BASE_ARGS = [
     "--spym", "51000",
     "--qqqm", "28000",
     "--soxx", "6000",
-    "--dd", "0",
+    "--dd", "0", "--dd-as-of", "2026-08-28",
     "--tiers-executed", "none", "--open-orders-status", "clear",
 ]
 

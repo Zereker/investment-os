@@ -9,6 +9,23 @@
 
 PR CI validates scenario definitions and the eval harness integrity. It uses synthetic fixture processes to prove that missing verification cannot produce a pass, that actor-only mode remains `NOT VERIFIED`, that multi-turn transcripts remain intact, and that only a schema-valid independent verifier can produce `VERIFIED PASS`. CI does not launch Claude Code or Codex and does not establish their behavioral coverage.
 
+## Actor contamination
+
+The actor runs a real CLI, and in a managed environment that CLI is handed the
+account's own skills. Nothing isolates them: an empty `--mcp-config` removes the
+broker as intended, `HOME` and `CLAUDE_CONFIG_DIR` overrides leave the injected
+skills in place, and `--disable-slash-commands` removes the plugin under test
+while leaving the injected ones — measured, not assumed.
+
+So contamination is detected rather than prevented. `run.py` scans what the
+actor said for another wealth policy's vocabulary and reports `CONTAMINATED`
+instead of a result. A transcript that reasoned from a different policy says
+nothing about this skill, and this suite already refuses to let a missing
+verifier produce a pass; a foreign policy in the reasoning is the same defect.
+
+A run in that state is not a failure of the skill. Remove the competing policy
+from the actor's account, or make it defer, and re-run.
+
 ## Scenario model
 
 Each scenario contains:

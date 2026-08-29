@@ -250,8 +250,27 @@ def self_test() -> None:
     print("alert pointer self-test: PASS")
 
 
+USAGE_EPILOG = """\
+The check reads one JSON object on stdin — there are no input flags:
+
+  {"ath_close": 91.56,                       # all-time-high CLOSE, not intraday
+   "tiers_executed": ["T1"],                 # [] when the cycle has just reset
+   "alert_inventory_status": "available",    # available|unavailable|stale|conflicting
+   "alerts": [{"symbol": "SPYM", "field": "LAST", "operator": "LTE",
+               "price": 82.40, "enabled": true, "id": "..."}]}
+
+An inventory that is not "available" must omit alerts rather than send an empty
+list: "the broker did not answer" and "the broker answered, nothing is set" are
+different states and only the second is a fact.
+
+  python3 alert_pointer_check.py < pointer.json
+"""
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        epilog=USAGE_EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
     if args.self_test:

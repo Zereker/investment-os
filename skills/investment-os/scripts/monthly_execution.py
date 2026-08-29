@@ -18,6 +18,7 @@ Hard boundaries this script will not cross:
     never in the repo (public-repo privacy red line).
   - It NEVER invents inputs. Positions and NAV must come from IBKR; a missing
     input yields DATA INCOMPLETE, not a guess.
+  - It NEVER reaches the network. Prices and account state arrive as arguments.
   - Which drawdown tiers already fired this cycle cannot be derived from price.
     Pass --tiers-executed; omitting it makes the script say so rather than assume.
   - This month's actual external contribution F cannot be derived from positions.
@@ -31,22 +32,18 @@ Usage (figures come from IBKR, in account currency; they are never persisted):
   # already deployed T1 earlier in this drawdown cycle:
   python3 skills/investment-os/scripts/monthly_execution.py ... --tiers-executed T1
 
-  # skip the network call for the drawdown check (offline / IBKR series preferred):
-  python3 skills/investment-os/scripts/monthly_execution.py ... --dd 0.0
+  # DD comes from the IBKR close series the session read; omit it and tiers are
+  # simply not evaluated today:
+  python3 skills/investment-os/scripts/monthly_execution.py ... --dd 0.0108 --dd-as-of 2026-08-28
 """
 
 from __future__ import annotations
 
 import argparse
-import json
 import sys
-import urllib.request
 from datetime import date
 
 from account_reconciliation import reconcile_nav  # noqa: E402
-
-UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-HISTORY_API = "https://stockanalysis.com/api/symbol/e/{sym}/history?range=10Y&period=Daily"
 
 # --- Constitution constants. Changing these here changes nothing in the rules;
 # --- they must be edited in 00-constitution.md first (red line 5).
@@ -75,8 +72,12 @@ PLAN_END = (2028, 12)  # strategic baseline planned completion month
 # the lump sum the tranching rules forbid, and worst in the drawdown that
 # creates the excess. Past the plan end the baseline rolls over 12 months.
 MIN_MONTHS_REMAINING = 12
-# A fetched close older than this cannot define today's drawdown tier; the
-# registry localizes the failure: a stale series only pauses tier evaluation.
+# DD is not fetched here. The registry names IBKR the source for the SPYM close
+# series, and only the session can reach it; a script that quietly pulled an
+# aggregator instead would be sourcing a tier trigger from an unregistered feed.
+# The session reads the series, derives DD (market_context.py does this), and
+# passes it with its as-of date. No --dd means tiers are not evaluated today —
+# the registry localizes that failure and leaves every other path running.
 MAX_DD_AGE_DAYS = 7
 
 
@@ -91,29 +92,12 @@ def months_remaining(today: date) -> int:
 
 
 def dd_series_is_fresh(last_day: str, today: date) -> bool:
-    """True when the series' last close is recent enough to define today's tier."""
+    """True when the supplied close is recent enough to define today's tier."""
     try:
         last = date.fromisoformat(str(last_day)[:10])
     except ValueError:
         return False
     return 0 <= (today - last).days <= MAX_DD_AGE_DAYS
-
-
-def fetch_drawdown(symbol: str = "spym") -> tuple[float, str, str]:
-    """Return (DD, as_of, ath_date) from the aggregator daily closes."""
-    url = HISTORY_API.format(sym=symbol)
-    with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=30) as resp:
-        rows = json.loads(resp.read().decode()).get("data")
-    if not rows:
-        raise RuntimeError(f"no history for {symbol}")
-    series = sorted((r["t"], float(r["c"])) for r in rows)
-    ath = 0.0
-    ath_date = series[0][0]
-    for day, close in series:
-        if close > ath:
-            ath, ath_date = close, day
-    last_day, last_close = series[-1]
-    return (ath - last_close) / ath, last_day, ath_date
 
 
 def tier_release(dd: float, executed: set[str]) -> tuple[float, list[str]]:
@@ -153,7 +137,7 @@ def within_band(name: str, weight: float) -> bool | None:
     return low - 1e-12 <= weight <= high + 1e-12
 
 
-def portfolio_state(nav, cash, spym, qqqm, soxx, today):
+def portfolio_state(nav, cash, spym, qqqm, soxx, today, legacy=0.0):
     """Return allocation facts that remain valid before funding inputs exist.
 
     Daily review uses this subset when a broker capability is unavailable. It
@@ -169,6 +153,7 @@ def portfolio_state(nav, cash, spym, qqqm, soxx, today):
     gaps = {name: max(targets_usd[name] - values[name], 0.0) for name in TICKERS}
     return {
         "values": values,
+        "legacy": legacy,
         "weights": weights,
         "targets_usd": targets_usd,
         "gaps": gaps,
@@ -205,9 +190,10 @@ def routine_channels(nav, cash, state, contribution):
     }
 
 
-def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed, today):
+def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed, today,
+            legacy=0.0):
     """Everything the monthly workflow needs. Pure function of its inputs."""
-    state = portfolio_state(nav, cash, spym, qqqm, soxx, today)
+    state = portfolio_state(nav, cash, spym, qqqm, soxx, today, legacy)
     routine = routine_channels(nav, cash, state, contribution)
 
     b_alloc = routine["b_alloc"]
@@ -238,7 +224,7 @@ def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed, today):
         "weights": state["weights"],
         "values": state["values"],
         "targets_usd": state["targets_usd"],
-        "gaps": state["gaps"], "g0": state["g0"],
+        "gaps": state["gaps"], "g0": state["g0"], "legacy": legacy,
         "d": routine["d"], "d_alloc": routine["d_alloc"],
         "cash_after_d": routine["cash_after_d"], "g": routine["g"],
         "r": state["r"], "s": routine["s"],
@@ -281,6 +267,11 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
         if ok is False:
             issues_note = f"{name.upper()} 权重 {res['weights'][name]:.2%} 位于带宽外"
             print(f"           ** {issues_note} —— 披露项，不阻断例行路径 **")
+    if res.get("legacy", 0.0) > 0:
+        print(f"  {'LEGACY':<8}{res['legacy']/nav:>8.2%}{'—':>9}{'不适用':>15}"
+              f"{'不适用':>12}{'—':>11}")
+        print(f"           ** Legacy / Out-of-Universe —— 只披露、只持有，"
+              f"不进目标缺口、不获得任何通道资金、不自动卖出 **")
     cash_ok = within_band("cash", res["weights"]["cash"])
     cband = BANDS["cash"]
     print(f"  {'CASH':<8}{res['weights']['cash']:>8.2%}{TARGETS['cash']:>9.0%}"
@@ -293,7 +284,7 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
         print("  DD 不可得 → 本月不评估分档（不影响 D / B）")
         issues.append("回撤序列不可得：当日不评估分档")
     else:
-        print(f"  SPYM DD = {dd:.2%}  (收盘 {dd_as_of}，ATH {ath_date})")
+        print(f"  SPYM DD = {dd:.2%}  (收盘 {dd_as_of}，ATH收盘 {ath_date})")
         if not tiers_known:
             print("  ** 未提供 --tiers-executed：无法确认本周期各档是否已执行 **")
             print("     按 05-state.md 第 4 步用成交记录重建后重跑")
@@ -451,7 +442,23 @@ def self_test() -> None:
     assert r["d"] == 0.0 and r["g0"] == 0.0, "nothing to buy when every ticker is at or above target"
     assert all(v >= 0.0 for v in r["gaps"].values()), "a gap must never go negative"
 
-    # 12. a stale fetched series must not define today's tier
+    # 11b. a Legacy holding reconciles but never receives funding and never
+    # creates a target or a gap — otherwise any account holding one is stuck.
+    from account_reconciliation import reconcile_nav as _rec
+    # the Legacy leg must be large enough that dropping it breaches the 0.5%
+    # tolerance, or the fixture proves nothing
+    assert _rec(100_000, 20_000, (50_000, 28_000, 1_000, 1_000)).passed, \
+        "Legacy must be able to close the reconciliation equation"
+    assert not _rec(100_000, 20_000, (50_000, 28_000, 1_000)).passed, \
+        "fixture must actually depend on the Legacy leg"
+    plain = compute(100_000, 20_000, 50_000, 28_000, 1_000, 5_000, 0.0, set(), d0)
+    withleg = compute(100_000, 20_000, 50_000, 28_000, 1_000, 5_000, 0.0, set(), d0,
+                      legacy=1_000)
+    for key in ("d", "b", "dd_amount", "g0"):
+        assert abs(plain[key] - withleg[key]) < 1e-9, f"Legacy displaced {key}"
+    assert set(withleg["gaps"]) == set(TICKERS), "Legacy must not appear as a gap"
+
+    # 12. a stale supplied close must not define today's tier
     assert dd_series_is_fresh("2026-07-30", date(2026, 8, 1)), "2-day-old close wrongly stale"
     assert dd_series_is_fresh("2026-07-25", date(2026, 8, 1)), "boundary 7-day close wrongly stale"
     assert not dd_series_is_fresh("2026-07-24", date(2026, 8, 1)), "8-day-old close wrongly fresh"
@@ -487,10 +494,16 @@ def main() -> int:
     ap.add_argument("--spym", type=float, help="SPYM 市值")
     ap.add_argument("--qqqm", type=float, help="QQQM 市值")
     ap.add_argument("--soxx", type=float, default=0.0, help="SOXX 市值")
+    ap.add_argument("--legacy", type=float, default=0.0,
+                    help="Legacy / Out-of-Universe 持仓市值合计。进入对账，但不参与目标、缺口或任何资金通道")
     ap.add_argument("--contribution", type=float, default=None,
                     help="F：本月已到账外部净入金；无入金也须显式传 0（省略即 DATA INCOMPLETE，不静默按 F=0）")
     ap.add_argument("--dd", type=float, default=None,
-                    help="SPYM 相对历史最高收盘的回撤（小数）。省略则联网自取")
+                    help="SPYM 相对历史最高收盘的回撤（小数），来自 IBKR 收盘序列。省略则本月不评估分档")
+    ap.add_argument("--dd-as-of", default=None,
+                    help="该回撤对应的最后一个已完成日线收盘日期 YYYY-MM-DD")
+    ap.add_argument("--ath", type=float, default=None,
+                    help="该回撤所依据的历史最高收盘。只作披露，使输出可反查 DD 的基准")
     ap.add_argument("--tiers-executed", default=None,
                     help="本回撤周期内已执行的档位，逗号分隔，如 T1 或 T1,T2；无则填 none")
     ap.add_argument("--open-orders-status", choices=("clear", "conflicting", "unknown"), default="unknown",
@@ -507,7 +520,7 @@ def main() -> int:
     missing = [f for f in ("nav", "cash", "spym", "qqqm") if getattr(args, f) is None]
     if missing:
         ap.error(f"缺少必填输入 {', '.join('--' + m for m in missing)}（或用 --self-test）")
-    for name in ("nav", "cash", "spym", "qqqm", "soxx"):
+    for name in ("nav", "cash", "spym", "qqqm", "soxx", "legacy"):
         if getattr(args, name) < 0:
             print(f"DATA INCOMPLETE: {name} 不能为负", file=sys.stderr)
             return 2
@@ -525,7 +538,12 @@ def main() -> int:
             file=sys.stderr,
         )
         return 2
-    reconciliation = reconcile_nav(args.nav, args.cash, (args.spym, args.qqqm, args.soxx))
+    # Legacy holdings are positions: leaving them out of the equation makes any
+    # account that holds one fail reconciliation permanently. They reconcile,
+    # and they do nothing else — no target, no gap, no channel (00-constitution
+    # part 2 section 3: disclose separately, never fold into a production ticker).
+    reconciliation = reconcile_nav(
+        args.nav, args.cash, (args.spym, args.qqqm, args.soxx, args.legacy))
     if not reconciliation.passed:
         print(f"DATA INCOMPLETE: {reconciliation.issue}", file=sys.stderr)
         return 2
@@ -539,22 +557,17 @@ def main() -> int:
 
     today = date.fromisoformat(args.today) if args.today else date.today()
 
-    dd, dd_as_of, ath_date = args.dd, "手工传入", "—"
+    dd, dd_as_of, ath_date = args.dd, args.dd_as_of or "未标注", args.ath or "未提供"
     if dd is None:
-        try:
-            dd, dd_as_of, ath_date = fetch_drawdown()
-        except Exception as exc:
-            print(f"警告：回撤序列拉取失败（{exc}）——本月不评估分档，D / B 不受影响\n",
-                  file=sys.stderr)
-            dd = None
-        else:
-            print("提示：DD 来自聚合源（Yellow）；生产触发以 IBKR/官方序列的 --dd 为准",
-                  file=sys.stderr)
-            if not dd_series_is_fresh(dd_as_of, today):
-                print(f"警告：回撤序列最后收盘 {dd_as_of} 超过 {MAX_DD_AGE_DAYS} 天"
-                      "——按注册表局部化规则，本月不评估分档，D / B 不受影响\n",
-                      file=sys.stderr)
-                dd = None
+        print("提示：未提供 --dd —— 本月不评估回撤分档，D / B 不受影响\n", file=sys.stderr)
+    elif args.dd_as_of is None:
+        print("警告：提供了 --dd 但没有 --dd-as-of，无法确认收盘新鲜度"
+              "——本月不评估分档，D / B 不受影响\n", file=sys.stderr)
+        dd = None
+    elif not dd_series_is_fresh(args.dd_as_of, today):
+        print(f"警告：回撤对应收盘 {args.dd_as_of} 超过 {MAX_DD_AGE_DAYS} 天或日期无效"
+              "——按注册表局部化规则，本月不评估分档，D / B 不受影响\n", file=sys.stderr)
+        dd = None
 
     tiers_known = args.tiers_executed is not None
     executed = set()
@@ -571,7 +584,7 @@ def main() -> int:
     res = compute(args.nav, args.cash, args.spym, args.qqqm, args.soxx,
                   args.contribution if contribution_known else 0.0,
                   effective_dd if effective_dd is not None else 0.0,
-                  executed, today)
+                  executed, today, args.legacy)
     issues = report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
                     contribution_known)
     return 1 if issues else 0
