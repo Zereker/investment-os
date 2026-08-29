@@ -261,12 +261,12 @@ python3 skills/investment-os/scripts/monthly_execution.py \
 
 - 实时 IBKR Positions 与账户净值
 - 宪法第一部分战略结构表（四个目标与带宽）
-- 组合与 SB-2 的季度及滚动三年数据
+- 账户 TWR 与同期 SPYM 总收益的季度及滚动三年数据
 
 ### 检查项
 
 1. 现金、SPYM、QQQM 是否位于各自带宽内，SOXX 正缺口是否为 0；连续偏离须记录并列入年度审核。
-2. 实际组合相对 SB-2 的季度与滚动三年表现。
+2. SPYM 对照：账户 TWR 相对同期 SPYM 总收益的季度与滚动三年差异。
 3. SOXX 相对其所替代的等额同期 SPYM 的表现（含税费与时间成本）。
 4. 最大回撤与回撤部署周期状态（各档已执行/可用）。
 5. 是否存在 Legacy / Out-of-Universe 持仓，处置进度如何。
@@ -285,7 +285,7 @@ python3 skills/investment-os/scripts/monthly_execution.py \
 - 实际组合与目标组合的全年收益、回撤和波动差异。
 - QQQM 30% 是否继续实现预期的战略成长倾斜，而非因短期跑输被临时削减。
 - SOXX 5% 相对等额、同期 SPYM，是否在风险、税费和复杂度成本后创造净价值。
-- 实际组合相对 SB-2 的累计差异：整套系统是否值回成本。
+- SPYM 对照的累计差异：整套系统是否值回成本。
 - 回撤部署条款的全年触发与执行记录：现金职能是否真实兑现。
 - 各标的连续偏离带宽的记录及其原因。
 - 月度固定投入节奏和战略现金迁移基线是否仍可持续。
@@ -305,7 +305,7 @@ python3 skills/investment-os/scripts/monthly_execution.py \
 ### 年度输出
 
 - 年度评分：执行、风险、收益、复杂度四项。
-- SB-2 对比及 Transition / Legacy / 超额现金的独立归因。
+- SPYM 对照结果及 Transition / Legacy / 超额现金的独立归因。
 - 保留/修改/删除的规则清单。
 - 下一年度目标和投入能力。
 - 如有规则变化，发布新的次版本或主版本。
