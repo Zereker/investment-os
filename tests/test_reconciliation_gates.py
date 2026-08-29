@@ -28,7 +28,7 @@ def main() -> None:
         "--nav", "100000", "--cash", "95000", "--spym", "200000",
         "--qqqm", "0", "--soxx", "0", "--dd", "0.26",
         "--tiers-executed", "none", "--contribution", "1000",
-        "--lookthrough-current", "--open-orders-status", "clear",
+        "--open-orders-status", "clear",
         "--today", "2026-08-02",
     )
     assert impossible.returncode != 0
