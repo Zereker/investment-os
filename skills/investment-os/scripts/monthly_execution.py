@@ -284,7 +284,7 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
         print("  DD 不可得 → 本月不评估分档（不影响 D / B）")
         issues.append("回撤序列不可得：当日不评估分档")
     else:
-        print(f"  SPYM DD = {dd:.2%}  (收盘 {dd_as_of}，ATH {ath_date})")
+        print(f"  SPYM DD = {dd:.2%}  (收盘 {dd_as_of}，ATH收盘 {ath_date})")
         if not tiers_known:
             print("  ** 未提供 --tiers-executed：无法确认本周期各档是否已执行 **")
             print("     按 05-state.md 第 4 步用成交记录重建后重跑")
@@ -502,6 +502,8 @@ def main() -> int:
                     help="SPYM 相对历史最高收盘的回撤（小数），来自 IBKR 收盘序列。省略则本月不评估分档")
     ap.add_argument("--dd-as-of", default=None,
                     help="该回撤对应的最后一个已完成日线收盘日期 YYYY-MM-DD")
+    ap.add_argument("--ath", type=float, default=None,
+                    help="该回撤所依据的历史最高收盘。只作披露，使输出可反查 DD 的基准")
     ap.add_argument("--tiers-executed", default=None,
                     help="本回撤周期内已执行的档位，逗号分隔，如 T1 或 T1,T2；无则填 none")
     ap.add_argument("--open-orders-status", choices=("clear", "conflicting", "unknown"), default="unknown",
@@ -555,7 +557,7 @@ def main() -> int:
 
     today = date.fromisoformat(args.today) if args.today else date.today()
 
-    dd, dd_as_of, ath_date = args.dd, args.dd_as_of or "未标注", "—"
+    dd, dd_as_of, ath_date = args.dd, args.dd_as_of or "未标注", args.ath or "未提供"
     if dd is None:
         print("提示：未提供 --dd —— 本月不评估回撤分档，D / B 不受影响\n", file=sys.stderr)
     elif args.dd_as_of is None:

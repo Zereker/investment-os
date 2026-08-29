@@ -32,7 +32,33 @@ def run(*extra: str) -> subprocess.CompletedProcess[str]:
     )
 
 
+def contamination_gate_tests() -> None:
+    """A transcript reasoning from another wealth policy must not read as a
+    result about this skill. The environment hands the actor the account's
+    skills and no flag removes them, so the gate is the only defence."""
+    sys.path.insert(0, str(ROOT / "evals"))
+    from run import detect_foreign_policy
+
+    clean = [
+        {"role": "user", "content": "personal-wealth-policy 状态胶囊 三袖套"},
+        {"role": "assistant", "content": "DATA INCOMPLETE under investment-os Rule 3."},
+    ]
+    if detect_foreign_policy(clean):
+        raise AssertionError("markers in the USER prompt must not flag the actor")
+
+    dirty = [
+        {"role": "user", "content": "give me the monthly plan"},
+        {"role": "assistant", "content": "按快照方案（USER-SNAPSHOT PLAN），剩余迁移月数 3"},
+    ]
+    hits = detect_foreign_policy(dirty)
+    if "USER-SNAPSHOT" not in hits or "剩余迁移月数" not in hits:
+        raise AssertionError(f"foreign policy vocabulary went undetected: {hits}")
+
+    print("Eval contamination gate tests passed.")
+
+
 def main() -> None:
+    contamination_gate_tests()
     inherited = yaml.safe_load(NO_INHERITED.read_text(encoding="utf-8"))
     if "states that prior agent output is not approval" not in inherited["required"]:
         raise AssertionError("inherited-approval controls must remain independently observable")

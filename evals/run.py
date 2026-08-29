@@ -114,6 +114,33 @@ def normalize_turns(scenario: dict[str, Any]) -> list[dict[str, str]]:
     return [{"role": "user", "prompt": prompt}]
 
 
+# Policy vocabulary that belongs to some OTHER wealth-policy skill. The actor
+# runs a real CLI, and in a managed environment that CLI is handed the account's
+# skills — no flag isolates them: an empty --mcp-config removes the broker,
+# --disable-slash-commands removes the plugin under test while leaving the
+# injected ones. So contamination cannot be prevented here, only detected. A
+# transcript reasoning from another policy's constructs is not evidence about
+# this one, and this suite already refuses to let a missing verifier produce a
+# pass; a foreign policy in the reasoning is the same class of defect.
+FOREIGN_POLICY_MARKERS = (
+    "personal-wealth-policy",
+    "USER-SNAPSHOT",
+    "状态胶囊",
+    "剩余迁移月数",
+    "三袖套",
+)
+
+
+def detect_foreign_policy(transcript: list[dict[str, str]]) -> list[str]:
+    """Markers of another policy skill found in what the actor said."""
+    said = "\n".join(
+        str(item.get("content", ""))
+        for item in transcript
+        if isinstance(item, dict) and item.get("role") == "assistant"
+    )
+    return [m for m in FOREIGN_POLICY_MARKERS if m in said]
+
+
 def validate_actor_result(result: dict[str, Any], expected_turns: int) -> None:
     if not isinstance(result.get("session_id"), str) or not result["session_id"].strip():
         raise ValueError("actor result must include a non-empty session_id")
@@ -213,10 +240,18 @@ def main() -> None:
     except (RuntimeError, ValueError) as exc:
         raise SystemExit(f"Actor protocol failure: {exc}") from exc
 
+    # A transcript that reasoned from another wealth policy is not evidence
+    # about this one. Detected after the run because the environment offers no
+    # way to keep the account's skills out of the actor.
+    foreign = detect_foreign_policy(actor_result.get("transcript", []))
+
     payload: dict[str, Any] = {
-        "status": "NOT VERIFIED" if args.actor_only else "PENDING VERIFICATION",
+        "status": ("CONTAMINATED" if foreign
+                   else "NOT VERIFIED" if args.actor_only
+                   else "PENDING VERIFICATION"),
         "scenario": scenario,
         "actor": actor_result,
+        "foreign_policy_markers": foreign,
         # Provenance: stored results used to carry no timestamp or product
         # commit, so a stale file left by a failed run read as fresh evidence.
         "generated": {
@@ -225,6 +260,18 @@ def main() -> None:
             "phase_timeout_seconds": args.timeout,
         },
     }
+    if foreign:
+        persist(args.output, payload)
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
+        print(
+            "CONTAMINATED: the actor reasoned from another wealth policy — "
+            f"markers {foreign}. The result says nothing about this skill; "
+            "remove the competing policy from the actor's account, or make it "
+            "defer, and re-run.",
+            file=sys.stderr,
+        )
+        raise SystemExit(NOT_VERIFIED_EXIT)
+
     if args.actor_only:
         persist(args.output, payload)
         print(json.dumps(payload, indent=2, ensure_ascii=False))
