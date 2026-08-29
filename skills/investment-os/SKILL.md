@@ -64,11 +64,17 @@ The test: does this stop protect real money, or does it only avoid answering?
 
 ## Source of truth
 
-Resolve this installed distribution from this `SKILL.md`, never from the user's current working directory. Read only the numbered policy references needed for the task:
+Resolve this installed distribution from this `SKILL.md`, never from the user's current working directory. `references/00-constitution.md` carries the investment policy — targets, bands, universe, drawdown clause — and every task reads it. Read only the procedure files that task needs:
 
-- `references/00-constitution.md` — mandate, universe, allocation, and risk rules;
-- `references/01-operating-manual.md` — daily, monthly, periodic, and review procedures;
-- `references/02-data-contract.md` — required sources, freshness, and data gates.
+| Task | Also read |
+|---|---|
+| `Daily` | `01-daily.md`, `05-state.md` |
+| Monthly funding | `02-monthly.md`, `05-state.md`, `06-data-contract.md` |
+| Weekly, quarterly, annual review | `03-periodic.md` |
+| Transaction judgment, research, any non-routine action | `04-committee.md` |
+| Broker execution | `05-state.md`, `06-data-contract.md` |
+
+Reading a file the task does not need is waste, not diligence.
 
 The installed files are the session authority. Do not clone, fetch, or substitute another checkout at runtime. Use the capabilities actually available in the current harness; missing required capabilities block only the affected path.
 
@@ -100,7 +106,7 @@ Separate the recommendation under current policy from any proposal to change pol
 
 ### Research
 
-Research may challenge the policy, but it cannot enter production by implication. A new asset, indicator, exception, or rule requires a separate proposal, owner approval, policy change, executable checks when needed, and a released distribution.
+Research may challenge the policy, but it cannot enter production by implication. The investment universe is permanently closed: a new asset is not available through any process, however strong the case. A new indicator, exception, or rule requires a separate proposal, owner approval, policy change, executable checks when needed, and a released distribution.
 
 ### Broker execution
 

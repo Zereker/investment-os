@@ -8,7 +8,7 @@ This closes that gap: same inputs -> same answer, every time.
 
 Mirrors (any divergence from these files is a BUG in this script, not a new rule):
   skills/investment-os/references/00-constitution.md       targets, bands, cash floor, tiers
-  skills/investment-os/references/01-operating-manual.md   deployment framework (D / S / B / drawdown),
+  skills/investment-os/references/02-monthly.md            deployment framework (D / S / B / drawdown),
                                                                  monthly gate order and routine-path checks
 
 Hard boundaries this script will not cross:
@@ -216,7 +216,7 @@ def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed, today):
     final_cash = cash_after_db - dd_amount
     floor_after = ABSOLUTE_FLOOR if consumed else CASH_FLOOR
     # A month can legitimately START below the normal floor: the tranches
-    # lowered cash by design, and the deployment framework (01-operating-manual.md §6.2) says it rebuilds
+    # lowered cash by design, and the deployment framework (02-monthly.md part 2 §2) says it rebuilds
     # only from external contributions afterwards, with the Routine DCA
     # explicitly not paused for it. The floor gate therefore checks what THIS
     # month's trades do, not where history left the balance: trades must not
@@ -287,7 +287,7 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
         print(f"  SPYM DD = {dd:.2%}  (收盘 {dd_as_of}，ATH {ath_date})")
         if not tiers_known:
             print("  ** 未提供 --tiers-executed：无法确认本周期各档是否已执行 **")
-            print("     按 State-Reconstruction 第 4 步用成交记录重建后重跑")
+            print("     按 05-state.md 第 4 步用成交记录重建后重跑")
             issues.append("回撤档位已执行状态未知")
         for trigger, name, tranche in TIERS:
             mark = "已执行" if name in executed else ("**达档可用**" if dd >= trigger else "未达档")
@@ -300,7 +300,7 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
     print(f"\n[3] 三条资金通道（都只买正缺口，三个标的同等对待）")
     if not contribution_known:
         print(f"  Routine DCA   ** 未提供 --contribution：本月已到账外部净入金 F 未知 **")
-        print(f"                  按 State-Reconstruction 第 5 步读 IBKR Cash Transactions 后重跑；")
+        print(f"                  按 05-state.md 第 5 步读 IBKR Cash Transactions 后重跑；")
         print(f"                  无入金的月份也须显式传 --contribution 0")
         print(f"                  → D = DATA INCOMPLETE（不静默按 F=0 部署）")
         issues.append("本月实际入金 F 未知：Routine DCA 无法确认（补 --contribution 后重跑）")
