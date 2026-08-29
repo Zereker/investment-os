@@ -24,7 +24,7 @@ Account Summary；Balances；Positions；Open Orders；当前市场输入与回�
 4. **Open Orders Gate**：权威订单状态必须明确为 `clear`；
 5. **Contribution Gate**：本月实际外部净入金 `F` 已由权威来源确认；
 6. **Drawdown State Gate**：回撤值使用小数、档位状态和已执行集合可验证；
-7. **Policy Gate**：现行宪法与转型计划可读取且无冲突。
+7. **Policy Gate**：现行宪法可读取且无冲突。
 
 任一项失败：`DATA INCOMPLETE / HOLD`，并停止新的月度候选。
 
