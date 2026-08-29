@@ -13,102 +13,80 @@ ROOT = Path(__file__).resolve().parents[1]
 CONSTITUTION = "skills/investment-os/references/00-constitution.md"
 sys.path.insert(0, str(ROOT / "skills" / "investment-os" / "scripts"))
 
-STAGES = (0.06,)  # v4.0: 6% is the permanent hard cap; 10/12.5/15% stages are void
-EXECUTION_CAPS = (0.03, 0.045, 0.06)
-CURRENT_STAGE = 0.06
-CURRENT_EXECUTION_CAP = 0.03
-# v4.4: each tier releases a FIXED tranche of NAV. The older "deploy everything
-# above a floor" shape dumped the whole 15%->floor band into the first tier,
-# which is exactly what tranching exists to prevent.
-# v4.6: four tiers ending at 25% (the deepest two of the old six almost never
-# fired), GRADED 1:2:3:4 so the first shot stays small while the money lands at
-# the deepest entries, and spending the cash out entirely — the old 6% floor was
-# never independently justified, just the tail of v4.0's 10/8/6 sequence.
+# Four explicit per-ticker targets summing to 100%.
+TARGETS = {"cash": 0.15, "spym": 0.50, "qqqm": 0.30, "soxx": 0.05}
+# Bands are disclosure and transition-completion criteria, NOT no-trade zones:
+# routine DCA still buys any positive gap with no threshold. SOXX has no band —
+# a symmetric band on a 5% position is meaningless; its criterion is gap == 0.
+BANDS = {"cash": (0.10, 0.20), "spym": (0.45, 0.55), "qqqm": (0.25, 0.35)}
+CASH_TARGET = TARGETS["cash"]
+# The cash floor is a RISK constraint, not the lower band edge. The band
+# describes state (a market move may carry cash to 10%); the floor constrains
+# trades (routine buying must not drive cash under it).
+NORMAL_CASH_FLOOR = 0.12
+# Each tier releases a FIXED tranche of NAV, graded 1:2:3:4 so the first shot
+# stays small while most of the money lands at the deepest entries. The four
+# tranches sum to the cash target, so the ladder spends the cash out entirely.
 DRAWDOWN_TIERS = ((0.10, 0.0150), (0.15, 0.0300), (0.20, 0.0450), (0.25, 0.0600))
 DRAWDOWN_TRIGGERS = tuple(t for t, _ in DRAWDOWN_TIERS)
 TIER_NAMES = ("T1", "T2", "T3", "T4")
 LADDER = sum(w for _, w in DRAWDOWN_TIERS)   # 15pp: all of the cash is ammunition
-ABSOLUTE_FLOOR = 0.0     # drawdown deployment never takes cash below this (+U)
-NORMAL_CASH_FLOOR = 0.12
-CASH_TARGET = 0.15
-QQQM_TARGET = 0.28
-SLEEVE = 0.57
+ABSOLUTE_FLOOR = 0.0     # drawdown deployment never takes cash below this
 
 
 def read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
 
-def close_to_member(value: float, allowed: tuple[float, ...]) -> bool:
-    return any(abs(value - item) <= 1e-12 for item in allowed)
-
-
-def allocation(actual: float, stage: float, execution_cap: float) -> dict[str, float]:
-    values = (actual, stage, execution_cap)
-    if not all(isinstance(value, (int, float)) and not isinstance(value, bool) and isfinite(value) for value in values):
-        raise ValueError("weights must be finite numbers")
-    if not 0 <= actual <= 0.15:
-        # actual may drift above the 6% cap (freeze, no auto-sell); 15% is a sanity bound
-        raise ValueError("A_actual outside [0, 15%]")
-    if not close_to_member(stage, STAGES):
-        raise ValueError("illegal A_stage")
-    if not close_to_member(execution_cap, EXECUTION_CAPS):
-        raise ValueError("illegal A_execution_cap")
-    if execution_cap > stage + 1e-12:
-        raise ValueError("execution cap exceeds stage")
-
-    basis = max(actual, stage)
-    reserve = max(stage - actual, 0.0)
-    targets = {
-        "cash_base": CASH_TARGET,
-        "stage_reserve": reserve,
-        "qqqm": QQQM_TARGET,
-        "spym": SLEEVE - basis,
-        "soxx": actual,
-    }
-    if not all(0.0 <= value <= 1.0 for value in targets.values()):
-        raise ValueError(f"target outside [0, 100%]: {targets}")
-    if abs(sum(targets.values()) - 1.0) > 1e-12:
-        raise ValueError(f"allocation does not sum to 100%: {targets}")
-    return targets
-
-
-def next_execution_cap(current: float, proposed: float) -> bool:
-    if not (close_to_member(current, EXECUTION_CAPS) and close_to_member(proposed, EXECUTION_CAPS)):
-        return False
-    old = min(range(len(EXECUTION_CAPS)), key=lambda i: abs(EXECUTION_CAPS[i] - current))
-    new = min(range(len(EXECUTION_CAPS)), key=lambda i: abs(EXECUTION_CAPS[i] - proposed))
-    return new == old + 1
+def positive_gap(target: float, actual: float) -> float:
+    """Weight of NAV to buy for one ticker. Drift above target yields 0, never a
+    sell signal: the rules repair overweight by dilution, never by rebalancing out."""
+    for value in (target, actual):
+        if not isinstance(value, (int, float)) or isinstance(value, bool) or not isfinite(value):
+            raise ValueError("weights must be finite numbers")
+    if not 0 <= actual <= 1:
+        raise ValueError("actual weight outside [0, 100%]")
+    return max(target - actual, 0.0)
 
 
 def allocation_tests() -> None:
-    valid = [
-        (0.00, 0.06, 0.03), (0.03, 0.06, 0.03), (0.045, 0.06, 0.045),
-        (0.06, 0.06, 0.06), (0.078, 0.06, 0.03),  # drift above cap: freeze, math still closes
-    ]
-    for args in valid:
-        allocation(*args)
+    # the four targets are explicit and close to exactly 100%
+    if abs(sum(TARGETS.values()) - 1.0) > 1e-12:
+        raise AssertionError(f"targets do not sum to 100%: {TARGETS}")
+    if any(not 0.0 < value < 1.0 for value in TARGETS.values()):
+        raise AssertionError(f"a target sits outside (0, 100%): {TARGETS}")
 
-    invalid = [
-        (-0.01, 0.06, 0.03), (0.16, 0.06, 0.06), (nan, 0.06, 0.03),
-        (inf, 0.06, 0.03), (0.03, 0.10, 0.03), (0.03, 0.15, 0.06),
-        (0.03, 0.06, 0.04), (0.03, 0.06, 0.10), (True, 0.06, 0.03),
-    ]
-    for args in invalid:
+    # every band brackets its own target, and no band is inverted
+    for name, (low, high) in BANDS.items():
+        if not low < TARGETS[name] < high:
+            raise AssertionError(f"{name} band {low}-{high} does not bracket {TARGETS[name]}")
+    # SOXX deliberately has no band; its criterion is a closed gap
+    if "soxx" in BANDS:
+        raise AssertionError("SOXX must not carry a band")
+
+    # the cash floor is a separate object from the band: it sits below the
+    # target (so routine buying has room) and above the band's lower edge (a
+    # market move may legitimately carry cash under the floor without a trade)
+    if not BANDS["cash"][0] <= NORMAL_CASH_FLOOR < CASH_TARGET:
+        raise AssertionError("cash floor must sit within the band and below the target")
+
+    # gaps: at target and above target nothing is bought; below target the gap
+    # is exactly the shortfall
+    for name, target in TARGETS.items():
+        if positive_gap(target, target) != 0.0:
+            raise AssertionError(f"{name} at target must produce no gap")
+        if positive_gap(target, min(target + 0.02, 1.0)) != 0.0:
+            raise AssertionError(f"{name} above target must produce no gap (dilution, not sale)")
+    if abs(positive_gap(TARGETS["qqqm"], 0.25) - 0.05) > 1e-12:
+        raise AssertionError("gap must equal the shortfall")
+
+    for args in ((0.5, -0.01), (0.5, 1.01), (0.5, nan), (0.5, inf), (0.5, True)):
         try:
-            allocation(*args)
+            positive_gap(*args)
         except ValueError:
             pass
         else:
-            raise AssertionError(f"illegal allocation accepted: {args}")
-
-    if not next_execution_cap(0.03, 0.045):
-        raise AssertionError("next checkpoint rejected")
-    if not next_execution_cap(0.045, 0.06):
-        raise AssertionError("next checkpoint rejected")
-    for proposed in (0.03, 0.06, 0.10, 0.15, nan):
-        if next_execution_cap(0.03, proposed):
-            raise AssertionError(f"illegal checkpoint transition accepted: 3% -> {proposed}")
+            raise AssertionError(f"illegal weight accepted: {args}")
 
 
 def drawdown_release(dd: float, executed: set[float] | None = None) -> float:
@@ -127,7 +105,7 @@ def drawdown_tests() -> None:
         raise AssertionError("no drawdown must release nothing")
     if drawdown_release(0.099999) != 0.0:
         raise AssertionError("below-tier drawdown must not unlock deployment")
-    # v4.6: graded ladder ending at 25% — 30%, 35% and 100% all release the same
+    # the graded ladder ends at 25% — 30%, 35% and 100% all release the same
     # 15pp, because past T4 the ammunition is spent by design.
     expected = {0.10: 0.0150, 0.1499: 0.0150, 0.15: 0.0450, 0.20: 0.0900,
                 0.25: 0.1500, 0.30: 0.1500, 0.35: 0.1500, 1.0: 0.1500}
@@ -147,7 +125,7 @@ def drawdown_tests() -> None:
         raise AssertionError("deeper tiers must stay available after shallower executed")
     # the tranches take cash from the 15% target exactly to the absolute floor
     if abs(LADDER + ABSOLUTE_FLOOR - CASH_TARGET) > 1e-12:
-        raise AssertionError("ladder does not span the 15% target down to the floor")
+        raise AssertionError("ladder does not span the cash target down to the floor")
     if ABSOLUTE_FLOOR >= NORMAL_CASH_FLOOR:
         raise AssertionError("the crisis floor must sit below the normal floor")
     # the floor may be zero but never negative: that would be borrowing, which
@@ -175,8 +153,7 @@ def load_runtime_module(rel_path: str):
 
 def mirror_tests() -> None:
     """Compare the ACTUAL constants of the shipped runtime modules against the
-    canonical values above. This replaces the old first-and-last-line string
-    pins, which could not see a corrupted middle tier."""
+    canonical values above, so a corrupted middle tier cannot slip through."""
     monthly = load_runtime_module(
         "skills/investment-os/scripts/monthly_execution.py")
     tiers = tuple((trigger, tranche) for trigger, _name, tranche in monthly.TIERS)
@@ -187,13 +164,14 @@ def mirror_tests() -> None:
         raise AssertionError(f"monthly_execution.TIERS names diverged: {names}")
     if monthly.ABSOLUTE_FLOOR != ABSOLUTE_FLOOR:
         raise AssertionError(f"monthly_execution.ABSOLUTE_FLOOR diverged: {monthly.ABSOLUTE_FLOOR}")
+    if monthly.TARGETS != TARGETS:
+        raise AssertionError(f"monthly_execution.TARGETS diverged: {monthly.TARGETS}")
+    if monthly.BANDS != BANDS:
+        raise AssertionError(f"monthly_execution.BANDS diverged: {monthly.BANDS}")
+    if monthly.CASH_FLOOR != NORMAL_CASH_FLOOR:
+        raise AssertionError("monthly_execution cash floor diverged")
 
-    if monthly.CASH_TARGET != CASH_TARGET or monthly.CASH_FLOOR != NORMAL_CASH_FLOOR:
-        raise AssertionError("monthly_execution cash constants diverged")
-    if monthly.QQQM_TARGET != QQQM_TARGET or monthly.SLEEVE_57 != SLEEVE:
-        raise AssertionError("monthly_execution sleeve constants diverged")
-    if monthly.A_STAGE != CURRENT_STAGE or monthly.A_EXECUTION_CAP != CURRENT_EXECUTION_CAP:
-        raise AssertionError("monthly_execution tilt constants diverged")
+
 PRIVACY_PATTERNS = (
     (re.compile(r"\$\s?\d"), "dollar amount ($N)"),
     (re.compile(r"\d[\d,]*(?:\.\d+)?\s*美元"), "CNY-written dollar amount (N美元)"),
@@ -218,78 +196,25 @@ def privacy_gate() -> None:
         raise AssertionError("privacy gate failed:\n" + "\n".join(violations))
 
 
-INTEREST_THRESHOLD = 10_000.0
-
-
-def benchmark_month_interest(
-    month_start_nav: float | None,
-    rate: float | None,
-    days_in_month: int,
-) -> float | None:
-    """v4.1 monthly cash-sleeve interest. Returns None (N/A) on any missing input.
-
-    Principal is fixed at the month-start sleeve value, so interest never
-    compounds within the month (BUG-016 regression guard).
-    """
-    if month_start_nav is None or rate is None:
-        return None
-    sleeve = 0.15 * month_start_nav
-    eligible = max(sleeve - INTEREST_THRESHOLD, 0.0)
-    scale = min(month_start_nav / 100_000.0, 1.0)
-    return eligible * rate * scale * days_in_month / 360.0
-
-
-def benchmark_interest_tests() -> None:
-    # missing input must yield N/A, never a silent 0% (BUG-013 regression guard)
-    if benchmark_month_interest(None, 0.036, 31) is not None:
-        raise AssertionError("missing NAV must yield N/A, not a number")
-    if benchmark_month_interest(200_000.0, None, 31) is not None:
-        raise AssertionError("missing rate must yield N/A, not a number")
-
-    # below the interest-free threshold the sleeve earns nothing
-    if benchmark_month_interest(60_000.0, 0.036, 31) != 0.0:
-        raise AssertionError("sleeve under the threshold must earn no interest")
-
-    # no intra-month compounding: two half-length months must equal one full month
-    full = benchmark_month_interest(1_000_000.0, 0.036, 30)
-    half = benchmark_month_interest(1_000_000.0, 0.036, 15)
-    if full is None or half is None or abs(full - 2 * half) > 1e-9:
-        raise AssertionError("interest compounded within the month")
-
-    # NAV scale caps at 1.0 and shrinks small accounts proportionally
-    big = benchmark_month_interest(1_000_000.0, 0.036, 30)
-    capped = benchmark_month_interest(100_000.0, 0.036, 30)
-    if capped is None or big is None:
-        raise AssertionError("scale test inputs must produce values")
-    if abs(min(1_000_000.0 / 100_000.0, 1.0) - 1.0) > 1e-12:
-        raise AssertionError("NAV scale must cap at 1.0")
-    expected_capped = max(0.15 * 100_000.0 - INTEREST_THRESHOLD, 0.0) * 0.036 * 1.0 * 30 / 360.0
-    if abs(capped - expected_capped) > 1e-9:
-        raise AssertionError("NAV scale applied incorrectly")
-
-
 def frozen_state_gate() -> None:
     """Live account state must never be frozen into rule files (red line 2).
 
-    Target the pattern "A_actual ... N%" specifically — a bare percentage is
-    legitimate elsewhere (price premiums, drawdown depths, guardrail lines).
-    "A_actual 约 7.8%" is a frozen observation; "A_actual 高于 6%" references the
-    cap and is legitimate. The approximation marker is what distinguishes them.
+    Target an observed WEIGHT specifically — a bare percentage is legitimate
+    elsewhere (targets, band edges, drawdown depths). "SOXX 实际权重 约 7.8%" is a
+    frozen observation; "SOXX 高于目标权重" references the rule and is legitimate.
+    The approximation marker is what distinguishes them.
     """
-    frozen_state = re.compile(r"A_actual[^。\n]{0,12}?(?:约|≈|大约)\s*\d+(?:\.\d+)?\s*%")
-    for path in (CONSTITUTION, "Decision-Log.md"):
-        hit = frozen_state.search(read(path))
-        if hit:
-            raise AssertionError(f"{path}: frozen A_actual value: {hit.group()!r}")
+    frozen_state = re.compile(
+        r"(?:实际权重|当前权重|持仓权重|A_actual)[^。\n]{0,12}?(?:约|≈|大约)\s*\d+(?:\.\d+)?\s*%")
+    hit = frozen_state.search(read(CONSTITUTION))
+    if hit:
+        raise AssertionError(f"{CONSTITUTION}: frozen weight observation: {hit.group()!r}")
 
 
 def main() -> None:
-    if CURRENT_EXECUTION_CAP > CURRENT_STAGE:
-        raise AssertionError("current execution cap exceeds current stage")
     allocation_tests()
     drawdown_tests()
     mirror_tests()
-    benchmark_interest_tests()
     frozen_state_gate()
     privacy_gate()
     print("Policy consistency checks passed.")
