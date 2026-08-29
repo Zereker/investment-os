@@ -70,15 +70,24 @@ TIERS = ((0.10, "T1", 0.0150),
 ABSOLUTE_FLOOR = 0.0     # cash never goes below this via drawdown deployment
 LADDER = sum(t[2] for t in TIERS)   # 15pp: the whole cash position is ammunition
 PLAN_END = (2028, 12)  # strategic baseline planned completion month
+# R never drops below this. Flooring at 1 made B = min(S, G) from the plan end
+# onward, so any excess cash after 2028-12 would deploy in a single month —
+# the lump sum the tranching rules forbid, and worst in the drawdown that
+# creates the excess. Past the plan end the baseline rolls over 12 months.
+MIN_MONTHS_REMAINING = 12
 # A fetched close older than this cannot define today's drawdown tier; the
 # registry localizes the failure: a stale series only pauses tier evaluation.
 MAX_DD_AGE_DAYS = 7
 
 
 def months_remaining(today: date) -> int:
-    """R: monthly execution slots left through PLAN_END inclusive, minimum 1."""
+    """R: monthly execution slots left through PLAN_END inclusive.
+
+    Floored at MIN_MONTHS_REMAINING so the baseline keeps tranching after the
+    plan end instead of collapsing into a single lump-sum deployment.
+    """
     n = (PLAN_END[0] - today.year) * 12 + (PLAN_END[1] - today.month) + 1
-    return max(n, 1)
+    return max(n, MIN_MONTHS_REMAINING)
 
 
 def dd_series_is_fresh(last_day: str, today: date) -> bool:
@@ -419,9 +428,16 @@ def self_test() -> None:
         assert r["final_cash_w"] >= r["floor_w"] - 1e-9, f"cash pierced the floor at DD {dd}"
 
     # 9. R counts down to the planned completion month and floors at 1
-    assert months_remaining(date(2028, 12, 1)) == 1, "R must be 1 in the final month"
-    assert months_remaining(date(2029, 6, 1)) == 1, "R must floor at 1 past the plan end"
     assert months_remaining(date(2026, 8, 1)) == 29, "R miscounted"
+    assert months_remaining(date(2028, 12, 1)) == MIN_MONTHS_REMAINING, \
+        "R must floor at the minimum in the final planned month"
+    assert months_remaining(date(2032, 1, 1)) == MIN_MONTHS_REMAINING, \
+        "R must keep the floor long past the plan end"
+    # the floor is what stops the baseline becoming a lump sum: with excess cash
+    # on the books past the plan end, B must stay a fraction of it, not all of it
+    late = compute(100_000, 25_000, 45_000, 25_000, 5_000, 0, 0.0, set(), date(2032, 1, 1))
+    assert late["s"] > 0, "late fixture must carry strategic surplus"
+    assert late["b"] < late["s"] / 2, f"baseline deployed as a lump sum: {late['b']} of {late['s']}"
 
     # 10. SOXX is an ordinary holding: its gap is funded by the same channels.
     r = compute(100_000, 20_000, 50_000, 30_000, 2_000, 5_000, 0.0, set(), d0)

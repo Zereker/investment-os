@@ -143,6 +143,51 @@ def drawdown_tests() -> None:
         raise AssertionError("drawdown triggers must deepen monotonically")
 
 
+NAME_BY_LABEL = {"结构性现金": "cash", "SPYM": "spym", "QQQM": "qqqm", "SOXX": "soxx"}
+
+
+def published_allocation() -> tuple[dict[str, float], dict[str, tuple[float, float]]]:
+    """Parse the constitution's strategy table back into targets and bands.
+
+    The numbers live in prose as well as in code, and nothing used to compare
+    the two: a target edited in the constitution and not in the runtime (or the
+    reverse) left every test green.
+    """
+    targets, bands = {}, {}
+    row = re.compile(
+        r"^\|\s*(结构性现金|SPYM|QQQM|SOXX)\s*\|\s*(\d+(?:\.\d+)?)%\s*\|\s*"
+        r"(?:(\d+(?:\.\d+)?)%\s*[–-]\s*(\d+(?:\.\d+)?)%|—)\s*\|")
+    for line in read(CONSTITUTION).splitlines():
+        hit = row.match(line.strip())
+        if not hit:
+            continue
+        name = NAME_BY_LABEL[hit.group(1)]
+        targets[name] = float(hit.group(2)) / 100
+        if hit.group(3) is not None:
+            bands[name] = (float(hit.group(3)) / 100, float(hit.group(4)) / 100)
+    return targets, bands
+
+
+def published_tiers() -> tuple[tuple[float, float], ...]:
+    """Parse the constitution's drawdown table back into (trigger, tranche)."""
+    row = re.compile(r"^\|\s*T\d\s*\|\s*`DD ≥ (\d+)%`\s*\|\s*(\d+\.\d+)pp")
+    return tuple((int(m.group(1)) / 100, float(m.group(2)) / 100)
+                 for m in (row.match(line.strip()) for line in read(CONSTITUTION).splitlines())
+                 if m)
+
+
+def published_matches_code() -> None:
+    """The constitution is the authority; the code must state the same numbers."""
+    targets, bands = published_allocation()
+    if targets != TARGETS:
+        raise AssertionError(f"constitution targets {targets} != code {TARGETS}")
+    if bands != BANDS:
+        raise AssertionError(f"constitution bands {bands} != code {BANDS}")
+    tiers = published_tiers()
+    if tiers != DRAWDOWN_TIERS:
+        raise AssertionError(f"constitution tiers {tiers} != code {DRAWDOWN_TIERS}")
+
+
 def load_runtime_module(rel_path: str):
     path = ROOT / rel_path
     spec = importlib.util.spec_from_file_location(path.stem, path)
@@ -170,6 +215,19 @@ def mirror_tests() -> None:
         raise AssertionError(f"monthly_execution.BANDS diverged: {monthly.BANDS}")
     if monthly.CASH_FLOOR != NORMAL_CASH_FLOOR:
         raise AssertionError("monthly_execution cash floor diverged")
+    if monthly.MIN_MONTHS_REMAINING < 2:
+        raise AssertionError(
+            "R must stay above 1, or the baseline becomes a lump sum past the plan end")
+    # A fired tier drops the floor straight to the absolute floor; what limits
+    # the deployment is the tier's own tranche, not the floor. Asserted so the
+    # behaviour is a checked intent rather than an accident of the expression.
+    from datetime import date
+    fired = monthly.compute(100_000, 20_000, 45_000, 28_000, 5_000, 0,
+                            0.10, set(), date(2026, 8, 1))
+    if fired["floor_w"] != ABSOLUTE_FLOOR:
+        raise AssertionError(f"a fired tier must drop the floor to {ABSOLUTE_FLOOR}")
+    if abs(fired["dd_amount"] - DRAWDOWN_TIERS[0][1] * 100_000) > 1e-6:
+        raise AssertionError("the tranche, not the floor, must cap the deployment")
 
 
 PRIVACY_PATTERNS = (
@@ -214,6 +272,7 @@ def frozen_state_gate() -> None:
 def main() -> None:
     allocation_tests()
     drawdown_tests()
+    published_matches_code()
     mirror_tests()
     frozen_state_gate()
     privacy_gate()

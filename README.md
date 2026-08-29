@@ -2,7 +2,7 @@
 
 ## What
 
-Karpathy-rules for long-term investing: one [Agent skill](skills/investment-os/SKILL.md), three policy references, and deterministic fact, math, and execution controls.
+Karpathy-rules for long-term investing: one [Agent skill](skills/investment-os/SKILL.md), a constitution plus per-task procedure references, and deterministic fact, math, and execution controls.
 
 ```text
 Facts → Rules → LLM Judgment → Owner-Authorized Execution
