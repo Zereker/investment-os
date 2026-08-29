@@ -33,7 +33,8 @@
 | External Contribution \(F\) | IBKR Activity / Cash Transactions | 无 | 每月 | Green | 只使用已到账外部净入金；提款与内部卖出所得排除 |
 | 各标的实际权重与正缺口 | IBKR 市值 / Net Liquidation + 宪法目标权重 | 无 | 每次巡检 | Green（Derived） | 失败则配置计算关闭 |
 | Routine Gap / Purchase \(G_0,D_{max},D\) | 实时 IBKR 数据 + 月度流程 | 无 | 每月 | Green（Derived） | \(D_{max}=\min(F,G_0)\) |
-| SPYM 历史最高收盘与回撤 `DD` | IBKR 历史收盘 | State Street 官方净值序列 | 每次巡检 | Green | 驱动回撤部署分档；数据失败则当日不评估分档，不影响其他路径 |
+| SPYM 历史最高收盘与回撤 `DD` | IBKR 历史收盘 | State Street 官方净值序列 | 每次巡检 | Green | 由会话读取后传入脚本，脚本不自行联网取数；必须带收盘日期，超过 7 天或无日期则当日不评估分档，不影响其他路径 |
+| Legacy / Out-of-Universe 持仓市值 | IBKR Positions | 无 | 每次巡检 | Green | 进入 NAV 对账；不产生目标、缺口或任何通道资金。遗漏会使对账失败并卡住全部交易路径 |
 | VIX 日收盘 | IBKR 历史收盘 | CBOE 官网 | 每次巡检 | Green | 定义波动日（≥20）供限价单偏好；不进入任何资金闸门 |
 | SPX PE-TTM 与月度历史 | multpl（GAAP as-reported） | 无 | 每次巡检 | Green | **只作披露**；口径必须随数值记录，不同口径不得混算分位 |
 | CNN 恐慌贪婪 | CNN dataviz 接口 | 无 | 每次巡检 | Green | **只作披露**；直接用接口的 `rating`，不自行按数字套档 |

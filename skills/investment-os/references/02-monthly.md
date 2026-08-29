@@ -80,13 +80,18 @@ Account Summary；Balances；Positions；Open Orders；当前市场输入与回�
 python3 skills/investment-os/scripts/monthly_execution.py \
   --nav <NetLiq> --cash <TotalCash> \
   --spym <MarketValue> --qqqm <MarketValue> --soxx <MarketValue> \
+  --legacy <Legacy 持仓合计> \
   --contribution <AuthoritativeF> \
-  --dd <DecimalDrawdown> \
+  --dd <DecimalDrawdown> --dd-as-of <收盘日期> \
   --tiers-executed <none|T1|T1,T2...> \
   --open-orders-status clear
 ```
 
 输入缺失、单位错误、账户不对账、订单状态未知或冲突时，CLI 必须非零退出并输出 `DATA INCOMPLETE`。
+
+`--legacy` 是 Legacy / Out-of-Universe 持仓的市值合计。它**必须**传（有就传，没有留 0）——Legacy 也是持仓，漏掉它对账等式就不成立，账户会被永久卡住。它只进对账与披露，不产生目标、缺口或任何通道资金。
+
+`--dd` 由会话从 IBKR 收盘序列取得后传入，脚本自身不联网；必须同时传 `--dd-as-of`，否则无法确认新鲜度，本月不评估分档。
 
 ### 11. Completion Conditions
 
