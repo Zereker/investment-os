@@ -37,8 +37,6 @@
 | SPYM Price | IBKR | State Street SPYM 官方页 | 每次巡检 | Green | 标记价格时间戳 |
 | QQQM Price | IBKR | Invesco QQQM 官方页 | 每次巡检 | Green | 标记价格时间戳 |
 | SOXX Price | IBKR | iShares SOXX 官方页 | 每次巡检 | Green | 标记价格时间戳 |
-| SPYM Total Return | State Street SPYM 官方绩效 / 分红数据 | IBKR 市场数据与分红记录 | 每月 | Green | SPYM 对照必须使用含分红同期总收益 |
-| Account Time-Weighted Return | IBKR PortfolioAnalyst | 无 | 每月 | Green | SPYM 对照的账户侧；缺失则当期对照记 `N/A` |
 
 ### 变更治理
 
@@ -90,7 +88,6 @@ Red 数据不得进入依赖该字段的计算。**影响必须按字段局部�
 
 - IBKR 账户、持仓或订单为 Red：全部交易路径关闭，结论 `DATA INCOMPLETE`。
 - SPYM 历史最高收盘序列为 Red：当日不评估回撤部署分档，已执行档位记录不变。
-- SPYM 对照任一侧（账户 TWR 或 SPYM 总收益）为 Red：当期对照记 `N/A`，不触发任何交易路径。
 
 ### 每次事实读取必须包含
 
@@ -108,7 +105,6 @@ Red 数据不得进入依赖该字段的计算。**影响必须按字段局部�
 |---|---|
 | IBKR 账户、持仓、订单 | 本次巡检实时读取 |
 | 市场价格 | 本次巡检实时读取，注明市场状态 |
-| 基金官方总收益 | 管理人最新公布版本，并在当前私有会话保留 `source_as_of` |
 
 ---
 
@@ -166,9 +162,6 @@ IBKR 返回的最新可用市场价格。必须同时记录读取时间和市场
 
 #### drawdown_from_ath / drawdown_tier_state
 `drawdown_from_ath` 是 SPYM 收盘价相对历史最高收盘价的回撤，以小数记录并注明收盘序列来源。`drawdown_tier_state` 记录当前回撤周期内四档的 `AVAILABLE / EXECUTED` 状态；SPYM 创历史新高收盘后全部重置为 `AVAILABLE`；最深档之后没有更深档位，该字段不新增取值。各档触发线、梯度定额与绝对下限以 `00-constitution.md` 回撤部署节的分档表为唯一权威。
-
-#### spym_total_return / account_twr
-同一计量期间内，含分红的 SPYM 总收益与 IBKR 账户时间加权收益率，两者构成 SPYM 对照。价格收益不得冒充总收益；TWR 不得用金额加权收益率（IRR / MWR）替代——后者受入金时点影响，会让对照失去可比性。
 
 ### 缺失值规则
 
