@@ -106,16 +106,9 @@ Production 是封闭投资宇宙。除 SPYM、QQQM、SOXX 外：
 4. 卖出、换仓或处置必须进入完整人工审查或既有转型规则；
 5. 无法识别的持仓使账户健康至少为 `WARN`，必要时为 `DATA INCOMPLETE`。
 
-### 4. Admission of a New Asset
+### 4. 封闭性
 
-新增第四个生产标的必须依次完成：
-
-```text
-Research → written proposal → owner approval → Constitution change
-→ Operating System update → executable checks → version release
-```
-
-任何 AI、脚本、日报或临时会话都无权自行扩展投资宇宙。
+投资宇宙永久封闭于上述三个标的，**不存在新增第四个标的的流程**。研究可以质疑现行配置，但不得引入新标的；任何 AI、脚本、日报、模型推荐或临时会话都无权扩展它。
 
 ### 5. Daily Decision Boundary
 

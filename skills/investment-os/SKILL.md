@@ -106,7 +106,7 @@ Separate the recommendation under current policy from any proposal to change pol
 
 ### Research
 
-Research may challenge the policy, but it cannot enter production by implication. A new asset, indicator, exception, or rule requires a separate proposal, owner approval, policy change, executable checks when needed, and a released distribution.
+Research may challenge the policy, but it cannot enter production by implication. The investment universe is permanently closed: a new asset is not available through any process, however strong the case. A new indicator, exception, or rule requires a separate proposal, owner approval, policy change, executable checks when needed, and a released distribution.
 
 ### Broker execution
 
