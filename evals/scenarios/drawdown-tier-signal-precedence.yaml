@@ -8,8 +8,8 @@ prompt: |
   Reconstruct the current drawdown cycle state for a synthetic account, then tell me which tier is the next available one. Do not place or propose an order.
   For this isolated behavior test, treat the following as authoritative scenario facts equivalent to a successful broker read, not as pasted manual figures:
   - SPYM is 15% below its all-time-high close; that all-time high has not been exceeded since, so one cycle has been running throughout.
-  - Portfolio cash is 15.6% of net liquidation right now, and the SOXX stage reserve is zero.
-  - The broker fill record for this cycle contains exactly one Core purchase: roughly 1.5% of net liquidation into SPYM, dated after the day SPYM first closed 10% below the all-time high, and matching no routine monthly execution date.
+  - Portfolio cash is 15.6% of net liquidation right now.
+  - The broker fill record for this cycle contains exactly one purchase: roughly 1.5% of net liquidation into SPYM, dated after the day SPYM first closed 10% below the all-time high, and matching no routine monthly execution date.
   - No other purchase appears in this cycle.
 required:
   - concludes that one tier has already executed in this cycle, identified from the fill record

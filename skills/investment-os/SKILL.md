@@ -108,6 +108,10 @@ Separate the recommendation under current policy from any proposal to change pol
 
 Research may challenge the policy, but it cannot enter production by implication. The investment universe is permanently closed: a new asset is not available through any process, however strong the case. A new indicator, exception, or rule requires a separate proposal, owner approval, policy change, executable checks when needed, and a released distribution.
 
+### Periodic review
+
+Weekly, quarterly and annual reviews follow `03-periodic.md`. The weekly checkpoint looks only at behaviour over the past week and issues a work item, never a trade. The quarterly review checks each holding against its band and reports the SPYM comparison. The annual review is the only window that may change the IPS, the target weights or a permanent rule, and it must clear the modification threshold before it does.
+
 ### Broker execution
 
 A recommendation is not authorization. Before any broker write:
