@@ -264,10 +264,14 @@ def main() -> None:
         persist(args.output, payload)
         print(json.dumps(payload, indent=2, ensure_ascii=False))
         print(
-            "CONTAMINATED: the actor reasoned from another wealth policy — "
-            f"markers {foreign}. The result says nothing about this skill; "
-            "remove the competing policy from the actor's account, or make it "
-            "defer, and re-run.",
+            f"CONTAMINATED: another wealth policy's vocabulary appears in what "
+            f"the actor said — markers {foreign}. Usually that means it reasoned "
+            "from the wrong policy, in which case the result says nothing about "
+            "this skill; it can also be the actor correctly naming a foreign "
+            "concept while refusing it, so read the transcript before drawing "
+            "either conclusion. Either way this is not a pass. Remove the "
+            "competing policy from the actor's account, or make it defer, and "
+            "re-run.",
             file=sys.stderr,
         )
         raise SystemExit(NOT_VERIFIED_EXIT)

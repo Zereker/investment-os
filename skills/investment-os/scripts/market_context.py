@@ -54,8 +54,11 @@ MULTPL_TABLE = "https://www.multpl.com/s-p-500-pe-ratio/table/by-month"
 # operating earnings and run ~10% lower on the same day. Both are defensible;
 # mixing them is not, so the caliber travels with the number everywhere.
 PE_CALIBER = "GAAP as-reported (multpl)"
-# VIX bands from the published scale; observation labels, not signals.
+# VIX bands from the published scale; observation labels, not signals. The
+# terminal label is separate: without it a reading above the last edge silently
+# reports the band below it, so a VIX of 70 would have read as 罕见恐慌.
 VIX_BANDS = ((15, "平静"), (20, "中性"), (30, "开始紧张"), (40, "剧烈波动"), (60, "罕见恐慌"))
+VIX_ABOVE_TOP = "极端"
 VOLATILE_SESSION_VIX = 20.0   # at or above this, prefer limit orders
 
 MONTHS = {m: i for i, m in enumerate(
@@ -156,13 +159,15 @@ def pe_ranks(current: float | None, history: list[dict],
     return out
 
 
-def band(value: float | None, bands) -> str | None:
+def band(value: float | None, bands, above: str) -> str | None:
+    """Label for a reading. `above` names the region past the last edge, which
+    is a distinct band rather than a repeat of the one below it."""
     if value is None:
         return None
     for edge, label in bands:
         if value < edge:
             return label
-    return bands[-1][1]
+    return above
 
 
 def series_stats(path: str | None) -> dict:
@@ -228,7 +233,7 @@ def main() -> int:
         data["spym"] = series_stats(args.spym_series)
     if args.vix_close is not None:
         data["vix"] = {"close": args.vix_close, "as_of": args.vix_as_of,
-                       "band": band(args.vix_close, VIX_BANDS),
+                       "band": band(args.vix_close, VIX_BANDS, VIX_ABOVE_TOP),
                        "volatile_session": args.vix_close >= VOLATILE_SESSION_VIX}
     if want_pe:
         cur = pe_current()
@@ -238,6 +243,11 @@ def main() -> int:
             data["pe"]["ranks"] = pe_ranks(cur["value"], hist)
             data["pe"]["history_n"] = len(hist)
             data["pe"]["frequency"] = "月度"
+            # An empty history means the source moved or failed to parse. Left
+            # as {} the report simply omits the rank lines, which reads as "no
+            # ranks were asked for" rather than "the history could not be read".
+            if not data["pe"]["ranks"]:
+                data["pe"]["ranks_missing"] = "历史序列不可读或为空，分位无法计算"
     if want_sent:
         data["fear_greed"] = fear_and_greed()
 
@@ -274,6 +284,8 @@ def main() -> int:
             fmt("SPX PE-TTM", f"缺（{p['missing']}）")
         else:
             fmt("SPX PE-TTM", f"{p['value']}  口径 {p['caliber']}  截至 {p['as_of']}")
+            if p.get("ranks_missing"):
+                fmt("  分位", f"缺（{p['ranks_missing']}）")
             for w, r in (p.get("ranks") or {}).items():
                 if r is None:
                     fmt(f"  {w} 分位", "缺")
