@@ -10,7 +10,7 @@
 
 ### Production 边界
 
-运行时事实不创建政策。是否影响交易由 canonical `SKILL.md`、`00-constitution.md` 和 `01-operating-manual.md` 决定。
+运行时事实不创建政策。是否影响交易由 canonical `SKILL.md`、`00-constitution.md` 与编号流程文件决定。
 
 ---
 
