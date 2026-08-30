@@ -130,7 +130,7 @@ A clean actor session is not automatic: an adapter that does not mint and pass i
 can silently reuse the invoking session, which voids the independence claim while still producing a
 schema-valid pass. The bundled adapters mint fresh UUIDs for exactly this reason.
 
-Use `--output evals/results/<harness-pair>/<scenario>.json` only for synthetic scenarios. Do not commit transcripts containing user, account, credential, or private runtime information.
+Write run output under `evals/results/<harness-pair>/<scenario>.json`. That directory is gitignored: transcripts are evidence of one past run, not policy, and this repository stores rules only. Read a run's verdict when it finishes; do not commit it.
 
 `run_all.py` writes raw local evidence under its `--output-dir`. Keep that directory under
 `evals/artifacts/` unless an operator intentionally chooses another protected location. The runner
