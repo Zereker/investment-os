@@ -78,7 +78,6 @@ def main() -> None:
             "skills/investment-os/scripts/broker_runtime.py",
             "skills/investment-os/scripts/account_reconciliation.py",
             "skills/investment-os/scripts/monthly_execution.py",
-            "skills/investment-os/scripts/alert_pointer_check.py",
             "skills/investment-os/scripts/execution_runtime.py",
         ):
             assert (installed / relative).is_file(), f"installed file missing: {relative}"

@@ -19,8 +19,12 @@ BASE_ARGS = [
     "--spym", "51000",
     "--qqqm", "28000",
     "--soxx", "6000",
-    "--dd", "0", "--dd-as-of", "2026-08-28",
-    "--tiers-executed", "none", "--open-orders-status", "clear",
+    # both ladders supplied, so this fixture isolates the contribution gate: a
+    # laddered ticker with no drawdown series of its own is DATA INCOMPLETE on
+    # that ladder, which would mask what this test is actually asserting
+    "--dd-spym", "0", "--dd-qqqm", "0", "--dd-as-of", "2026-08-28",
+    "--tiers-executed-spym", "none", "--tiers-executed-qqqm", "none",
+    "--open-orders-status", "clear",
 ]
 
 

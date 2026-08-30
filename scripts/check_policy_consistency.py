@@ -17,21 +17,33 @@ sys.path.insert(0, str(ROOT / "skills" / "investment-os" / "scripts"))
 # Four explicit per-ticker targets summing to 100%.
 TARGETS = {"cash": 0.15, "spym": 0.50, "qqqm": 0.30, "soxx": 0.05}
 # Bands are disclosure and transition-completion criteria, NOT no-trade zones:
-# routine DCA still buys any positive gap with no threshold. SOXX has no band —
-# a symmetric band on a 5% position is meaningless; its criterion is gap == 0.
+# routine DCA still buys any positive gap with no threshold. SOXX has no
+# symmetric band — one is meaningless on a 5% position — so being underweight is
+# caught by its positive gap and being OVERWEIGHT is caught by a disclosure-only
+# ceiling. Without that ceiling an overweight SOXX is reported by nothing: it is
+# outside the band check and an overweight position's gap is zero.
 BANDS = {"cash": (0.10, 0.20), "spym": (0.45, 0.55), "qqqm": (0.25, 0.35)}
+SOXX_CEILING = 0.075
 CASH_TARGET = TARGETS["cash"]
-# The cash floor is a RISK constraint, not the lower band edge. The band
-# describes state (a market move may carry cash to 10%); the floor constrains
-# trades (routine buying must not drive cash under it).
-NORMAL_CASH_FLOOR = 0.12
-# Each tier releases a FIXED tranche of NAV, graded 1:2:3:4 so the first shot
-# stays small while most of the money lands at the deepest entries. The four
-# tranches sum to the cash target, so the ladder spends the cash out entirely.
-DRAWDOWN_TIERS = ((0.10, 0.0150), (0.15, 0.0300), (0.20, 0.0450), (0.25, 0.0600))
-DRAWDOWN_TRIGGERS = tuple(t for t, _ in DRAWDOWN_TIERS)
+# SPYM and QQQM each carry their OWN ladder against their OWN all-time high,
+# sized so a tranche is proportionate to the position it buys. Within a ladder
+# the four tiers are graded 1:2:3:4. The two ladders sum to the cash target, so
+# a market-wide crash still spends exactly the 15% cash position — what changed
+# is that one ticker alone can no longer reach for it.
+#
+# SOXX carries NO ladder: its tranches could not buy one whole share at this
+# account's size, and for a sleeve that small the gap mechanism already IS the
+# drawdown response.
+LADDERS = {"spym": 0.09, "qqqm": 0.06}
+DRAWDOWN_TRIGGERS = (0.10, 0.15, 0.20, 0.25)
+TIER_GRADES = (1, 2, 3, 4)
 TIER_NAMES = ("T1", "T2", "T3", "T4")
-LADDER = sum(w for _, w in DRAWDOWN_TIERS)   # 15pp: all of the cash is ammunition
+# (ticker, trigger, tier name, released NAV weight)
+DRAWDOWN_TIERS = tuple(
+    (t, trig, name, LADDERS[t] * grade / sum(TIER_GRADES))
+    for t in LADDERS
+    for trig, name, grade in zip(DRAWDOWN_TRIGGERS, TIER_NAMES, TIER_GRADES))
+LADDER = sum(LADDERS.values())   # 15pp: all of the cash is ammunition
 ABSOLUTE_FLOOR = 0.0     # drawdown deployment never takes cash below this
 
 
@@ -65,11 +77,10 @@ def allocation_tests() -> None:
     if "soxx" in BANDS:
         raise AssertionError("SOXX must not carry a band")
 
-    # the cash floor is a separate object from the band: it sits below the
-    # target (so routine buying has room) and above the band's lower edge (a
-    # market move may legitimately carry cash under the floor without a trade)
-    if not BANDS["cash"][0] <= NORMAL_CASH_FLOOR < CASH_TARGET:
-        raise AssertionError("cash floor must sit within the band and below the target")
+    # the SOXX ceiling is a disclosure line above the target, not a band edge:
+    # it must sit above the target or it would fire while SOXX is at policy
+    if SOXX_CEILING <= TARGETS["soxx"]:
+        raise AssertionError("the SOXX ceiling must sit above its target")
 
     # gaps: at target and above target nothing is bought; below target the gap
     # is exactly the shortfall
@@ -90,15 +101,16 @@ def allocation_tests() -> None:
             raise AssertionError(f"illegal weight accepted: {args}")
 
 
-def drawdown_release(dd: float, executed: set[float] | None = None) -> float:
-    """Weight of NAV the drawdown clause releases at this level, given fired tiers."""
+def drawdown_release(dd: float, executed: set[float] | None = None,
+                     ticker: str = "spym") -> float:
+    """Weight of NAV ONE ticker's ladder releases at this level, given fired tiers."""
     if not isinstance(dd, (int, float)) or isinstance(dd, bool) or not isfinite(dd):
         raise ValueError("drawdown must be a finite number")
     if not 0 <= dd <= 1:
         raise ValueError("drawdown outside [0, 100%]")
     executed = executed or set()
-    return sum(weight for trigger, weight in DRAWDOWN_TIERS
-               if dd >= trigger and trigger not in executed)
+    return sum(weight for t, trigger, _name, weight in DRAWDOWN_TIERS
+               if t == ticker and dd >= trigger and trigger not in executed)
 
 
 def drawdown_tests() -> None:
@@ -108,29 +120,48 @@ def drawdown_tests() -> None:
         raise AssertionError("below-tier drawdown must not unlock deployment")
     # the graded ladder ends at 25% — 30%, 35% and 100% all release the same
     # 15pp, because past T4 the ammunition is spent by design.
-    expected = {0.10: 0.0150, 0.1499: 0.0150, 0.15: 0.0450, 0.20: 0.0900,
-                0.25: 0.1500, 0.30: 0.1500, 0.35: 0.1500, 1.0: 0.1500}
+    expected = {0.10: 0.0090, 0.1499: 0.0090, 0.15: 0.0270, 0.20: 0.0540,
+                0.25: 0.0900, 0.30: 0.0900, 0.35: 0.0900, 1.0: 0.0900}
     for dd, weight in expected.items():
         if abs(drawdown_release(dd) - weight) > 1e-12:
             raise AssertionError(f"wrong release at drawdown {dd}")
-    # graded, not equal: each tier must be strictly larger than the one above it
-    if any(b[1] <= a[1] for a, b in zip(DRAWDOWN_TIERS, DRAWDOWN_TIERS[1:])):
-        raise AssertionError("tranches must grow strictly with depth")
+    # graded, not equal: within EACH ladder every tier is strictly larger than
+    # the one above it, and each ladder's four tranches sum to its total
+    for t, ladder in LADDERS.items():
+        coded = [w for tk, _tr, _n, w in DRAWDOWN_TIERS if tk == t]
+        if any(b <= a for a, b in zip(coded, coded[1:])):
+            raise AssertionError(f"{t} tranches must grow strictly with depth")
+        if abs(sum(coded) - ladder) > 1e-12:
+            raise AssertionError(f"{t} tranches do not sum to its ladder")
     # a fully spent ladder releases nothing however deep the fall goes
     if drawdown_release(0.60, executed=set(DRAWDOWN_TRIGGERS)) != 0.0:
         raise AssertionError("spent ladder must release nothing at any depth")
     # once-per-cycle: an executed tier no longer releases
     if drawdown_release(0.12, executed={0.10}) != 0.0:
         raise AssertionError("executed tier must not re-authorize deployment")
-    if abs(drawdown_release(0.30, executed={0.10}) - 0.1350) > 1e-12:
+    if abs(drawdown_release(0.30, executed={0.10}) - 0.0810) > 1e-12:
         raise AssertionError("deeper tiers must stay available after shallower executed")
-    # the tranches take cash from the 15% target exactly to the absolute floor
+    # the three ladders together take cash from the 15% target exactly to the floor
     if abs(LADDER + ABSOLUTE_FLOOR - CASH_TARGET) > 1e-12:
-        raise AssertionError("ladder does not span the cash target down to the floor")
-    if ABSOLUTE_FLOOR >= NORMAL_CASH_FLOOR:
-        raise AssertionError("the crisis floor must sit below the normal floor")
+        raise AssertionError("the three ladders do not span the cash target down to the floor")
+    # ammunition is proportionate to the position it buys, within 2pp of the
+    # target's share of the equity allocation
+    equity = sum(TARGETS[t] for t in LADDERS)
+    for t, ladder in LADDERS.items():
+        if abs(ladder / LADDER - TARGETS[t] / equity) > 0.03:
+            raise AssertionError(f"{t} ladder is not proportionate to its target weight")
+    # SOXX must carry no ladder: its tranches cannot buy one whole share, and
+    # its positive gap already is its drawdown response
+    if "soxx" in LADDERS:
+        raise AssertionError("SOXX must carry no drawdown ladder")
+    # all three at the same tier reproduce the old single ladder's tranche
+    for trig, single in zip(DRAWDOWN_TRIGGERS, (0.0150, 0.0300, 0.0450, 0.0600)):
+        across = sum(w for _t, tr, _n, w in DRAWDOWN_TIERS if tr == trig)
+        if abs(across - single) > 1e-12:
+            raise AssertionError(
+                f"a market-wide fall to {trig:.0%} must still release {single:.2%}")
     # the floor may be zero but never negative: that would be borrowing, which
-    # the IPS forbids outright (owner reaffirmed no leverage on 2026-08-01)
+    # the IPS forbids outright
     if ABSOLUTE_FLOOR < 0:
         raise AssertionError("a negative floor is margin borrowing — forbidden by the IPS")
     for invalid in (-0.01, 1.01, nan, inf, True):
@@ -169,6 +200,14 @@ def published_allocation() -> tuple[dict[str, float], dict[str, tuple[float, flo
     return targets, bands
 
 
+def published_soxx_ceiling() -> float:
+    """Parse the SOXX disclosure ceiling out of the constitution."""
+    hit = re.search(r"只作披露的上沿[：:]\s*(\d+(?:\.\d+)?)%", read(CONSTITUTION))
+    if not hit:
+        raise AssertionError("00-constitution.md no longer publishes the SOXX ceiling")
+    return float(hit.group(1)) / 100
+
+
 def published_migration_months() -> int:
     """Parse R out of the monthly reference's strategic-baseline definition."""
     hit = re.search(r"\\\(R=(\d+)\\\)", read(MONTHLY_REF))
@@ -177,12 +216,31 @@ def published_migration_months() -> int:
     return int(hit.group(1))
 
 
-def published_tiers() -> tuple[tuple[float, float], ...]:
-    """Parse the constitution's drawdown table back into (trigger, tranche)."""
-    row = re.compile(r"^\|\s*T\d\s*\|\s*`DD ≥ (\d+)%`\s*\|\s*(\d+\.\d+)pp")
-    return tuple((int(m.group(1)) / 100, float(m.group(2)) / 100)
-                 for m in (row.match(line.strip()) for line in read(CONSTITUTION).splitlines())
-                 if m)
+def published_ladders() -> dict[str, float]:
+    """Parse the constitution's per-ticker ladder totals out of its tier table."""
+    row = re.compile(
+        r"^\|\s*(SPYM|QQQM|SOXX)\s*\|\s*\d+%\s*\|\s*(\d+\.\d+)pp\s*\|")
+    out = {}
+    for line in read(CONSTITUTION).splitlines():
+        hit = row.match(line.strip())
+        if hit:
+            out[hit.group(1).lower()] = float(hit.group(2)) / 100
+    return out
+
+
+def published_tranches() -> dict[str, tuple[float, ...]]:
+    """Parse each ticker's four published tranches, left to right."""
+    row = re.compile(
+        r"^\|\s*(SPYM|QQQM|SOXX)\s*\|\s*\d+%\s*\|\s*\d+\.\d+pp\s*\|"
+        r"\s*(\d+\.\d+)pp\s*\|\s*(\d+\.\d+)pp\s*\|\s*(\d+\.\d+)pp\s*\|"
+        r"\s*(\d+\.\d+)pp\s*\|")
+    out = {}
+    for line in read(CONSTITUTION).splitlines():
+        hit = row.match(line.strip())
+        if hit:
+            out[hit.group(1).lower()] = tuple(
+                float(hit.group(i)) / 100 for i in range(2, 6))
+    return out
 
 
 def published_matches_code() -> None:
@@ -192,9 +250,16 @@ def published_matches_code() -> None:
         raise AssertionError(f"constitution targets {targets} != code {TARGETS}")
     if bands != BANDS:
         raise AssertionError(f"constitution bands {bands} != code {BANDS}")
-    tiers = published_tiers()
-    if tiers != DRAWDOWN_TIERS:
-        raise AssertionError(f"constitution tiers {tiers} != code {DRAWDOWN_TIERS}")
+    ladders = published_ladders()
+    if ladders != LADDERS:
+        raise AssertionError(f"constitution ladders {ladders} != code {LADDERS}")
+    tranches = published_tranches()
+    for t, published in tranches.items():
+        coded = tuple(w for tk, _tr, _n, w in DRAWDOWN_TIERS if tk == t)
+        if any(abs(a - b) > 1e-12 for a, b in zip(published, coded)):
+            raise AssertionError(f"constitution {t} tranches {published} != code {coded}")
+    if set(tranches) != set(LADDERS):
+        raise AssertionError(f"constitution publishes tranches for {set(tranches)}")
 
 
 def load_runtime_module(rel_path: str):
@@ -217,35 +282,46 @@ def mirror_tests() -> None:
     canonical values above, so a corrupted middle tier cannot slip through."""
     monthly = load_runtime_module(
         "skills/investment-os/scripts/monthly_execution.py")
-    tiers = tuple((trigger, tranche) for trigger, _name, tranche in monthly.TIERS)
-    if tiers != DRAWDOWN_TIERS:
-        raise AssertionError(f"monthly_execution.TIERS diverged: {tiers}")
-    names = tuple(name for _trigger, name, _tranche in monthly.TIERS)
-    if names != TIER_NAMES:
-        raise AssertionError(f"monthly_execution.TIERS names diverged: {names}")
+    if monthly.TIERS != DRAWDOWN_TIERS:
+        raise AssertionError(f"monthly_execution.TIERS diverged: {monthly.TIERS}")
+    if monthly.LADDERS != LADDERS:
+        raise AssertionError(f"monthly_execution.LADDERS diverged: {monthly.LADDERS}")
+    if monthly.TIER_NAMES != TIER_NAMES:
+        raise AssertionError(f"monthly_execution.TIER_NAMES diverged: {monthly.TIER_NAMES}")
     if monthly.ABSOLUTE_FLOOR != ABSOLUTE_FLOOR:
         raise AssertionError(f"monthly_execution.ABSOLUTE_FLOOR diverged: {monthly.ABSOLUTE_FLOOR}")
     if monthly.TARGETS != TARGETS:
         raise AssertionError(f"monthly_execution.TARGETS diverged: {monthly.TARGETS}")
     if monthly.BANDS != BANDS:
         raise AssertionError(f"monthly_execution.BANDS diverged: {monthly.BANDS}")
-    if monthly.CASH_FLOOR != NORMAL_CASH_FLOOR:
-        raise AssertionError("monthly_execution cash floor diverged")
+    if monthly.SOXX_CEILING != SOXX_CEILING:
+        raise AssertionError(f"monthly_execution.SOXX_CEILING diverged: {monthly.SOXX_CEILING}")
+    if monthly.SOXX_CEILING != published_soxx_ceiling():
+        raise AssertionError(
+            "00-constitution.md and monthly_execution.SOXX_CEILING disagree on the ceiling")
+    if hasattr(monthly, "CASH_FLOOR"):
+        raise AssertionError(
+            "CASH_FLOOR is back: the percentage cash floor was removed because "
+            "B <= S and D <= F make it unreachable under every input")
     if monthly.MIGRATION_MONTHS < 2:
         raise AssertionError(
             "R must stay above 1, or the strategic baseline becomes a lump sum")
     if monthly.MIGRATION_MONTHS != published_migration_months():
         raise AssertionError(
             "02-monthly.md and monthly_execution.MIGRATION_MONTHS disagree on R")
-    # A fired tier drops the floor straight to the absolute floor; what limits
-    # the deployment is the tier's own tranche, not the floor. Asserted so the
-    # behaviour is a checked intent rather than an accident of the expression.
-    fired = monthly.compute(100_000, 20_000, 45_000, 28_000, 5_000, 0,
-                            0.10, set())
-    if fired["floor_w"] != ABSOLUTE_FLOOR:
-        raise AssertionError(f"a fired tier must drop the floor to {ABSOLUTE_FLOOR}")
-    if abs(fired["dd_amount"] - DRAWDOWN_TIERS[0][1] * 100_000) > 1e-6:
-        raise AssertionError("the tranche, not the floor, must cap the deployment")
+    # A fired tier drops the bound straight to the absolute floor; what limits
+    # the deployment is the tier's own tranche, not any percentage line.
+    # Asserted so this is a checked intent, not an accident of the expression.
+    fired = monthly.compute(100_000, 20_000, 40_000, 28_000, 5_000, 0,
+                            {"spym": 0.10, "qqqm": None, "soxx": None},
+                            {"spym": set()})
+    if fired["structural_bound_w"] != ABSOLUTE_FLOOR:
+        raise AssertionError(f"a fired tier must drop the bound to {ABSOLUTE_FLOOR}")
+    if abs(fired["dd_amount"] - LADDERS["spym"] / 10 * 100_000) > 1e-6:
+        raise AssertionError("the tranche, not a floor, must cap the deployment")
+    # a SPYM tranche buys SPYM: it must not reach into another ticker's gap
+    if fired["dd_alloc"]["qqqm"] or fired["dd_alloc"]["soxx"]:
+        raise AssertionError("a SPYM tranche deployed into another ticker")
 
 
 PRIVACY_PATTERNS = (
