@@ -11,6 +11,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 CONSTITUTION = "skills/investment-os/references/00-constitution.md"
+MONTHLY_REF = "skills/investment-os/references/02-monthly.md"
 sys.path.insert(0, str(ROOT / "skills" / "investment-os" / "scripts"))
 
 # Four explicit per-ticker targets summing to 100%.
@@ -168,6 +169,14 @@ def published_allocation() -> tuple[dict[str, float], dict[str, tuple[float, flo
     return targets, bands
 
 
+def published_migration_months() -> int:
+    """Parse R out of the monthly reference's strategic-baseline definition."""
+    hit = re.search(r"\\\(R=(\d+)\\\)", read(MONTHLY_REF))
+    if not hit:
+        raise AssertionError("02-monthly.md no longer publishes R")
+    return int(hit.group(1))
+
+
 def published_tiers() -> tuple[tuple[float, float], ...]:
     """Parse the constitution's drawdown table back into (trigger, tranche)."""
     row = re.compile(r"^\|\s*T\d\s*\|\s*`DD ≥ (\d+)%`\s*\|\s*(\d+\.\d+)pp")
@@ -189,10 +198,17 @@ def published_matches_code() -> None:
 
 
 def load_runtime_module(rel_path: str):
+    """Load the module from SOURCE, never from a cached .pyc.
+
+    The default loader validates bytecode on (mtime, size); an edit that keeps
+    the size and lands inside the mtime resolution is served from the stale
+    cache. A checker whose whole job is catching edits must not be able to
+    compare against the file as it used to be.
+    """
     path = ROOT / rel_path
     spec = importlib.util.spec_from_file_location(path.stem, path)
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    exec(compile(path.read_text(), str(path), "exec"), module.__dict__)
     return module
 
 
@@ -215,15 +231,17 @@ def mirror_tests() -> None:
         raise AssertionError(f"monthly_execution.BANDS diverged: {monthly.BANDS}")
     if monthly.CASH_FLOOR != NORMAL_CASH_FLOOR:
         raise AssertionError("monthly_execution cash floor diverged")
-    if monthly.MIN_MONTHS_REMAINING < 2:
+    if monthly.MIGRATION_MONTHS < 2:
         raise AssertionError(
-            "R must stay above 1, or the baseline becomes a lump sum past the plan end")
+            "R must stay above 1, or the strategic baseline becomes a lump sum")
+    if monthly.MIGRATION_MONTHS != published_migration_months():
+        raise AssertionError(
+            "02-monthly.md and monthly_execution.MIGRATION_MONTHS disagree on R")
     # A fired tier drops the floor straight to the absolute floor; what limits
     # the deployment is the tier's own tranche, not the floor. Asserted so the
     # behaviour is a checked intent rather than an accident of the expression.
-    from datetime import date
     fired = monthly.compute(100_000, 20_000, 45_000, 28_000, 5_000, 0,
-                            0.10, set(), date(2026, 8, 1))
+                            0.10, set())
     if fired["floor_w"] != ABSOLUTE_FLOOR:
         raise AssertionError(f"a fired tier must drop the floor to {ABSOLUTE_FLOOR}")
     if abs(fired["dd_amount"] - DRAWDOWN_TIERS[0][1] * 100_000) > 1e-6:
