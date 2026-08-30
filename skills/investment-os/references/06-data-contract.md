@@ -131,8 +131,9 @@ Red 数据不得进入依赖该字段的计算。**影响必须按字段局部�
 - `position_weight`：标的市值 ÷ `net_liquidation_usd`。
 - `position_target_weight`：宪法第一部分战略结构表中该标的的目标权重（现金 15%、SPYM 50%、QQQM 30%、SOXX 5%）。
 - `position_gap_usd`：\(\max(\text{目标权重}\times V-\text{市值},0)\)。负值取 0，不产生卖出信号。
-- `within_band`：该标的实际权重是否落在宪法带宽内（现金 10–20%、SPYM 45–55%、QQQM 25–35%）。SOXX 无带宽，记 `N/A`。
-- `cash_floor_weight`：12%，例行路径交易后的硬下限；回撤部署按档临时下调，最深至 0%。
+- `within_band`：该标的实际权重是否落在宪法带宽内（现金 10–20%、SPYM 45–55%、QQQM 25–35%）。SOXX 无对称带宽，记 `N/A`。
+- `soxx_above_ceiling`：SOXX 实际权重是否超过宪法的 7.5% 披露上沿。只作披露，不阻断任何路径。
+- `cash_absolute_floor_weight`：0%，任何情形下的硬下限。现金可以归零，不得为负。例行路径够不到它（`B ≤ S`、`D ≤ F`），只有回撤部署能把现金推到那里。
 
 ### 账户与月度执行字段
 

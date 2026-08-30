@@ -55,7 +55,12 @@ TARGETS = {"cash": 0.15, "spym": 0.50, "qqqm": 0.30, "soxx": 0.05}
 BANDS = {"cash": (0.10, 0.20), "spym": (0.45, 0.55), "qqqm": (0.25, 0.35)}
 TICKERS = ("spym", "qqqm", "soxx")
 CASH_TARGET = TARGETS["cash"]
-CASH_FLOOR = 0.12   # risk constraint on trades, not the lower band edge
+# SOXX has no symmetric band: for a 5% position a symmetric band is meaningless,
+# and being underweight is already caught by a positive gap. Overweight was not
+# caught by anything — SOXX sits out of the band check and an overweight gap is
+# zero — so it carries a disclosure-only ceiling. Crossing it reports; it never
+# sells, and it never blocks a path.
+SOXX_CEILING = 0.075
 # Each tier releases a FIXED tranche of NAV, graded 1:2:3:4: the first shot
 # stays small while most of the money lands at the deepest, best-priced
 # entries. The four tranches sum to the cash target, so the ladder spends the
@@ -126,6 +131,11 @@ def within_band(name: str, weight: float) -> bool | None:
         return None
     low, high = BANDS[name]
     return low - 1e-12 <= weight <= high + 1e-12
+
+
+def above_ceiling(name: str, weight: float) -> bool:
+    """True when SOXX has drifted past its disclosure-only ceiling."""
+    return name == "soxx" and weight > SOXX_CEILING + 1e-12
 
 
 def portfolio_state(nav, cash, spym, qqqm, soxx, legacy=0.0):
@@ -200,17 +210,16 @@ def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed,
     dd_alloc = allocate(dd_amount, gaps_after_db)
 
     final_cash = cash_after_db - dd_amount
-    floor_after = ABSOLUTE_FLOOR if consumed else CASH_FLOOR
-    # A month can legitimately START below the normal floor: the tranches
-    # lowered cash by design, and the deployment framework (02-monthly.md part 2 §2) says it rebuilds
-    # only from external contributions afterwards, with the Routine DCA
-    # explicitly not paused for it. The floor gate therefore checks what THIS
-    # month's trades do, not where history left the balance: trades must not
-    # take cash below the floor in force, and a month already below it only
-    # requires that trades not push it lower still. The start level excludes F
-    # because D may spend up to all of F; what D leaves behind is the rebuild.
+    # There is no percentage cash floor to enforce. The routine paths cannot
+    # reach one: B <= S = max(cash - 15%V, 0) cannot take cash below the 15%
+    # target, and D <= F cannot take it below the pre-contribution level. A
+    # 12% line used to sit here and was unreachable under every input — a rule
+    # that looks binding but never is, which is worse than no rule. What the
+    # policy actually constrains is that cash never goes negative, and only
+    # drawdown deployment can approach that; the tranche caps enforce it.
+    # This bound is reported so the reader can see where cash could not go.
     start_cash_w = max(cash - contribution, 0.0) / nav
-    floor_effective = min(floor_after, start_cash_w)
+    structural_bound = 0.0 if consumed else min(CASH_TARGET, start_cash_w)
     return {
         "weights": state["weights"],
         "values": state["values"],
@@ -223,11 +232,9 @@ def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed,
         "consumed": consumed, "released_w": released_w,
         "dd_amount": dd_amount, "dd_alloc": dd_alloc,
         "final_cash": final_cash, "final_cash_w": final_cash / nav,
-        # the floor in force this month: the crisis floor only when a tier fired
-        "floor_w": floor_after,
         "start_cash_w": start_cash_w,
-        "floor_effective_w": floor_effective,
-        "floor_ok": final_cash / nav >= floor_effective - 1e-9,
+        "structural_bound_w": structural_bound,
+        "cash_non_negative": final_cash >= -1e-9,
     }
 
 
@@ -258,6 +265,9 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
         if ok is False:
             issues_note = f"{name.upper()} 权重 {res['weights'][name]:.2%} 位于带宽外"
             print(f"           ** {issues_note} —— 披露项，不阻断例行路径 **")
+        if above_ceiling(name, res["weights"][name]):
+            print(f"           ** SOXX 权重 {res['weights'][name]:.2%} 超过 {SOXX_CEILING:.1%} 披露上沿"
+                  f" —— 季度审核须记录；不卖出、不阻断，靠新增资金稀释修复 **")
     if res.get("legacy", 0.0) > 0:
         print(f"  {'LEGACY':<8}{res['legacy']/nav:>8.2%}{'—':>9}{'不适用':>15}"
               f"{'不适用':>12}{'—':>11}")
@@ -313,24 +323,24 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
 
     total = res["d"] + res["b"] + res["dd_amount"]
     print(f"\n[4] 例行路径检查")
-    rebuilding = res["floor_effective_w"] < res["floor_w"] - 1e-9
-    floor_label = (
-        f"交易后现金 {res['final_cash_w']:.2%} ≥ 有效下限 {res['floor_effective_w']:.2%}"
-        + (f"（现行下限 {res['floor_w']:.2%}；月初水位 {res['start_cash_w']:.2%}，"
-           "部署后重建期不因此阻断例行路径）" if rebuilding
-           else f"（现行下限 {res['floor_w']:.2%}）")
+    cash_label = (
+        f"交易后现金 {res['final_cash_w']:.2%}"
+        f"（本月结构下界 {res['structural_bound_w']:.2%}"
+        + ("：档位已触发，下界即绝对下限 0%" if res["consumed"]
+           else f"，取 15% 目标与月初入金前水位 {res['start_cash_w']:.2%} 的较低者）")
+        + ("" if res["consumed"] else "")
     )
     checks = [
         ("只买 Production 标的的正缺口", True),
         ("金额完全由已发布公式产生", True),
-        (floor_label, res["floor_ok"]),
-        ("不使用融资", res["final_cash"] >= -1e-9),
+        ("不使用融资：交易后现金不为负", res["cash_non_negative"]),
         ("没有重复或冲突订单", inp.get("open_orders_status") == "clear"),
     ]
     for label, ok in checks:
         print(f"  [{'x' if ok else ' '}] {label}")
         if not ok:
             issues.append(label)
+    print(f"  ·   {cash_label}")
 
     print(f"\n[5] 结论")
     if issues:
@@ -345,7 +355,7 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
             amt = res["d_alloc"][name] + res["b_alloc"][name] + res["dd_alloc"][name]
             if amt >= 1.0:   # below 1 unit is float residue, not a real candidate
                 print(f"    {name.upper()}  {money(amt)}")
-        print(f"  交易后现金 {res['final_cash_w']:.2%}（有效下限 {res['floor_effective_w']:.2%}）")
+        print(f"  交易后现金 {res['final_cash_w']:.2%}（本月结构下界 {res['structural_bound_w']:.2%}）")
         print(f"\n  本结论不是下单授权。数量、限价与有效期由账户所有者在 IBKR 人工确定并确认。")
     return issues
 
@@ -402,10 +412,21 @@ def self_test() -> None:
     assert spent["dd_amount"] == 0 and not spent["consumed"], \
         "a spent ladder must authorize nothing however deep the fall"
 
-    # 8. cash never ends below the authorized floor
+    # 8. the two structural cash bounds. There is no percentage floor gate: the
+    # formulas make one unreachable, so the properties it pretended to enforce
+    # are asserted directly instead — a check that can fail, not a tautology.
+    # 8a. no routine path takes cash below the 15% target or below the level it
+    # started at before this month's contribution, whichever is lower.
+    for cash_w in (0.05, 0.12, 0.15, 0.20, 0.41, 0.60):
+        for f in (0.0, 1_500.0, 15_000.0):
+            cash = cash_w * 100_000
+            r = compute(100_000 + f, cash + f, 30_000, 15_000, 6_000, f, 0.0, set())
+            assert r["final_cash_w"] >= r["structural_bound_w"] - 1e-9, \
+                f"routine path pierced the structural bound at cash {cash_w}, F {f}"
+    # 8b. cash never goes negative, at any depth, with any tiers already spent
     for dd, ex in ((0.0, set()), (0.11, set()), (0.28, set()), (0.40, set()), (0.28, {"T1"})):
         r = compute(100_000, 30_000, 30_000, 15_000, 6_000, 3_000, dd, ex)
-        assert r["final_cash_w"] >= r["floor_w"] - 1e-9, f"cash pierced the floor at DD {dd}"
+        assert r["cash_non_negative"], f"cash went negative at DD {dd}"
 
     # 9. the baseline deploys a fixed fraction of the surplus, never all of it
     assert MIGRATION_MONTHS >= 2, "R = 1 collapses B into min(S, G): a lump sum"
@@ -456,20 +477,33 @@ def self_test() -> None:
     # that STARTS below the normal floor because tranches fired earlier in the
     # cycle is a rebuild state, not a violation — the floor gate must pass it.
     r = compute(100_000, 11_000, 55_000, 28_500, 4_900, 0, 0.17, {"T1", "T2"})
-    assert r["final_cash_w"] < CASH_FLOOR, "rebuild fixture must sit below the normal floor"
-    assert r["floor_ok"], "post-deployment rebuild month tripped the floor gate"
+    assert r["final_cash_w"] < CASH_TARGET, "rebuild fixture must sit below the cash target"
+    assert r["cash_non_negative"], "post-deployment rebuild month drove cash negative"
     # and a contribution flowing through D returns cash to its pre-F level —
     # the DCA runs, and that is still not a breach
     r = compute(100_000, 11_500, 55_000, 28_000, 4_900, 2_000, 0.18, {"T1", "T2"})
     assert r["d"] > 0, "rebuild fixture must exercise the DCA path"
-    assert r["floor_ok"], "DCA during the rebuild tripped the floor gate"
+    assert r["final_cash"] >= (11_500 - 2_000) - 1e-9, \
+        "DCA spent more than the contribution: it must never dig into existing cash"
 
     # 14. band classification matches the published edges
     assert within_band("cash", 0.15) and within_band("cash", 0.10) and within_band("cash", 0.20)
     assert not within_band("cash", 0.0999) and not within_band("cash", 0.2001)
     assert within_band("soxx", 0.05) is None, "SOXX must report no band"
 
-    print("monthly_execution self-test passed (14 invariants)")
+    # 15. SOXX overweight is visible. Without the ceiling nothing reports it:
+    # it is outside the band check and an overweight position has a zero gap.
+    assert SOXX_CEILING > TARGETS["soxx"], "the ceiling must sit above the target"
+    assert not above_ceiling("soxx", TARGETS["soxx"]), "at target is not above the ceiling"
+    assert not above_ceiling("soxx", SOXX_CEILING), "the ceiling edge is inside"
+    assert above_ceiling("soxx", SOXX_CEILING + 1e-6), "just past the ceiling must report"
+    assert not above_ceiling("spym", 0.99), "the ceiling applies to SOXX alone"
+    drift = compute(100_000, 20_000, 45_000, 27_000, 8_000, 0, 0.0, set())
+    assert drift["gaps"]["soxx"] == 0.0, "overweight SOXX still yields no gap"
+    assert above_ceiling("soxx", drift["weights"]["soxx"]), \
+        "an 8% SOXX position must trip the ceiling that the gap cannot"
+
+    print("monthly_execution self-test passed (15 invariants)")
 
 
 def main() -> int:

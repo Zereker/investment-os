@@ -17,14 +17,14 @@ sys.path.insert(0, str(ROOT / "skills" / "investment-os" / "scripts"))
 # Four explicit per-ticker targets summing to 100%.
 TARGETS = {"cash": 0.15, "spym": 0.50, "qqqm": 0.30, "soxx": 0.05}
 # Bands are disclosure and transition-completion criteria, NOT no-trade zones:
-# routine DCA still buys any positive gap with no threshold. SOXX has no band —
-# a symmetric band on a 5% position is meaningless; its criterion is gap == 0.
+# routine DCA still buys any positive gap with no threshold. SOXX has no
+# symmetric band — one is meaningless on a 5% position — so being underweight is
+# caught by its positive gap and being OVERWEIGHT is caught by a disclosure-only
+# ceiling. Without that ceiling an overweight SOXX is reported by nothing: it is
+# outside the band check and an overweight position's gap is zero.
 BANDS = {"cash": (0.10, 0.20), "spym": (0.45, 0.55), "qqqm": (0.25, 0.35)}
+SOXX_CEILING = 0.075
 CASH_TARGET = TARGETS["cash"]
-# The cash floor is a RISK constraint, not the lower band edge. The band
-# describes state (a market move may carry cash to 10%); the floor constrains
-# trades (routine buying must not drive cash under it).
-NORMAL_CASH_FLOOR = 0.12
 # Each tier releases a FIXED tranche of NAV, graded 1:2:3:4 so the first shot
 # stays small while most of the money lands at the deepest entries. The four
 # tranches sum to the cash target, so the ladder spends the cash out entirely.
@@ -65,11 +65,10 @@ def allocation_tests() -> None:
     if "soxx" in BANDS:
         raise AssertionError("SOXX must not carry a band")
 
-    # the cash floor is a separate object from the band: it sits below the
-    # target (so routine buying has room) and above the band's lower edge (a
-    # market move may legitimately carry cash under the floor without a trade)
-    if not BANDS["cash"][0] <= NORMAL_CASH_FLOOR < CASH_TARGET:
-        raise AssertionError("cash floor must sit within the band and below the target")
+    # the SOXX ceiling is a disclosure line above the target, not a band edge:
+    # it must sit above the target or it would fire while SOXX is at policy
+    if SOXX_CEILING <= TARGETS["soxx"]:
+        raise AssertionError("the SOXX ceiling must sit above its target")
 
     # gaps: at target and above target nothing is bought; below target the gap
     # is exactly the shortfall
@@ -127,10 +126,8 @@ def drawdown_tests() -> None:
     # the tranches take cash from the 15% target exactly to the absolute floor
     if abs(LADDER + ABSOLUTE_FLOOR - CASH_TARGET) > 1e-12:
         raise AssertionError("ladder does not span the cash target down to the floor")
-    if ABSOLUTE_FLOOR >= NORMAL_CASH_FLOOR:
-        raise AssertionError("the crisis floor must sit below the normal floor")
     # the floor may be zero but never negative: that would be borrowing, which
-    # the IPS forbids outright (owner reaffirmed no leverage on 2026-08-01)
+    # the IPS forbids outright
     if ABSOLUTE_FLOOR < 0:
         raise AssertionError("a negative floor is margin borrowing — forbidden by the IPS")
     for invalid in (-0.01, 1.01, nan, inf, True):
@@ -167,6 +164,14 @@ def published_allocation() -> tuple[dict[str, float], dict[str, tuple[float, flo
         if hit.group(3) is not None:
             bands[name] = (float(hit.group(3)) / 100, float(hit.group(4)) / 100)
     return targets, bands
+
+
+def published_soxx_ceiling() -> float:
+    """Parse the SOXX disclosure ceiling out of the constitution."""
+    hit = re.search(r"只作披露的上沿[：:]\s*(\d+(?:\.\d+)?)%", read(CONSTITUTION))
+    if not hit:
+        raise AssertionError("00-constitution.md no longer publishes the SOXX ceiling")
+    return float(hit.group(1)) / 100
 
 
 def published_migration_months() -> int:
@@ -229,23 +234,30 @@ def mirror_tests() -> None:
         raise AssertionError(f"monthly_execution.TARGETS diverged: {monthly.TARGETS}")
     if monthly.BANDS != BANDS:
         raise AssertionError(f"monthly_execution.BANDS diverged: {monthly.BANDS}")
-    if monthly.CASH_FLOOR != NORMAL_CASH_FLOOR:
-        raise AssertionError("monthly_execution cash floor diverged")
+    if monthly.SOXX_CEILING != SOXX_CEILING:
+        raise AssertionError(f"monthly_execution.SOXX_CEILING diverged: {monthly.SOXX_CEILING}")
+    if monthly.SOXX_CEILING != published_soxx_ceiling():
+        raise AssertionError(
+            "00-constitution.md and monthly_execution.SOXX_CEILING disagree on the ceiling")
+    if hasattr(monthly, "CASH_FLOOR"):
+        raise AssertionError(
+            "CASH_FLOOR is back: the percentage cash floor was removed because "
+            "B <= S and D <= F make it unreachable under every input")
     if monthly.MIGRATION_MONTHS < 2:
         raise AssertionError(
             "R must stay above 1, or the strategic baseline becomes a lump sum")
     if monthly.MIGRATION_MONTHS != published_migration_months():
         raise AssertionError(
             "02-monthly.md and monthly_execution.MIGRATION_MONTHS disagree on R")
-    # A fired tier drops the floor straight to the absolute floor; what limits
-    # the deployment is the tier's own tranche, not the floor. Asserted so the
-    # behaviour is a checked intent rather than an accident of the expression.
+    # A fired tier drops the bound straight to the absolute floor; what limits
+    # the deployment is the tier's own tranche, not any percentage line.
+    # Asserted so this is a checked intent, not an accident of the expression.
     fired = monthly.compute(100_000, 20_000, 45_000, 28_000, 5_000, 0,
                             0.10, set())
-    if fired["floor_w"] != ABSOLUTE_FLOOR:
-        raise AssertionError(f"a fired tier must drop the floor to {ABSOLUTE_FLOOR}")
+    if fired["structural_bound_w"] != ABSOLUTE_FLOOR:
+        raise AssertionError(f"a fired tier must drop the bound to {ABSOLUTE_FLOOR}")
     if abs(fired["dd_amount"] - DRAWDOWN_TIERS[0][1] * 100_000) > 1e-6:
-        raise AssertionError("the tranche, not the floor, must cap the deployment")
+        raise AssertionError("the tranche, not a floor, must cap the deployment")
 
 
 PRIVACY_PATTERNS = (
