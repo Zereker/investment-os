@@ -6,7 +6,7 @@
 
 ## A. 数据读取（Preconditions）
 
-只读取当前判断路径实际需要的账户与市场能力，并分别记录来源和 `observed_at`。不可用能力表示为 `null`，不得伪装成 `0`、空对象或空数组；只有接口成功后，空订单、空警报或空现金活动才是事实。
+只读取当前判断路径实际需要的账户与市场能力，并分别记录来源和 `observed_at`。不可用能力表示为 `null`，不得伪装成 `0`、空对象或空数组；只有接口成功后，空订单或空现金活动才是事实。
 
 关键输入缺失、过期、币种不明或冲突时，继续报告不受影响的已知事实，将受影响的路径标记为 `DATA INCOMPLETE`，停止该路径的新交易候选，并说明最小恢复条件。不得用旧快照填充「今日」状态。
 
@@ -18,18 +18,7 @@
 - Positions 与 Open Orders 是否存在数量冲突
 - 是否出现零数量持仓、碎股、异常价格或重复合约
 - Leverage 是否来自真实借款，还是仅表示投资比例
-- 回撤警报数量、标的、字段、运算符、档位和价格是否与各标的当前周期状态一致（SPYM 一个、QQQM 一个；无阶梯标的上的警报单独报告）
 - 是否存在可绕过 Production universe 的常驻券商自动化；发现时只报告并阻断，不自动修改
-
-### B.1 回撤警报指针每日核对
-
-指针的完整不变量见 `05-state.md`，本节只规定每日动作：
-
-1. 按 `05-state.md` **分别**重建 SPYM 与 QQQM 各自的历史最高收盘与本周期已执行档位；
-2. 运行 `python3 skills/investment-os/scripts/alert_pointer_check.py`，比较每只标的重建出的 expected pointer 与 IBKR actual alert；
-3. 不得把券商警报本身当成已执行状态的证据。
-
-任何不一致：`Account Health = WARN`、`drawdown deployment state = DATA INCOMPLETE`、停止新的回撤部署候选；其他例行资金路径按其自身 Data Gate 判断。报告 expected、actual、差异与人工修复条件，不得由 agent 自动修改券商警报。
 
 ## C. 判断与输出
 
@@ -37,22 +26,7 @@
 
 输出只使用 canonical `SKILL.md` 定义的 `Portfolio`、`Change`、`Decision`、`Reason`、`Next Trigger` 五个字段。没有动作时 `HOLD` 是完整结果；数据问题只阻断受影响的路径。日报不得给出可直接提交的订单参数或交易指令。
 
-下一观察条件必须客观、具体、可验证，不得写「继续关注市场」。警报指针异常时，恢复条件是 IBKR 中每套未耗尽阶梯各有且只有一个启用警报，且与该标的的 expected pointer 完全一致。
-
-### C.1 市场背景块
-
-五个字段之后附一块市场背景：
-
-```bash
-python3 skills/investment-os/scripts/market_context.py \
-  --spym-series <日收盘 JSON> --vix-close <收盘> --vix-as-of <日期>
-```
-
-脚本自己取数并缩减（CNN 接口约 177KB，只取其中一个对象），取不到就打印「缺（原因）」。
-
-**这一块只作披露。** 它的任何字段都不得出现在 `Decision` 或 `Reason` 里，也不得作为改变结论的理由 —— 没有任何资金通道、缺口或档位以它为条件（宪法决策原则 7）。唯一的例外是 VIX 对订单类型的影响，见 `02-monthly.md` 执行约束。
-
-PE 必须连同口径一起报（如 `29.72（GAAP，multpl）`）；不同口径的数不得比较，也不得混算分位。
+下一观察条件必须客观、具体、可验证，不得写「继续关注市场」。
 
 ## D. 事实与报告纪律
 
@@ -62,7 +36,6 @@ PE 必须连同口径一起报（如 `29.72（GAAP，multpl）`）；不同口�
 - 研究指标只能放在独立的 Research Note，不得混入 Production Decision。
 - 价格涨跌本身不产生 `SELL CANDIDATE`。
 - 无操作是有效结果。
-- agent 只报告警报修复要求，不自动创建、修改或删除 IBKR 警报。
 
 ## E. Privacy and Retention
 

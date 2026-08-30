@@ -369,8 +369,7 @@ def report(inp, res, dd, dd_as_of, ath, executed, tiers_known,
             print(f"     → 消耗 {', '.join(res['consumed'][name])}，释放 {res['released_w'][name]:.2%} of NAV"
                   f"，实际部署 {money(res['dd_alloc'][name])}（受该标的正缺口与现金限制）")
     if res["any_consumed"]:
-        print(f"  全部消耗档位必须由 IBKR 成交记录确认，并更新对应标的的 IBKR 警报指针"
-              f"（绝对下限 {ABSOLUTE_FLOOR:.0%}）")
+        print(f"  全部消耗档位必须由 IBKR 成交记录确认（绝对下限 {ABSOLUTE_FLOOR:.0%}）")
 
     print(f"\n[3] 三条资金通道（都只买正缺口，三个标的同等对待）")
     if not contribution_known:

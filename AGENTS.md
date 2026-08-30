@@ -18,7 +18,7 @@ Chinese. The split follows the reader, not preference:
 
 | Layer | Language | Reader |
 |---|---|---|
-| `skills/investment-os/SKILL.md`, eval scenarios, `evals/`, code, tests, docs | English | the agent and the verifier |
+| `skills/investment-os/SKILL.md`, code, tests, docs | English | the agent |
 | `skills/investment-os/references/*` | Chinese | the owner |
 
 Two reasons hold this line. Behavior rules bind through naming the exact
