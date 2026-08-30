@@ -66,12 +66,13 @@ TIERS = ((0.10, "T1", 0.0150),
          (0.25, "T4", 0.0600))
 ABSOLUTE_FLOOR = 0.0     # cash never goes below this via drawdown deployment
 LADDER = sum(t[2] for t in TIERS)   # 15pp: the whole cash position is ammunition
-PLAN_END = (2028, 12)  # strategic baseline planned completion month
-# R never drops below this. Flooring at 1 made B = min(S, G) from the plan end
-# onward, so any excess cash after 2028-12 would deploy in a single month —
-# the lump sum the tranching rules forbid, and worst in the drawdown that
-# creates the excess. Past the plan end the baseline rolls over 12 months.
-MIN_MONTHS_REMAINING = 12
+# The strategic baseline migrates surplus cash over a FIXED window: B = min(S/R, G)
+# with R constant. Not a countdown to a date: a countdown needs stored state this
+# system does not keep, and its final period (R = 1) deploys the entire remainder
+# in one month — the lump sum the tranching rules forbid, and worst in the
+# drawdown that creates the surplus. Held fixed, the surplus decays geometrically
+# and no single month is ever a lump sum.
+MIGRATION_MONTHS = 3
 # DD is not fetched here. The registry names IBKR the source for the SPYM close
 # series, and only the session can reach it; a script that quietly pulled an
 # aggregator instead would be sourcing a tier trigger from an unregistered feed.
@@ -79,16 +80,6 @@ MIN_MONTHS_REMAINING = 12
 # passes it with its as-of date. No --dd means tiers are not evaluated today —
 # the registry localizes that failure and leaves every other path running.
 MAX_DD_AGE_DAYS = 7
-
-
-def months_remaining(today: date) -> int:
-    """R: monthly execution slots left through PLAN_END inclusive.
-
-    Floored at MIN_MONTHS_REMAINING so the baseline keeps tranching after the
-    plan end instead of collapsing into a single lump-sum deployment.
-    """
-    n = (PLAN_END[0] - today.year) * 12 + (PLAN_END[1] - today.month) + 1
-    return max(n, MIN_MONTHS_REMAINING)
 
 
 def dd_series_is_fresh(last_day: str, today: date) -> bool:
@@ -137,7 +128,7 @@ def within_band(name: str, weight: float) -> bool | None:
     return low - 1e-12 <= weight <= high + 1e-12
 
 
-def portfolio_state(nav, cash, spym, qqqm, soxx, today, legacy=0.0):
+def portfolio_state(nav, cash, spym, qqqm, soxx, legacy=0.0):
     """Return allocation facts that remain valid before funding inputs exist.
 
     Daily review uses this subset when a broker capability is unavailable. It
@@ -158,7 +149,7 @@ def portfolio_state(nav, cash, spym, qqqm, soxx, today, legacy=0.0):
         "targets_usd": targets_usd,
         "gaps": gaps,
         "g0": sum(gaps.values()),
-        "r": months_remaining(today),
+        "r": MIGRATION_MONTHS,
         "cash": cash,
     }
 
@@ -190,10 +181,10 @@ def routine_channels(nav, cash, state, contribution):
     }
 
 
-def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed, today,
+def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed,
             legacy=0.0):
     """Everything the monthly workflow needs. Pure function of its inputs."""
-    state = portfolio_state(nav, cash, spym, qqqm, soxx, today, legacy)
+    state = portfolio_state(nav, cash, spym, qqqm, soxx, legacy)
     routine = routine_channels(nav, cash, state, contribution)
 
     b_alloc = routine["b_alloc"]
@@ -308,7 +299,7 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
         print(f"  Routine DCA   D = min(F={money(inp['contribution'])}, G_0={money(res['g0'])}) = {money(res['d'])}")
         print(f"                  → " + " ｜ ".join(
             f"{n.upper()} {money(res['d_alloc'][n])}" for n in TICKERS))
-    print(f"  Strategic     R = {res['r']} 期至 2028-12")
+    print(f"  Strategic     R = {res['r']}（固定迁移期数，每月按最新数据重算）")
     print(f"                  S = max(C − 15%×V, 0) = {money(res['s'])}")
     print(f"                  B = min(S/R={money(res['s']/res['r'])}, G={money(res['g'])}) = {money(res['b'])}")
     print(f"                  → " + " ｜ ".join(
@@ -361,8 +352,6 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
 
 def self_test() -> None:
     """Assert the arithmetic mirrors the published rules. Run with --self-test."""
-    d0 = date(2026, 8, 1)
-
     # 1. the four targets are explicit and close to exactly 100%
     assert abs(sum(TARGETS.values()) - 1.0) < 1e-12, "targets do not sum to 100%"
     for name, (low, high) in BANDS.items():
@@ -370,7 +359,7 @@ def self_test() -> None:
     assert "soxx" not in BANDS, "SOXX must not carry a band"
 
     # 2. D never exceeds F nor G_0
-    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 5_000, 0.0, set(), d0)
+    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 5_000, 0.0, set())
     assert r["d"] <= 5_000 + 1e-9 and r["d"] <= r["g0"] + 1e-9, "D exceeded min(F, G_0)"
 
     # 3. every channel conserves money across the three tickers
@@ -382,19 +371,19 @@ def self_test() -> None:
     assert r["b"] <= r["g"] + 1e-9, "B exceeded G"
 
     # 5. no drawdown deployment below a tier trigger
-    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.09, set(), d0)
+    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.09, set())
     assert r["dd_amount"] == 0 and not r["consumed"], "deployed below the T1 trigger"
 
     # 6. an already-executed tier must not re-authorize (once per cycle).
     # At DD 12% only T1 qualifies, and it already fired -> nothing releases.
-    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.12, {"T1"}, d0)
+    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.12, {"T1"})
     assert r["dd_amount"] == 0 and not r["consumed"], "executed tier re-authorized deployment"
     # but deeper tiers stay available: at DD 20%, T2 and T3 still release
-    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.20, {"T1"}, d0)
+    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.20, {"T1"})
     assert r["consumed"] == ["T2", "T3"], f"deeper tiers blocked: {r['consumed']}"
 
     # 7. a gap-down day consumes every tier it passes through, shallow-to-deep
-    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.28, set(), d0)
+    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.28, set())
     assert r["consumed"] == ["T1", "T2", "T3", "T4"], f"wrong tiers consumed: {r['consumed']}"
 
     # 7b. graded tranching: the tiers take cash from the 15% target exactly to 0
@@ -405,39 +394,36 @@ def self_test() -> None:
 
     # 7c. the ladder ends at 25%. Past T4 the ammunition is spent by design,
     # so a deeper fall authorizes nothing — this is the decision, not an oversight.
-    deep = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.45, set(), d0)
+    deep = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.45, set())
     assert deep["consumed"] == ["T1", "T2", "T3", "T4"], \
         f"a 45% fall must consume the whole ladder and no more: {deep['consumed']}"
     spent = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.45,
-                    {"T1", "T2", "T3", "T4"}, d0)
+                    {"T1", "T2", "T3", "T4"})
     assert spent["dd_amount"] == 0 and not spent["consumed"], \
         "a spent ladder must authorize nothing however deep the fall"
 
     # 8. cash never ends below the authorized floor
     for dd, ex in ((0.0, set()), (0.11, set()), (0.28, set()), (0.40, set()), (0.28, {"T1"})):
-        r = compute(100_000, 30_000, 30_000, 15_000, 6_000, 3_000, dd, ex, d0)
+        r = compute(100_000, 30_000, 30_000, 15_000, 6_000, 3_000, dd, ex)
         assert r["final_cash_w"] >= r["floor_w"] - 1e-9, f"cash pierced the floor at DD {dd}"
 
-    # 9. R counts down to the planned completion month and floors at 1
-    assert months_remaining(date(2026, 8, 1)) == 29, "R miscounted"
-    assert months_remaining(date(2028, 12, 1)) == MIN_MONTHS_REMAINING, \
-        "R must floor at the minimum in the final planned month"
-    assert months_remaining(date(2032, 1, 1)) == MIN_MONTHS_REMAINING, \
-        "R must keep the floor long past the plan end"
-    # the floor is what stops the baseline becoming a lump sum: with excess cash
-    # on the books past the plan end, B must stay a fraction of it, not all of it
-    late = compute(100_000, 25_000, 45_000, 25_000, 5_000, 0, 0.0, set(), date(2032, 1, 1))
-    assert late["s"] > 0, "late fixture must carry strategic surplus"
-    assert late["b"] < late["s"] / 2, f"baseline deployed as a lump sum: {late['b']} of {late['s']}"
+    # 9. the baseline deploys a fixed fraction of the surplus, never all of it
+    assert MIGRATION_MONTHS >= 2, "R = 1 collapses B into min(S, G): a lump sum"
+    surplus = compute(100_000, 25_000, 45_000, 25_000, 5_000, 0, 0.0, set())
+    assert surplus["s"] > 0, "fixture must carry a strategic surplus"
+    assert abs(surplus["b"] - surplus["s"] / MIGRATION_MONTHS) < 1e-9, \
+        "B must be S/R where the gap does not bind"
+    assert surplus["b"] < surplus["s"], \
+        f"baseline deployed as a lump sum: {surplus['b']} of {surplus['s']}"
 
     # 10. SOXX is an ordinary holding: its gap is funded by the same channels.
-    r = compute(100_000, 20_000, 50_000, 30_000, 2_000, 5_000, 0.0, set(), d0)
+    r = compute(100_000, 20_000, 50_000, 30_000, 2_000, 5_000, 0.0, set())
     assert abs(r["gaps"]["soxx"] - 3_000) < 1e-6, f"SOXX gap miscomputed: {r['gaps']}"
     assert abs(r["d_alloc"]["soxx"] - 3_000) < 1e-6, \
         f"routine DCA must fund the SOXX gap like any other: {r['d_alloc']}"
 
     # 11. drift above target yields no gap and no sale — repaired by dilution
-    r = compute(100_000, 20_000, 60_000, 30_000, 5_000, 5_000, 0.0, set(), d0)
+    r = compute(100_000, 20_000, 60_000, 30_000, 5_000, 5_000, 0.0, set())
     assert r["gaps"]["spym"] == 0.0, "overweight SPYM must not produce a gap"
     assert r["d"] == 0.0 and r["g0"] == 0.0, "nothing to buy when every ticker is at or above target"
     assert all(v >= 0.0 for v in r["gaps"].values()), "a gap must never go negative"
@@ -451,8 +437,8 @@ def self_test() -> None:
         "Legacy must be able to close the reconciliation equation"
     assert not _rec(100_000, 20_000, (50_000, 28_000, 1_000)).passed, \
         "fixture must actually depend on the Legacy leg"
-    plain = compute(100_000, 20_000, 50_000, 28_000, 1_000, 5_000, 0.0, set(), d0)
-    withleg = compute(100_000, 20_000, 50_000, 28_000, 1_000, 5_000, 0.0, set(), d0,
+    plain = compute(100_000, 20_000, 50_000, 28_000, 1_000, 5_000, 0.0, set())
+    withleg = compute(100_000, 20_000, 50_000, 28_000, 1_000, 5_000, 0.0, set(),
                       legacy=1_000)
     for key in ("d", "b", "dd_amount", "g0"):
         assert abs(plain[key] - withleg[key]) < 1e-9, f"Legacy displaced {key}"
@@ -469,12 +455,12 @@ def self_test() -> None:
     # external contributions and the Routine DCA must not pause for it. A month
     # that STARTS below the normal floor because tranches fired earlier in the
     # cycle is a rebuild state, not a violation — the floor gate must pass it.
-    r = compute(100_000, 11_000, 55_000, 28_500, 4_900, 0, 0.17, {"T1", "T2"}, d0)
+    r = compute(100_000, 11_000, 55_000, 28_500, 4_900, 0, 0.17, {"T1", "T2"})
     assert r["final_cash_w"] < CASH_FLOOR, "rebuild fixture must sit below the normal floor"
     assert r["floor_ok"], "post-deployment rebuild month tripped the floor gate"
     # and a contribution flowing through D returns cash to its pre-F level —
     # the DCA runs, and that is still not a breach
-    r = compute(100_000, 11_500, 55_000, 28_000, 4_900, 2_000, 0.18, {"T1", "T2"}, d0)
+    r = compute(100_000, 11_500, 55_000, 28_000, 4_900, 2_000, 0.18, {"T1", "T2"})
     assert r["d"] > 0, "rebuild fixture must exercise the DCA path"
     assert r["floor_ok"], "DCA during the rebuild tripped the floor gate"
 
@@ -508,7 +494,8 @@ def main() -> int:
                     help="本回撤周期内已执行的档位，逗号分隔，如 T1 或 T1,T2；无则填 none")
     ap.add_argument("--open-orders-status", choices=("clear", "conflicting", "unknown"), default="unknown",
                     help="权威订单核查结果；只有 clear 允许月度候选，省略即 unknown 并失败关闭")
-    ap.add_argument("--today", default=None, help="计算 R 用的日期 YYYY-MM-DD（默认今天）")
+    ap.add_argument("--today", default=None,
+                    help="判定回撤收盘新鲜度用的日期 YYYY-MM-DD（默认今天）")
     ap.add_argument("--self-test", action="store_true", help="校验算术是否镜像规则")
     # parse_args, not parse_known_args: an unrecognized flag must fail loudly
     # rather than be silently swallowed by the caller.
@@ -584,7 +571,7 @@ def main() -> int:
     res = compute(args.nav, args.cash, args.spym, args.qqqm, args.soxx,
                   args.contribution if contribution_known else 0.0,
                   effective_dd if effective_dd is not None else 0.0,
-                  executed, today, args.legacy)
+                  executed, args.legacy)
     issues = report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
                     contribution_known)
     return 1 if issues else 0
