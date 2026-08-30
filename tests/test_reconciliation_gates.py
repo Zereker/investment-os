@@ -26,8 +26,8 @@ def monthly(*args: str) -> subprocess.CompletedProcess[str]:
 def main() -> None:
     impossible = monthly(
         "--nav", "100000", "--cash", "95000", "--spym", "200000",
-        "--qqqm", "0", "--soxx", "0", "--dd", "0.26",
-        "--tiers-executed", "none", "--contribution", "1000",
+        "--qqqm", "0", "--soxx", "0", "--dd-spym", "0.26",
+        "--tiers-executed-spym", "none", "--contribution", "1000",
         "--open-orders-status", "clear",
         "--today", "2026-08-02",
     )
@@ -37,8 +37,8 @@ def main() -> None:
 
     physically_valid_but_orders_unknown = monthly(
         "--nav", "100000", "--cash", "20000", "--spym", "46000",
-        "--qqqm", "28000", "--soxx", "6000", "--dd", "0",
-        "--tiers-executed", "none", "--contribution", "0",
+        "--qqqm", "28000", "--soxx", "6000", "--dd-spym", "0",
+        "--tiers-executed-spym", "none", "--contribution", "0",
         "--today", "2026-08-02",
     )
     assert physically_valid_but_orders_unknown.returncode != 0

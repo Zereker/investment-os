@@ -30,7 +30,7 @@ import math
 import sys
 from typing import Any
 
-from monthly_execution import TIERS  # noqa: E402
+from monthly_execution import LADDERS, TIERS, TIER_NAMES  # noqa: E402
 
 
 class InputError(ValueError):
@@ -46,11 +46,13 @@ def number(value: Any, name: str) -> float:
     return result
 
 
-def expected_pointer(ath_close: float, tiers_executed: set[str]) -> dict[str, Any] | None:
-    """Return the next available tier and price, or None when ladder is exhausted."""
-    for trigger, name, _ in TIERS:
-        if name not in tiers_executed:
+def expected_pointer(ticker: str, ath_close: float,
+                     tiers_executed: set[str]) -> dict[str, Any] | None:
+    """Next available tier and price for ONE ticker, or None when it is spent."""
+    for t, trigger, name, _w in TIERS:
+        if t == ticker and name not in tiers_executed:
             return {
+                "ticker": ticker,
                 "tier": name,
                 "trigger": trigger,
                 "price": round((1.0 - trigger) * ath_close, 2),
@@ -59,19 +61,37 @@ def expected_pointer(ath_close: float, tiers_executed: set[str]) -> dict[str, An
 
 
 def validate(payload: dict[str, Any]) -> dict[str, Any]:
-    missing = sorted({"ath_close", "tiers_executed", "alert_inventory_status"} - payload.keys())
+    missing = sorted({"cycles", "alert_inventory_status"} - payload.keys())
     if missing:
         raise InputError("missing fields: " + ", ".join(missing))
 
-    ath = number(payload["ath_close"], "ath_close")
-    if ath <= 0:
-        raise InputError("ath_close must be positive")
+    raw_cycles = payload["cycles"]
+    if not isinstance(raw_cycles, dict):
+        raise InputError("cycles must be an object keyed by ticker")
+    # Every laddered ticker must be present. A ticker silently absent would be
+    # read as "no alert expected", which is exactly the state a missing series
+    # must NOT be allowed to imitate.
+    absent = sorted(set(LADDERS) - set(raw_cycles))
+    if absent:
+        raise InputError("cycles missing tickers: " + ", ".join(absent))
+    unknown = sorted(set(raw_cycles) - set(LADDERS))
+    if unknown:
+        raise InputError("cycles has tickers with no ladder: " + ", ".join(unknown))
 
-    valid_tiers = {name for _, name, _ in TIERS}
-    tiers_raw = payload["tiers_executed"]
-    if not isinstance(tiers_raw, list) or any(t not in valid_tiers for t in tiers_raw):
-        raise InputError("tiers_executed contains an unknown tier")
-    tiers = set(tiers_raw)
+    cycles = {}
+    for ticker, raw in raw_cycles.items():
+        if not isinstance(raw, dict):
+            raise InputError(f"cycles.{ticker} must be an object")
+        for field in ("ath_close", "tiers_executed"):
+            if field not in raw:
+                raise InputError(f"cycles.{ticker} missing {field}")
+        ath = number(raw["ath_close"], f"cycles.{ticker}.ath_close")
+        if ath <= 0:
+            raise InputError(f"cycles.{ticker}.ath_close must be positive")
+        tiers_raw = raw["tiers_executed"]
+        if not isinstance(tiers_raw, list) or any(t not in TIER_NAMES for t in tiers_raw):
+            raise InputError(f"cycles.{ticker}.tiers_executed contains an unknown tier")
+        cycles[ticker] = {"ath_close": ath, "tiers_executed": set(tiers_raw)}
 
     inventory_status = str(payload["alert_inventory_status"]).lower()
     if inventory_status not in {"available", "unavailable", "stale", "conflicting"}:
@@ -82,8 +102,7 @@ def validate(payload: dict[str, Any]) -> dict[str, Any]:
                 "unavailable alert inventory must not be represented as an empty collection"
             )
         return {
-            "ath_close": ath,
-            "tiers_executed": tiers,
+            "cycles": cycles,
             "alert_inventory_status": inventory_status,
             "alerts": None,
         }
@@ -112,16 +131,18 @@ def validate(payload: dict[str, Any]) -> dict[str, Any]:
         })
 
     return {
-        "ath_close": ath,
-        "tiers_executed": tiers,
+        "cycles": cycles,
         "alert_inventory_status": inventory_status,
         "alerts": alerts,
     }
 
 
 def check(payload: dict[str, Any], tolerance: float = 0.011) -> dict[str, Any]:
+    """One pointer per laddered ticker: each unspent ladder needs exactly one
+    active alert at its own next tier, and a spent one needs none."""
     state = validate(payload)
-    expected = expected_pointer(state["ath_close"], state["tiers_executed"])
+    expected = {t: expected_pointer(t, c["ath_close"], c["tiers_executed"])
+                for t, c in state["cycles"].items()}
     if state["alert_inventory_status"] != "available":
         return {
             "status": "DATA INCOMPLETE",
@@ -129,38 +150,39 @@ def check(payload: dict[str, Any], tolerance: float = 0.011) -> dict[str, Any]:
             "actual": None,
             "inventory_status": state["alert_inventory_status"],
             "issues": [
-                f"alert inventory is {state['alert_inventory_status']}; pointer not verified"
+                f"alert inventory is {state['alert_inventory_status']}; pointers not verified"
             ],
         }
     active = [a for a in state["alerts"] if a["enabled"]]
     issues: list[str] = []
 
-    if expected is None:
-        if active:
-            issues.append("drawdown ladder is exhausted but an active alert still exists")
-        return {
-            "status": "PASS" if not issues else "WARN",
-            "expected": None,
-            "actual": active,
-            "inventory_status": "available",
-            "issues": issues,
-        }
-
-    if len(active) != 1:
-        issues.append(f"expected exactly one active drawdown alert, found {len(active)}")
-    if len(active) == 1:
-        alert = active[0]
-        if alert["symbol"] != "SPYM":
-            issues.append("active drawdown alert symbol is not SPYM")
-        if alert["field"] != "LAST":
-            issues.append("active drawdown alert field is not LAST")
-        if alert["operator"] not in {"LTE", "<=", "LESS_THAN_OR_EQUAL"}:
-            issues.append("active drawdown alert operator is not less-than-or-equal")
-        if abs(alert["price"] - expected["price"]) > tolerance:
+    for ticker in sorted(LADDERS):
+        want = expected[ticker]
+        mine = [a for a in active if a["symbol"] == ticker.upper()]
+        if want is None:
+            if mine:
+                issues.append(
+                    f"{ticker.upper()} ladder is exhausted but an active alert still exists")
+            continue
+        if len(mine) != 1:
             issues.append(
-                f"alert pointer mismatch: expected {expected['tier']} at {expected['price']:.2f}, "
-                f"actual price {alert['price']:.2f}"
-            )
+                f"{ticker.upper()}: expected exactly one active drawdown alert, found {len(mine)}")
+            continue
+        alert = mine[0]
+        if alert["field"] != "LAST":
+            issues.append(f"{ticker.upper()} alert field is not LAST")
+        if alert["operator"] not in {"LTE", "<=", "LESS_THAN_OR_EQUAL"}:
+            issues.append(f"{ticker.upper()} alert operator is not less-than-or-equal")
+        if abs(alert["price"] - want["price"]) > tolerance:
+            issues.append(
+                f"{ticker.upper()} pointer mismatch: expected {want['tier']} at "
+                f"{want['price']:.2f}, actual price {alert['price']:.2f}")
+
+    # An alert on a symbol that carries no ladder is not a drawdown pointer and
+    # must be reported rather than ignored: it may be someone else's automation.
+    stray = sorted({a["symbol"] for a in active} - {t.upper() for t in LADDERS})
+    if stray:
+        issues.append("active alerts on symbols with no ladder: " + ", ".join(stray))
 
     return {
         "status": "PASS" if not issues else "WARN",
@@ -173,11 +195,13 @@ def check(payload: dict[str, Any], tolerance: float = 0.011) -> dict[str, Any]:
 
 def render(result: dict[str, Any]) -> str:
     lines = ["# Drawdown Alert Pointer Check", f"Status: **{result['status']}**"]
-    expected = result["expected"]
-    if expected is None:
-        lines.append("Expected: no active alert; drawdown ladder exhausted.")
-    else:
-        lines.append(f"Expected: {expected['tier']} at {expected['price']:.2f}.")
+    for ticker in sorted(result["expected"]):
+        want = result["expected"][ticker]
+        if want is None:
+            lines.append(f"Expected {ticker.upper()}: no active alert; ladder exhausted.")
+        else:
+            lines.append(
+                f"Expected {ticker.upper()}: {want['tier']} at {want['price']:.2f}.")
     if result["actual"] is None:
         lines.append(f"Actual: alert inventory {result['inventory_status']}.")
     elif result["actual"]:
@@ -197,45 +221,84 @@ def render(result: dict[str, Any]) -> str:
 
 
 def self_test() -> None:
-    base = {
-        "ath_close": 100.0,
-        "tiers_executed": [],
-        "alert_inventory_status": "available",
-        "alerts": [{
-            "id": "synthetic",
-            "symbol": "SPYM",
-            "field": "LAST",
-            "operator": "LTE",
-            "price": 90.0,
-            "enabled": True,
-        }],
-    }
+    def alert(symbol, price, **kw):
+        return {"id": f"synthetic-{symbol}", "symbol": symbol, "field": "LAST",
+                "operator": "LTE", "price": price, "enabled": True, **kw}
+
+    # every ladder at cycle start: one alert each, at that ticker's own T1
+    cycles = {t: {"ath_close": 100.0, "tiers_executed": []} for t in LADDERS}
+    alerts = [alert(t.upper(), 90.0) for t in LADDERS]
+    base = {"cycles": cycles, "alert_inventory_status": "available", "alerts": alerts}
     if check(base)["status"] != "PASS":
-        raise AssertionError("first-tier pointer should pass")
+        raise AssertionError("first-tier pointers should pass")
 
-    stale_tier = {**base, "alerts": [{**base["alerts"][0], "price": 85.0}]}
-    result = check(stale_tier)
-    if result["status"] != "WARN" or "expected T1" not in " ".join(result["issues"]):
-        raise AssertionError("stale tier pointer was not detected")
+    # each ticker is judged against ITS OWN high: a shared price is wrong
+    own_highs = {
+        "cycles": {t: {"ath_close": h, "tiers_executed": []}
+                   for t, h in zip(sorted(LADDERS), (100.0, 200.0, 400.0))},
+        "alert_inventory_status": "available",
+        "alerts": [alert(t.upper(), h * 0.9)
+                   for t, h in zip(sorted(LADDERS), (100.0, 200.0, 400.0))],
+    }
+    if check(own_highs)["status"] != "PASS":
+        raise AssertionError("per-ticker highs should each drive their own pointer")
 
-    after_first = {**base, "tiers_executed": ["T1"], "alerts": [{**base["alerts"][0], "price": 85.0}]}
+    # one ticker's pointer left on a spent tier is caught, and named
+    one_stale = {**base, "alerts": [alert(t.upper(), 85.0 if t == "spym" else 90.0)
+                                    for t in LADDERS]}
+    result = check(one_stale)
+    if result["status"] != "WARN" or not any(
+            "SPYM pointer mismatch" in i for i in result["issues"]):
+        raise AssertionError("a stale pointer on one ticker was not detected")
+
+    # a missing pointer on one ticker must not be masked by the other two
+    one_missing = {**base, "alerts": [a for a in alerts if a["symbol"] != "QQQM"]}
+    result = check(one_missing)
+    if result["status"] != "WARN" or not any(
+            "QQQM: expected exactly one" in i for i in result["issues"]):
+        raise AssertionError("a missing pointer was not detected")
+
+    after_first = {
+        "cycles": {t: {"ath_close": 100.0,
+                       "tiers_executed": ["T1"] if t == "spym" else []}
+                   for t in LADDERS},
+        "alert_inventory_status": "available",
+        "alerts": [alert(t.upper(), 85.0 if t == "spym" else 90.0) for t in LADDERS],
+    }
     if check(after_first)["status"] != "PASS":
-        raise AssertionError("second-tier pointer should pass after first tier executes")
+        raise AssertionError("second-tier pointer should pass after the first executes")
 
-    duplicate = {**base, "alerts": base["alerts"] * 2}
+    duplicate = {**base, "alerts": alerts + [alert("SPYM", 90.0)]}
     if check(duplicate)["status"] != "WARN":
         raise AssertionError("duplicate alerts were not detected")
 
-    exhausted = {**base, "tiers_executed": [name for _, name, _ in TIERS], "alerts": []}
-    if check(exhausted)["status"] != "PASS":
-        raise AssertionError("exhausted ladder should require no alert")
-
-    unavailable = {
-        "ath_close": 100.0,
-        "tiers_executed": [],
-        "alert_inventory_status": "unavailable",
-        "alerts": None,
+    exhausted = {
+        "cycles": {t: {"ath_close": 100.0, "tiers_executed": list(TIER_NAMES)}
+                   for t in LADDERS},
+        "alert_inventory_status": "available",
+        "alerts": [],
     }
+    if check(exhausted)["status"] != "PASS":
+        raise AssertionError("exhausted ladders should require no alert")
+
+    # an alert on a symbol with no ladder is someone else's automation, not a
+    # pointer — reported, never silently ignored
+    stray = {**base, "alerts": alerts + [alert("AAPL", 100.0)]}
+    result = check(stray)
+    if result["status"] != "WARN" or not any("AAPL" in i for i in result["issues"]):
+        raise AssertionError("a stray alert was not reported")
+
+    # a ticker silently absent from cycles must not read as "no alert expected"
+    for bad in ({t: cycles[t] for t in list(LADDERS)[:-1]},
+                {**cycles, "aapl": {"ath_close": 100.0, "tiers_executed": []}}):
+        try:
+            check({**base, "cycles": bad})
+        except InputError:
+            pass
+        else:
+            raise AssertionError(f"malformed cycles accepted: {sorted(bad)}")
+
+    unavailable = {"cycles": cycles, "alert_inventory_status": "unavailable", "alerts": None}
     if check(unavailable)["status"] != "DATA INCOMPLETE":
         raise AssertionError("unavailable alert inventory must fail closed")
 
@@ -251,13 +314,20 @@ def self_test() -> None:
 
 
 USAGE_EPILOG = """\
-The check reads one JSON object on stdin — there are no input flags:
+The check reads one JSON object on stdin — there are no input flags. Every
+laddered ticker carries its OWN all-time-high close, its own cycle and its own
+pointer, so every one of them must appear under "cycles":
 
-  {"ath_close": 91.56,                       # all-time-high CLOSE, not intraday
-   "tiers_executed": ["T1"],                 # [] when the cycle has just reset
+  {"cycles": {
+     "spym": {"ath_close": 91.56,  "tiers_executed": []},      # [] = cycle reset
+     "qqqm": {"ath_close": 303.96, "tiers_executed": []},
+     "soxx": {"ath_close": 655.01, "tiers_executed": ["T1"]}},
    "alert_inventory_status": "available",    # available|unavailable|stale|conflicting
    "alerts": [{"symbol": "SPYM", "field": "LAST", "operator": "LTE",
                "price": 82.40, "enabled": true, "id": "..."}]}
+
+A ticker omitted from "cycles" is refused rather than read as "no alert
+expected" — that is precisely the state a missing series must not imitate.
 
 An inventory that is not "available" must omit alerts rather than send an empty
 list: "the broker did not answer" and "the broker answered, nothing is set" are

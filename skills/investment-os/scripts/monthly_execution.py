@@ -20,7 +20,8 @@ Hard boundaries this script will not cross:
     input yields DATA INCOMPLETE, not a guess.
   - It NEVER reaches the network. Prices and account state arrive as arguments.
   - Which drawdown tiers already fired this cycle cannot be derived from price.
-    Pass --tiers-executed; omitting it makes the script say so rather than assume.
+    Pass --tiers-executed-<ticker>; omitting it makes the script say so per
+    ticker rather than assume.
   - This month's actual external contribution F cannot be derived from positions.
     Pass --contribution (0 for a no-deposit month); omitting it makes the Routine
     DCA path say DATA INCOMPLETE rather than silently deploying on an assumed F=0.
@@ -29,12 +30,12 @@ Usage (figures come from IBKR, in account currency; they are never persisted):
   python3 skills/investment-os/scripts/monthly_execution.py --nav 100000 --cash 18000 \\
       --spym 50000 --qqqm 26000 --soxx 6000 --contribution 2000
 
-  # already deployed T1 earlier in this drawdown cycle:
-  python3 skills/investment-os/scripts/monthly_execution.py ... --tiers-executed T1
-
-  # DD comes from the IBKR close series the session read; omit it and tiers are
-  # simply not evaluated today:
-  python3 skills/investment-os/scripts/monthly_execution.py ... --dd 0.0108 --dd-as-of 2026-08-28
+  # each ticker has its OWN ladder, its own all-time-high close and its own
+  # cycle. DD comes from the IBKR close series the session read; a ticker with
+  # no --dd-<ticker> is simply not evaluated today, the other two still run:
+  python3 skills/investment-os/scripts/monthly_execution.py ... \\
+      --dd-spym 0.0108 --dd-qqqm 0.0295 --dd-soxx 0.2235 --dd-as-of 2026-08-28 \\
+      --tiers-executed-spym none --tiers-executed-qqqm none --tiers-executed-soxx T1,T2
 """
 
 from __future__ import annotations
@@ -61,16 +62,36 @@ CASH_TARGET = TARGETS["cash"]
 # zero — so it carries a disclosure-only ceiling. Crossing it reports; it never
 # sells, and it never blocks a path.
 SOXX_CEILING = 0.075
-# Each tier releases a FIXED tranche of NAV, graded 1:2:3:4: the first shot
-# stays small while most of the money lands at the deepest, best-priced
-# entries. The four tranches sum to the cash target, so the ladder spends the
-# cash out entirely.
-TIERS = ((0.10, "T1", 0.0150),
-         (0.15, "T2", 0.0300),
-         (0.20, "T3", 0.0450),
-         (0.25, "T4", 0.0600))
+# Each of the three tickers carries its OWN ladder, its own all-time-high close,
+# its own cycle and its own executed set. A single SPYM trigger cannot answer a
+# semiconductor selloff that leaves the broad index untouched — SOXX fell 22%
+# from its own high while SPYM was down 1%, and under a SPYM-only trigger
+# nothing in this system ever said so.
+#
+# Ammunition is split by target weight, so a tranche is proportionate to the
+# position it is buying: a 5% sleeve falling 25% releases 1pp, not 6pp. A single
+# shared pool would let one sector drawdown spend the ammunition reserved for a
+# broad-market crash, because whoever triggers first spends first.
+LADDERS = {"spym": 0.09, "qqqm": 0.05, "soxx": 0.01}   # 9 + 5 + 1 = 15pp
+# Within each ladder the four tiers are graded 1:2:3:4 — the first shot stays
+# small while most of the money lands at the deepest, best-priced entries.
+TIER_GRADES = ((0.10, "T1", 1), (0.15, "T2", 2), (0.20, "T3", 3), (0.25, "T4", 4))
+GRADE_TOTAL = sum(g for _, _, g in TIER_GRADES)
+TIER_NAMES = tuple(n for _, n, _ in TIER_GRADES)
 ABSOLUTE_FLOOR = 0.0     # cash never goes below this via drawdown deployment
-LADDER = sum(t[2] for t in TIERS)   # 15pp: the whole cash position is ammunition
+LADDER = sum(LADDERS.values())   # 15pp: the whole cash position is ammunition
+
+
+def tranche(ticker: str, grade: int) -> float:
+    """The NAV weight one tier of one ticker's ladder releases."""
+    return LADDERS[ticker] * grade / GRADE_TOTAL
+
+
+# Kept as a flat schedule for readers and for the alert-pointer validator:
+# (ticker, trigger, tier name, released NAV weight).
+TIERS = tuple((t, trig, name, tranche(t, grade))
+              for t in ("spym", "qqqm", "soxx")
+              for trig, name, grade in TIER_GRADES)
 # The strategic baseline migrates surplus cash over a FIXED window: B = min(S/R, G)
 # with R constant. Not a countdown to a date: a countdown needs stored state this
 # system does not keep, and its final period (R = 1) deploys the entire remainder
@@ -78,12 +99,12 @@ LADDER = sum(t[2] for t in TIERS)   # 15pp: the whole cash position is ammunitio
 # drawdown that creates the surplus. Held fixed, the surplus decays geometrically
 # and no single month is ever a lump sum.
 MIGRATION_MONTHS = 3
-# DD is not fetched here. The registry names IBKR the source for the SPYM close
+# DD is not fetched here. The registry names IBKR the source for the close
 # series, and only the session can reach it; a script that quietly pulled an
 # aggregator instead would be sourcing a tier trigger from an unregistered feed.
-# The session reads the series, derives DD (market_context.py does this), and
-# passes it with its as-of date. No --dd means tiers are not evaluated today —
-# the registry localizes that failure and leaves every other path running.
+# The session reads each ticker's series, derives its DD, and passes it with the
+# as-of date. A ticker with no --dd is simply not evaluated today — the registry
+# localizes that failure and leaves the other two, and every other path, running.
 MAX_DD_AGE_DAYS = 7
 
 
@@ -96,18 +117,21 @@ def dd_series_is_fresh(last_day: str, today: date) -> bool:
     return 0 <= (today - last).days <= MAX_DD_AGE_DAYS
 
 
-def tier_release(dd: float, executed: set[str]) -> tuple[float, list[str]]:
-    """Return (released weight, tiers consumed).
+def tier_release(ticker: str, dd: float | None,
+                 executed: set[str]) -> tuple[float, list[str]]:
+    """Return (released NAV weight, tiers consumed) for ONE ticker.
 
-    Each newly triggered tier releases its own graded tranche of NAV — a fixed
-    amount, not "everything above a floor". A single day may satisfy several
-    tiers (a gap down straight through 25%); they fire shallow-to-deep, each
-    once per cycle, and every one consumed must be recorded as EXECUTED or a
-    later reconstruction would show a shallow tier still available.
+    Each newly triggered tier releases its own graded tranche — a fixed amount,
+    not "everything above a floor". A single day may satisfy several tiers (a
+    gap down straight through 25%); they fire shallow-to-deep, each once per
+    that ticker's cycle, and every one consumed must be recorded as EXECUTED or
+    a later reconstruction would show a shallow tier still available.
     """
-    fresh = [(name, tranche) for trigger, name, tranche in TIERS
+    if dd is None:
+        return 0.0, []
+    fresh = [(name, tranche(ticker, grade)) for trigger, name, grade in TIER_GRADES
              if dd >= trigger and name not in executed]
-    return sum(tranche for _, tranche in fresh), [name for name, _ in fresh]
+    return sum(w for _, w in fresh), [name for name, _ in fresh]
 
 
 def allocate(amount: float, gaps: dict[str, float]) -> dict[str, float]:
@@ -193,21 +217,46 @@ def routine_channels(nav, cash, state, contribution):
 
 def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed,
             legacy=0.0):
-    """Everything the monthly workflow needs. Pure function of its inputs."""
+    """Everything the monthly workflow needs. Pure function of its inputs.
+
+    `dd` and `executed` are per-ticker: {"spym": 0.011, "soxx": 0.2235} and
+    {"spym": set(), "soxx": {"T1", "T2"}}. A ticker absent from `dd`, or mapped
+    to None, is not evaluated today and releases nothing.
+    """
     state = portfolio_state(nav, cash, spym, qqqm, soxx, legacy)
     routine = routine_channels(nav, cash, state, contribution)
 
     b_alloc = routine["b_alloc"]
     gaps_after_db = {name: routine["gaps_after_d"][name] - b_alloc[name]
                      for name in TICKERS}
-    released_w, consumed = tier_release(dd, executed)
     cash_after_db = routine["cash_after_d"] - routine["b"]
-    # drawdown deployment: the released tranche(s), capped by cash above the
-    # absolute floor and by the gap left after D and B
-    dd_amount = min(released_w * nav,
-                    max(cash_after_db - ABSOLUTE_FLOOR * nav, 0.0),
-                    sum(gaps_after_db.values())) if consumed else 0.0
-    dd_alloc = allocate(dd_amount, gaps_after_db)
+    # Drawdown deployment, one ladder per ticker. A tier's tranche buys THAT
+    # ticker and nothing else: a SOXX fall answered by buying SPYM is not a
+    # response to the fall, it is the drawdown used as an excuse to spend early.
+    # Each tranche is capped by that ticker's own remaining gap; anything above
+    # the gap is simply not deployed this cycle and does not spill.
+    released_w, consumed, dd_alloc = {}, {}, {}
+    remaining_cash = cash_after_db
+    # Deepest fall first, so a cash shortage answers the worst drawdown before
+    # the shallower ones. Ties break on the published ticker order.
+    order = sorted(TICKERS, key=lambda t: (-(dd.get(t) or 0.0), TICKERS.index(t)))
+    for name in order:
+        w, names = tier_release(name, dd.get(name), executed.get(name, set()))
+        amount = min(w * nav,
+                     max(remaining_cash - ABSOLUTE_FLOOR * nav, 0.0),
+                     gaps_after_db[name]) if names else 0.0
+        # A tier is consumed only when it actually bought something. Reaching a
+        # trigger with nothing to buy — the ticker is already at or above target,
+        # or there is no cash — must not burn the tranche: 05-state.md rebuilds
+        # the executed set from FILLS, so a tier marked consumed here with no
+        # fill behind it would disagree with the reconstruction on the next cold
+        # start, and would silently spend ammunition that was never fired.
+        fired = bool(names) and amount > 0.0
+        released_w[name] = w if fired else 0.0
+        consumed[name] = names if fired else []
+        dd_alloc[name] = amount
+        remaining_cash -= amount
+    dd_amount = sum(dd_alloc.values())
 
     final_cash = cash_after_db - dd_amount
     # There is no percentage cash floor to enforce. The routine paths cannot
@@ -219,7 +268,8 @@ def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed,
     # drawdown deployment can approach that; the tranche caps enforce it.
     # This bound is reported so the reader can see where cash could not go.
     start_cash_w = max(cash - contribution, 0.0) / nav
-    structural_bound = 0.0 if consumed else min(CASH_TARGET, start_cash_w)
+    structural_bound = (0.0 if any(consumed.values())
+                        else min(CASH_TARGET, start_cash_w))
     return {
         "weights": state["weights"],
         "values": state["values"],
@@ -230,6 +280,7 @@ def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed,
         "r": state["r"], "s": routine["s"],
         "b": routine["b"], "b_alloc": b_alloc,
         "consumed": consumed, "released_w": released_w,
+        "any_consumed": any(consumed.values()),
         "dd_amount": dd_amount, "dd_alloc": dd_alloc,
         "final_cash": final_cash, "final_cash_w": final_cash / nav,
         "start_cash_w": start_cash_w,
@@ -242,7 +293,7 @@ def money(x: float) -> str:
     return f"{x:,.0f}"
 
 
-def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
+def report(inp, res, dd, dd_as_of, ath, executed, tiers_known,
            contribution_known=True) -> list[str]:
     """Build the monthly report. Returns the list of blocking issues (empty = clean)."""
     nav = inp["nav"]
@@ -280,23 +331,30 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
           f"{'—':>12}{'—':>11}")
     print(f"  G_0 = {money(res['g0'])}  ({res['g0']/nav*100:.2f} pp of NAV)")
 
-    print(f"\n[2] 回撤部署档位")
-    if dd is None:
-        print("  DD 不可得 → 本月不评估分档（不影响 D / B）")
-        issues.append("回撤序列不可得：当日不评估分档")
-    else:
-        print(f"  SPYM DD = {dd:.2%}  (收盘 {dd_as_of}，ATH收盘 {ath_date})")
-        if not tiers_known:
-            print("  ** 未提供 --tiers-executed：无法确认本周期各档是否已执行 **")
-            print("     按 05-state.md 第 4 步用成交记录重建后重跑")
-            issues.append("回撤档位已执行状态未知")
-        for trigger, name, tranche in TIERS:
-            mark = "已执行" if name in executed else ("**达档可用**" if dd >= trigger else "未达档")
-            print(f"    {name}  触发 {trigger:>3.0%}  释放 {tranche:>5.2%} of NAV   {mark}")
-        if res["consumed"]:
-            print(f"  → 本次消耗档位 {', '.join(res['consumed'])}，共释放 {res['released_w']:.1%} of NAV"
-                  f"（绝对下限 {ABSOLUTE_FLOOR:.0%}）")
-            print(f"     全部消耗档位必须由 IBKR 成交记录确认，并更新 IBKR 警报指针")
+    print(f"\n[2] 回撤部署档位（每只标的独立阶梯、独立周期）")
+    for name in TICKERS:
+        d, known = dd.get(name), tiers_known.get(name, False)
+        head = f"  {name.upper()}  阶梯 {LADDERS[name]:.0%} of NAV"
+        if d is None:
+            print(f"{head}   DD 不可得 → 本月不评估该标的分档（不影响 D / B）")
+            issues.append(f"{name.upper()} 回撤序列不可得：当日不评估其分档")
+            continue
+        print(f"{head}   DD = {d:.2%}  (收盘 {dd_as_of}，ATH收盘 {ath.get(name, '未提供')})")
+        if not known:
+            print(f"     ** 未提供 --tiers-executed-{name}：无法确认本周期各档是否已执行 **")
+            print("        按 05-state.md 第 4 步用成交记录重建后重跑")
+            issues.append(f"{name.upper()} 回撤档位已执行状态未知")
+        done = executed.get(name, set())
+        for trigger, tname, grade in TIER_GRADES:
+            mark = ("已执行" if tname in done
+                    else ("**达档可用**" if d >= trigger else "未达档"))
+            print(f"       {tname}  触发 {trigger:>3.0%}  释放 {tranche(name, grade):>5.2%} of NAV   {mark}")
+        if res["consumed"][name]:
+            print(f"     → 消耗 {', '.join(res['consumed'][name])}，释放 {res['released_w'][name]:.2%} of NAV"
+                  f"，实际部署 {money(res['dd_alloc'][name])}（受该标的正缺口与现金限制）")
+    if res["any_consumed"]:
+        print(f"  全部消耗档位必须由 IBKR 成交记录确认，并更新对应标的的 IBKR 警报指针"
+              f"（绝对下限 {ABSOLUTE_FLOOR:.0%}）")
 
     print(f"\n[3] 三条资金通道（都只买正缺口，三个标的同等对待）")
     if not contribution_known:
@@ -314,10 +372,13 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
     print(f"                  B = min(S/R={money(res['s']/res['r'])}, G={money(res['g'])}) = {money(res['b'])}")
     print(f"                  → " + " ｜ ".join(
         f"{n.upper()} {money(res['b_alloc'][n])}" for n in TICKERS))
-    if res["consumed"]:
-        print(f"  Drawdown      {'+'.join(res['consumed'])} 部署 = {money(res['dd_amount'])}")
+    if res["any_consumed"]:
+        fired = " ".join(f"{n.upper()}:{'+'.join(res['consumed'][n])}"
+                         for n in TICKERS if res["consumed"][n])
+        print(f"  Drawdown      {fired} 部署 = {money(res['dd_amount'])}")
         print(f"                  → " + " ｜ ".join(
             f"{n.upper()} {money(res['dd_alloc'][n])}" for n in TICKERS))
+        print(f"                  （各档只买触发它的标的，不溢出）")
     else:
         print(f"  Drawdown      0（未达档或该档本周期已执行）")
 
@@ -326,9 +387,8 @@ def report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
     cash_label = (
         f"交易后现金 {res['final_cash_w']:.2%}"
         f"（本月结构下界 {res['structural_bound_w']:.2%}"
-        + ("：档位已触发，下界即绝对下限 0%" if res["consumed"]
+        + ("：档位已触发，下界即绝对下限 0%）" if res["any_consumed"]
            else f"，取 15% 目标与月初入金前水位 {res['start_cash_w']:.2%} 的较低者）")
-        + ("" if res["consumed"] else "")
     )
     checks = [
         ("只买 Production 标的的正缺口", True),
@@ -369,7 +429,7 @@ def self_test() -> None:
     assert "soxx" not in BANDS, "SOXX must not carry a band"
 
     # 2. D never exceeds F nor G_0
-    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 5_000, 0.0, set())
+    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 5_000, {"spym": None, "qqqm": None, "soxx": None}, {})
     assert r["d"] <= 5_000 + 1e-9 and r["d"] <= r["g0"] + 1e-9, "D exceeded min(F, G_0)"
 
     # 3. every channel conserves money across the three tickers
@@ -380,37 +440,92 @@ def self_test() -> None:
     # 4. B never exceeds the remaining gap
     assert r["b"] <= r["g"] + 1e-9, "B exceeded G"
 
+    def dds(**kw):
+        return {t: kw.get(t) for t in TICKERS}
+
+    def ex(**kw):
+        return {t: set(kw.get(t, ())) for t in TICKERS}
+
     # 5. no drawdown deployment below a tier trigger
-    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.09, set())
-    assert r["dd_amount"] == 0 and not r["consumed"], "deployed below the T1 trigger"
+    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, dds(spym=0.09), ex())
+    assert r["dd_amount"] == 0 and not r["any_consumed"], "deployed below the T1 trigger"
 
     # 6. an already-executed tier must not re-authorize (once per cycle).
     # At DD 12% only T1 qualifies, and it already fired -> nothing releases.
-    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.12, {"T1"})
-    assert r["dd_amount"] == 0 and not r["consumed"], "executed tier re-authorized deployment"
+    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, dds(spym=0.12), ex(spym=["T1"]))
+    assert r["dd_amount"] == 0 and not r["any_consumed"], "executed tier re-authorized deployment"
     # but deeper tiers stay available: at DD 20%, T2 and T3 still release
-    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.20, {"T1"})
-    assert r["consumed"] == ["T2", "T3"], f"deeper tiers blocked: {r['consumed']}"
+    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, dds(spym=0.20), ex(spym=["T1"]))
+    assert r["consumed"]["spym"] == ["T2", "T3"], f"deeper tiers blocked: {r['consumed']}"
 
     # 7. a gap-down day consumes every tier it passes through, shallow-to-deep
-    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.28, set())
-    assert r["consumed"] == ["T1", "T2", "T3", "T4"], f"wrong tiers consumed: {r['consumed']}"
+    r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, dds(spym=0.28), ex())
+    assert r["consumed"]["spym"] == ["T1", "T2", "T3", "T4"], f"wrong tiers: {r['consumed']}"
 
-    # 7b. graded tranching: the tiers take cash from the 15% target exactly to 0
+    # 7b. the three ladders sum to the cash target: all three at T4 together
+    # spends exactly the 15% cash position, the same total the single SPYM
+    # ladder used to release. A market-wide crash is unchanged; what changed is
+    # that one ticker alone can no longer reach for the whole pool.
     assert abs(LADDER + ABSOLUTE_FLOOR - CASH_TARGET) < 1e-12, \
-        "the tranches must take cash from the cash target exactly to the absolute floor"
-    assert all(b[2] > a[2] for a, b in zip(TIERS, TIERS[1:])), \
-        "tranches must grow strictly with depth"
+        "the three ladders must sum to the cash target"
+    assert abs(sum(LADDERS.values()) - 0.15) < 1e-12, "9 + 5 + 1 must be 15pp"
+    for t in TICKERS:
+        grades = [tranche(t, g) for _, _, g in TIER_GRADES]
+        assert all(b > a for a, b in zip(grades, grades[1:])), \
+            f"{t} tranches must grow strictly with depth"
+        assert abs(sum(grades) - LADDERS[t]) < 1e-12, f"{t} ladder does not sum"
+        # ammunition is proportionate to the position it buys
+        assert abs(LADDERS[t] / LADDER - TARGETS[t] / sum(TARGETS[x] for x in TICKERS)) < 0.02, \
+            f"{t} ladder is not proportionate to its target weight"
+    # the old single-ladder tranche is reproduced by the three together
+    for (_, name, grade) in TIER_GRADES:
+        assert abs(sum(tranche(t, grade) for t in TICKERS)
+                   - {1: 0.015, 2: 0.030, 3: 0.045, 4: 0.060}[grade]) < 1e-12, \
+            f"tier {name} across all three must equal the old single tranche"
 
-    # 7c. the ladder ends at 25%. Past T4 the ammunition is spent by design,
-    # so a deeper fall authorizes nothing — this is the decision, not an oversight.
-    deep = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.45, set())
-    assert deep["consumed"] == ["T1", "T2", "T3", "T4"], \
-        f"a 45% fall must consume the whole ladder and no more: {deep['consumed']}"
-    spent = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, 0.45,
-                    {"T1", "T2", "T3", "T4"})
-    assert spent["dd_amount"] == 0 and not spent["consumed"], \
+    # 7c. each ladder ends at 25%. Past T4 that ticker's ammunition is spent by
+    # design, so a deeper fall authorizes nothing — the decision, not an oversight.
+    deep = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, dds(spym=0.45), ex())
+    assert deep["consumed"]["spym"] == ["T1", "T2", "T3", "T4"], \
+        f"a 45% fall must consume that ladder and no more: {deep['consumed']}"
+    spent = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, dds(spym=0.45),
+                    ex(spym=["T1", "T2", "T3", "T4"]))
+    assert spent["dd_amount"] == 0 and not spent["any_consumed"], \
         "a spent ladder must authorize nothing however deep the fall"
+
+    # 7d. THE REASON THIS EXISTS: a sector selloff that leaves the broad index
+    # untouched must be answered, and answered in proportion. SOXX at -22% with
+    # SPYM at -1% released nothing under the old SPYM-only trigger.
+    sector = compute(100_000, 20_000, 40_000, 20_000, 4_000, 0,
+                     dds(spym=0.011, qqqm=0.03, soxx=0.2235), ex())
+    assert sector["consumed"]["soxx"] == ["T1", "T2", "T3"], \
+        f"a 22% SOXX fall must fire its first three tiers: {sector['consumed']}"
+    assert sector["consumed"]["spym"] == [] and sector["consumed"]["qqqm"] == [], \
+        "an untouched SPYM must not release anything"
+    assert abs(sector["released_w"]["soxx"] - 0.006) < 1e-12, \
+        "SOXX T1+T2+T3 must release 0.6pp, proportionate to a 5% sleeve"
+    assert sector["dd_alloc"]["qqqm"] == 0.0 and sector["dd_alloc"]["spym"] == 0.0, \
+        "a SOXX tranche must buy SOXX and nothing else"
+
+    # 7d-2. reaching a trigger with nothing to buy must NOT burn the tier.
+    # SOXX above its target has no gap; the tranche has nowhere to go, and
+    # 05-state.md rebuilds the executed set from fills, so marking it consumed
+    # here would both contradict the reconstruction and spend a tier unfired.
+    nogap = compute(100_000, 20_000, 40_000, 20_000, 8_000, 0,
+                    dds(soxx=0.2235), ex())
+    assert nogap["gaps"]["soxx"] == 0.0, "fixture must have SOXX above target"
+    assert nogap["dd_alloc"]["soxx"] == 0.0, "nothing can be bought with no gap"
+    assert nogap["consumed"]["soxx"] == [], \
+        f"a tier that deployed nothing must stay available: {nogap['consumed']}"
+    assert not nogap["any_consumed"], "no tier fired, so none was consumed"
+
+    # 7e. a tranche never exceeds the triggering ticker's own gap, and the
+    # excess does not spill into another ticker's gap
+    capped = compute(100_000, 20_000, 40_000, 20_000, 4_950, 0, dds(soxx=0.28), ex())
+    assert abs(capped["dd_alloc"]["soxx"] - 50) < 1e-6, \
+        f"deployment must stop at the SOXX gap of 50: {capped['dd_alloc']}"
+    assert capped["dd_amount"] == capped["dd_alloc"]["soxx"], \
+        "the unspent tranche must not spill to another ticker"
 
     # 8. the two structural cash bounds. There is no percentage floor gate: the
     # formulas make one unreachable, so the properties it pretended to enforce
@@ -420,17 +535,23 @@ def self_test() -> None:
     for cash_w in (0.05, 0.12, 0.15, 0.20, 0.41, 0.60):
         for f in (0.0, 1_500.0, 15_000.0):
             cash = cash_w * 100_000
-            r = compute(100_000 + f, cash + f, 30_000, 15_000, 6_000, f, 0.0, set())
+            r = compute(100_000 + f, cash + f, 30_000, 15_000, 6_000, f, {"spym": None, "qqqm": None, "soxx": None}, {})
             assert r["final_cash_w"] >= r["structural_bound_w"] - 1e-9, \
                 f"routine path pierced the structural bound at cash {cash_w}, F {f}"
-    # 8b. cash never goes negative, at any depth, with any tiers already spent
-    for dd, ex in ((0.0, set()), (0.11, set()), (0.28, set()), (0.40, set()), (0.28, {"T1"})):
-        r = compute(100_000, 30_000, 30_000, 15_000, 6_000, 3_000, dd, ex)
-        assert r["cash_non_negative"], f"cash went negative at DD {dd}"
+    # 8b. cash never goes negative, at any depth, on any ticker, with any tiers
+    # already spent — including all three ladders firing on the same day
+    for d, spent in ((0.0, ()), (0.11, ()), (0.28, ()), (0.40, ()), (0.28, ("T1",))):
+        r = compute(100_000, 30_000, 30_000, 15_000, 6_000, 3_000,
+                    {t: d for t in TICKERS}, {t: set(spent) for t in TICKERS})
+        assert r["cash_non_negative"], f"cash went negative at DD {d}"
+    starved = compute(100_000, 1_000, 30_000, 15_000, 6_000, 0,
+                      {t: 0.45 for t in TICKERS}, {t: set() for t in TICKERS})
+    assert starved["cash_non_negative"], "a full three-ladder day drove cash negative"
+    assert starved["dd_amount"] <= 1_000 + 1e-9, "deployed more cash than exists"
 
     # 9. the baseline deploys a fixed fraction of the surplus, never all of it
     assert MIGRATION_MONTHS >= 2, "R = 1 collapses B into min(S, G): a lump sum"
-    surplus = compute(100_000, 25_000, 45_000, 25_000, 5_000, 0, 0.0, set())
+    surplus = compute(100_000, 25_000, 45_000, 25_000, 5_000, 0, {"spym": None, "qqqm": None, "soxx": None}, {})
     assert surplus["s"] > 0, "fixture must carry a strategic surplus"
     assert abs(surplus["b"] - surplus["s"] / MIGRATION_MONTHS) < 1e-9, \
         "B must be S/R where the gap does not bind"
@@ -438,13 +559,13 @@ def self_test() -> None:
         f"baseline deployed as a lump sum: {surplus['b']} of {surplus['s']}"
 
     # 10. SOXX is an ordinary holding: its gap is funded by the same channels.
-    r = compute(100_000, 20_000, 50_000, 30_000, 2_000, 5_000, 0.0, set())
+    r = compute(100_000, 20_000, 50_000, 30_000, 2_000, 5_000, {"spym": None, "qqqm": None, "soxx": None}, {})
     assert abs(r["gaps"]["soxx"] - 3_000) < 1e-6, f"SOXX gap miscomputed: {r['gaps']}"
     assert abs(r["d_alloc"]["soxx"] - 3_000) < 1e-6, \
         f"routine DCA must fund the SOXX gap like any other: {r['d_alloc']}"
 
     # 11. drift above target yields no gap and no sale — repaired by dilution
-    r = compute(100_000, 20_000, 60_000, 30_000, 5_000, 5_000, 0.0, set())
+    r = compute(100_000, 20_000, 60_000, 30_000, 5_000, 5_000, {"spym": None, "qqqm": None, "soxx": None}, {})
     assert r["gaps"]["spym"] == 0.0, "overweight SPYM must not produce a gap"
     assert r["d"] == 0.0 and r["g0"] == 0.0, "nothing to buy when every ticker is at or above target"
     assert all(v >= 0.0 for v in r["gaps"].values()), "a gap must never go negative"
@@ -458,8 +579,8 @@ def self_test() -> None:
         "Legacy must be able to close the reconciliation equation"
     assert not _rec(100_000, 20_000, (50_000, 28_000, 1_000)).passed, \
         "fixture must actually depend on the Legacy leg"
-    plain = compute(100_000, 20_000, 50_000, 28_000, 1_000, 5_000, 0.0, set())
-    withleg = compute(100_000, 20_000, 50_000, 28_000, 1_000, 5_000, 0.0, set(),
+    plain = compute(100_000, 20_000, 50_000, 28_000, 1_000, 5_000, {"spym": None, "qqqm": None, "soxx": None}, {})
+    withleg = compute(100_000, 20_000, 50_000, 28_000, 1_000, 5_000, {"spym": None, "qqqm": None, "soxx": None}, {},
                       legacy=1_000)
     for key in ("d", "b", "dd_amount", "g0"):
         assert abs(plain[key] - withleg[key]) < 1e-9, f"Legacy displaced {key}"
@@ -474,14 +595,16 @@ def self_test() -> None:
 
     # 13. deployment-framework §2: after a deployment, cash rebuilds only from
     # external contributions and the Routine DCA must not pause for it. A month
-    # that STARTS below the normal floor because tranches fired earlier in the
-    # cycle is a rebuild state, not a violation — the floor gate must pass it.
-    r = compute(100_000, 11_000, 55_000, 28_500, 4_900, 0, 0.17, {"T1", "T2"})
+    # that STARTS below the cash target because tranches fired earlier in the
+    # cycle is a rebuild state, not a violation.
+    r = compute(100_000, 11_000, 55_000, 28_500, 4_900, 0,
+                {"spym": 0.17, "qqqm": None, "soxx": None}, {"spym": {"T1", "T2"}})
     assert r["final_cash_w"] < CASH_TARGET, "rebuild fixture must sit below the cash target"
     assert r["cash_non_negative"], "post-deployment rebuild month drove cash negative"
     # and a contribution flowing through D returns cash to its pre-F level —
     # the DCA runs, and that is still not a breach
-    r = compute(100_000, 11_500, 55_000, 28_000, 4_900, 2_000, 0.18, {"T1", "T2"})
+    r = compute(100_000, 11_500, 55_000, 28_000, 4_900, 2_000,
+                {"spym": 0.18, "qqqm": None, "soxx": None}, {"spym": {"T1", "T2"}})
     assert r["d"] > 0, "rebuild fixture must exercise the DCA path"
     assert r["final_cash"] >= (11_500 - 2_000) - 1e-9, \
         "DCA spent more than the contribution: it must never dig into existing cash"
@@ -498,7 +621,7 @@ def self_test() -> None:
     assert not above_ceiling("soxx", SOXX_CEILING), "the ceiling edge is inside"
     assert above_ceiling("soxx", SOXX_CEILING + 1e-6), "just past the ceiling must report"
     assert not above_ceiling("spym", 0.99), "the ceiling applies to SOXX alone"
-    drift = compute(100_000, 20_000, 45_000, 27_000, 8_000, 0, 0.0, set())
+    drift = compute(100_000, 20_000, 45_000, 27_000, 8_000, 0, {"spym": None, "qqqm": None, "soxx": None}, {})
     assert drift["gaps"]["soxx"] == 0.0, "overweight SOXX still yields no gap"
     assert above_ceiling("soxx", drift["weights"]["soxx"]), \
         "an 8% SOXX position must trip the ceiling that the gap cannot"
@@ -518,14 +641,16 @@ def main() -> int:
                     help="Legacy / Out-of-Universe 持仓市值合计。进入对账，但不参与目标、缺口或任何资金通道")
     ap.add_argument("--contribution", type=float, default=None,
                     help="F：本月已到账外部净入金；无入金也须显式传 0（省略即 DATA INCOMPLETE，不静默按 F=0）")
-    ap.add_argument("--dd", type=float, default=None,
-                    help="SPYM 相对历史最高收盘的回撤（小数），来自 IBKR 收盘序列。省略则本月不评估分档")
+    for t in TICKERS:
+        ap.add_argument(f"--dd-{t}", type=float, default=None,
+                        help=f"{t.upper()} 相对其自身历史最高收盘的回撤（小数），"
+                             "来自 IBKR 收盘序列。省略则本月不评估该标的分档")
+        ap.add_argument(f"--ath-{t}", type=float, default=None,
+                        help=f"{t.upper()} 该回撤所依据的历史最高收盘。只作披露，使输出可反查基准")
+        ap.add_argument(f"--tiers-executed-{t}", default=None,
+                        help=f"{t.upper()} 本回撤周期内已执行的档位，逗号分隔，如 T1 或 T1,T2；无则填 none")
     ap.add_argument("--dd-as-of", default=None,
-                    help="该回撤对应的最后一个已完成日线收盘日期 YYYY-MM-DD")
-    ap.add_argument("--ath", type=float, default=None,
-                    help="该回撤所依据的历史最高收盘。只作披露，使输出可反查 DD 的基准")
-    ap.add_argument("--tiers-executed", default=None,
-                    help="本回撤周期内已执行的档位，逗号分隔，如 T1 或 T1,T2；无则填 none")
+                    help="三个收盘序列共同的最后一个已完成日线收盘日期 YYYY-MM-DD")
     ap.add_argument("--open-orders-status", choices=("clear", "conflicting", "unknown"), default="unknown",
                     help="权威订单核查结果；只有 clear 允许月度候选，省略即 unknown 并失败关闭")
     ap.add_argument("--today", default=None,
@@ -553,12 +678,12 @@ def main() -> int:
     if args.nav <= 0:
         print("DATA INCOMPLETE: NAV 必须为正", file=sys.stderr)
         return 2
-    if args.dd is not None and not (0.0 <= args.dd < 1.0):
-        print(
-            "DATA INCOMPLETE: --dd 必须使用小数且范围为 [0, 1)；例如 1.68% 应传 0.0168",
-            file=sys.stderr,
-        )
-        return 2
+    for t in TICKERS:
+        v = getattr(args, f"dd_{t}")
+        if v is not None and not (0.0 <= v < 1.0):
+            print(f"DATA INCOMPLETE: --dd-{t} 必须使用小数且范围为 [0, 1)；"
+                  "例如 1.68% 应传 0.0168", file=sys.stderr)
+            return 2
     # Legacy holdings are positions: leaving them out of the equation makes any
     # account that holds one fail reconciliation permanently. They reconcile,
     # and they do nothing else — no target, no gap, no channel (00-constitution
@@ -578,35 +703,45 @@ def main() -> int:
 
     today = date.fromisoformat(args.today) if args.today else date.today()
 
-    dd, dd_as_of, ath_date = args.dd, args.dd_as_of or "未标注", args.ath or "未提供"
-    if dd is None:
-        print("提示：未提供 --dd —— 本月不评估回撤分档，D / B 不受影响\n", file=sys.stderr)
-    elif args.dd_as_of is None:
-        print("警告：提供了 --dd 但没有 --dd-as-of，无法确认收盘新鲜度"
-              "——本月不评估分档，D / B 不受影响\n", file=sys.stderr)
-        dd = None
-    elif not dd_series_is_fresh(args.dd_as_of, today):
+    dd_as_of = args.dd_as_of or "未标注"
+    stale = args.dd_as_of is not None and not dd_series_is_fresh(args.dd_as_of, today)
+    if stale:
         print(f"警告：回撤对应收盘 {args.dd_as_of} 超过 {MAX_DD_AGE_DAYS} 天或日期无效"
-              "——按注册表局部化规则，本月不评估分档，D / B 不受影响\n", file=sys.stderr)
-        dd = None
+              "——按注册表局部化规则，本月不评估任何标的分档，D / B 不受影响\n",
+              file=sys.stderr)
 
-    tiers_known = args.tiers_executed is not None
-    executed = set()
-    if tiers_known and args.tiers_executed.strip().lower() not in ("none", ""):
-        executed = {t.strip().upper() for t in args.tiers_executed.split(",")}
-        bad = executed - {name for _, name, _t in TIERS}
-        if bad:
-            print(f"DATA INCOMPLETE: 未知档位 {bad}", file=sys.stderr)
-            return 2
+    dd, ath, executed, tiers_known = {}, {}, {}, {}
+    for t in TICKERS:
+        v = getattr(args, f"dd_{t}")
+        ath[t] = getattr(args, f"ath_{t}") or "未提供"
+        raw = getattr(args, f"tiers_executed_{t}")
+        tiers_known[t] = raw is not None
+        executed[t] = set()
+        if tiers_known[t] and raw.strip().lower() not in ("none", ""):
+            executed[t] = {x.strip().upper() for x in raw.split(",")}
+            bad = executed[t] - set(TIER_NAMES)
+            if bad:
+                print(f"DATA INCOMPLETE: {t.upper()} 未知档位 {bad}", file=sys.stderr)
+                return 2
+        if v is None:
+            print(f"提示：未提供 --dd-{t} —— 本月不评估 {t.upper()} 分档，D / B 不受影响",
+                  file=sys.stderr)
+        elif args.dd_as_of is None:
+            print(f"警告：提供了 --dd-{t} 但没有 --dd-as-of，无法确认收盘新鲜度"
+                  f"——不评估 {t.upper()} 分档", file=sys.stderr)
+            v = None
+        elif stale:
+            v = None
+        dd[t] = v
+
     # unknown tier state must not silently authorize deployment
-    effective_dd = dd if (dd is not None and tiers_known) else None
+    effective_dd = {t: (dd[t] if tiers_known[t] else None) for t in TICKERS}
 
     inp = vars(args) | {"nav": args.nav}
     res = compute(args.nav, args.cash, args.spym, args.qqqm, args.soxx,
                   args.contribution if contribution_known else 0.0,
-                  effective_dd if effective_dd is not None else 0.0,
-                  executed, args.legacy)
-    issues = report(inp, res, dd, dd_as_of, ath_date, executed, tiers_known,
+                  effective_dd, executed, args.legacy)
+    issues = report(inp, res, dd, dd_as_of, ath, executed, tiers_known,
                     contribution_known)
     return 1 if issues else 0
 
