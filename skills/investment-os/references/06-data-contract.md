@@ -33,7 +33,7 @@
 | External Contribution \(F\) | IBKR Activity / Cash Transactions | 无 | 每月 | Green | 只使用已到账外部净入金；提款与内部卖出所得排除 |
 | 各标的实际权重与正缺口 | IBKR 市值 / Net Liquidation + 宪法目标权重 | 无 | 每次巡检 | Green（Derived） | 失败则配置计算关闭 |
 | Routine Gap / Purchase \(G_0,D_{max},D\) | 实时 IBKR 数据 + 月度流程 | 无 | 每月 | Green（Derived） | \(D_{max}=\min(F,G_0)\) |
-| SPYM 历史最高收盘与回撤 `DD` | IBKR 历史收盘 | State Street 官方净值序列 | 每次巡检 | Green | 由会话读取后传入脚本，脚本不自行联网取数；必须带收盘日期，超过 7 天或无日期则当日不评估分档，不影响其他路径 |
+| SPYM 与 QQQM 各自的历史最高收盘与回撤 `DD` | IBKR 历史收盘 | 发行人官方净值序列 | 每次巡检 | Green | 两只**分别**取数、分别定档。由会话读取后传入脚本，脚本不自行联网取数；必须带收盘日期，超过 7 天或无日期则当日不评估分档；一只不可得只阻断它自己的阶梯，不影响另一只与其他路径 |
 | Legacy / Out-of-Universe 持仓市值 | IBKR Positions | 无 | 每次巡检 | Green | 进入 NAV 对账；不产生目标、缺口或任何通道资金。遗漏会使对账失败并卡住全部交易路径 |
 | VIX 日收盘 | IBKR 历史收盘 | CBOE 官网 | 每次巡检 | Green | 定义波动日（≥20）供限价单偏好；不进入任何资金闸门 |
 | SPX PE-TTM 与月度历史 | multpl（GAAP as-reported） | 无 | 每次巡检 | Green | **只作披露**；口径必须随数值记录，不同口径不得混算分位 |
@@ -91,7 +91,7 @@ Yellow 数据可以展示；涉及真实资金时必须披露限制。
 Red 数据不得进入依赖该字段的计算。**影响必须按字段局部化**：
 
 - IBKR 账户、持仓或订单为 Red：全部交易路径关闭，结论 `DATA INCOMPLETE`。
-- SPYM 历史最高收盘序列为 Red：当日不评估回撤部署分档，已执行档位记录不变。
+- 某只标的的历史最高收盘序列为 Red：当日不评估**该标的**的回撤部署分档，其已执行档位记录不变；另一只标的的阶梯照常评估。
 - 市场背景任一字段为 Red 或不可达：该字段记「缺（原因）」，不阻断任何路径——它本就不是任何闸门的输入。
 
 ### 每次事实读取必须包含
@@ -167,7 +167,7 @@ IBKR Orders 返回的订单状态。存在 `NEW`、`SUBMITTED` 或 `PARTIALLY_FI
 IBKR 返回的最新可用市场价格。必须同时记录读取时间和市场是否开盘。
 
 #### drawdown_from_ath / drawdown_tier_state
-`drawdown_from_ath` 是 SPYM 收盘价相对历史最高收盘价的回撤，以小数记录并注明收盘序列来源。`drawdown_tier_state` 记录当前回撤周期内四档的 `AVAILABLE / EXECUTED` 状态；SPYM 创历史新高收盘后全部重置为 `AVAILABLE`；最深档之后没有更深档位，该字段不新增取值。各档触发线、梯度定额与绝对下限以 `00-constitution.md` 回撤部署节的分档表为唯一权威。
+`drawdown_from_ath` **按标的分别记录**（SPYM、QQQM 各一），是该标的收盘价相对**其自身**历史最高收盘价的回撤，以小数记录并注明收盘序列来源。`drawdown_tier_state` 同样按标的分别记录该标的当前回撤周期内四档的 `AVAILABLE / EXECUTED` 状态；该标的创历史新高收盘后**只把它自己的**四档重置为 `AVAILABLE`；最深档之后没有更深档位，该字段不新增取值。达档但部署额为 0 的档位保持 `AVAILABLE`。SOXX 无阶梯，这两个字段对它不适用，记 `N/A`。各标的的触发线、梯度定额与绝对下限以 `00-constitution.md` 回撤部署节的分档表为唯一权威。
 
 ### 缺失值规则
 

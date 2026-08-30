@@ -25,19 +25,23 @@ TARGETS = {"cash": 0.15, "spym": 0.50, "qqqm": 0.30, "soxx": 0.05}
 BANDS = {"cash": (0.10, 0.20), "spym": (0.45, 0.55), "qqqm": (0.25, 0.35)}
 SOXX_CEILING = 0.075
 CASH_TARGET = TARGETS["cash"]
-# Each of the three tickers carries its OWN ladder against its OWN all-time
-# high, sized by target weight so a tranche is proportionate to the position it
-# buys. Within a ladder the four tiers are graded 1:2:3:4. The three ladders sum
-# to the cash target, so a market-wide crash still spends exactly the 15% cash
-# position — what changed is that one ticker alone can no longer reach for it.
-LADDERS = {"spym": 0.09, "qqqm": 0.05, "soxx": 0.01}
+# SPYM and QQQM each carry their OWN ladder against their OWN all-time high,
+# sized so a tranche is proportionate to the position it buys. Within a ladder
+# the four tiers are graded 1:2:3:4. The two ladders sum to the cash target, so
+# a market-wide crash still spends exactly the 15% cash position — what changed
+# is that one ticker alone can no longer reach for it.
+#
+# SOXX carries NO ladder: its tranches could not buy one whole share at this
+# account's size, and for a sleeve that small the gap mechanism already IS the
+# drawdown response.
+LADDERS = {"spym": 0.09, "qqqm": 0.06}
 DRAWDOWN_TRIGGERS = (0.10, 0.15, 0.20, 0.25)
 TIER_GRADES = (1, 2, 3, 4)
 TIER_NAMES = ("T1", "T2", "T3", "T4")
 # (ticker, trigger, tier name, released NAV weight)
 DRAWDOWN_TIERS = tuple(
     (t, trig, name, LADDERS[t] * grade / sum(TIER_GRADES))
-    for t in ("spym", "qqqm", "soxx")
+    for t in LADDERS
     for trig, name, grade in zip(DRAWDOWN_TRIGGERS, TIER_NAMES, TIER_GRADES))
 LADDER = sum(LADDERS.values())   # 15pp: all of the cash is ammunition
 ABSOLUTE_FLOOR = 0.0     # drawdown deployment never takes cash below this
@@ -144,8 +148,12 @@ def drawdown_tests() -> None:
     # target's share of the equity allocation
     equity = sum(TARGETS[t] for t in LADDERS)
     for t, ladder in LADDERS.items():
-        if abs(ladder / LADDER - TARGETS[t] / equity) > 0.02:
+        if abs(ladder / LADDER - TARGETS[t] / equity) > 0.03:
             raise AssertionError(f"{t} ladder is not proportionate to its target weight")
+    # SOXX must carry no ladder: its tranches cannot buy one whole share, and
+    # its positive gap already is its drawdown response
+    if "soxx" in LADDERS:
+        raise AssertionError("SOXX must carry no drawdown ladder")
     # all three at the same tier reproduce the old single ladder's tranche
     for trig, single in zip(DRAWDOWN_TRIGGERS, (0.0150, 0.0300, 0.0450, 0.0600)):
         across = sum(w for _t, tr, _n, w in DRAWDOWN_TIERS if tr == trig)

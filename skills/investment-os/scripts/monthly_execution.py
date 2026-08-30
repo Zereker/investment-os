@@ -69,10 +69,20 @@ SOXX_CEILING = 0.075
 # nothing in this system ever said so.
 #
 # Ammunition is split by target weight, so a tranche is proportionate to the
-# position it is buying: a 5% sleeve falling 25% releases 1pp, not 6pp. A single
-# shared pool would let one sector drawdown spend the ammunition reserved for a
-# broad-market crash, because whoever triggers first spends first.
-LADDERS = {"spym": 0.09, "qqqm": 0.05, "soxx": 0.01}   # 9 + 5 + 1 = 15pp
+# position it is buying. A single shared pool would let one drawdown spend the
+# ammunition reserved for another, because whoever triggers first spends first.
+#
+# SOXX has NO ladder. Not an oversight — at this account's size the tranches
+# cannot buy one share: a 1pp ladder over four tiers makes the largest tranche
+# a fraction of a single SOXX share, and whole shares are required. Its first
+# tier would need a NAV several times the account's terminal size before it
+# could buy anything at all. And it needs no ladder: for a sleeve this small the
+# gap mechanism IS the drawdown response — a fall drops SOXX below its 5%
+# target, a positive gap opens, and the routine channels fill it automatically.
+# The ladder was the redundant half, and the half that could not fire.
+LADDERS = {"spym": 0.09, "qqqm": 0.06}   # 9 + 6 = 15pp, the whole cash target
+# QQQM is deliberately a shade above its 37.5% share of the equity target:
+# it falls further than SPYM in a drawdown, so the gap that opens is larger.
 # Within each ladder the four tiers are graded 1:2:3:4 — the first shot stays
 # small while most of the money lands at the deepest, best-priced entries.
 TIER_GRADES = ((0.10, "T1", 1), (0.15, "T2", 2), (0.20, "T3", 3), (0.25, "T4", 4))
@@ -90,7 +100,7 @@ def tranche(ticker: str, grade: int) -> float:
 # Kept as a flat schedule for readers and for the alert-pointer validator:
 # (ticker, trigger, tier name, released NAV weight).
 TIERS = tuple((t, trig, name, tranche(t, grade))
-              for t in ("spym", "qqqm", "soxx")
+              for t in LADDERS
               for trig, name, grade in TIER_GRADES)
 # The strategic baseline migrates surplus cash over a FIXED window: B = min(S/R, G)
 # with R constant. Not a countdown to a date: a countdown needs stored state this
@@ -127,7 +137,7 @@ def tier_release(ticker: str, dd: float | None,
     that ticker's cycle, and every one consumed must be recorded as EXECUTED or
     a later reconstruction would show a shallow tier still available.
     """
-    if dd is None:
+    if dd is None or ticker not in LADDERS:
         return 0.0, []
     fresh = [(name, tranche(ticker, grade)) for trigger, name, grade in TIER_GRADES
              if dd >= trigger and name not in executed]
@@ -235,11 +245,13 @@ def compute(nav, cash, spym, qqqm, soxx, contribution, dd, executed,
     # response to the fall, it is the drawdown used as an excuse to spend early.
     # Each tranche is capped by that ticker's own remaining gap; anything above
     # the gap is simply not deployed this cycle and does not spill.
-    released_w, consumed, dd_alloc = {}, {}, {}
+    released_w = {t: 0.0 for t in TICKERS}
+    consumed = {t: [] for t in TICKERS}
+    dd_alloc = {t: 0.0 for t in TICKERS}
     remaining_cash = cash_after_db
     # Deepest fall first, so a cash shortage answers the worst drawdown before
     # the shallower ones. Ties break on the published ticker order.
-    order = sorted(TICKERS, key=lambda t: (-(dd.get(t) or 0.0), TICKERS.index(t)))
+    order = sorted(LADDERS, key=lambda t: (-(dd.get(t) or 0.0), TICKERS.index(t)))
     for name in order:
         w, names = tier_release(name, dd.get(name), executed.get(name, set()))
         amount = min(w * nav,
@@ -333,6 +345,10 @@ def report(inp, res, dd, dd_as_of, ath, executed, tiers_known,
 
     print(f"\n[2] 回撤部署档位（每只标的独立阶梯、独立周期）")
     for name in TICKERS:
+        if name not in LADDERS:
+            print(f"  {name.upper():<5} 无阶梯 —— 该仓位过小，单档买不足一股；"
+                  "跌破目标由正缺口经例行通道自动补足")
+            continue
         d, known = dd.get(name), tiers_known.get(name, False)
         head = f"  {name.upper()}  阶梯 {LADDERS[name]:.0%} of NAV"
         if d is None:
@@ -441,10 +457,10 @@ def self_test() -> None:
     assert r["b"] <= r["g"] + 1e-9, "B exceeded G"
 
     def dds(**kw):
-        return {t: kw.get(t) for t in TICKERS}
+        return {t: kw.get(t) for t in LADDERS}
 
     def ex(**kw):
-        return {t: set(kw.get(t, ())) for t in TICKERS}
+        return {t: set(kw.get(t, ())) for t in LADDERS}
 
     # 5. no drawdown deployment below a tier trigger
     r = compute(100_000, 20_000, 40_000, 20_000, 6_000, 0, dds(spym=0.09), ex())
@@ -467,21 +483,38 @@ def self_test() -> None:
     # ladder used to release. A market-wide crash is unchanged; what changed is
     # that one ticker alone can no longer reach for the whole pool.
     assert abs(LADDER + ABSOLUTE_FLOOR - CASH_TARGET) < 1e-12, \
-        "the three ladders must sum to the cash target"
-    assert abs(sum(LADDERS.values()) - 0.15) < 1e-12, "9 + 5 + 1 must be 15pp"
-    for t in TICKERS:
+        "the ladders must sum to the cash target"
+    assert abs(sum(LADDERS.values()) - 0.15) < 1e-12, "9 + 6 must be 15pp"
+    for t in LADDERS:
         grades = [tranche(t, g) for _, _, g in TIER_GRADES]
         assert all(b > a for a, b in zip(grades, grades[1:])), \
             f"{t} tranches must grow strictly with depth"
         assert abs(sum(grades) - LADDERS[t]) < 1e-12, f"{t} ladder does not sum"
-        # ammunition is proportionate to the position it buys
-        assert abs(LADDERS[t] / LADDER - TARGETS[t] / sum(TARGETS[x] for x in TICKERS)) < 0.02, \
+        # ammunition tracks the position it buys, within 3pp of that ticker's
+        # share of the LADDERED equity. QQQM sits deliberately above its share:
+        # it falls further in a drawdown, so the gap that opens is larger.
+        laddered = sum(TARGETS[x] for x in LADDERS)
+        assert abs(LADDERS[t] / LADDER - TARGETS[t] / laddered) < 0.03, \
             f"{t} ladder is not proportionate to its target weight"
-    # the old single-ladder tranche is reproduced by the three together
+    # a market-wide fall reproduces the old single ladder's tranche exactly
     for (_, name, grade) in TIER_GRADES:
-        assert abs(sum(tranche(t, grade) for t in TICKERS)
+        assert abs(sum(tranche(t, grade) for t in LADDERS)
                    - {1: 0.015, 2: 0.030, 3: 0.045, 4: 0.060}[grade]) < 1e-12, \
-            f"tier {name} across all three must equal the old single tranche"
+            f"tier {name} across the ladders must equal the old single tranche"
+
+    # 7b-2. SOXX carries no ladder, and reaching any depth releases nothing.
+    # Its tranches could not buy one whole share at this account's size, and it
+    # does not need them: a fall drops it below target, a gap opens, and the
+    # routine channels fill it. Asserted so the absence is a decision on record.
+    assert "soxx" not in LADDERS, "SOXX must carry no drawdown ladder"
+    for depth in (0.10, 0.25, 0.60):
+        w, names = tier_release("soxx", depth, set())
+        assert w == 0.0 and names == [], f"SOXX released {w} at DD {depth}"
+    crash = compute(100_000, 20_000, 40_000, 20_000, 2_000, 0,
+                    dds(soxx=0.60, spym=0.02), ex())
+    assert crash["dd_amount"] == 0.0, "a SOXX crash must authorize no tranche"
+    assert crash["gaps"]["soxx"] == 3_000, \
+        "the gap mechanism is SOXX's drawdown response: a fall must open one"
 
     # 7c. each ladder ends at 25%. Past T4 that ticker's ammunition is spent by
     # design, so a deeper fall authorizes nothing — the decision, not an oversight.
@@ -493,38 +526,37 @@ def self_test() -> None:
     assert spent["dd_amount"] == 0 and not spent["any_consumed"], \
         "a spent ladder must authorize nothing however deep the fall"
 
-    # 7d. THE REASON THIS EXISTS: a sector selloff that leaves the broad index
-    # untouched must be answered, and answered in proportion. SOXX at -22% with
-    # SPYM at -1% released nothing under the old SPYM-only trigger.
-    sector = compute(100_000, 20_000, 40_000, 20_000, 4_000, 0,
-                     dds(spym=0.011, qqqm=0.03, soxx=0.2235), ex())
-    assert sector["consumed"]["soxx"] == ["T1", "T2", "T3"], \
-        f"a 22% SOXX fall must fire its first three tiers: {sector['consumed']}"
-    assert sector["consumed"]["spym"] == [] and sector["consumed"]["qqqm"] == [], \
-        "an untouched SPYM must not release anything"
-    assert abs(sector["released_w"]["soxx"] - 0.006) < 1e-12, \
-        "SOXX T1+T2+T3 must release 0.6pp, proportionate to a 5% sleeve"
-    assert sector["dd_alloc"]["qqqm"] == 0.0 and sector["dd_alloc"]["spym"] == 0.0, \
-        "a SOXX tranche must buy SOXX and nothing else"
+    # 7d. THE REASON THIS EXISTS: a fall in one sleeve that the other does not
+    # share must be answered, and answered only in that sleeve. A single SPYM
+    # trigger could not see a QQQM-led selloff at all.
+    growth = compute(100_000, 20_000, 45_000, 22_000, 5_000, 0,
+                     dds(spym=0.04, qqqm=0.21), ex())
+    assert growth["consumed"]["qqqm"] == ["T1", "T2", "T3"], \
+        f"a 21% QQQM fall must fire its first three tiers: {growth['consumed']}"
+    assert growth["consumed"]["spym"] == [], "an untouched SPYM must release nothing"
+    assert abs(growth["released_w"]["qqqm"] - 0.036) < 1e-12, \
+        "QQQM T1+T2+T3 must release 3.6pp of its 6pp ladder"
+    assert growth["dd_alloc"]["spym"] == 0.0 and growth["dd_alloc"]["soxx"] == 0.0, \
+        "a QQQM tranche must buy QQQM and nothing else"
 
     # 7d-2. reaching a trigger with nothing to buy must NOT burn the tier.
     # SOXX above its target has no gap; the tranche has nowhere to go, and
     # 05-state.md rebuilds the executed set from fills, so marking it consumed
     # here would both contradict the reconstruction and spend a tier unfired.
-    nogap = compute(100_000, 20_000, 40_000, 20_000, 8_000, 0,
-                    dds(soxx=0.2235), ex())
-    assert nogap["gaps"]["soxx"] == 0.0, "fixture must have SOXX above target"
-    assert nogap["dd_alloc"]["soxx"] == 0.0, "nothing can be bought with no gap"
-    assert nogap["consumed"]["soxx"] == [], \
+    nogap = compute(100_000, 20_000, 52_000, 30_000, 5_000, 0,
+                    dds(qqqm=0.2235), ex())
+    assert nogap["gaps"]["qqqm"] == 0.0, "fixture must have QQQM at or above target"
+    assert nogap["dd_alloc"]["qqqm"] == 0.0, "nothing can be bought with no gap"
+    assert nogap["consumed"]["qqqm"] == [], \
         f"a tier that deployed nothing must stay available: {nogap['consumed']}"
     assert not nogap["any_consumed"], "no tier fired, so none was consumed"
 
     # 7e. a tranche never exceeds the triggering ticker's own gap, and the
     # excess does not spill into another ticker's gap
-    capped = compute(100_000, 20_000, 40_000, 20_000, 4_950, 0, dds(soxx=0.28), ex())
-    assert abs(capped["dd_alloc"]["soxx"] - 50) < 1e-6, \
-        f"deployment must stop at the SOXX gap of 50: {capped['dd_alloc']}"
-    assert capped["dd_amount"] == capped["dd_alloc"]["soxx"], \
+    capped = compute(100_000, 20_000, 40_000, 29_950, 5_000, 0, dds(qqqm=0.28), ex())
+    assert abs(capped["dd_alloc"]["qqqm"] - 50) < 1e-6, \
+        f"deployment must stop at the QQQM gap of 50: {capped['dd_alloc']}"
+    assert capped["dd_amount"] == capped["dd_alloc"]["qqqm"], \
         "the unspent tranche must not spill to another ticker"
 
     # 8. the two structural cash bounds. There is no percentage floor gate: the
@@ -542,11 +574,11 @@ def self_test() -> None:
     # already spent — including all three ladders firing on the same day
     for d, spent in ((0.0, ()), (0.11, ()), (0.28, ()), (0.40, ()), (0.28, ("T1",))):
         r = compute(100_000, 30_000, 30_000, 15_000, 6_000, 3_000,
-                    {t: d for t in TICKERS}, {t: set(spent) for t in TICKERS})
+                    {t: d for t in LADDERS}, {t: set(spent) for t in LADDERS})
         assert r["cash_non_negative"], f"cash went negative at DD {d}"
     starved = compute(100_000, 1_000, 30_000, 15_000, 6_000, 0,
-                      {t: 0.45 for t in TICKERS}, {t: set() for t in TICKERS})
-    assert starved["cash_non_negative"], "a full three-ladder day drove cash negative"
+                      {t: 0.45 for t in LADDERS}, {t: set() for t in LADDERS})
+    assert starved["cash_non_negative"], "a full two-ladder day drove cash negative"
     assert starved["dd_amount"] <= 1_000 + 1e-9, "deployed more cash than exists"
 
     # 9. the baseline deploys a fixed fraction of the surplus, never all of it
@@ -641,7 +673,7 @@ def main() -> int:
                     help="Legacy / Out-of-Universe 持仓市值合计。进入对账，但不参与目标、缺口或任何资金通道")
     ap.add_argument("--contribution", type=float, default=None,
                     help="F：本月已到账外部净入金；无入金也须显式传 0（省略即 DATA INCOMPLETE，不静默按 F=0）")
-    for t in TICKERS:
+    for t in LADDERS:
         ap.add_argument(f"--dd-{t}", type=float, default=None,
                         help=f"{t.upper()} 相对其自身历史最高收盘的回撤（小数），"
                              "来自 IBKR 收盘序列。省略则本月不评估该标的分档")
@@ -678,7 +710,7 @@ def main() -> int:
     if args.nav <= 0:
         print("DATA INCOMPLETE: NAV 必须为正", file=sys.stderr)
         return 2
-    for t in TICKERS:
+    for t in LADDERS:
         v = getattr(args, f"dd_{t}")
         if v is not None and not (0.0 <= v < 1.0):
             print(f"DATA INCOMPLETE: --dd-{t} 必须使用小数且范围为 [0, 1)；"
@@ -711,7 +743,7 @@ def main() -> int:
               file=sys.stderr)
 
     dd, ath, executed, tiers_known = {}, {}, {}, {}
-    for t in TICKERS:
+    for t in LADDERS:
         v = getattr(args, f"dd_{t}")
         ath[t] = getattr(args, f"ath_{t}") or "未提供"
         raw = getattr(args, f"tiers_executed_{t}")
@@ -735,7 +767,7 @@ def main() -> int:
         dd[t] = v
 
     # unknown tier state must not silently authorize deployment
-    effective_dd = {t: (dd[t] if tiers_known[t] else None) for t in TICKERS}
+    effective_dd = {t: (dd[t] if tiers_known[t] else None) for t in LADDERS}
 
     inp = vars(args) | {"nav": args.nav}
     res = compute(args.nav, args.cash, args.spym, args.qqqm, args.soxx,

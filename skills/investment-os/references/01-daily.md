@@ -18,15 +18,15 @@
 - Positions 与 Open Orders 是否存在数量冲突
 - 是否出现零数量持仓、碎股、异常价格或重复合约
 - Leverage 是否来自真实借款，还是仅表示投资比例
-- 回撤警报数量、标的、字段、运算符、档位和价格是否与当前周期状态一致
+- 回撤警报数量、标的、字段、运算符、档位和价格是否与各标的当前周期状态一致（SPYM 一个、QQQM 一个；无阶梯标的上的警报单独报告）
 - 是否存在可绕过 Production universe 的常驻券商自动化；发现时只报告并阻断，不自动修改
 
 ### B.1 回撤警报指针每日核对
 
 指针的完整不变量见 `05-state.md`，本节只规定每日动作：
 
-1. 按 `05-state.md` 重建当前历史最高收盘与本周期已执行档位；
-2. 运行 `python3 skills/investment-os/scripts/alert_pointer_check.py`，比较重建出的 expected pointer 与 IBKR actual alert；
+1. 按 `05-state.md` **分别**重建 SPYM 与 QQQM 各自的历史最高收盘与本周期已执行档位；
+2. 运行 `python3 skills/investment-os/scripts/alert_pointer_check.py`，比较每只标的重建出的 expected pointer 与 IBKR actual alert；
 3. 不得把券商警报本身当成已执行状态的证据。
 
 任何不一致：`Account Health = WARN`、`drawdown deployment state = DATA INCOMPLETE`、停止新的回撤部署候选；其他例行资金路径按其自身 Data Gate 判断。报告 expected、actual、差异与人工修复条件，不得由 agent 自动修改券商警报。
@@ -37,7 +37,7 @@
 
 输出只使用 canonical `SKILL.md` 定义的 `Portfolio`、`Change`、`Decision`、`Reason`、`Next Trigger` 五个字段。没有动作时 `HOLD` 是完整结果；数据问题只阻断受影响的路径。日报不得给出可直接提交的订单参数或交易指令。
 
-下一观察条件必须客观、具体、可验证，不得写「继续关注市场」。警报指针异常时，恢复条件是 IBKR 中唯一启用警报与 expected pointer 完全一致。
+下一观察条件必须客观、具体、可验证，不得写「继续关注市场」。警报指针异常时，恢复条件是 IBKR 中每套未耗尽阶梯各有且只有一个启用警报，且与该标的的 expected pointer 完全一致。
 
 ### C.1 市场背景块
 
