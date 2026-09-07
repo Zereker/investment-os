@@ -22,9 +22,14 @@ The Skill remains usable without a broker connection for policy questions, hypot
 
 The Interactive Brokers app is a runtime dependency only. No IBKR account id, credential, token, portfolio snapshot, order, fill, or authorization record belongs in this repository.
 
+Support, privacy, and usage terms are published in [SUPPORT.md](SUPPORT.md),
+[PRIVACY.md](PRIVACY.md), and [TERMS.md](TERMS.md).
+
 ### ChatGPT distribution
 
-The repository is now structurally compatible with the OpenAI plugin manifest format. To make it appear as a one-click install in ChatGPT for other users, publish/register the plugin through the ChatGPT Plugin distribution flow. The repository itself remains the source package; publishing is a product-distribution step rather than a code change.
+The repository is structurally compatible with the OpenAI plugin manifest format and can be installed from its marketplace for local or workspace use. That distribution packages the Investment OS skill with a mapping to the existing Interactive Brokers integration.
+
+This repository is not, by itself, a public Plugins Directory release. OpenAI's public submission flow does not accept a new plugin submission that merely references an already-published third-party integration. Public-directory publication therefore requires a separately reviewed distribution plan; a Git tag or GitHub Release does not substitute for that review. Do not describe the repository build as publicly published until the corresponding OpenAI release exists.
 
 Once installed in ChatGPT, start with prompts such as:
 
