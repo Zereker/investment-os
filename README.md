@@ -10,6 +10,30 @@ Facts → Rules → LLM Judgment → Owner-Authorized Execution
 
 This repository is the installable product. It stores rules, never personal portfolio data. This project supports personal discipline; it is not investment advice.
 
+## ChatGPT
+
+Investment OS is packaged as an OpenAI plugin with:
+
+- `.codex-plugin/plugin.json` as the plugin manifest;
+- `skills/investment-os/SKILL.md` as the canonical behavior layer;
+- `.app.json` declaring the ChatGPT Interactive Brokers app dependency used for authoritative live account state.
+
+The Skill remains usable without a broker connection for policy questions, hypotheticals, research, and audits. Any path that depends on real account state must fail closed with `DATA INCOMPLETE` when an authoritative account capability is unavailable.
+
+The Interactive Brokers app is a runtime dependency only. No IBKR account id, credential, token, portfolio snapshot, order, fill, or authorization record belongs in this repository.
+
+### ChatGPT distribution
+
+The repository is now structurally compatible with the OpenAI plugin manifest format. To make it appear as a one-click install in ChatGPT for other users, publish/register the plugin through the ChatGPT Plugin distribution flow. The repository itself remains the source package; publishing is a product-distribution step rather than a code change.
+
+Once installed in ChatGPT, start with prompts such as:
+
+- `Daily`
+- `Review my monthly funding under Investment OS.`
+- `Evaluate this transaction under the current policy.`
+
+If the connected Interactive Brokers app is not authorized, Investment OS still answers non-account-dependent requests and closes only the paths requiring live broker state.
+
 ## Install
 
 Codex:
@@ -28,9 +52,9 @@ Claude Code:
 
 ## Broker runtime
 
-Installing the plugin does not give the agent account access. The rules require every account fact to come from an authoritative capability, and pasted figures are context rather than truth, so **without a broker connector every real-money path correctly returns `DATA INCOMPLETE`**. The connector is configured in your harness, never in this repository: no account id, credential, or token belongs here.
+Installing the plugin does not by itself give the agent account access. The rules require every account fact to come from an authoritative capability, and pasted figures are context rather than truth, so **without a broker connector every real-money path correctly returns `DATA INCOMPLETE`**. The connector is configured in the host product, never in this repository: no account id, credential, or token belongs here.
 
-Interactive Brokers publishes an MCP server at `https://api.ibkr.com/v1/api/mcp-public` that AI applications supporting MCP, including Claude Code, can link to an authorized account. Note that it is not a read-only integration — IBKR's model lets the assistant draft an order while the client keeps the final click. That matches this system's boundary, where a candidate is never authorization and the owner places the order, but it means the connector's write surface is real and the rules in `SKILL.md`, not the connector, are what keep it closed.
+For ChatGPT, the plugin manifest declares the Interactive Brokers app dependency. Interactive Brokers exposes account and market capabilities to ChatGPT after the user connects and authorizes the app. The app may expose order-drafting capabilities, but the Investment OS Skill preserves the stricter execution boundary: a recommendation or candidate is never authorization, and final authority remains with the account owner.
 
 `scripts/broker_runtime.py` validates whatever an adapter supplies before any domain rule consumes it. Its required sections map to broker data as follows; `identity`, `snapshot`, `capabilities`, `observations` and `reconciliation` are computed by the adapter rather than fetched.
 
@@ -38,12 +62,12 @@ Interactive Brokers publishes an MCP server at `https://api.ibkr.com/v1/api/mcp-
 |---|---|---|
 | `account_summary`, `balances`, `positions` | positions, cash balances, margin, multi-currency balances | everything: reconciliation cannot run, so all funding formulas stop |
 | `cash_transactions` | historical transactions | the authoritative monthly contribution `F`, which must never be inferred, so Routine DCA stays `DATA INCOMPLETE` |
-| `open_orders` | not named in IBKR's published capability summary — verify at setup | all new transaction candidates; the Open Orders gate defaults to `unknown` and only an explicit `clear` proceeds |
+| `open_orders` | broker open-order capability | all new transaction candidates; the Open Orders gate defaults to `unknown` and only an explicit `clear` proceeds |
 | `market_inputs` | prices; the all-time-high close series may need a separate source | drawdown tier evaluation for the day |
-| `alert_inventory` | broker-side drawdown alerts, likely outside the MCP surface | the alert pointer consistency check, which forces `Account Health = WARN` and freezes drawdown deployment candidates |
-| `standing_automations` | broker-resident automation | the daily check for automation that could bypass the Production universe |
+| `alert_inventory` | broker-side drawdown alerts, if exposed by the connected capability | the alert pointer consistency check, which forces `Account Health = WARN` and freezes drawdown deployment candidates |
+| `standing_automations` | broker-resident automation, if exposed by the connected capability | the daily check for automation that could bypass the Production universe |
 
-Verify each capability against your own connector before trusting a formal result: a gap does not degrade the system quietly, it closes the affected path by design.
+Verify each capability against the connected runtime before trusting a formal result: a gap does not degrade the system quietly, it closes the affected path by design.
 
 ## Use
 
