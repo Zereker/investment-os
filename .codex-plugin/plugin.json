@@ -1,6 +1,6 @@
 {
   "name": "investment-os",
-  "version": "0.17.0",
+  "version": "0.17.1",
   "description": "A rules-first long-term investment agent distributed as one canonical skill with fresh authoritative runtime state.",
   "author": {
     "name": "Zereker",
@@ -21,7 +21,7 @@
   "apps": "./.app.json",
   "interface": {
     "displayName": "Investment OS",
-    "shortDescription": "Rules-first long-term portfolio decisions",
+    "shortDescription": "Rules-first portfolio reviews",
     "longDescription": "Use one canonical Investment OS skill in ChatGPT or Codex to review a live portfolio, make policy-grounded investment judgments, separate research from Production, and keep broker execution under explicit owner authority. Interactive Brokers is used only as an authoritative runtime capability; the repository stores rules, never portfolio data.",
     "developerName": "Zereker",
     "category": "Finance",
@@ -35,8 +35,8 @@
       "Evaluate this transaction under the current policy."
     ],
     "websiteURL": "https://github.com/Zereker/investment-os",
-    "privacyPolicyURL": "https://github.com/Zereker/investment-os/blob/master/skills/investment-os/SKILL.md",
-    "termsOfServiceURL": "https://github.com/Zereker/investment-os/blob/master/LICENSE",
+    "privacyPolicyURL": "https://github.com/Zereker/investment-os/blob/master/PRIVACY.md",
+    "termsOfServiceURL": "https://github.com/Zereker/investment-os/blob/master/TERMS.md",
     "brandColor": "#1F6FEB",
     "screenshots": []
   }

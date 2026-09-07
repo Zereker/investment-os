@@ -36,7 +36,7 @@ def verify_marketplaces() -> None:
     assert len(codex["plugins"]) == 1
     codex_entry = codex["plugins"][0]
     assert codex_entry["name"] == "investment-os"
-    assert codex_entry["source"] == {"source": "url", "url": "./"}
+    assert codex_entry["source"] == {"source": "local", "path": "./"}
     assert codex_entry["policy"] == {"installation": "AVAILABLE", "authentication": "ON_INSTALL"}
 
     claude = load_json(ROOT / ".claude-plugin" / "marketplace.json")
@@ -89,7 +89,16 @@ def main() -> None:
         codex_manifest = load_json(installed / ".codex-plugin" / "plugin.json")
         assert codex_manifest["skills"] == "./skills/"
         assert "hooks" not in codex_manifest
-        assert codex_manifest["interface"]["privacyPolicyURL"].endswith("/skills/investment-os/SKILL.md")
+        interface = codex_manifest["interface"]
+        assert len(interface["shortDescription"]) <= 30
+        assert interface["privacyPolicyURL"].endswith("/PRIVACY.md")
+        assert interface["termsOfServiceURL"].endswith("/TERMS.md")
+        for legal_file in ("LICENSE", "PRIVACY.md", "TERMS.md", "SUPPORT.md"):
+            assert (installed / legal_file).is_file(), f"installed file missing: {legal_file}"
+
+        app_manifest = load_json(installed / ".app.json")
+        ibkr = app_manifest["apps"]["interactive-brokers"]
+        assert ibkr == {"id": "asdk_app_69bc11db874881918718abaca20b68ce"}
 
     print("Single-skill plugin installation and cache-isolation tests passed.")
 

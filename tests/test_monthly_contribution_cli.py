@@ -23,6 +23,7 @@ BASE_ARGS = [
     # laddered ticker with no drawdown series of its own is DATA INCOMPLETE on
     # that ladder, which would mask what this test is actually asserting
     "--dd-spym", "0", "--dd-qqqm", "0", "--dd-as-of", "2026-08-28",
+    "--today", "2026-08-28",
     "--tiers-executed-spym", "none", "--tiers-executed-qqqm", "none",
     "--open-orders-status", "clear",
 ]
