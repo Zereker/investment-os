@@ -216,6 +216,23 @@ def published_migration_months() -> int:
     return int(hit.group(1))
 
 
+def monthly_schedule_gate() -> None:
+    """The monthly workflow must publish one deterministic, non-retroactive day."""
+    monthly = read(MONTHLY_REF)
+    required = (
+        "每个自然月的第一个美国股票市场交易日",
+        "NYSE 官方交易日历",
+        "月度计算每月只运行一次",
+        "不追溯",
+        "权威确认 \\(F=0\\)",
+        "战略现金迁移基线照常计算",
+    )
+    missing = [phrase for phrase in required if phrase not in monthly]
+    if missing:
+        raise AssertionError(
+            f"02-monthly.md no longer publishes the fixed monthly schedule: {missing}")
+
+
 def published_ladders() -> dict[str, float]:
     """Parse the constitution's per-ticker ladder totals out of its tier table."""
     row = re.compile(
@@ -367,6 +384,7 @@ def main() -> None:
     allocation_tests()
     drawdown_tests()
     published_matches_code()
+    monthly_schedule_gate()
     mirror_tests()
     frozen_state_gate()
     privacy_gate()
