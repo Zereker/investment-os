@@ -39,7 +39,15 @@ function object(value: unknown): JsonObject | null {
 }
 
 function number(value: unknown): number | null {
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (
+    typeof value === "string" &&
+    /^-?(?:\d+\.?\d*|\.\d+)$/.test(value.trim())
+  ) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
 }
 
 function positionValues(value: unknown): number[] | null {
@@ -57,6 +65,96 @@ function positionValues(value: unknown): number[] | null {
     values.push(parsed);
   }
   return values;
+}
+
+function normalizeBalances(
+  value: unknown,
+  currencyBasis: unknown
+): { value: unknown; issue?: string } {
+  const record = object(value);
+  if (!record) return { value, issue: "balances data must be an object" };
+  const directCash = number(record.total_cash ?? record.cash);
+  if (directCash !== null) {
+    return { value: { ...record, total_cash: directCash } };
+  }
+
+  const rows = Array.isArray(record.balances) ? record.balances : null;
+  if (!rows) {
+    return {
+      value,
+      issue: "balances data has no total_cash, cash, or balances array"
+    };
+  }
+  const basis =
+    typeof currencyBasis === "string" ? currencyBasis.toUpperCase() : null;
+  const candidates = rows.filter((item) => {
+    const row = object(item);
+    const currency =
+      typeof row?.currency === "string" ? row.currency.toUpperCase() : null;
+    return currency === "BASE" || (basis !== null && currency === basis);
+  });
+  const baseRows = candidates.filter(
+    (item) => {
+      const currency = object(item)?.currency;
+      return typeof currency === "string" && currency.toUpperCase() === "BASE";
+    }
+  );
+  const selectedRows = baseRows.length > 0 ? baseRows : candidates;
+  if (selectedRows.length !== 1) {
+    return {
+      value,
+      issue:
+        selectedRows.length === 0
+          ? "balances array has no BASE or currency-basis row"
+          : "balances array has multiple matching currency rows"
+    };
+  }
+
+  const selected = object(selectedRows[0])!;
+  const cash = number(selected.cash_balance ?? selected.cashBalance);
+  if (cash === null) {
+    return { value, issue: "selected balance row has no numeric cash_balance" };
+  }
+  const settled = number(selected.settled_cash ?? selected.settledCash);
+  return {
+    value: {
+      total_cash: cash,
+      ...(settled === null ? {} : { settled_cash: settled }),
+      currency: selected.currency
+    }
+  };
+}
+
+function normalizePositions(value: unknown): { value: unknown; issue?: string } {
+  const record = object(value);
+  const rows = Array.isArray(value)
+    ? value
+    : Array.isArray(record?.positions)
+      ? record.positions
+      : null;
+  if (!rows) return { value, issue: "positions data must be an array or positions envelope" };
+
+  const normalized = [];
+  for (const item of rows) {
+    const position = object(item);
+    if (!position) return { value, issue: "position row must be an object" };
+    const marketValue = number(position.market_value ?? position.marketValue);
+    if (marketValue === null) {
+      return { value, issue: "position row has no numeric market_value" };
+    }
+    normalized.push({ ...position, market_value: marketValue });
+  }
+  return { value: normalized };
+}
+
+function normalizeConnectorData(
+  name: string,
+  value: unknown,
+  currencyBasis: unknown
+): { value: unknown; issue?: string } {
+  if (name === "balances") return normalizeBalances(value, currencyBasis);
+  if (name === "positions") return normalizePositions(value);
+  return { value };
 }
 
 function reconcile(runtime: JsonObject) {
@@ -117,8 +215,19 @@ export function assembleBrokerRuntime(input: BrokerRuntimeInput) {
       runtime[name] = null;
       issues.push(`${name}: available connector result has no data`);
     } else if (declared === "available") {
-      states[name] = declared;
-      runtime[name] = capability.data;
+      const normalized = normalizeConnectorData(
+        name,
+        capability.data,
+        input.snapshot.currency_basis
+      );
+      if (normalized.issue) {
+        states[name] = "unavailable";
+        runtime[name] = null;
+        issues.push(`${name}: ${normalized.issue}`);
+      } else {
+        states[name] = declared;
+        runtime[name] = normalized.value;
+      }
     } else {
       states[name] = declared;
       runtime[name] = null;
@@ -143,4 +252,3 @@ export function assembleBrokerRuntime(input: BrokerRuntimeInput) {
     runtime_data_persisted: false
   };
 }
-
