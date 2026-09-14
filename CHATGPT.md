@@ -45,6 +45,31 @@ Test it with MCP Inspector:
 npx @modelcontextprotocol/inspector@latest
 ```
 
+## Deploy on Cloudflare Workers Free
+
+The repository includes a native, stateless TypeScript MCP Worker. It bundles
+the canonical Skill and policy references at build time and does not require
+Containers or a paid Workers plan.
+
+```bash
+npm install
+npm run check:cloudflare
+npm run test:cloudflare
+npx wrangler login
+npm run deploy:cloudflare
+```
+
+Wrangler prints a URL similar to:
+
+```text
+https://investment-os-mcp.YOUR_SUBDOMAIN.workers.dev
+```
+
+Connect ChatGPT to the same URL with `/mcp` appended. The initial deployment
+is intentionally unauthenticated and exposes only read-only policy loading and
+runtime validation. Do not add broker credentials or account storage to the
+Worker.
+
 ## Run with Docker
 
 ```bash
