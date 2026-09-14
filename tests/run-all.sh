@@ -8,6 +8,7 @@ export PYTHONDONTWRITEBYTECODE=1
 export PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}"
 
 python3 tests/test_plugin_installation.py
+python3 tests/test_mcp_policy.py
 python3 tests/test_broker_runtime.py
 python3 tests/test_execution_runtime.py
 python3 tests/test_monthly_contribution_cli.py
