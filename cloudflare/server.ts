@@ -15,7 +15,7 @@ function jsonResult(value: unknown) {
 
 function createServer() {
   const server = new McpServer(
-    { name: "Investment OS", version: "0.17.3" },
+    { name: "Investment OS", version: "0.17.4" },
     {
       instructions: [
         "Investment OS is rules-first and read-only.",
@@ -70,7 +70,7 @@ function createServer() {
     "assemble_broker_runtime",
     {
       description:
-        "Deterministically assemble ephemeral IBKR connector results into the canonical Investment OS runtime. Missing, stale, conflicting, and failed connector capabilities remain explicit and are never guessed.",
+        "Deterministically assemble ephemeral IBKR connector results, including balances and positions envelopes, into the canonical Investment OS runtime. Missing, stale, conflicting, and failed connector capabilities remain explicit and are never guessed.",
       inputSchema: {
         identity: z.record(z.string(), z.unknown()),
         snapshot: z.record(z.string(), z.unknown()),

@@ -16,7 +16,9 @@ Investment OS policy.
   capability, and reconciliation gates.
 - `assemble_broker_runtime` converts ephemeral connector results into the
   canonical runtime without guessing unavailable data. Each capability carries
-  its own status, source, observation time, and optional error.
+  its own status, source, observation time, and optional error. The adapter
+  accepts IBKR's `balances.balances[]` and `positions.positions[]` envelopes;
+  balance selection prefers the `BASE` row, then the snapshot currency basis.
 - No tool writes to a broker.
 - No tool stores account data.
 

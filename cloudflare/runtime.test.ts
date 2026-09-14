@@ -100,6 +100,70 @@ assert.equal(
   "PASS"
 );
 
+const rawEnvelopeCapabilities = structuredClone(connectorCapabilities);
+rawEnvelopeCapabilities.balances = {
+  status: "available",
+  data: {
+    balances: [
+      { currency: "BASE", cash_balance: "15000", settled_cash: "14900" },
+      { currency: "USD", cash_balance: 14000, settled_cash: 13900 }
+    ]
+  },
+  source: "IBKR Balances",
+  observed_at: "2026-09-14T12:00:00Z"
+};
+rawEnvelopeCapabilities.positions = {
+  status: "available",
+  data: {
+    positions: [{ symbol: "SYNTHETIC", market_value: "85000" }]
+  },
+  source: "IBKR Positions",
+  observed_at: "2026-09-14T12:00:00Z"
+};
+const assembledRawEnvelope = assembleBrokerRuntime({
+  identity: runtime.identity,
+  snapshot: runtime.snapshot,
+  capabilities: rawEnvelopeCapabilities
+});
+assert.equal(assembledRawEnvelope.adapter_status, "PASS");
+assert.deepEqual(assembledRawEnvelope.runtime.balances, {
+  total_cash: 15000,
+  settled_cash: 14900,
+  currency: "BASE"
+});
+assert.deepEqual(assembledRawEnvelope.runtime.positions, [
+  { symbol: "SYNTHETIC", market_value: 85000 }
+]);
+assert.equal(
+  validateBrokerRuntime(
+    assembledRawEnvelope.runtime,
+    ["positions", "balances", "open_orders"],
+    300,
+    now
+  ).runtime_status,
+  "PASS"
+);
+
+const unusableBalanceEnvelope = structuredClone(connectorCapabilities);
+unusableBalanceEnvelope.balances = {
+  status: "available",
+  data: { balances: [{ currency: "EUR", cash_balance: 15000 }] },
+  source: "IBKR Balances",
+  observed_at: "2026-09-14T12:00:00Z"
+};
+const assembledUnusableBalance = assembleBrokerRuntime({
+  identity: runtime.identity,
+  snapshot: runtime.snapshot,
+  capabilities: unusableBalanceEnvelope
+});
+assert.equal(assembledUnusableBalance.adapter_status, "WARN");
+assert.equal(assembledUnusableBalance.runtime.balances, null);
+assert.equal(
+  (assembledUnusableBalance.runtime.capabilities as Record<string, string>)
+    .balances,
+  "unavailable"
+);
+
 const missingBalances = structuredClone(connectorCapabilities);
 missingBalances.balances = {
   status: "unavailable",
