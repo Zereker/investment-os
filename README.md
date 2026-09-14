@@ -29,7 +29,7 @@ Support, privacy, and usage terms are published in [SUPPORT.md](SUPPORT.md),
 
 The repository is structurally compatible with the OpenAI plugin manifest format and can be installed from its marketplace for local or workspace use. That distribution packages the Investment OS skill with a mapping to the existing Interactive Brokers integration.
 
-This repository is not, by itself, a public Plugins Directory release. OpenAI's public submission flow does not accept a new plugin submission that merely references an already-published third-party integration. Public-directory publication therefore requires a separately reviewed distribution plan; a Git tag or GitHub Release does not substitute for that review. Do not describe the repository build as publicly published until the corresponding OpenAI release exists.
+This repository is not, by itself, a public Plugins Directory release. A Git tag or GitHub Release does not substitute for OpenAI review. For private ChatGPT use, this repository also includes a stateless remote MCP server; see [CHATGPT.md](CHATGPT.md). Do not describe the repository build as publicly published until the corresponding OpenAI release exists.
 
 Once installed in ChatGPT, start with prompts such as:
 
@@ -40,6 +40,8 @@ Once installed in ChatGPT, start with prompts such as:
 If the connected Interactive Brokers app is not authorized, Investment OS still answers non-account-dependent requests and closes only the paths requiring live broker state.
 
 ## Install
+
+ChatGPT (Developer mode): deploy the remote MCP server and connect its HTTPS `/mcp` endpoint by following [CHATGPT.md](CHATGPT.md). The GitHub repository URL itself is not an MCP endpoint.
 
 Codex:
 
