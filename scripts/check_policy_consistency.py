@@ -354,7 +354,7 @@ def privacy_gate() -> None:
     """Public-repo red line: no account-derivable figures in any tracked Markdown."""
     violations = []
     for path in sorted(ROOT.rglob("*.md")):
-        if ".git" in path.parts:
+        if {".git", ".venv", "node_modules"}.intersection(path.parts):
             continue
         text = path.read_text(encoding="utf-8")
         for lineno, line in enumerate(text.splitlines(), 1):
