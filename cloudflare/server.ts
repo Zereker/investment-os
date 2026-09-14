@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { createMcpHandler } from "agents/mcp/server";
 import { z } from "zod";
 
+import { assembleBrokerRuntime } from "./adapter";
 import { isInvestmentTask, loadTaskContext, taskReferences } from "./policy";
 import { validateBrokerRuntime } from "./runtime";
 
@@ -14,11 +15,12 @@ function jsonResult(value: unknown) {
 
 function createServer() {
   const server = new McpServer(
-    { name: "Investment OS", version: "0.17.2" },
+    { name: "Investment OS", version: "0.17.3" },
     {
       instructions: [
         "Investment OS is rules-first and read-only.",
         "Call load_investment_os before answering an Investment OS task.",
+        "Use assemble_broker_runtime to normalize connector results before validation.",
         "Never infer live account state or treat pasted figures as authoritative.",
         "Account-dependent paths require fresh broker output and PASS from validate_broker_runtime.",
         "Missing, stale, conflicting, or unverified data leaves only the affected path DATA INCOMPLETE.",
@@ -62,6 +64,30 @@ function createServer() {
       }
       return jsonResult(loadTaskContext(normalized));
     }
+  );
+
+  server.registerTool(
+    "assemble_broker_runtime",
+    {
+      description:
+        "Deterministically assemble ephemeral IBKR connector results into the canonical Investment OS runtime. Missing, stale, conflicting, and failed connector capabilities remain explicit and are never guessed.",
+      inputSchema: {
+        identity: z.record(z.string(), z.unknown()),
+        snapshot: z.record(z.string(), z.unknown()),
+        capabilities: z.record(
+          z.string(),
+          z.object({
+            status: z.enum(["available", "unavailable", "stale", "conflicting"]),
+            data: z.unknown().optional(),
+            source: z.string().optional(),
+            observed_at: z.string().optional(),
+            error: z.string().optional()
+          })
+        )
+      }
+    },
+    async ({ identity, snapshot, capabilities }) =>
+      jsonResult(assembleBrokerRuntime({ identity, snapshot, capabilities }))
   );
 
   server.registerTool(

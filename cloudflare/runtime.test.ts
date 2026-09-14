@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 
+import { assembleBrokerRuntime, type CapabilityInput } from "./adapter";
 import { validateBrokerRuntime } from "./runtime";
 
 const now = Date.parse("2026-09-14T12:00:00Z");
@@ -70,6 +71,87 @@ const staleResult = validateBrokerRuntime(stale, ["positions"], 300, now);
 assert.equal(staleResult.runtime_status, "DATA INCOMPLETE");
 assert.ok(
   staleResult.blocking_issues.some((issue) => issue.includes("snapshot is stale"))
+);
+
+const connectorCapabilities: Record<string, CapabilityInput> = Object.fromEntries(
+  Object.entries(capabilities).map(([name]) => [
+    name,
+    {
+      status: "available",
+      data: runtime[name as keyof typeof runtime],
+      source: "synthetic-adapter",
+      observed_at: "2026-09-14T12:00:00Z"
+    }
+  ])
+);
+const assembled = assembleBrokerRuntime({
+  identity: runtime.identity,
+  snapshot: runtime.snapshot,
+  capabilities: connectorCapabilities
+});
+assert.equal(assembled.adapter_status, "PASS");
+assert.equal(
+  validateBrokerRuntime(
+    assembled.runtime,
+    ["positions", "balances", "open_orders"],
+    300,
+    now
+  ).runtime_status,
+  "PASS"
+);
+
+const missingBalances = structuredClone(connectorCapabilities);
+missingBalances.balances = {
+  status: "unavailable",
+  error: "MCP Internal error"
+};
+const assembledWithoutBalances = assembleBrokerRuntime({
+  identity: runtime.identity,
+  snapshot: runtime.snapshot,
+  capabilities: missingBalances
+});
+assert.equal(assembledWithoutBalances.adapter_status, "WARN");
+assert.equal(assembledWithoutBalances.runtime.balances, null);
+assert.equal(
+  validateBrokerRuntime(
+    assembledWithoutBalances.runtime,
+    ["balances"],
+    300,
+    now
+  ).runtime_status,
+  "DATA INCOMPLETE"
+);
+
+const staleMarketInputs = structuredClone(connectorCapabilities);
+staleMarketInputs.market_inputs = {
+  status: "stale",
+  data: { last_bar: "2025-12-20" },
+  source: "IBKR historical data",
+  observed_at: "2026-09-14T12:00:00Z"
+};
+const assembledWithStaleMarket = assembleBrokerRuntime({
+  identity: runtime.identity,
+  snapshot: runtime.snapshot,
+  capabilities: staleMarketInputs
+});
+assert.equal(assembledWithStaleMarket.runtime.market_inputs, null);
+assert.equal(
+  validateBrokerRuntime(
+    assembledWithStaleMarket.runtime,
+    ["positions", "balances"],
+    300,
+    now
+  ).runtime_status,
+  "PASS"
+);
+assert.equal(
+  validateBrokerRuntime(
+    assembledWithStaleMarket.runtime,
+    ["market_inputs"],
+    300,
+    now
+  ).runtime_status,
+  "DATA INCOMPLETE"
 );
 
 console.log("Cloudflare runtime tests passed.");
