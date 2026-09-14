@@ -6,16 +6,18 @@
   "scripts": {
     "dev:cloudflare": "wrangler dev",
     "deploy:cloudflare": "wrangler deploy",
-    "check:cloudflare": "tsc --noEmit"
+    "check:cloudflare": "tsc --noEmit",
+    "test:cloudflare": "tsx cloudflare/runtime.test.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "2.0.0",
-    "agents": "^0.3.7",
+    "agents": "*",
     "zod": "^4.5.4"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260729.1",
     "typescript": "^6.0.3",
-    "wrangler": "^4.115.0"
+    "wrangler": "^4.115.0",
+    "tsx": "^4.20.5"
   }
 }
