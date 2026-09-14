@@ -1,0 +1,87 @@
+# ChatGPT MCP deployment
+
+ChatGPT cannot install this repository directly from its GitHub URL. Codex and
+Claude Code can load repository marketplaces locally; ChatGPT connects custom
+plugins through a remote MCP endpoint or installs a reviewed directory release.
+
+This directory adds the remote MCP path without creating a second copy of
+Investment OS policy.
+
+## What the server exposes
+
+- `load_investment_os` reads the installed canonical `SKILL.md` and only the
+  numbered references required for the selected task.
+- `list_investment_os_tasks` returns the supported task routing names.
+- `validate_broker_runtime` applies the existing broker-neutral freshness,
+  capability, and reconciliation gates.
+- No tool writes to a broker.
+- No tool stores account data.
+
+The MCP server does not fetch IBKR data itself. In ChatGPT, enable the existing
+Interactive Brokers plugin alongside Investment OS. Account-dependent work must
+use fresh IBKR output and pass it to `validate_broker_runtime`; otherwise that
+path remains `DATA INCOMPLETE`.
+
+## Run locally
+
+Python 3.11 or newer is required.
+
+```bash
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements-mcp.txt
+python -m mcp_server.server
+```
+
+The Streamable HTTP endpoint is available at:
+
+```text
+http://localhost:8000/mcp
+```
+
+Test it with MCP Inspector:
+
+```bash
+npx @modelcontextprotocol/inspector@latest
+```
+
+## Run with Docker
+
+```bash
+docker build -t investment-os-mcp .
+docker run --rm -p 8000:8000 investment-os-mcp
+```
+
+## Connect from ChatGPT
+
+ChatGPT requires a reachable HTTPS endpoint. For temporary development, expose
+port 8000 with an HTTPS tunnel. For continued use, deploy the Docker image to a
+service that preserves the `PORT` environment variable and supports streaming
+HTTP responses.
+
+1. Open ChatGPT Settings, then Security and login, and enable Developer mode.
+2. Open the ChatGPT Plugins page and create a plugin connection.
+3. Enter `https://YOUR_HOST/mcp`.
+4. Start a new chat and enable both Investment OS and Interactive Brokers.
+5. Ask `Daily` or another supported Investment OS task.
+
+The server is stateless. Do not add request-body logging, account snapshots,
+credentials, authorization records, or execution receipts to the repository or
+hosting logs.
+
+## Verification
+
+Repository checks:
+
+```bash
+bash tests/run-all.sh
+```
+
+MCP integration check after installing dependencies:
+
+```bash
+python -c "from mcp_server.server import mcp; print(mcp.name)"
+```
+
+A public ChatGPT Plugins Directory release is a separate review and publication
+step. A GitHub tag or deployment does not make the plugin publicly listed.
