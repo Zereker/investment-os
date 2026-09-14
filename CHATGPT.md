@@ -14,13 +14,18 @@ Investment OS policy.
 - `list_investment_os_tasks` returns the supported task routing names.
 - `validate_broker_runtime` applies the existing broker-neutral freshness,
   capability, and reconciliation gates.
+- `assemble_broker_runtime` converts ephemeral connector results into the
+  canonical runtime without guessing unavailable data. Each capability carries
+  its own status, source, observation time, and optional error.
 - No tool writes to a broker.
 - No tool stores account data.
 
 The MCP server does not fetch IBKR data itself. In ChatGPT, enable the existing
 Interactive Brokers plugin alongside Investment OS. Account-dependent work must
-use fresh IBKR output and pass it to `validate_broker_runtime`; otherwise that
-path remains `DATA INCOMPLETE`.
+use fresh IBKR output, pass each connector result to `assemble_broker_runtime`,
+and then pass its `runtime` to `validate_broker_runtime`; otherwise that path
+remains `DATA INCOMPLETE`. A connector error stays unavailable—the adapter does
+not repair, replace, or estimate broker data.
 
 ## Run locally
 
