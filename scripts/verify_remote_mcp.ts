@@ -93,6 +93,8 @@ async function main() {
   assert.ok(assembleTool, "assemble_broker_runtime must be published");
   const assembleSchema = object(assembleTool.inputSchema, "assemble inputSchema");
   const assembleProperties = object(assembleSchema.properties, "assemble properties");
+  const schemaVersion = object(assembleProperties.schema_version, "schema version input");
+  assert.deepEqual(schemaVersion.enum, ["1.0"]);
   const snapshotSchema = object(assembleProperties.snapshot, "snapshot schema");
   assert.deepEqual(snapshotSchema.required, ["as_of", "source", "timezone", "currency_basis"]);
   assert.equal(snapshotSchema.additionalProperties, false);
@@ -105,6 +107,8 @@ async function main() {
   ]);
   const accountSummarySchema = object(capabilityProperties.account_summary, "account_summary schema");
   const accountSummaryProperties = object(accountSummarySchema.properties, "account_summary properties");
+  const accountSummaryDataSchema = object(accountSummaryProperties.data, "account_summary data schema");
+  assert.ok(JSON.stringify(accountSummaryDataSchema).includes("net_liquidation"));
   const statusSchema = object(accountSummaryProperties.status, "capability status schema");
   assert.deepEqual(statusSchema.enum, [
     "available", "unavailable", "stale", "conflicting", "not_requested", "not_applicable"
@@ -112,6 +116,10 @@ async function main() {
   const requiredCapabilitiesSchema = object(assembleProperties.required_capabilities, "required capabilities schema");
   const requiredCapabilityItems = object(requiredCapabilitiesSchema.items, "required capability items");
   assert.deepEqual(requiredCapabilityItems.enum, Object.keys(capabilityProperties));
+  const balancesSchema = object(capabilityProperties.balances, "balances capability schema");
+  assert.ok(JSON.stringify(balancesSchema).includes("cash_balance"));
+  const positionsSchema = object(capabilityProperties.positions, "positions capability schema");
+  assert.ok(JSON.stringify(positionsSchema).includes("market_value"));
 
   const taskResult = structuredContent(
     await rpc("tools/call", {
@@ -301,6 +309,18 @@ async function main() {
   );
   assert.equal(failedReconciliation.status, "DATA INCOMPLETE");
   assert.equal(failedReconciliation.cash, null);
+
+  const overToleranceArguments = structuredClone(baseArguments);
+  overToleranceArguments.capabilities.positions = available(
+    { positions: [{ symbol: "SYNTHETIC", market_value: 84_000 }] }, observedAt, "synthetic IBKR positions"
+  ) as never;
+  const overTolerance = structuredContent(await rpc("tools/call", {
+    name: "assemble_broker_runtime", arguments: overToleranceArguments
+  }));
+  const overReconciliation = object(object(overTolerance.runtime, "over-tolerance runtime").reconciliation, "over-tolerance reconciliation");
+  assert.equal(overReconciliation.status, "DATA INCOMPLETE");
+  assert.match(String(overReconciliation.diagnostic), /exceeds tolerance/);
+  assert.doesNotMatch(String(overReconciliation.diagnostic), /within tolerance/);
 
   const monthly = structuredContent(await rpc("tools/call", {
     name: "calculate_monthly_deployment",

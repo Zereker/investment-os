@@ -14,6 +14,7 @@ export type CapabilityInput = {
 };
 
 export type BrokerRuntimeInput = {
+  schema_version?: string;
   identity: JsonObject;
   snapshot: { as_of: string; source: string; timezone: string; currency_basis: string };
   capabilities: Record<string, CapabilityInput>;

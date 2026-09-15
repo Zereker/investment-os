@@ -16,18 +16,47 @@ function jsonResult(value: unknown) {
   };
 }
 
-const capabilityInput = z.object({
-  status: z.enum(CAPABILITY_STATES),
-  data: z.unknown().optional(), source: z.string().optional(),
-  observed_at: z.string().optional(), error: z.string().optional()
+const numeric = z.union([z.number(), z.string().regex(/^-?(?:\d+\.?\d*|\.\d+)$/)]);
+const accountSummaryData = z.object({ net_liquidation: numeric }).passthrough();
+const balanceRow = z.object({
+  currency: z.string(), cash_balance: numeric,
+  settled_cash: numeric.optional(), exchange_rate: numeric.optional()
+}).passthrough();
+const balancesData = z.union([
+  z.object({ total_cash: numeric, settled_cash: numeric.optional() }).passthrough(),
+  z.object({ cash: numeric, settled_cash: numeric.optional() }).passthrough(),
+  z.object({ balances: z.array(balanceRow) }).passthrough()
+]);
+const positionRow = z.object({
+  market_value: numeric,
+  symbol: z.string().optional()
+}).passthrough();
+const positionsData = z.union([
+  z.array(positionRow),
+  z.object({ positions: z.array(positionRow) }).passthrough()
+]);
+const rowsOrEnvelope = (key: string) => z.union([
+  z.array(z.unknown()),
+  z.object({ [key]: z.array(z.unknown()) }).passthrough()
+]);
+const capabilityInput = <T extends z.ZodType>(dataSchema: T) => z.object({
+  status: z.enum(CAPABILITY_STATES), data: dataSchema.optional(),
+  source: z.string().optional(), observed_at: z.string().optional(), error: z.string().optional()
 }).strict();
-const capabilitiesInput = z.object(Object.fromEntries(
-  CAPABILITY_NAMES.map((name) => [name, capabilityInput.optional()])
-) as Record<(typeof CAPABILITY_NAMES)[number], z.ZodOptional<typeof capabilityInput>>).strict();
+const capabilitiesInput = z.object({
+  account_summary: capabilityInput(accountSummaryData).optional(),
+  balances: capabilityInput(balancesData).optional(),
+  positions: capabilityInput(positionsData).optional(),
+  open_orders: capabilityInput(rowsOrEnvelope("orders")).optional(),
+  cash_transactions: capabilityInput(rowsOrEnvelope("transactions")).optional(),
+  market_inputs: capabilityInput(z.record(z.string(), z.unknown())).optional(),
+  alert_inventory: capabilityInput(rowsOrEnvelope("alerts")).optional(),
+  standing_automations: capabilityInput(rowsOrEnvelope("automations")).optional()
+}).strict();
 
 function createServer() {
   const server = new McpServer(
-    { name: "Investment OS", version: "0.19.1" },
+    { name: "Investment OS", version: "0.20.0" },
     {
       instructions: [
         "Investment OS is rules-first and read-only.",
@@ -85,6 +114,7 @@ function createServer() {
       description:
         "Deterministically assemble ephemeral IBKR connector results into canonical runtime schema 1.0. Use exactly account_summary, balances, positions, open_orders, cash_transactions, market_inputs, alert_inventory, and standing_automations; aliases such as account_balances, account_positions, and account_orders are invalid. Omitted optional capabilities become not_requested. Pass required_capabilities to scope status. Obtain explicit consent before passing private data from another connector; data is never persisted.",
       inputSchema: {
+        schema_version: z.literal("1.0").default("1.0").describe("Broker runtime contract version accepted by both assemble and validate"),
         identity: z.record(z.string(), z.unknown()).describe("Broker-neutral account identity metadata. This object is intentionally extensible and is not an authorization claim."),
         snapshot: z.object({
           as_of: z.iso.datetime({ offset: true }).describe("ISO-8601 timezone-aware snapshot timestamp"),
@@ -95,8 +125,8 @@ function createServer() {
         required_capabilities: z.array(z.enum(CAPABILITY_NAMES)).default([])
       }
     },
-    async ({ identity, snapshot, capabilities, required_capabilities }) =>
-      jsonResult(assembleBrokerRuntime({ identity, snapshot, capabilities, required_capabilities }))
+    async ({ schema_version, identity, snapshot, capabilities, required_capabilities }) =>
+      jsonResult(assembleBrokerRuntime({ schema_version, identity, snapshot, capabilities, required_capabilities }))
   );
 
   server.registerTool(

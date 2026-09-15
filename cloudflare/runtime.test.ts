@@ -85,6 +85,8 @@ const outsideToleranceResult = validateBrokerRuntime(
 );
 assert.equal(outsideToleranceResult.runtime_status, "DATA INCOMPLETE");
 assert.equal(outsideToleranceResult.reconciliation?.absolute_difference, 600);
+assert.match(outsideToleranceResult.reconciliation?.diagnostic ?? "", /exceeds tolerance/);
+assert.doesNotMatch(outsideToleranceResult.reconciliation?.diagnostic ?? "", /within tolerance/);
 assert.ok(
   outsideToleranceResult.blocking_issues.some((issue) =>
     issue.includes("limit 0.50%")
