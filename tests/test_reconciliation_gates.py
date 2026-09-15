@@ -8,6 +8,7 @@ from pathlib import Path
 
 from runtime_paths import SCRIPT_DIRS
 from broker_runtime import validate_runtime
+from account_reconciliation import DEFAULT_TOLERANCE, reconcile_nav
 
 ROOT = Path(__file__).resolve().parents[1]
 MONTHLY = SCRIPT_DIRS["monthly"] / "monthly_execution.py"
@@ -24,6 +25,17 @@ def monthly(*args: str) -> subprocess.CompletedProcess[str]:
 
 
 def main() -> None:
+    within_tolerance = reconcile_nav(100000, 15000, [84900])
+    assert within_tolerance.passed
+    assert within_tolerance.absolute_difference == 100
+    assert within_tolerance.relative_difference == 0.001
+    assert within_tolerance.tolerance == DEFAULT_TOLERANCE == 0.005
+    assert within_tolerance.as_dict()["positions_market_value"] == 84900
+
+    outside_tolerance = reconcile_nav(100000, 15000, [84400])
+    assert not outside_tolerance.passed
+    assert outside_tolerance.absolute_difference == 600
+
     impossible = monthly(
         "--nav", "100000", "--cash", "95000", "--spym", "200000",
         "--qqqm", "0", "--soxx", "0", "--dd-spym", "0.26",

@@ -15,7 +15,7 @@ function jsonResult(value: unknown) {
 
 function createServer() {
   const server = new McpServer(
-    { name: "Investment OS", version: "0.17.4" },
+    { name: "Investment OS", version: "0.17.5" },
     {
       instructions: [
         "Investment OS is rules-first and read-only.",

@@ -14,10 +14,25 @@ DEFAULT_TOLERANCE = 0.005
 class ReconciliationResult:
     passed: bool
     nav: float
+    cash: float
+    positions_market_value: float
     component_total: float
     absolute_difference: float
     relative_difference: float
     tolerance: float
+
+    def as_dict(self) -> dict[str, float | str | list[str]]:
+        return {
+            "status": "PASS" if self.passed else "DATA INCOMPLETE",
+            "issues": [] if self.passed else [self.issue or "NAV reconciliation failed"],
+            "nav": self.nav,
+            "cash": self.cash,
+            "positions_market_value": self.positions_market_value,
+            "component_total": self.component_total,
+            "absolute_difference": self.absolute_difference,
+            "relative_difference": self.relative_difference,
+            "tolerance": self.tolerance,
+        }
 
     @property
     def issue(self) -> str | None:
@@ -45,12 +60,15 @@ def reconcile_nav(
     if tolerance < 0 or not math.isfinite(tolerance):
         raise ValueError("reconciliation tolerance must be finite and nonnegative")
 
-    component_total = cash + sum(values[2:])
+    positions_market_value = sum(values[2:])
+    component_total = cash + positions_market_value
     absolute_difference = abs(component_total - nav)
     relative_difference = absolute_difference / nav
     return ReconciliationResult(
         passed=relative_difference <= tolerance,
         nav=nav,
+        cash=cash,
+        positions_market_value=positions_market_value,
         component_total=component_total,
         absolute_difference=absolute_difference,
         relative_difference=relative_difference,
