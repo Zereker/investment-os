@@ -94,7 +94,7 @@ async function main() {
   const assembleSchema = object(assembleTool.inputSchema, "assemble inputSchema");
   const assembleProperties = object(assembleSchema.properties, "assemble properties");
   const schemaVersion = object(assembleProperties.schema_version, "schema version input");
-  assert.deepEqual(schemaVersion.enum, ["1.0"]);
+  assert.equal(schemaVersion.const, "1.0");
   const snapshotSchema = object(assembleProperties.snapshot, "snapshot schema");
   assert.deepEqual(snapshotSchema.required, ["as_of", "source", "timezone", "currency_basis"]);
   assert.equal(snapshotSchema.additionalProperties, false);
