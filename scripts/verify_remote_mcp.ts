@@ -64,6 +64,20 @@ function structuredContent(result: JsonObject): JsonObject {
   return object(result.structuredContent, "structuredContent");
 }
 
+function toolErrorText(result: JsonObject): string {
+  assert.equal(result.isError, true, "tool call must fail at input validation");
+  const content = result.content as Array<JsonObject>;
+  assert.ok(Array.isArray(content), "error result content must be an array");
+  return content.map((item) => item.text).filter((text): text is string => typeof text === "string").join("\n");
+}
+
+async function expectToolError(arguments_: JsonObject, fragments: string[]) {
+  const result = await rpc("tools/call", { name: "assemble_broker_runtime", arguments: arguments_ });
+  const text = toolErrorText(result);
+  for (const fragment of fragments) assert.match(text, new RegExp(fragment), text);
+  return text;
+}
+
 function available(data: unknown, observedAt: string, source: string) {
   return { status: "available", data, observed_at: observedAt, source };
 }
@@ -184,6 +198,7 @@ async function main() {
     standing_automations: available([], observedAt, "synthetic IBKR automations")
   };
   const baseArguments = {
+    schema_version: "1.0",
     identity: { account_id: "SYNTHETIC", account_type: "paper" },
     snapshot: {
       as_of: observedAt,
@@ -256,6 +271,46 @@ async function main() {
   assert.equal(minimum.required_status, "PASS");
   assert.equal(object(object(minimum.runtime, "minimum runtime").capabilities, "minimum capabilities").market_inputs, "not_requested");
 
+  const notApplicableArguments = structuredClone(minimumArguments);
+  notApplicableArguments.capabilities.market_inputs = { status: "not_applicable" } as never;
+  const notApplicable = structuredContent(await rpc("tools/call", {
+    name: "assemble_broker_runtime", arguments: notApplicableArguments
+  }));
+  assert.equal(object(object(notApplicable.runtime, "not-applicable runtime").capabilities, "not-applicable capabilities").market_inputs, "not_applicable");
+  assert.equal(notApplicable.adapter_status, "PASS");
+
+  const aliasError = await expectToolError({
+    ...baseArguments,
+    capabilities: {
+      account_balances: capabilities.balances,
+      account_positions: capabilities.positions,
+      account_orders: capabilities.open_orders
+    }
+  }, ["account_balances", "account_positions", "account_orders"]);
+  assert.match(aliasError, /Unrecognized key/i);
+
+  await expectToolError({
+    ...baseArguments,
+    snapshot: { as_of: observedAt }
+  }, ["snapshot.source", "snapshot.timezone", "snapshot.currency_basis"]);
+
+  await expectToolError({ ...baseArguments, schema_version: "0.9" }, ["schema_version"]);
+
+  const multiCurrencyArguments = structuredClone(minimumArguments);
+  multiCurrencyArguments.capabilities.balances = available({ balances: [
+    { currency: "BASE", cash_balance: 15_000, exchange_rate: 1 },
+    { currency: "USD", cash_balance: 15_000, exchange_rate: 1 },
+    { currency: "JPY", cash_balance: 100_000, exchange_rate: 0.0068 }
+  ] }, observedAt, "synthetic IBKR balances") as never;
+  const multiCurrency = structuredContent(await rpc("tools/call", {
+    name: "assemble_broker_runtime", arguments: multiCurrencyArguments
+  }));
+  const normalizedBalances = object(object(multiCurrency.runtime, "multi-currency runtime").balances, "normalized balances");
+  assert.equal(normalizedBalances.base_currency, "USD");
+  assert.equal(normalizedBalances.selected_balance_label, "BASE");
+  assert.match(String(normalizedBalances.selection_reason), /BASE aggregate selected/);
+  assert.deepEqual(normalizedBalances.by_currency, (multiCurrencyArguments.capabilities.balances as JsonObject).data && object((multiCurrencyArguments.capabilities.balances as JsonObject).data, "balance input").balances);
+
   const failedOrdersArguments = structuredClone(baseArguments);
   failedOrdersArguments.capabilities.open_orders = {
     status: "unavailable",
@@ -321,6 +376,43 @@ async function main() {
   assert.equal(overReconciliation.status, "DATA INCOMPLETE");
   assert.match(String(overReconciliation.diagnostic), /exceeds tolerance/);
   assert.doesNotMatch(String(overReconciliation.diagnostic), /within tolerance/);
+  const overValidated = structuredContent(await rpc("tools/call", {
+    name: "validate_broker_runtime", arguments: { runtime: overTolerance.runtime, required_capabilities: baseArguments.required_capabilities, max_age_seconds: 3600 }
+  }));
+  assert.equal(overValidated.runtime_status, "DATA INCOMPLETE");
+
+  const exactDifferenceArguments = structuredClone(baseArguments);
+  exactDifferenceArguments.capabilities.positions = available(
+    { positions: [{ symbol: "SYNTHETIC", market_value: 84_880.14 }] }, observedAt, "synthetic IBKR positions"
+  ) as never;
+  const exactDifference = structuredContent(await rpc("tools/call", {
+    name: "assemble_broker_runtime", arguments: exactDifferenceArguments
+  }));
+  const exactReconciliation = object(object(exactDifference.runtime, "exact-difference runtime").reconciliation, "exact-difference reconciliation");
+  assert.equal(exactReconciliation.status, "PASS");
+  assert.ok(Math.abs(Number(exactReconciliation.absolute_difference) - 119.86) < 1e-8);
+  assert.ok(Math.abs(Number(exactReconciliation.relative_difference) - 0.0011986) < 1e-12);
+  assert.equal(exactReconciliation.tolerance, 0.005);
+  assert.match(String(exactReconciliation.diagnostic), /diagnostic only/);
+
+  for (const [label, offsetMs, expected] of [
+    ["current", 0, "PASS"],
+    ["stale", -7_301_000, "DATA INCOMPLETE"],
+    ["future", 7_200_000, "DATA INCOMPLETE"]
+  ] as const) {
+    const timestamp = new Date(Date.now() + offsetMs).toISOString();
+    const timeArguments = structuredClone(baseArguments);
+    timeArguments.snapshot.as_of = timestamp;
+    for (const capability of Object.values(timeArguments.capabilities)) capability.observed_at = timestamp;
+    const timeAssembled = structuredContent(await rpc("tools/call", { name: "assemble_broker_runtime", arguments: timeArguments }));
+    const timeValidated = structuredContent(await rpc("tools/call", {
+      name: "validate_broker_runtime", arguments: { runtime: timeAssembled.runtime, required_capabilities: baseArguments.required_capabilities, max_age_seconds: 3600 }
+    }));
+    assert.equal(timeValidated.runtime_status, expected, `${label} timestamp status`);
+    const issues = (timeValidated.blocking_issues as string[]).join("\n");
+    if (label === "stale") assert.match(issues, /stale/);
+    if (label === "future") assert.match(issues, /in the future/);
+  }
 
   const monthly = structuredContent(await rpc("tools/call", {
     name: "calculate_monthly_deployment",
