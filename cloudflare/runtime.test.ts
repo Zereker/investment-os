@@ -48,6 +48,45 @@ const passed = validateBrokerRuntime(
   now
 );
 assert.equal(passed.runtime_status, "PASS");
+assert.deepEqual(passed.reconciliation, {
+  status: "PASS",
+  issues: [],
+  nav: 100000,
+  cash: 15000,
+  positions_market_value: 85000,
+  component_total: 100000,
+  absolute_difference: 0,
+  relative_difference: 0,
+  tolerance: 0.005
+});
+
+const withinTolerance = structuredClone(runtime);
+withinTolerance.positions[0].market_value = 84900;
+const withinToleranceResult = validateBrokerRuntime(
+  withinTolerance,
+  ["positions", "balances"],
+  300,
+  now
+);
+assert.equal(withinToleranceResult.runtime_status, "PASS");
+assert.equal(withinToleranceResult.reconciliation?.absolute_difference, 100);
+assert.equal(withinToleranceResult.reconciliation?.relative_difference, 0.001);
+
+const outsideTolerance = structuredClone(runtime);
+outsideTolerance.positions[0].market_value = 84400;
+const outsideToleranceResult = validateBrokerRuntime(
+  outsideTolerance,
+  ["positions", "balances"],
+  300,
+  now
+);
+assert.equal(outsideToleranceResult.runtime_status, "DATA INCOMPLETE");
+assert.equal(outsideToleranceResult.reconciliation?.absolute_difference, 600);
+assert.ok(
+  outsideToleranceResult.blocking_issues.some((issue) =>
+    issue.includes("limit 0.50%")
+  )
+);
 
 const unavailable = structuredClone(runtime);
 unavailable.capabilities.positions = "unavailable";
@@ -59,6 +98,8 @@ const blocked = validateBrokerRuntime(
   now
 );
 assert.equal(blocked.runtime_status, "DATA INCOMPLETE");
+assert.equal(blocked.reconciliation.positions_market_value, null);
+assert.equal(blocked.reconciliation.tolerance, 0.005);
 assert.ok(
   blocked.blocking_issues.some((issue) =>
     issue.includes("positions is unavailable")

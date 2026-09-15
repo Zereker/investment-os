@@ -326,6 +326,16 @@ def mirror_tests() -> None:
     if monthly.MIGRATION_MONTHS != published_migration_months():
         raise AssertionError(
             "02-monthly.md and monthly_execution.MIGRATION_MONTHS disagree on R")
+    reconciliation = load_runtime_module(
+        "skills/investment-os/scripts/account_reconciliation.py")
+    cloudflare_reconciliation = read("cloudflare/reconciliation.ts")
+    if reconciliation.DEFAULT_TOLERANCE != 0.005:
+        raise AssertionError("Python NAV reconciliation tolerance must remain 0.5%")
+    if "DEFAULT_RECONCILIATION_TOLERANCE = 0.005" not in cloudflare_reconciliation:
+        raise AssertionError("Cloudflare NAV reconciliation tolerance diverged from Python")
+    if "相对差额为 NAV 的 **0.5%**" not in read(
+            "skills/investment-os/references/06-data-contract.md"):
+        raise AssertionError("06-data-contract.md no longer publishes the 0.5% tolerance")
     # A fired tier drops the bound straight to the absolute floor; what limits
     # the deployment is the tier's own tranche, not any percentage line.
     # Asserted so this is a checked intent, not an accident of the expression.

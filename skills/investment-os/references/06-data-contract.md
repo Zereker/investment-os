@@ -146,6 +146,13 @@ IBKR 的 Total Cash Value。不得以 Buying Power 替代现金。
 #### position_market_value_usd
 IBKR Positions 返回的单项市值。持仓真相以 Positions 为准。
 
+#### NAV reconciliation
+
+运行时用 `total_cash_usd + Σ position_market_value_usd` 与
+`net_liquidation_usd` 做独立对账。允许的相对差额为 NAV 的 **0.5%**；这是处理同一轮多接口读取的短暂估值偏移所需的一致性容差，不是缺失资产的替代值。输出必须同时报告 NAV、现金、持仓市值合计、组成项合计、绝对差额、相对差额与容差。
+
+IBKR 的 `GrossPositionValue` 只可与逐项持仓合计交叉核对，不得与逐项持仓重复相加。`AccruedCash`、`AccruedDividend`、外汇折算及其他权益项只作差额诊断；除非其字段定义、币种与同一快照时点均可验证并经本数据契约登记，不得自动加入对账公式。超过容差时保持 `DATA INCOMPLETE`，不得通过临时放宽容差或猜测差额来源解锁交易。
+
 #### external_contribution_usd
 月度符号 \(F\)。本月已到账的实际外部净入金，且 \(F\ge0\)。提款、内部资产出售所得和未到账计划额不得计入。
 

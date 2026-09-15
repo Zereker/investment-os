@@ -13,7 +13,8 @@ Investment OS policy.
   numbered references required for the selected task.
 - `list_investment_os_tasks` returns the supported task routing names.
 - `validate_broker_runtime` applies the existing broker-neutral freshness,
-  capability, and reconciliation gates.
+  capability, and reconciliation gates. Reconciliation uses the canonical 0.5%
+  relative tolerance and returns its component totals and differences.
 - `assemble_broker_runtime` converts ephemeral connector results into the
   canonical runtime without guessing unavailable data. Each capability carries
   its own status, source, observation time, and optional error. The adapter

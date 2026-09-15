@@ -1,3 +1,9 @@
+import {
+  reconcileNav,
+  unavailableReconciliation,
+  type ReconciliationDetails
+} from "./reconciliation";
+
 const VALID_CAPABILITY_STATES = new Set([
   "available",
   "unavailable",
@@ -170,16 +176,14 @@ export function validateBrokerRuntime(
   const nav = number(summary?.net_liquidation);
   const cash = number(balances?.total_cash ?? balances?.cash);
   const positions = positionValues(runtime.positions);
+  let actualReconciliation: ReconciliationDetails = unavailableReconciliation(
+    "actual reconciliation inputs are unavailable"
+  );
   if (nav === null || cash === null || positions === null) {
     issues.push("actual reconciliation inputs are unavailable");
   } else {
-    const difference = Math.abs(nav - (cash + positions.reduce((a, b) => a + b, 0)));
-    const tolerance = Math.max(1, Math.abs(nav) * 0.0001);
-    if (difference > tolerance) {
-      issues.push(
-        `NAV reconciliation failed: difference ${difference.toFixed(2)} exceeds tolerance ${tolerance.toFixed(2)}`
-      );
-    }
+    actualReconciliation = reconcileNav(nav, cash, positions);
+    issues.push(...actualReconciliation.issues);
   }
 
   let observationSkewSeconds: number | null = null;
@@ -196,6 +200,7 @@ export function validateBrokerRuntime(
   return {
     runtime_status: issues.length === 0 ? "PASS" : "DATA INCOMPLETE",
     blocking_issues: issues,
-    observation_skew_seconds: observationSkewSeconds
+    observation_skew_seconds: observationSkewSeconds,
+    reconciliation: actualReconciliation
   };
 }

@@ -60,6 +60,8 @@ def check_case(payload: dict, required: list[str], expected_status: str, needle:
 
 
 def main() -> None:
+    from broker_runtime import validate_runtime
+
     base = runtime()
     check_case(base, ["positions", "balances", "open_orders"], "PASS")
 
@@ -67,6 +69,14 @@ def main() -> None:
     missing_positions["capabilities"]["positions"] = "unavailable"
     missing_positions["positions"] = None
     check_case(missing_positions, ["positions", "balances"], "DATA INCOMPLETE", "positions is unavailable")
+    missing_result = validate_runtime(
+        missing_positions,
+        ["positions", "balances"],
+        now=NOW,
+        max_age_seconds=300,
+    ).as_dict()
+    assert missing_result["reconciliation"]["positions_market_value"] is None
+    assert missing_result["reconciliation"]["tolerance"] == 0.005
 
     missing_orders = runtime()
     missing_orders["capabilities"]["open_orders"] = "unavailable"

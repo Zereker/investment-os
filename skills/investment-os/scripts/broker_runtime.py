@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Iterable
 
-from account_reconciliation import reconcile_nav  # noqa: E402
+from account_reconciliation import DEFAULT_TOLERANCE, reconcile_nav  # noqa: E402
 
 VALID_CAPABILITY_STATES = {"available", "unavailable", "stale", "conflicting"}
 REQUIRED_SECTIONS = {
@@ -40,12 +40,14 @@ class ValidationResult:
     status: str
     blocking_issues: tuple[str, ...]
     observation_skew_seconds: float | None = None
+    reconciliation: dict[str, Any] | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return {
             "runtime_status": self.status,
             "blocking_issues": list(self.blocking_issues),
             "observation_skew_seconds": self.observation_skew_seconds,
+            "reconciliation": self.reconciliation,
         }
 
 
@@ -185,6 +187,17 @@ def validate_runtime(
     if isinstance(balances, dict):
         cash = _number(balances.get("total_cash", balances.get("cash")))
     positions = _position_values(runtime.get("positions"))
+    reconciliation_details = {
+        "status": "DATA INCOMPLETE",
+        "issues": ["actual reconciliation inputs are unavailable"],
+        "nav": None,
+        "cash": None,
+        "positions_market_value": None,
+        "component_total": None,
+        "absolute_difference": None,
+        "relative_difference": None,
+        "tolerance": DEFAULT_TOLERANCE,
+    }
     if nav is None or cash is None or positions is None:
         issues.append("actual reconciliation inputs are unavailable")
     else:
@@ -193,6 +206,7 @@ def validate_runtime(
         except ValueError as exc:
             issues.append(f"actual reconciliation invalid: {exc}")
         else:
+            reconciliation_details = actual.as_dict()
             if not actual.passed:
                 issues.append(actual.issue or "actual reconciliation failed")
 
@@ -206,7 +220,12 @@ def validate_runtime(
             )
 
     status = "PASS" if not issues else "DATA INCOMPLETE"
-    return ValidationResult(status, tuple(issues), observation_skew)
+    return ValidationResult(
+        status,
+        tuple(issues),
+        observation_skew,
+        reconciliation_details,
+    )
 
 
 def main() -> int:

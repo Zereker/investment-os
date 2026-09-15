@@ -1,3 +1,5 @@
+import { reconcileNav, unavailableReconciliation } from "./reconciliation";
+
 const CAPABILITY_NAMES = [
   "account_summary",
   "balances",
@@ -164,23 +166,10 @@ function reconcile(runtime: JsonObject) {
   const cash = number(balances?.total_cash ?? balances?.cash);
   const positions = positionValues(runtime.positions);
   if (nav === null || cash === null || positions === null) {
-    return {
-      status: "DATA INCOMPLETE",
-      issues: ["NAV reconciliation inputs are unavailable"]
-    };
+    return unavailableReconciliation("NAV reconciliation inputs are unavailable");
   }
 
-  const difference = Math.abs(nav - (cash + positions.reduce((sum, value) => sum + value, 0)));
-  const tolerance = Math.max(1, Math.abs(nav) * 0.0001);
-  if (difference > tolerance) {
-    return {
-      status: "DATA INCOMPLETE",
-      issues: [
-        `NAV reconciliation failed: difference ${difference.toFixed(2)} exceeds tolerance ${tolerance.toFixed(2)}`
-      ]
-    };
-  }
-  return { status: "PASS", issues: [] };
+  return reconcileNav(nav, cash, positions);
 }
 
 export function assembleBrokerRuntime(input: BrokerRuntimeInput) {
