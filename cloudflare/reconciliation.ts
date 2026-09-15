@@ -58,7 +58,8 @@ export function reconcileNav(
     absolute_difference: absoluteDifference,
     relative_difference: relativeDifference,
     tolerance,
-    diagnostic: absoluteDifference === 0 ? null :
-      "Difference is within tolerance and may reflect timing, accrued dividends, FX translation, or other equity components; this is diagnostic only, not a confirmed cause."
+    diagnostic: absoluteDifference === 0 ? null : passed
+      ? "Difference is within tolerance and may reflect timing, accrued dividends, FX translation, or other equity components; this is diagnostic only, not a confirmed cause."
+      : "Difference exceeds tolerance. No missing asset or cause is inferred; reconcile authoritative timing, accrued dividend, FX, and other equity-component evidence before retrying."
   };
 }
