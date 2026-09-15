@@ -1,22 +1,7 @@
 import { reconcileNav, unavailableReconciliation } from "./reconciliation";
+import { BROKER_RUNTIME_SCHEMA_VERSION, CAPABILITY_NAMES, CAPABILITY_STATES as CAPABILITY_STATE_VALUES } from "./contract";
 
-const CAPABILITY_NAMES = [
-  "account_summary",
-  "balances",
-  "positions",
-  "open_orders",
-  "cash_transactions",
-  "market_inputs",
-  "alert_inventory",
-  "standing_automations"
-] as const;
-
-const CAPABILITY_STATES = new Set([
-  "available",
-  "unavailable",
-  "stale",
-  "conflicting"
-]);
+const CAPABILITY_STATES = new Set<string>(CAPABILITY_STATE_VALUES);
 
 type JsonObject = Record<string, unknown>;
 
@@ -30,8 +15,9 @@ export type CapabilityInput = {
 
 export type BrokerRuntimeInput = {
   identity: JsonObject;
-  snapshot: JsonObject;
+  snapshot: { as_of: string; source: string; timezone: string; currency_basis: string };
   capabilities: Record<string, CapabilityInput>;
+  required_capabilities?: string[];
 };
 
 function object(value: unknown): JsonObject | null {
@@ -122,7 +108,11 @@ function normalizeBalances(
     value: {
       total_cash: cash,
       ...(settled === null ? {} : { settled_cash: settled }),
-      currency: selected.currency
+      currency_basis: basis,
+      base_currency: basis,
+      selected_balance_label: selected.currency,
+      selection_reason: baseRows.length > 0 ? "IBKR BASE aggregate selected for account currency basis" : "currency-basis row selected",
+      by_currency: rows
     }
   };
 }
@@ -174,6 +164,7 @@ function reconcile(runtime: JsonObject) {
 
 export function assembleBrokerRuntime(input: BrokerRuntimeInput) {
   const runtime: JsonObject = {
+    schema_version: BROKER_RUNTIME_SCHEMA_VERSION,
     identity: input.identity,
     snapshot: input.snapshot,
     capabilities: {},
@@ -182,13 +173,16 @@ export function assembleBrokerRuntime(input: BrokerRuntimeInput) {
   const states = runtime.capabilities as JsonObject;
   const observations = runtime.observations as JsonObject;
   const issues: string[] = [];
+  const required = new Set(input.required_capabilities ?? []);
+  const requiredIssues: string[] = [];
+  const optionalIssues: string[] = [];
 
   for (const name of CAPABILITY_NAMES) {
     const capability = input.capabilities[name];
     if (!capability) {
-      states[name] = "unavailable";
+      states[name] = "not_requested";
       runtime[name] = null;
-      issues.push(`${name}: connector result was not supplied`);
+      if (required.has(name)) requiredIssues.push(`${name}: required connector result was not supplied`);
       continue;
     }
 
@@ -196,13 +190,13 @@ export function assembleBrokerRuntime(input: BrokerRuntimeInput) {
       ? capability.status
       : "unavailable";
     if (declared !== capability.status) {
-      issues.push(`${name}: invalid connector status ${JSON.stringify(capability.status)}`);
+      (required.has(name) ? requiredIssues : optionalIssues).push(`${name}: invalid connector status ${JSON.stringify(capability.status)}`);
     }
 
     if (declared === "available" && capability.data === undefined) {
       states[name] = "unavailable";
       runtime[name] = null;
-      issues.push(`${name}: available connector result has no data`);
+      (required.has(name) ? requiredIssues : optionalIssues).push(`${name}: available connector result has no data`);
     } else if (declared === "available") {
       const normalized = normalizeConnectorData(
         name,
@@ -212,7 +206,7 @@ export function assembleBrokerRuntime(input: BrokerRuntimeInput) {
       if (normalized.issue) {
         states[name] = "unavailable";
         runtime[name] = null;
-        issues.push(`${name}: ${normalized.issue}`);
+        (required.has(name) ? requiredIssues : optionalIssues).push(`${name}: ${normalized.issue}`);
       } else {
         states[name] = declared;
         runtime[name] = normalized.value;
@@ -220,9 +214,11 @@ export function assembleBrokerRuntime(input: BrokerRuntimeInput) {
     } else {
       states[name] = declared;
       runtime[name] = null;
-      issues.push(
-        `${name}: connector capability is ${declared}${capability.error ? ` (${capability.error})` : ""}`
-      );
+      if (declared !== "not_requested" && declared !== "not_applicable") {
+        (required.has(name) ? requiredIssues : optionalIssues).push(
+          `${name}: connector capability is ${declared}${capability.error ? ` (${capability.error})` : ""}`
+        );
+      } else if (required.has(name)) requiredIssues.push(`${name}: required capability is ${declared}`);
     }
 
     if (capability.source || capability.observed_at) {
@@ -234,10 +230,16 @@ export function assembleBrokerRuntime(input: BrokerRuntimeInput) {
   }
 
   runtime.reconciliation = reconcile(runtime);
+  issues.push(...requiredIssues, ...optionalIssues);
+  const requiredStatus = requiredIssues.length === 0 ? "PASS" : "DATA INCOMPLETE";
+  const optionalStatus = optionalIssues.length === 0 ? "PASS" : "PARTIAL";
   return {
-    adapter_status: issues.length === 0 ? "PASS" : "WARN",
+    adapter_status: requiredStatus === "DATA INCOMPLETE" ? "DATA INCOMPLETE" : optionalStatus === "PARTIAL" ? "PASS_WITH_OPTIONAL_GAPS" : "PASS",
+    required_status: requiredStatus,
+    optional_status: optionalStatus,
     adapter_issues: issues,
     runtime,
+    schema_version: BROKER_RUNTIME_SCHEMA_VERSION,
     runtime_data_persisted: false
   };
 }

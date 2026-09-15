@@ -3,15 +3,19 @@ import {
   unavailableReconciliation,
   type ReconciliationDetails
 } from "./reconciliation";
+import { BROKER_RUNTIME_SCHEMA_VERSION } from "./contract";
 
 const VALID_CAPABILITY_STATES = new Set([
   "available",
   "unavailable",
   "stale",
-  "conflicting"
+  "conflicting",
+  "not_requested",
+  "not_applicable"
 ]);
 
 const REQUIRED_SECTIONS = [
+  "schema_version",
   "identity",
   "snapshot",
   "capabilities",
@@ -74,6 +78,9 @@ export function validateBrokerRuntime(
   nowMs = Date.now()
 ) {
   const issues: string[] = [];
+  if (runtime.schema_version !== BROKER_RUNTIME_SCHEMA_VERSION) {
+    issues.push(`runtime schema_version must be ${BROKER_RUNTIME_SCHEMA_VERSION}`);
+  }
   for (const section of REQUIRED_SECTIONS) {
     if (!(section in runtime)) issues.push(`missing runtime section: ${section}`);
   }
@@ -198,6 +205,7 @@ export function validateBrokerRuntime(
   }
 
   return {
+    schema_version: BROKER_RUNTIME_SCHEMA_VERSION,
     runtime_status: issues.length === 0 ? "PASS" : "DATA INCOMPLETE",
     blocking_issues: issues,
     observation_skew_seconds: observationSkewSeconds,

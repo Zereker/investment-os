@@ -10,6 +10,7 @@ export type ReconciliationDetails = {
   absolute_difference: number | null;
   relative_difference: number | null;
   tolerance: number;
+  diagnostic: string | null;
 };
 
 export function unavailableReconciliation(
@@ -24,7 +25,8 @@ export function unavailableReconciliation(
     component_total: null,
     absolute_difference: null,
     relative_difference: null,
-    tolerance: DEFAULT_RECONCILIATION_TOLERANCE
+    tolerance: DEFAULT_RECONCILIATION_TOLERANCE,
+    diagnostic: null
   };
 }
 
@@ -55,6 +57,8 @@ export function reconcileNav(
     component_total: componentTotal,
     absolute_difference: absoluteDifference,
     relative_difference: relativeDifference,
-    tolerance
+    tolerance,
+    diagnostic: absoluteDifference === 0 ? null :
+      "Difference is within tolerance and may reflect timing, accrued dividends, FX translation, or other equity components; this is diagnostic only, not a confirmed cause."
   };
 }

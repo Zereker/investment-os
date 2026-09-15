@@ -160,7 +160,8 @@ async function main() {
       timezone: "UTC",
       currency_basis: "USD"
     },
-    capabilities
+    capabilities,
+    required_capabilities: ["account_summary", "balances", "positions", "open_orders"]
   };
   const assembled = structuredContent(
     await rpc("tools/call", {
@@ -174,8 +175,16 @@ async function main() {
   assert.deepEqual(runtime.balances, {
     total_cash: 15_000,
     settled_cash: 14_900,
-    currency: "BASE"
+    currency_basis: "USD",
+    base_currency: "USD",
+    selected_balance_label: "BASE",
+    selection_reason: "IBKR BASE aggregate selected for account currency basis",
+    by_currency: [
+      { currency: "BASE", cash_balance: 15_000, settled_cash: 14_900 },
+      { currency: "USD", cash_balance: 14_000, settled_cash: 13_900 }
+    ]
   });
+  assert.equal(runtime.schema_version, "1.0");
   assert.deepEqual(runtime.positions, [
     { symbol: "SYNTHETIC", market_value: 84_900 }
   ]);
@@ -201,6 +210,20 @@ async function main() {
   assert.equal(reconciliation.absolute_difference, 100);
   assert.equal(reconciliation.relative_difference, 0.001);
   assert.equal(reconciliation.tolerance, 0.005);
+  assert.match(String(reconciliation.diagnostic), /diagnostic only/);
+
+  const minimumArguments = structuredClone(baseArguments);
+  minimumArguments.capabilities = Object.fromEntries(
+    Object.entries(minimumArguments.capabilities).filter(([name]) =>
+      minimumArguments.required_capabilities.includes(name)
+    )
+  ) as never;
+  const minimum = structuredContent(await rpc("tools/call", {
+    name: "assemble_broker_runtime", arguments: minimumArguments
+  }));
+  assert.equal(minimum.adapter_status, "PASS");
+  assert.equal(minimum.required_status, "PASS");
+  assert.equal(object(object(minimum.runtime, "minimum runtime").capabilities, "minimum capabilities").market_inputs, "not_requested");
 
   const failedOrdersArguments = structuredClone(baseArguments);
   failedOrdersArguments.capabilities.open_orders = {
@@ -213,7 +236,7 @@ async function main() {
       arguments: failedOrdersArguments
     })
   );
-  assert.equal(failedOrders.adapter_status, "WARN");
+  assert.equal(failedOrders.adapter_status, "DATA INCOMPLETE");
   const failedOrdersRuntime = object(failedOrders.runtime, "failed-orders runtime");
   assert.equal(failedOrdersRuntime.open_orders, null);
   const failedOrdersValidation = structuredContent(
@@ -255,6 +278,26 @@ async function main() {
   );
   assert.equal(failedReconciliation.status, "DATA INCOMPLETE");
   assert.equal(failedReconciliation.cash, null);
+
+  const monthly = structuredContent(await rpc("tools/call", {
+    name: "calculate_monthly_deployment",
+    arguments: { nav: 100000, cash: 34000, positions: { spym: 40000, qqqm: 20000, soxx: 6000 }, legacy: 0,
+      contribution: 0, open_orders_status: "clear", drawdown_as_of: observedAt.slice(0, 10), today: observedAt.slice(0, 10),
+      drawdowns: { spym: 0.04, qqqm: 0.21 }, tiers_executed: { spym: [], qqqm: [] } }
+  }));
+  assert.equal(monthly.status, "PASS");
+  assert.equal(monthly.execution_authorized, false);
+
+  const execution = structuredContent(await rpc("tools/call", {
+    name: "validate_broker_execution",
+    arguments: { record: { operation: { type: "place_order", account: "SYNTHETIC", instrument: "TEST", side: "BUY", quantity: 1,
+      order_type: "LIMIT", limit_price: 10, time_in_force: "DAY" }, capability: "Broker.Trade.PlaceOrder",
+      authorization: { scope: "single-operation-current-session", operation_digest: "7750551cc9b0a33805406be0e503d433cdb6067d01eb500600bbe9ad571c0137", owner_explicit: true, session_id: "synthetic-regression" },
+      adapter: { supported_capabilities: ["Broker.Trade.PlaceOrder"] },
+      stages: ["PREPARED", "CAPABILITY_CHECKED", "AUTHORIZED", "EXECUTED", "READ_BACK", "VERIFIED", "COMPLETED"], submit_count: 1,
+      write_result: { accepted: true }, read_back: { status: "Submitted" }, verification: { performed: true, passed: true, evidence: "synthetic read-back matched" }, status: "COMPLETED" } }
+  }));
+  assert.equal(execution.passed, true);
 
   console.log(
     `Remote MCP verification passed: ${serverInfo.name} ${serverInfo.version} at ${ENDPOINT}`

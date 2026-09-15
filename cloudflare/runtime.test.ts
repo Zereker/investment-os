@@ -16,6 +16,7 @@ const capabilities = {
 };
 
 const runtime = {
+  schema_version: "1.0",
   identity: { account_id: "SYNTHETIC", account_type: "paper" },
   snapshot: {
     as_of: "2026-09-14T12:00:00Z",
@@ -57,7 +58,8 @@ assert.deepEqual(passed.reconciliation, {
   component_total: 100000,
   absolute_difference: 0,
   relative_difference: 0,
-  tolerance: 0.005
+  tolerance: 0.005,
+  diagnostic: null
 });
 
 const withinTolerance = structuredClone(runtime);
@@ -71,6 +73,7 @@ const withinToleranceResult = validateBrokerRuntime(
 assert.equal(withinToleranceResult.runtime_status, "PASS");
 assert.equal(withinToleranceResult.reconciliation?.absolute_difference, 100);
 assert.equal(withinToleranceResult.reconciliation?.relative_difference, 0.001);
+assert.match(withinToleranceResult.reconciliation?.diagnostic ?? "", /diagnostic only/);
 
 const outsideTolerance = structuredClone(runtime);
 outsideTolerance.positions[0].market_value = 84400;
@@ -164,13 +167,21 @@ rawEnvelopeCapabilities.positions = {
 const assembledRawEnvelope = assembleBrokerRuntime({
   identity: runtime.identity,
   snapshot: runtime.snapshot,
-  capabilities: rawEnvelopeCapabilities
+  capabilities: rawEnvelopeCapabilities,
+  required_capabilities: ["account_summary", "balances", "positions", "open_orders"]
 });
 assert.equal(assembledRawEnvelope.adapter_status, "PASS");
 assert.deepEqual(assembledRawEnvelope.runtime.balances, {
   total_cash: 15000,
   settled_cash: 14900,
-  currency: "BASE"
+  currency_basis: "USD",
+  base_currency: "USD",
+  selected_balance_label: "BASE",
+  selection_reason: "IBKR BASE aggregate selected for account currency basis",
+  by_currency: [
+    { currency: "BASE", cash_balance: "15000", settled_cash: "14900" },
+    { currency: "USD", cash_balance: 14000, settled_cash: 13900 }
+  ]
 });
 assert.deepEqual(assembledRawEnvelope.runtime.positions, [
   { symbol: "SYNTHETIC", market_value: 85000 }
@@ -197,7 +208,7 @@ const assembledUnusableBalance = assembleBrokerRuntime({
   snapshot: runtime.snapshot,
   capabilities: unusableBalanceEnvelope
 });
-assert.equal(assembledUnusableBalance.adapter_status, "WARN");
+assert.equal(assembledUnusableBalance.adapter_status, "PASS_WITH_OPTIONAL_GAPS");
 assert.equal(assembledUnusableBalance.runtime.balances, null);
 assert.equal(
   (assembledUnusableBalance.runtime.capabilities as Record<string, string>)
@@ -215,7 +226,7 @@ const assembledWithoutBalances = assembleBrokerRuntime({
   snapshot: runtime.snapshot,
   capabilities: missingBalances
 });
-assert.equal(assembledWithoutBalances.adapter_status, "WARN");
+assert.equal(assembledWithoutBalances.adapter_status, "PASS_WITH_OPTIONAL_GAPS");
 assert.equal(assembledWithoutBalances.runtime.balances, null);
 assert.equal(
   validateBrokerRuntime(
@@ -226,6 +237,27 @@ assert.equal(
   ).runtime_status,
   "DATA INCOMPLETE"
 );
+
+const scopedMinimum = assembleBrokerRuntime({
+  identity: runtime.identity,
+  snapshot: runtime.snapshot,
+  required_capabilities: ["account_summary", "balances", "positions", "open_orders"],
+  capabilities: Object.fromEntries(Object.entries(connectorCapabilities).filter(([name]) =>
+    ["account_summary", "balances", "positions", "open_orders"].includes(name)))
+});
+assert.equal(scopedMinimum.adapter_status, "PASS");
+assert.equal(scopedMinimum.required_status, "PASS");
+assert.equal(scopedMinimum.optional_status, "PASS");
+assert.equal((scopedMinimum.runtime.capabilities as Record<string, string>).market_inputs, "not_requested");
+
+const requiredMissing = assembleBrokerRuntime({
+  identity: runtime.identity,
+  snapshot: runtime.snapshot,
+  required_capabilities: ["balances"],
+  capabilities: {}
+});
+assert.equal(requiredMissing.adapter_status, "DATA INCOMPLETE");
+assert.equal(requiredMissing.required_status, "DATA INCOMPLETE");
 
 const staleMarketInputs = structuredClone(connectorCapabilities);
 staleMarketInputs.market_inputs = {
