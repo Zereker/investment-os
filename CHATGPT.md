@@ -110,6 +110,19 @@ Repository checks:
 bash tests/run-all.sh
 ```
 
+Production remote MCP verification (no ChatGPT session required):
+
+```bash
+npm run verify:mcp
+```
+
+The verifier checks protocol initialization, the exact tool and task catalogs,
+bundled policy equality, IBKR-shaped envelope normalization, NAV reconciliation,
+localized fail-closed behavior, and the no-persistence declaration. It sends
+synthetic data only. Override the endpoint with `INVESTMENT_OS_MCP_URL` when
+testing another deployment. A scheduled GitHub Actions workflow runs the same
+smoke test daily and can also be started manually.
+
 MCP integration check after installing dependencies:
 
 ```bash
