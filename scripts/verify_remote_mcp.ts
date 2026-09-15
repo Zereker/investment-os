@@ -89,6 +89,29 @@ async function main() {
     tools.map((tool) => tool.name).sort(),
     EXPECTED_TOOLS
   );
+  const assembleTool = tools.find((tool) => tool.name === "assemble_broker_runtime");
+  assert.ok(assembleTool, "assemble_broker_runtime must be published");
+  const assembleSchema = object(assembleTool.inputSchema, "assemble inputSchema");
+  const assembleProperties = object(assembleSchema.properties, "assemble properties");
+  const snapshotSchema = object(assembleProperties.snapshot, "snapshot schema");
+  assert.deepEqual(snapshotSchema.required, ["as_of", "source", "timezone", "currency_basis"]);
+  assert.equal(snapshotSchema.additionalProperties, false);
+  const capabilitiesSchema = object(assembleProperties.capabilities, "capabilities schema");
+  assert.equal(capabilitiesSchema.additionalProperties, false);
+  const capabilityProperties = object(capabilitiesSchema.properties, "capability properties");
+  assert.deepEqual(Object.keys(capabilityProperties), [
+    "account_summary", "balances", "positions", "open_orders",
+    "cash_transactions", "market_inputs", "alert_inventory", "standing_automations"
+  ]);
+  const accountSummarySchema = object(capabilityProperties.account_summary, "account_summary schema");
+  const accountSummaryProperties = object(accountSummarySchema.properties, "account_summary properties");
+  const statusSchema = object(accountSummaryProperties.status, "capability status schema");
+  assert.deepEqual(statusSchema.enum, [
+    "available", "unavailable", "stale", "conflicting", "not_requested", "not_applicable"
+  ]);
+  const requiredCapabilitiesSchema = object(assembleProperties.required_capabilities, "required capabilities schema");
+  const requiredCapabilityItems = object(requiredCapabilitiesSchema.items, "required capability items");
+  assert.deepEqual(requiredCapabilityItems.enum, Object.keys(capabilityProperties));
 
   const taskResult = structuredContent(
     await rpc("tools/call", {
