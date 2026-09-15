@@ -142,6 +142,7 @@ async function main() {
     })
   );
   assert.deepEqual(taskResult.tasks, EXPECTED_TASKS);
+  assert.deepEqual(taskResult.server, { name: "Investment OS", version: packageJson.version });
 
   const policy = structuredContent(
     await rpc("tools/call", {
@@ -150,6 +151,19 @@ async function main() {
     })
   );
   assert.equal(policy.runtime_data_persisted, false);
+  assert.deepEqual(policy.server, { name: "Investment OS", version: packageJson.version });
+  const declaredContract = object(policy.broker_runtime_contract, "declared broker runtime contract");
+  assert.equal(declaredContract.schema_version, schemaVersion.const);
+  const declaredSnapshot = object(declaredContract.snapshot, "declared snapshot contract");
+  assert.deepEqual(declaredSnapshot.required, snapshotSchema.required);
+  assert.equal(declaredSnapshot.additional_properties, snapshotSchema.additionalProperties);
+  const declaredCapabilities = object(declaredContract.capabilities, "declared capabilities contract");
+  assert.deepEqual(declaredCapabilities.names, Object.keys(capabilityProperties));
+  assert.deepEqual(declaredCapabilities.states, statusSchema.enum);
+  const declaredShapes = object(declaredCapabilities.data_shapes, "declared data shapes");
+  assert.ok(JSON.stringify(declaredShapes.account_summary).includes("net_liquidation"));
+  assert.ok(JSON.stringify(declaredShapes.balances).includes("cash_balance"));
+  assert.ok(JSON.stringify(declaredShapes.positions).includes("market_value"));
   assert.equal(
     policy.skill,
     await readFile(resolve(ROOT, "skills/investment-os/SKILL.md"), "utf8")

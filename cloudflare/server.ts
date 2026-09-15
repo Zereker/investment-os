@@ -7,7 +7,7 @@ import { isInvestmentTask, loadTaskContext, taskReferences } from "./policy";
 import { validateBrokerRuntime } from "./runtime";
 import { calculateMonthlyDeployment } from "./monthly";
 import { validateBrokerExecution } from "./execution";
-import { CAPABILITY_NAMES, CAPABILITY_STATES } from "./contract";
+import { CAPABILITY_NAMES, CAPABILITY_STATES, SERVER_NAME, SERVER_VERSION } from "./contract";
 
 function jsonResult(value: unknown) {
   return {
@@ -56,7 +56,7 @@ const capabilitiesInput = z.object({
 
 function createServer() {
   const server = new McpServer(
-    { name: "Investment OS", version: "0.20.0" },
+    { name: SERVER_NAME, version: SERVER_VERSION },
     {
       instructions: [
         "Investment OS is rules-first and read-only.",
@@ -77,7 +77,10 @@ function createServer() {
       description: "List task names accepted by load_investment_os.",
       inputSchema: {}
     },
-    async () => jsonResult({ tasks: Object.keys(taskReferences) })
+    async () => jsonResult({
+      server: { name: SERVER_NAME, version: SERVER_VERSION },
+      tasks: Object.keys(taskReferences)
+    })
   );
 
   server.registerTool(
