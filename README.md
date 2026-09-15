@@ -63,7 +63,7 @@ Installing the plugin does not by itself give the agent account access. The rule
 
 For ChatGPT, the plugin manifest declares the Interactive Brokers app dependency. Interactive Brokers exposes account and market capabilities to ChatGPT after the user connects and authorizes the app. The app may expose order-drafting capabilities, but the Investment OS Skill preserves the stricter execution boundary: a recommendation or candidate is never authorization, and final authority remains with the account owner.
 
-`scripts/broker_runtime.py` validates whatever an adapter supplies before any domain rule consumes it. Its required sections map to broker data as follows; `identity`, `snapshot`, `capabilities`, `observations` and `reconciliation` are computed by the adapter rather than fetched.
+The TypeScript MCP validates whatever an adapter supplies before any domain rule consumes it. Its required sections map to broker data as follows; `identity`, `snapshot`, `capabilities`, `observations` and `reconciliation` are computed by the adapter rather than fetched.
 
 | Runtime section | Broker source | What it blocks when unavailable |
 |---|---|---|

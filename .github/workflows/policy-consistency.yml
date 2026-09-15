@@ -15,16 +15,7 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Install Python test dependencies
-        run: python3 -m pip install --disable-pip-version-check pyyaml -r requirements-mcp.txt
-      - name: Run canonical non-LLM test suite
-        # The canonical suite includes: python3 scripts/check_policy_consistency.py
-        run: bash tests/run-all.sh
-      - name: Verify Python ChatGPT MCP server imports
-        run: python3 -c "from mcp_server.server import mcp; print(mcp.name)"
       - name: Install Cloudflare Worker dependencies
-        run: npm install --ignore-scripts
-      - name: Check Cloudflare Worker
-        run: npm run check:cloudflare
-      - name: Test Cloudflare runtime gates
-        run: npm run test:cloudflare
+        run: npm ci --ignore-scripts
+      - name: Run canonical TypeScript suite
+        run: bash tests/run-all.sh

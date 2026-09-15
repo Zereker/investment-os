@@ -49,7 +49,7 @@ Account Summary；Balances；Positions；Open Orders；当前市场输入与回�
 
 ### 5. Account Reconciliation
 
-统一调用 `skills/investment-os/scripts/account_reconciliation.py`，验证 `NAV ≈ Cash + Σ Position Market Values`。对账失败必须在任何资金公式之前停止。调用者自报 `reconciliation.status = PASS` 不能覆盖真实数字冲突。
+统一调用 MCP 的 `validate_broker_runtime`，验证 `NAV ≈ Cash + Σ Position Market Values`。对账失败必须在任何资金公式之前停止。调用者自报 `reconciliation.status = PASS` 不能覆盖真实数字冲突。
 
 ### 6. Deterministic Calculation Order
 
@@ -62,7 +62,7 @@ Account Summary；Balances；Positions；Open Orders；当前市场输入与回�
 5. 生成结构化结果、阻塞项和下一观察条件；
 6. 仅在需要实际 Broker 操作时进入 Execution Runtime。
 
-具体公式与阈值由 `00-constitution.md`、本文件第二部分和 `skills/investment-os/scripts/monthly_execution.py` 当前实现共同约束。
+具体公式与阈值由 `00-constitution.md`、本文件第二部分和 MCP 的 `calculate_monthly_deployment` 当前实现共同约束。
 
 ### 7. Routine Path Checks
 
@@ -80,24 +80,15 @@ Account Summary；Balances；Positions；Open Orders；当前市场输入与回�
 
 真实账户数据只在当前私有会话展示，不落盘、不提交公开仓库。
 
-### 10. Canonical Command
+### 10. Canonical Tool
 
-```bash
-python3 skills/investment-os/scripts/monthly_execution.py \
-  --nav <NetLiq> --cash <TotalCash> \
-  --spym <MarketValue> --qqqm <MarketValue> --soxx <MarketValue> \
-  --legacy <Legacy 持仓合计> \
-  --contribution <AuthoritativeF> \
-  --dd <DecimalDrawdown> --dd-as-of <收盘日期> \
-  --tiers-executed <none|T1|T1,T2...> \
-  --open-orders-status clear
-```
+统一调用 MCP 的 `calculate_monthly_deployment`，输入已校验的 NAV、现金、三项 Production 持仓、Legacy 合计、权威入金、订单状态，以及逐标的回撤和已执行档位。
 
 输入缺失、单位错误、账户不对账、订单状态未知或冲突时，CLI 必须非零退出并输出 `DATA INCOMPLETE`。
 
-`--legacy` 是 Legacy / Out-of-Universe 持仓的市值合计。它**必须**传（有就传，没有留 0）——Legacy 也是持仓，漏掉它对账等式就不成立，账户会被永久卡住。它只进对账与披露，不产生目标、缺口或任何通道资金。
+`legacy` 是 Legacy / Out-of-Universe 持仓的市值合计。它**必须**传（有就传，没有留 0）——Legacy 也是持仓，漏掉它对账等式就不成立，账户会被永久卡住。它只进对账与披露，不产生目标、缺口或任何通道资金。
 
-`--dd` 由会话从 IBKR 收盘序列取得后传入，脚本自身不联网；必须同时传 `--dd-as-of`，否则无法确认新鲜度，本月不评估分档。
+`drawdowns` 由会话从 IBKR 收盘序列取得后传入，MCP 自身不联网；必须同时传 `drawdown_as_of`，否则无法确认新鲜度，本月不评估分档。
 
 ### 11. Completion Conditions
 

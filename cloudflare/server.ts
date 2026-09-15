@@ -5,6 +5,8 @@ import { z } from "zod";
 import { assembleBrokerRuntime } from "./adapter";
 import { isInvestmentTask, loadTaskContext, taskReferences } from "./policy";
 import { validateBrokerRuntime } from "./runtime";
+import { calculateMonthlyDeployment } from "./monthly";
+import { validateBrokerExecution } from "./execution";
 
 function jsonResult(value: unknown) {
   return {
@@ -15,7 +17,7 @@ function jsonResult(value: unknown) {
 
 function createServer() {
   const server = new McpServer(
-    { name: "Investment OS", version: "0.17.5" },
+    { name: "Investment OS", version: "0.18.0" },
     {
       instructions: [
         "Investment OS is rules-first and read-only.",
@@ -109,6 +111,32 @@ function createServer() {
           max_age_seconds
         )
       )
+  );
+
+  server.registerTool(
+    "calculate_monthly_deployment",
+    {
+      description: "Calculate the policy-defined monthly funding candidates from validated ephemeral inputs. This never authorizes or submits an order.",
+      inputSchema: {
+        nav: z.number(), cash: z.number(),
+        positions: z.object({ spym: z.number(), qqqm: z.number(), soxx: z.number() }),
+        legacy: z.number().default(0), contribution: z.number().nullable(),
+        open_orders_status: z.enum(["clear", "conflicting", "unknown"]),
+        drawdowns: z.object({ spym: z.number().optional(), qqqm: z.number().optional() }).optional(),
+        tiers_executed: z.object({ spym: z.array(z.string()).optional(), qqqm: z.array(z.string()).optional() }).optional(),
+        drawdown_as_of: z.string().optional(), today: z.string().optional()
+      }
+    },
+    async (input) => jsonResult(calculateMonthlyDeployment(input))
+  );
+
+  server.registerTool(
+    "validate_broker_execution",
+    {
+      description: "Validate one broker operation lifecycle, authorization binding, single-submit semantics, and authoritative read-back. This tool never submits an order.",
+      inputSchema: { record: z.record(z.string(), z.unknown()) }
+    },
+    async ({ record }) => jsonResult(validateBrokerExecution(record))
   );
 
   return server;

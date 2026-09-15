@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "investment-os": {
+      "type": "http",
+      "url": "https://investment-os-mcp.444002.xyz/mcp"
+    }
+  }
+}

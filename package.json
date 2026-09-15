@@ -1,13 +1,15 @@
 {
   "name": "investment-os-cloudflare-mcp",
-  "version": "0.17.5",
+  "version": "0.18.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev:cloudflare": "wrangler dev",
     "deploy:cloudflare": "wrangler deploy",
     "check:cloudflare": "tsc --noEmit",
-    "test:cloudflare": "tsx cloudflare/runtime.test.ts"
+    "test:cloudflare": "tsx cloudflare/runtime.test.ts && tsx cloudflare/monthly.test.ts && tsx cloudflare/execution.test.ts",
+    "test": "npm run check:cloudflare && npm run test:cloudflare",
+    "verify:mcp": "tsx scripts/verify_remote_mcp.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "2.0.0",
