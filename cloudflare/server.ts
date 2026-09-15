@@ -7,6 +7,7 @@ import { isInvestmentTask, loadTaskContext, taskReferences } from "./policy";
 import { validateBrokerRuntime } from "./runtime";
 import { calculateMonthlyDeployment } from "./monthly";
 import { validateBrokerExecution } from "./execution";
+import { CAPABILITY_NAMES, CAPABILITY_STATES } from "./contract";
 
 function jsonResult(value: unknown) {
   return {
@@ -15,9 +16,18 @@ function jsonResult(value: unknown) {
   };
 }
 
+const capabilityInput = z.object({
+  status: z.enum(CAPABILITY_STATES),
+  data: z.unknown().optional(), source: z.string().optional(),
+  observed_at: z.string().optional(), error: z.string().optional()
+}).strict();
+const capabilitiesInput = z.object(Object.fromEntries(
+  CAPABILITY_NAMES.map((name) => [name, capabilityInput.optional()])
+) as Record<(typeof CAPABILITY_NAMES)[number], z.ZodOptional<typeof capabilityInput>>).strict();
+
 function createServer() {
   const server = new McpServer(
-    { name: "Investment OS", version: "0.18.0" },
+    { name: "Investment OS", version: "0.19.0" },
     {
       instructions: [
         "Investment OS is rules-first and read-only.",
@@ -27,6 +37,7 @@ function createServer() {
         "Account-dependent paths require fresh broker output and PASS from validate_broker_runtime.",
         "Missing, stale, conflicting, or unverified data leaves only the affected path DATA INCOMPLETE.",
         "This server never submits orders and never persists portfolio data."
+        ,"Before sending private broker data from another connector, obtain explicit current-session consent for ephemeral processing."
       ].join(" ")
     }
   );
@@ -72,24 +83,20 @@ function createServer() {
     "assemble_broker_runtime",
     {
       description:
-        "Deterministically assemble ephemeral IBKR connector results, including balances and positions envelopes, into the canonical Investment OS runtime. Missing, stale, conflicting, and failed connector capabilities remain explicit and are never guessed.",
+        "Deterministically assemble ephemeral IBKR connector results into canonical runtime schema 1.0. Use exactly account_summary, balances, positions, open_orders, cash_transactions, market_inputs, alert_inventory, and standing_automations; aliases such as account_balances, account_positions, and account_orders are invalid. Omitted optional capabilities become not_requested. Pass required_capabilities to scope status. Obtain explicit consent before passing private data from another connector; data is never persisted.",
       inputSchema: {
         identity: z.record(z.string(), z.unknown()),
-        snapshot: z.record(z.string(), z.unknown()),
-        capabilities: z.record(
-          z.string(),
-          z.object({
-            status: z.enum(["available", "unavailable", "stale", "conflicting"]),
-            data: z.unknown().optional(),
-            source: z.string().optional(),
-            observed_at: z.string().optional(),
-            error: z.string().optional()
-          })
-        )
+        snapshot: z.object({
+          as_of: z.iso.datetime({ offset: true }).describe("ISO-8601 timezone-aware snapshot timestamp"),
+          source: z.string().min(1), timezone: z.string().min(1),
+          currency_basis: z.string().min(1).describe("Real account base currency code, for example USD")
+        }).strict(),
+        capabilities: capabilitiesInput,
+        required_capabilities: z.array(z.enum(CAPABILITY_NAMES)).default([])
       }
     },
-    async ({ identity, snapshot, capabilities }) =>
-      jsonResult(assembleBrokerRuntime({ identity, snapshot, capabilities }))
+    async ({ identity, snapshot, capabilities, required_capabilities }) =>
+      jsonResult(assembleBrokerRuntime({ identity, snapshot, capabilities, required_capabilities }))
   );
 
   server.registerTool(
@@ -99,7 +106,7 @@ function createServer() {
         "Validate ephemeral authoritative broker facts before an account-dependent judgment. This tool never stores the payload or writes to a broker.",
       inputSchema: {
         runtime: z.record(z.string(), z.unknown()),
-        required_capabilities: z.array(z.string()).default([]),
+        required_capabilities: z.array(z.enum(CAPABILITY_NAMES)).default([]),
         max_age_seconds: z.number().int().min(1).max(3600).default(300)
       }
     },
