@@ -1,6 +1,6 @@
 {
   "name": "investment-os",
-  "version": "0.20.0+codex.20260915153105",
+  "version": "0.20.1+codex.20260915160110",
   "description": "A rules-first long-term investment agent distributed as one canonical skill with fresh authoritative runtime state.",
   "author": {
     "name": "Zereker",

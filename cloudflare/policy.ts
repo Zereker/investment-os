@@ -6,6 +6,7 @@ import periodic from "../skills/investment-os/references/03-periodic.md";
 import committee from "../skills/investment-os/references/04-committee.md";
 import state from "../skills/investment-os/references/05-state.md";
 import dataContract from "../skills/investment-os/references/06-data-contract.md";
+import { BROKER_RUNTIME_CONTRACT, SERVER_NAME, SERVER_VERSION } from "./contract";
 
 export const taskReferences = {
   daily: {
@@ -51,6 +52,8 @@ export function isInvestmentTask(value: string): value is InvestmentTask {
 export function loadTaskContext(task: InvestmentTask) {
   return {
     task,
+    server: { name: SERVER_NAME, version: SERVER_VERSION },
+    broker_runtime_contract: BROKER_RUNTIME_CONTRACT,
     skill,
     references: taskReferences[task],
     source: "bundled canonical Investment OS distribution",
