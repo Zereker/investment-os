@@ -27,7 +27,7 @@ const capabilitiesInput = z.object(Object.fromEntries(
 
 function createServer() {
   const server = new McpServer(
-    { name: "Investment OS", version: "0.19.0" },
+    { name: "Investment OS", version: "0.19.1" },
     {
       instructions: [
         "Investment OS is rules-first and read-only.",
@@ -85,7 +85,7 @@ function createServer() {
       description:
         "Deterministically assemble ephemeral IBKR connector results into canonical runtime schema 1.0. Use exactly account_summary, balances, positions, open_orders, cash_transactions, market_inputs, alert_inventory, and standing_automations; aliases such as account_balances, account_positions, and account_orders are invalid. Omitted optional capabilities become not_requested. Pass required_capabilities to scope status. Obtain explicit consent before passing private data from another connector; data is never persisted.",
       inputSchema: {
-        identity: z.record(z.string(), z.unknown()),
+        identity: z.record(z.string(), z.unknown()).describe("Broker-neutral account identity metadata. This object is intentionally extensible and is not an authorization claim."),
         snapshot: z.object({
           as_of: z.iso.datetime({ offset: true }).describe("ISO-8601 timezone-aware snapshot timestamp"),
           source: z.string().min(1), timezone: z.string().min(1),
