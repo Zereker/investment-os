@@ -114,9 +114,12 @@ async function main() {
   const assembleProperties = object(assembleSchema.properties, "assemble properties");
   const schemaVersion = object(assembleProperties.schema_version, "schema version input");
   assert.equal(schemaVersion.const, "1.0");
+  assert.equal(schemaVersion.default, "1.0");
   const snapshotSchema = object(assembleProperties.snapshot, "snapshot schema");
   assert.deepEqual(snapshotSchema.required, ["as_of", "source", "timezone", "currency_basis"]);
   assert.equal(snapshotSchema.additionalProperties, false);
+  const snapshotProperties = object(snapshotSchema.properties, "snapshot properties");
+  assert.equal(object(snapshotProperties.as_of, "snapshot as_of").format, "date-time");
   const capabilitiesSchema = object(assembleProperties.capabilities, "capabilities schema");
   assert.equal(capabilitiesSchema.additionalProperties, false);
   const capabilityProperties = object(capabilitiesSchema.properties, "capability properties");
@@ -126,6 +129,11 @@ async function main() {
   ]);
   const accountSummarySchema = object(capabilityProperties.account_summary, "account_summary schema");
   const accountSummaryProperties = object(accountSummarySchema.properties, "account_summary properties");
+  assert.equal(accountSummarySchema.additionalProperties, false);
+  assert.equal(
+    object(accountSummaryProperties.observed_at, "account_summary observed_at").format,
+    "date-time"
+  );
   const accountSummaryDataSchema = object(accountSummaryProperties.data, "account_summary data schema");
   assert.ok(JSON.stringify(accountSummaryDataSchema).includes("net_liquidation"));
   const statusSchema = object(accountSummaryProperties.status, "capability status schema");
@@ -154,6 +162,10 @@ async function main() {
     object(runtimeOutputProperties.capabilities, "runtime capability states").required,
     Object.keys(capabilityProperties)
   );
+  const observationsOutput = object(runtimeOutputProperties.observations, "runtime observations output");
+  const observationValueOutput = object(observationsOutput.additionalProperties, "runtime observation value output");
+  const observationOutputProperties = object(observationValueOutput.properties, "runtime observation output properties");
+  assert.equal(object(observationOutputProperties.observed_at, "runtime observed_at output").format, "date-time");
 
   const taskResult = structuredContent(
     await rpc("tools/call", {

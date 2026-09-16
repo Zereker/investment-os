@@ -1,6 +1,6 @@
 export const BROKER_RUNTIME_SCHEMA_VERSION = "1.0";
 export const SERVER_NAME = "Investment OS";
-export const SERVER_VERSION = "0.20.2";
+export const SERVER_VERSION = "0.20.3";
 export const CAPABILITY_NAMES = [
   "account_summary", "balances", "positions", "open_orders",
   "cash_transactions", "market_inputs", "alert_inventory", "standing_automations"

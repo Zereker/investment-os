@@ -41,7 +41,9 @@ const rowsOrEnvelope = (key: string) => z.union([
 ]);
 const capabilityInput = <T extends z.ZodType>(dataSchema: T) => z.object({
   status: z.enum(CAPABILITY_STATES), data: dataSchema.optional(),
-  source: z.string().optional(), observed_at: z.string().optional(), error: z.string().optional()
+  source: z.string().optional(),
+  observed_at: z.iso.datetime({ offset: true }).optional(),
+  error: z.string().optional()
 }).strict();
 const capabilitiesInput = z.object({
   account_summary: capabilityInput(accountSummaryData).optional(),
@@ -84,7 +86,7 @@ const capabilityStatesOutput = z.object({
 }).strict();
 const observationOutput = z.object({
   source: z.string().optional(),
-  observed_at: z.string().optional()
+  observed_at: z.iso.datetime({ offset: true }).optional()
 }).strict();
 const runtimeOutput = z.object({
   schema_version: z.literal("1.0"),
