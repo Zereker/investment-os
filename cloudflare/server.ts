@@ -54,6 +54,63 @@ const capabilitiesInput = z.object({
   standing_automations: capabilityInput(rowsOrEnvelope("automations")).optional()
 }).strict();
 
+const taskName = z.enum([
+  "daily", "monthly_funding", "periodic_review", "transaction_judgment",
+  "research", "broker_execution", "system_audit"
+]);
+const serverMetadata = z.object({ name: z.string(), version: z.string() }).strict();
+const reconciliationOutput = z.object({
+  status: z.enum(["PASS", "DATA INCOMPLETE"]),
+  issues: z.array(z.string()),
+  nav: z.number().nullable(),
+  cash: z.number().nullable(),
+  positions_market_value: z.number().nullable(),
+  component_total: z.number().nullable(),
+  absolute_difference: z.number().nullable(),
+  relative_difference: z.number().nullable(),
+  tolerance: z.number(),
+  diagnostic: z.string().nullable()
+}).strict();
+const capabilityStateOutput = z.enum(CAPABILITY_STATES);
+const capabilityStatesOutput = z.object({
+  account_summary: capabilityStateOutput,
+  balances: capabilityStateOutput,
+  positions: capabilityStateOutput,
+  open_orders: capabilityStateOutput,
+  cash_transactions: capabilityStateOutput,
+  market_inputs: capabilityStateOutput,
+  alert_inventory: capabilityStateOutput,
+  standing_automations: capabilityStateOutput
+}).strict();
+const observationOutput = z.object({
+  source: z.string().optional(),
+  observed_at: z.string().optional()
+}).strict();
+const runtimeOutput = z.object({
+  schema_version: z.literal("1.0"),
+  identity: z.record(z.string(), z.unknown()),
+  snapshot: z.object({
+    as_of: z.iso.datetime({ offset: true }),
+    source: z.string(),
+    timezone: z.string(),
+    currency_basis: z.string()
+  }).strict(),
+  capabilities: capabilityStatesOutput,
+  observations: z.record(z.string(), observationOutput),
+  account_summary: accountSummaryData.nullable(),
+  balances: balancesData.nullable(),
+  positions: z.array(positionRow).nullable(),
+  open_orders: rowsOrEnvelope("orders").nullable(),
+  cash_transactions: rowsOrEnvelope("transactions").nullable(),
+  market_inputs: z.record(z.string(), z.unknown()).nullable(),
+  alert_inventory: rowsOrEnvelope("alerts").nullable(),
+  standing_automations: rowsOrEnvelope("automations").nullable(),
+  reconciliation: reconciliationOutput
+}).strict();
+const allocationOutput = z.object({
+  spym: z.number(), qqqm: z.number(), soxx: z.number()
+}).strict();
+
 function createServer() {
   const server = new McpServer(
     { name: SERVER_NAME, version: SERVER_VERSION },
@@ -75,7 +132,11 @@ function createServer() {
     "list_investment_os_tasks",
     {
       description: "List task names accepted by load_investment_os.",
-      inputSchema: {}
+      inputSchema: {},
+      outputSchema: {
+        server: serverMetadata,
+        tasks: z.array(taskName)
+      }
     },
     async () => jsonResult({
       server: { name: SERVER_NAME, version: SERVER_VERSION },
@@ -92,6 +153,15 @@ function createServer() {
         task: z.string().describe(
           "One of daily, monthly_funding, periodic_review, transaction_judgment, research, broker_execution, or system_audit"
         )
+      },
+      outputSchema: {
+        task: taskName,
+        server: serverMetadata,
+        broker_runtime_contract: z.record(z.string(), z.unknown()),
+        skill: z.string(),
+        references: z.record(z.string(), z.string()),
+        source: z.string(),
+        runtime_data_persisted: z.literal(false)
       }
     },
     async ({ task }) => {
@@ -126,6 +196,15 @@ function createServer() {
         }).strict(),
         capabilities: capabilitiesInput,
         required_capabilities: z.array(z.enum(CAPABILITY_NAMES)).default([])
+      },
+      outputSchema: {
+        adapter_status: z.enum(["PASS", "PASS_WITH_OPTIONAL_GAPS", "DATA INCOMPLETE"]),
+        required_status: z.enum(["PASS", "DATA INCOMPLETE"]),
+        optional_status: z.enum(["PASS", "PARTIAL"]),
+        adapter_issues: z.array(z.string()),
+        runtime: runtimeOutput,
+        schema_version: z.literal("1.0"),
+        runtime_data_persisted: z.literal(false)
       }
     },
     async ({ schema_version, identity, snapshot, capabilities, required_capabilities }) =>
@@ -141,6 +220,13 @@ function createServer() {
         runtime: z.record(z.string(), z.unknown()),
         required_capabilities: z.array(z.enum(CAPABILITY_NAMES)).default([]),
         max_age_seconds: z.number().int().min(1).max(3600).default(300)
+      },
+      outputSchema: {
+        schema_version: z.literal("1.0"),
+        runtime_status: z.enum(["PASS", "DATA INCOMPLETE"]),
+        blocking_issues: z.array(z.string()),
+        observation_skew_seconds: z.number().nullable(),
+        reconciliation: reconciliationOutput
       }
     },
     async ({ runtime, required_capabilities, max_age_seconds }) =>
@@ -165,6 +251,24 @@ function createServer() {
         drawdowns: z.object({ spym: z.number().optional(), qqqm: z.number().optional() }).optional(),
         tiers_executed: z.object({ spym: z.array(z.string()).optional(), qqqm: z.array(z.string()).optional() }).optional(),
         drawdown_as_of: z.string().optional(), today: z.string().optional()
+      },
+      outputSchema: {
+        status: z.enum(["PASS", "DATA INCOMPLETE"]),
+        blocking_issues: z.array(z.string()),
+        weights: z.object({ spym: z.number(), qqqm: z.number(), soxx: z.number(), cash: z.number() }).strict(),
+        gaps: allocationOutput,
+        routine_dca: z.object({ amount: z.number(), allocation: allocationOutput }).strict(),
+        strategic_baseline: z.object({ surplus: z.number(), amount: z.number(), allocation: allocationOutput }).strict(),
+        drawdown_deployment: z.object({
+          evaluated: z.boolean(),
+          allocation: allocationOutput,
+          consumed_tiers: z.object({
+            spym: z.array(z.string()), qqqm: z.array(z.string()), soxx: z.array(z.string())
+          }).strict()
+        }).strict(),
+        final_cash: z.number(),
+        execution_authorized: z.literal(false),
+        runtime_data_persisted: z.literal(false)
       }
     },
     async (input) => jsonResult(calculateMonthlyDeployment(input))
@@ -174,7 +278,12 @@ function createServer() {
     "validate_broker_execution",
     {
       description: "Validate one broker operation lifecycle, authorization binding, single-submit semantics, and authoritative read-back. This tool never submits an order.",
-      inputSchema: { record: z.record(z.string(), z.unknown()) }
+      inputSchema: { record: z.record(z.string(), z.unknown()) },
+      outputSchema: {
+        status: z.enum(["COMPLETED", "NOT EXECUTED", "EXECUTION UNKNOWN", "VERIFICATION FAILED"]),
+        issues: z.array(z.string()),
+        passed: z.boolean()
+      }
     },
     async ({ record }) => jsonResult(validateBrokerExecution(record))
   );

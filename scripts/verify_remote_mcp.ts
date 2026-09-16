@@ -103,6 +103,11 @@ async function main() {
     tools.map((tool) => tool.name).sort(),
     EXPECTED_TOOLS
   );
+  for (const tool of tools) {
+    const outputSchema = object(tool.outputSchema, `${String(tool.name)} outputSchema`);
+    assert.equal(outputSchema.type, "object", `${String(tool.name)} must publish an object outputSchema`);
+    assert.equal(outputSchema.additionalProperties, false, `${String(tool.name)} outputSchema must reject undeclared top-level fields`);
+  }
   const assembleTool = tools.find((tool) => tool.name === "assemble_broker_runtime");
   assert.ok(assembleTool, "assemble_broker_runtime must be published");
   const assembleSchema = object(assembleTool.inputSchema, "assemble inputSchema");
@@ -134,6 +139,21 @@ async function main() {
   assert.ok(JSON.stringify(balancesSchema).includes("cash_balance"));
   const positionsSchema = object(capabilityProperties.positions, "positions capability schema");
   assert.ok(JSON.stringify(positionsSchema).includes("market_value"));
+  const assembleOutputSchema = object(assembleTool.outputSchema, "assemble outputSchema");
+  const assembleOutputProperties = object(assembleOutputSchema.properties, "assemble output properties");
+  assert.deepEqual(Object.keys(assembleOutputProperties), [
+    "adapter_status", "required_status", "optional_status", "adapter_issues",
+    "runtime", "schema_version", "runtime_data_persisted"
+  ]);
+  assert.deepEqual(assembleOutputSchema.required, Object.keys(assembleOutputProperties));
+  const runtimeOutputSchema = object(assembleOutputProperties.runtime, "runtime output schema");
+  assert.equal(runtimeOutputSchema.additionalProperties, false);
+  const runtimeOutputProperties = object(runtimeOutputSchema.properties, "runtime output properties");
+  assert.ok(runtimeOutputProperties.reconciliation, "runtime output must publish reconciliation");
+  assert.deepEqual(
+    object(runtimeOutputProperties.capabilities, "runtime capability states").required,
+    Object.keys(capabilityProperties)
+  );
 
   const taskResult = structuredContent(
     await rpc("tools/call", {
