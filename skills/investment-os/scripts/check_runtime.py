@@ -10,7 +10,7 @@ import sys
 
 TARGETS = {"SPYM": .50, "QQQM": .30, "SOXX": .05}
 ACCOUNT = ("account_summary", "balances", "positions", "open_orders")
-MONTHLY = ACCOUNT + ("cash_transactions", "market_inputs")
+MONTHLY = ACCOUNT + ("market_inputs",)
 
 
 def numeric(value):
@@ -66,7 +66,9 @@ def check(payload, now=None):
         if len(base) == 1 and numeric(base[0].get("cash_balance")):
             cash = base[0]["cash_balance"]
         if len(usd) == 1 and numeric(usd[0].get("cash_balance")):
-            usd_cash = usd[0]["cash_balance"]
+            settled = usd[0].get("settled_cash")
+            if numeric(settled) and settled >= 0:
+                usd_cash = min(usd[0]["cash_balance"], settled)
     if cash is None or usd_cash is None:
         issues.append("unique BASE aggregate and USD cash rows required")
     if isinstance(rows, list) and any(numeric(r.get("cash_balance")) and r["cash_balance"] < 0 for r in rows):
@@ -123,9 +125,6 @@ def check(payload, now=None):
         return report
 
     # Monthly gates must finish before any funding formula is evaluated.
-    contribution = data.get("cash_transactions", {}).get("external_contribution_usd")
-    if not numeric(contribution) or contribution < 0:
-        issues.append("authoritative external net contribution F unavailable or invalid")
     schedule = payload.get("schedule", {})
     if schedule.get("source") != "NYSE" or schedule.get("monthly_execution_date") != now.date().isoformat():
         issues.append("not a verified fixed monthly execution date; no catch-up")
@@ -159,10 +158,7 @@ def check(payload, now=None):
             amount -= allocation[t]
         return allocation
 
-    g0 = sum(gaps.values())
-    d = min(contribution, g0, usd_cash)
-    routine = allocate(d)
-    c = usd_cash - d
+    c = usd_cash
     surplus = max(c - .15 * nav, 0)
     g = sum(remaining.values())
     b = min(surplus / 3, g)
@@ -180,9 +176,9 @@ def check(payload, now=None):
                     candidate_tiers[t].append(tier)
                     cash_left -= amount
                     remaining[t] -= amount
-    report["deployment"] = dict(F=contribution, V=nav, C0=usd_cash, G0=g0, D=d, C=c,
+    report["deployment"] = dict(V=nav, C=c,
                                  R=3, S=surplus, G=g, B=b, gaps=gaps,
-                                 routine_allocation=routine, baseline_allocation=baseline,
+                                 baseline_allocation=baseline,
                                  drawdown_allocation=drawdown, candidate_tiers=candidate_tiers,
                                  final_cash=cash_left, note="Candidates only; tiers consumed only after verified fills. Whole shares and commissions require execution checks.")
     return report

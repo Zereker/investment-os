@@ -20,7 +20,7 @@ def fixture():
         'account_summary': {'currency': 'USD', 'net_liquidation': 100000},
         'balances': {'balances': [
             {'currency': 'BASE', 'cash_balance': 30000},
-            {'currency': 'USD', 'cash_balance': 25000},
+            {'currency': 'USD', 'cash_balance': 25000, 'settled_cash': 25000},
             {'currency': 'CNH', 'cash_balance': 35000}]},
         'positions': {'positions': [
             {'contract_description': t, 'contract_id': i, 'market_value': v,
@@ -46,25 +46,23 @@ class RuntimeTests(unittest.TestCase):
         r = self.run_check(fixture())
         self.assertEqual(r['status'], 'PASS')
         d = r['deployment']
-        self.assertEqual(d['C0'], 25000)
-        self.assertEqual(d['D'], 2000)
-        self.assertAlmostEqual(d['B'], 8000 / 3)
+        self.assertEqual(d['C'], 25000)
+        self.assertAlmostEqual(d['B'], 10000 / 3)
         self.assertEqual(d['gaps'], {'SPYM': 10000, 'QQQM': 5000, 'SOXX': 1000})
         self.assertFalse(r['execution_authorized'])
 
-    def test_missing_contribution_yields_no_amounts(self):
+    def test_missing_contribution_does_not_block(self):
         p = fixture()
         p['capabilities']['cash_transactions'] = {'status': 'unavailable', 'data': None}
         r = self.run_check(p)
-        self.assertEqual(r['status'], 'DATA INCOMPLETE')
-        self.assertIsNone(r['deployment'])
+        self.assertEqual(r['status'], 'PASS')
+        self.assertIsNotNone(r['deployment'])
         self.assertIn('weights', r)
 
     def test_explicit_zero_contribution_preserves_baseline(self):
         p = fixture()
         p['capabilities']['cash_transactions']['data']['external_contribution_usd'] = 0
         d = self.run_check(p)['deployment']
-        self.assertEqual(d['D'], 0)
         self.assertAlmostEqual(d['B'], 10000 / 3)
 
     def test_account_review_does_not_require_funding_capability(self):
@@ -125,6 +123,26 @@ class RuntimeTests(unittest.TestCase):
             p = fixture(); m = p['capabilities']['market_inputs']['data']['SPYM']
             m['drawdown'], m['tiers_executed'] = dd, tiers
             self.assertIsNone(self.run_check(p)['deployment'])
+
+    def test_settled_cash_limits_and_missing_settlement(self):
+        p = fixture()
+        p['capabilities']['balances']['data']['balances'][1]['settled_cash'] = 16000
+        d = self.run_check(p)['deployment']
+        self.assertEqual(d['C'], 16000)
+        self.assertAlmostEqual(d['B'], 1000 / 3)
+        p['capabilities']['balances']['data']['balances'][1]['settled_cash'] = 14000
+        self.assertEqual(self.run_check(p)['deployment']['B'], 0)
+        del p['capabilities']['balances']['data']['balances'][1]['settled_cash']
+        self.assertIsNone(self.run_check(p)['deployment'])
+
+    def test_contribution_cannot_change_deployment(self):
+        p = fixture()
+        expected = self.run_check(p)['deployment']
+        for value in (None, 0, 50000):
+            p['capabilities']['cash_transactions']['data']['external_contribution_usd'] = value
+            self.assertEqual(self.run_check(p)['deployment'], expected)
+        del p['capabilities']['cash_transactions']
+        self.assertEqual(self.run_check(p)['deployment'], expected)
 
     def test_cli_bad_input_fails_without_traceback_or_execution(self):
         result = subprocess.run([sys.executable, str(SCRIPT)], input='{"task":"monthly"}',
