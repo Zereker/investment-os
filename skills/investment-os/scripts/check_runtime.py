@@ -10,7 +10,7 @@ import sys
 
 TARGETS = {"SPYM": .50, "QQQM": .30, "SOXX": .05}
 ACCOUNT = ("account_summary", "balances", "positions", "open_orders")
-MONTHLY = ACCOUNT + ("market_inputs",)
+MONTHLY = ACCOUNT + ("cash_transactions", "market_inputs")
 
 
 def numeric(value):
@@ -149,6 +149,9 @@ def check(payload, now=None):
         return report
 
     # Monthly gates must finish before any funding formula is evaluated.
+    contribution = data.get("cash_transactions", {}).get("external_contribution_usd")
+    if not numeric(contribution) or contribution < 0:
+        issues.append("authoritative external net contribution F unavailable or invalid")
     schedule = payload.get("schedule", {})
     if schedule.get("source") != "NYSE" or schedule.get("monthly_execution_date") != now.date().isoformat():
         issues.append("not a verified fixed monthly execution date; no catch-up")
@@ -182,7 +185,11 @@ def check(payload, now=None):
             amount -= allocation[t]
         return allocation
 
-    c = usd_cash
+    g0 = sum(gaps.values())
+    dmax = min(contribution, g0)
+    d = min(dmax, usd_cash)
+    routine = allocate(d)
+    c = usd_cash - d
     surplus = max(c - .15 * nav, 0)
     g = sum(remaining.values())
     b = min(surplus / 3, g)
@@ -200,9 +207,9 @@ def check(payload, now=None):
                     candidate_tiers[t].append(tier)
                     cash_left -= amount
                     remaining[t] -= amount
-    report["deployment"] = dict(V=nav, C=c,
+    report["deployment"] = dict(F=contribution, V=nav, C0=usd_cash, G0=g0, Dmax=dmax, D=d, C=c,
                                  R=3, S=surplus, G=g, B=b, gaps=gaps,
-                                 baseline_allocation=baseline,
+                                 routine_allocation=routine, baseline_allocation=baseline,
                                  drawdown_allocation=drawdown, candidate_tiers=candidate_tiers,
                                  final_cash=cash_left, note="Candidates only; tiers consumed only after verified fills. Whole shares and commissions require execution checks.")
     return report

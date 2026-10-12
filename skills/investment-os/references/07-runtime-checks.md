@@ -32,7 +32,7 @@ account_summary 含 currency、net_liquidation；balances 含 balances 数组；
 positions 含 positions 数组；open_orders 含 orders 数组。
 
 月度必须读取 USD cash_balance 与 settled_cash，取较小值作为可用美元现金。
-cash_transactions 为可选披露，缺失不影响月度计算，不推断入金。
+cash_transactions 必须提供权威 external_contribution_usd；缺失关闭月度 D 与 B，不推断入金。
 market_inputs.data 按 SPYM、QQQM 分别提供 drawdown（小数）、close_as_of、
 tiers_executed（经成交重建的 T1–T4 列表；确认为未执行才传空列表）。
 
@@ -54,7 +54,7 @@ skill 可直接依据权威结果完成账户校验、对账、权重披露、�
 
 逐项报告能力、时效、币种、对账、订单、入金、回撤状态及执行日。
 区分工具不可用、事实不可得和不在执行日，写明最小恢复条件。
-入金流水缺失不阻断现金部署；回撤不到档时不创造部署理由。
+入金流水缺失阻断月度定投及依赖它的战略迁移；回撤不到档时不创造部署理由。
 本地 helper 不替代 canonical SKILL.md 的账户所有者授权边界。
 
 ## 5. 待换汇资金披露

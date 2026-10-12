@@ -42,7 +42,7 @@ the helper. Its JSON output is a review result, never execution authorization.
 
 Installing a skill does not grant brokerage access. IBKR remains the authoritative
 source of account, order, fill and contribution facts. Available capabilities are
-checked per task. Monthly deployment uses current settled available USD cash, not inferred contributions. Missing cash transactions affect optional disclosure only. Pasted figures remain context, not production inputs.
+checked per task. Monthly funding first invests confirmed external contributions into positive gaps, then migrates one third of remaining excess USD cash. Missing contribution evidence closes dependent funding arithmetic; it is never inferred or set to zero. Pasted figures remain context, not production inputs.
 
 Without code execution, the skill still performs evidence-based account checks
 and policy explanation. Monthly deployment arithmetic requires the bundled
@@ -56,7 +56,7 @@ bash tests/run-all.sh
 
 Checks use Python's standard library and synthetic data only. Tests verify the
 policy mirrors, reconciliation tolerance, unavailable/stale capabilities,
-monthly execution date, settled cash, optional contribution independence, per-ticker tiers and candidate-only
+monthly execution date, settled cash, contribution evidence, per-ticker tiers and candidate-only
 outputs. Static checks do not prove behavior in a live agent or broker session.
 
 Support, privacy and usage terms: [SUPPORT.md](SUPPORT.md),

@@ -46,17 +46,18 @@ class RuntimeTests(unittest.TestCase):
         r = self.run_check(fixture())
         self.assertEqual(r['status'], 'PASS')
         d = r['deployment']
-        self.assertEqual(d['C'], 25000)
-        self.assertAlmostEqual(d['B'], 10000 / 3)
+        self.assertEqual(d['C0'], 25000)
+        self.assertEqual(d['D'], 2000)
+        self.assertAlmostEqual(d['B'], 8000 / 3)
         self.assertEqual(d['gaps'], {'SPYM': 10000, 'QQQM': 5000, 'SOXX': 1000})
         self.assertFalse(r['execution_authorized'])
 
-    def test_missing_contribution_does_not_block(self):
+    def test_missing_contribution_blocks_amounts(self):
         p = fixture()
         p['capabilities']['cash_transactions'] = {'status': 'unavailable', 'data': None}
         r = self.run_check(p)
-        self.assertEqual(r['status'], 'PASS')
-        self.assertIsNotNone(r['deployment'])
+        self.assertEqual(r['status'], 'DATA INCOMPLETE')
+        self.assertIsNone(r['deployment'])
         self.assertIn('weights', r)
 
     def test_explicit_zero_contribution_preserves_baseline(self):
@@ -128,21 +129,24 @@ class RuntimeTests(unittest.TestCase):
         p = fixture()
         p['capabilities']['balances']['data']['balances'][1]['settled_cash'] = 16000
         d = self.run_check(p)['deployment']
-        self.assertEqual(d['C'], 16000)
-        self.assertAlmostEqual(d['B'], 1000 / 3)
+        self.assertEqual(d['C0'], 16000)
+        self.assertEqual(d['B'], 0)
         p['capabilities']['balances']['data']['balances'][1]['settled_cash'] = 14000
         self.assertEqual(self.run_check(p)['deployment']['B'], 0)
         del p['capabilities']['balances']['data']['balances'][1]['settled_cash']
         self.assertIsNone(self.run_check(p)['deployment'])
 
-    def test_contribution_cannot_change_deployment(self):
+    def test_dca_precedes_baseline_and_requires_contribution(self):
         p = fixture()
-        expected = self.run_check(p)['deployment']
-        for value in (None, 0, 50000):
-            p['capabilities']['cash_transactions']['data']['external_contribution_usd'] = value
-            self.assertEqual(self.run_check(p)['deployment'], expected)
+        out = self.run_check(p)['deployment']
+        self.assertEqual(out['D'], 2000)
+        self.assertEqual(out['routine_allocation']['SPYM'], 2000)
+        self.assertEqual(out['C'], 23000)
+        self.assertAlmostEqual(out['B'], 8000 / 3)
+        p['capabilities']['cash_transactions']['data']['external_contribution_usd'] = None
+        self.assertIsNone(self.run_check(p)['deployment'])
         del p['capabilities']['cash_transactions']
-        self.assertEqual(self.run_check(p)['deployment'], expected)
+        self.assertIsNone(self.run_check(p)['deployment'])
 
     def test_cnh_settled_disclosure_is_not_conversion_authority(self):
         p = fixture()
