@@ -68,8 +68,9 @@ Resolve this installed distribution from this `SKILL.md`, never from the user's 
 
 | Task | Also read |
 |---|---|
-| `Daily` | `01-daily.md`, `05-state.md`, `06-data-contract.md`, `07-runtime-checks.md` |
-| Monthly funding | `02-monthly.md`, `05-state.md`, `06-data-contract.md`, `07-runtime-checks.md` |
+| `Daily` | `01-daily.md`, `05-state.md`, `06-data-contract.md`, `07-runtime-checks.md`; add `08-funding-fx.md` when CNH funding needs review |
+| Monthly funding | `02-monthly.md`, `05-state.md`, `06-data-contract.md`, `07-runtime-checks.md`, `08-funding-fx.md` |
+| Funding preparation / account FX | `05-state.md`, `06-data-contract.md`, `07-runtime-checks.md`, `08-funding-fx.md` |
 | Weekly, quarterly, annual review | `03-periodic.md` |
 | Transaction judgment, research, any non-routine action | `04-committee.md` |
 | Broker execution | `05-state.md`, `06-data-contract.md`, `07-runtime-checks.md` |
@@ -105,6 +106,16 @@ Resolve account and market capabilities independently; absence of one does not e
 5. `Next Trigger`
 
 Mention news only when it changes the thesis, risk, decision, or trigger. Do not add a market recap or repeat unchanged policy.
+
+### Funding preparation / account FX
+
+Follow `08-funding-fx.md` for CNH already inside IBKR and explicitly designated
+for this investment sleeve. Report currency cash separately from deployable USD.
+A settled CNH balance is not a monthly contribution, an FX amount or authorization.
+Check actual broker FX capabilities; never pass a CASH instrument to stock/option
+order tools. If conversion execution is unavailable, use the owner-confirmed IBKR
+platform route and refresh balances afterwards. Never estimate USD proceeds as
+settled USD or treat policy approval as authorization for conversion or purchases.
 
 ### Monthly funding
 

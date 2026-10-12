@@ -144,6 +144,39 @@ class RuntimeTests(unittest.TestCase):
         del p['capabilities']['cash_transactions']
         self.assertEqual(self.run_check(p)['deployment'], expected)
 
+    def test_cnh_settled_disclosure_is_not_conversion_authority(self):
+        p = fixture()
+        row = p['capabilities']['balances']['data']['balances'][2]
+        row['settled_cash'] = 30000
+        out = self.run_check(p)
+        prep = out['funding_preparation']
+        self.assertEqual(prep['status'], 'AWAIT_OWNER_REVIEW')
+        self.assertEqual(prep['settled_balance_limit'], 30000)
+        self.assertIsNone(prep['amount_to_convert'])
+        self.assertIsNone(prep['expected_usd_proceeds'])
+        self.assertFalse(prep['execution_authorized'])
+        self.assertEqual(out['deployment'], self.run_check(fixture())['deployment'])
+
+    def test_unsettled_cnh_waits_without_affecting_usd(self):
+        p = fixture()
+        p['capabilities']['balances']['data']['balances'][2]['settled_cash'] = 0
+        out = self.run_check(p)
+        self.assertEqual(out['status'], 'PASS')
+        self.assertEqual(out['funding_preparation']['status'], 'WAIT')
+
+    def test_missing_cnh_settlement_is_localized(self):
+        out = self.run_check(fixture())
+        self.assertEqual(out['funding_preparation']['status'], 'DATA INCOMPLETE')
+        self.assertEqual(out['status'], 'PASS')
+
+    def test_missing_or_duplicate_cnh_is_not_an_assumed_deposit(self):
+        p = fixture()
+        rows = p['capabilities']['balances']['data']['balances']
+        rows.append(dict(rows[2], settled_cash=35000))
+        self.assertEqual(self.run_check(p)['funding_preparation']['status'], 'DATA INCOMPLETE')
+        del rows[2:]
+        self.assertEqual(self.run_check(p)['funding_preparation']['status'], 'NOT_APPLICABLE')
+
     def test_cli_bad_input_fails_without_traceback_or_execution(self):
         result = subprocess.run([sys.executable, str(SCRIPT)], input='{"task":"monthly"}',
                                 text=True, capture_output=True)

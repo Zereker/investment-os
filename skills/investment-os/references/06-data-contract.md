@@ -164,6 +164,15 @@ D 与 Dmax 的入金优先通道已取消，不再是输入或输出。
 #### open_order_status
 IBKR Orders 返回的订单状态。存在 `NEW`、`SUBMITTED` 或 `PARTIALLY_FILLED` 时，Trade Gate 必须检查重复交易。
 
+### 账户内换汇字段
+
+`funding_preparation` 只披露 CNH 原币 cash_balance、settled_cash 与两者较小值。
+只存在唯一且有效 CNH 行时才计算；缺失、重复、负数或未结算状态不能以零补造。
+它不是换汇金额、入金流水或授权。CNH 不参与 USD 部署金额计算。
+若准备实际换汇，还须由 IBKR 明确提供币对、方向、报价口径、金额单位、费用
+币种与结算状态。余额中的 exchange_rate 只用于折算诊断，不是可成交报价。
+缺失报价或费用只关闭换汇执行路径，不影响已结算 USD 的独立审核。
+
 ### 市场字段
 
 #### spym_last_price_usd / qqqm_last_price_usd / soxx_last_price_usd

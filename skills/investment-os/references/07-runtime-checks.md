@@ -56,3 +56,11 @@ skill 可直接依据权威结果完成账户校验、对账、权重披露、�
 区分工具不可用、事实不可得和不在执行日，写明最小恢复条件。
 入金流水缺失不阻断现金部署；回撤不到档时不创造部署理由。
 本地 helper 不替代 canonical SKILL.md 的账户所有者授权边界。
+
+## 5. 待换汇资金披露
+
+helper 输出 funding_preparation，CNH 余额与可用美元现金分开显示。
+AWAIT_OWNER_REVIEW 表示存在已结算 CNH，仍需确认投资用途、本次金额及券商费用。
+WAIT 表示当前没有已结算 CNH；DATA INCOMPLETE 表示 CNH 行或结算事实缺失。
+该局部状态不降低可独立通过的美元月度检查。余额不证明入金来源；helper 不输出
+预计美元所得，不创建换汇订单。实际流程见 `08-funding-fx.md`。

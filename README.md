@@ -61,3 +61,12 @@ outputs. Static checks do not prove behavior in a live agent or broker session.
 
 Support, privacy and usage terms: [SUPPORT.md](SUPPORT.md),
 [PRIVACY.md](PRIVACY.md), [TERMS.md](TERMS.md).
+
+## CNH funding preparation
+
+For CNH already inside IBKR and explicitly designated for the investment sleeve,
+follow `references/08-funding-fx.md`: inspect settlement, review a specific
+conversion and its fees in IBKR, verify refreshed balances, then use settled USD
+at the fixed monthly review. The helper discloses CNH separately without inferring
+contributions, converting balances or authorizing orders. No FX execution tool
+is assumed; unsupported broker conversions use the owner-confirmed IBKR route.
