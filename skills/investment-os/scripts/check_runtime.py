@@ -24,6 +24,29 @@ def timestamp(value):
     return parsed
 
 
+def funding_preparation(rows):
+    """Disclosure only: source-currency balances never become deployable USD."""
+    result = dict(source_currency="CNH", destination_currency="USD",
+                  status="DATA INCOMPLETE", cash_balance=None, settled_cash=None,
+                  settled_balance_limit=None, amount_to_convert=None,
+                  expected_usd_proceeds=None, execution_authorized=False)
+    if not isinstance(rows, list):
+        return result
+    found = [row for row in rows if isinstance(row, dict) and row.get("currency") == "CNH"]
+    if not found:
+        result["status"] = "NOT_APPLICABLE"
+        return result
+    if len(found) != 1:
+        return result
+    cash, settled = found[0].get("cash_balance"), found[0].get("settled_cash")
+    if not numeric(cash) or not numeric(settled) or cash < 0 or settled < 0:
+        return result
+    limit = min(cash, settled)
+    result.update(cash_balance=cash, settled_cash=settled, settled_balance_limit=limit,
+                  status="AWAIT_OWNER_REVIEW" if limit > 0 else "WAIT")
+    return result
+
+
 def check(payload, now=None):
     now = now or dt.datetime.now(dt.timezone.utc)
     task = payload.get("task", "account")
@@ -116,7 +139,8 @@ def check(payload, now=None):
                   balances_by_currency=rows, base_currency=currency,
                   selected_balance_label="BASE" if cash is not None else None,
                   selection_reason="BASE for reconciliation; USD only for deployment",
-                  deployment=None, execution_authorized=False, runtime_data_persisted=False)
+                  deployment=None, funding_preparation=funding_preparation(rows),
+                  execution_authorized=False, runtime_data_persisted=False)
     if nav and positions is not None and len(values) == len(positions):
         report["weights"] = {t: holdings.get(t, 0) / nav for t in TARGETS}
         report["legacy"] = {"market_value": legacy, "weight": legacy / nav}
