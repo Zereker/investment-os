@@ -15,9 +15,7 @@ file, command-line argument, debug log or public issue.
 A conversation with only rule text can still discuss policy and disclose facts
 returned by IBKR. It must not claim the local helper is installed or executable.
 If Python execution is unavailable, close only deployment arithmetic and continue
-the independent checks. If cash transactions are unavailable, actual monthly
-contribution remains unknown even if Python is available. No MCP or skill can
-create a missing broker capability.
+the independent checks. Cash transactions are optional disclosure; monthly deployment uses fresh settled available USD cash. No MCP or skill creates a missing broker capability.
 
 A reviewed public ChatGPT Plugins Directory release is a separate publication
 step; a repository version or tag does not establish one.

@@ -31,8 +31,8 @@ status、source（IBKR）、observed_at 和 data。data 使用原始连接器 en
 account_summary 含 currency、net_liquidation；balances 含 balances 数组；
 positions 含 positions 数组；open_orders 含 orders 数组。
 
-月度额外需要 cash_transactions.data.external_contribution_usd，必须从券商已到账
-外部净入金记录规范化，不能从余额、交易流水、人工数字或计划额推断。
+月度必须读取 USD cash_balance 与 settled_cash，取较小值作为可用美元现金。
+cash_transactions 为可选披露，缺失不影响月度计算，不推断入金。
 market_inputs.data 按 SPYM、QQQM 分别提供 drawdown（小数）、close_as_of、
 tiers_executed（经成交重建的 T1–T4 列表；确认为未执行才传空列表）。
 
@@ -40,7 +40,7 @@ schedule 含 source=NYSE、monthly_execution_date 和 calculation_already_run。
 执行日必须由当年度 NYSE 官方日历确认；已执行状态须有可验证的私有会话或执行
 证据。未知不得填 false。helper 检查当日一致，但不能自行证明日历或生命周期。
 
-所有月度前置门完成前，deployment 为 null，不生成 D、B 或回撤部署金额。
+所有月度前置门完成前，deployment 为 null，不生成 B 或回撤部署金额。
 helper 输出仅为候选：整股、佣金、价格、券商能力、授权与成交回读另行核验；
 candidate_tiers 不代表已执行档位，只有实际成交后才消耗。
 
@@ -54,5 +54,5 @@ skill 可直接依据权威结果完成账户校验、对账、权重披露、�
 
 逐项报告能力、时效、币种、对账、订单、入金、回撤状态及执行日。
 区分工具不可用、事实不可得和不在执行日，写明最小恢复条件。
-入金缺失时 D 与依赖它的战略迁移均不计算；回撤不到档时不创造部署理由。
+入金流水缺失不阻断现金部署；回撤不到档时不创造部署理由。
 本地 helper 不替代 canonical SKILL.md 的账户所有者授权边界。

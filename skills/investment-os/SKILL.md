@@ -108,7 +108,7 @@ Mention news only when it changes the thesis, risk, decision, or trigger. Do not
 
 ### Monthly funding
 
-Use confirmed contribution, cash, position, order, and lifecycle facts. Apply the current policy and deterministic arithmetic. Report available channels, blockers, the authorized scope, and the next observation condition. Never infer a missing contribution.
+Use fresh available USD cash, position, order, and lifecycle facts. Contributions are optional disclosure, never inferred and never a funding gate. Apply the current policy and deterministic arithmetic. Report available channels, blockers, the authorized scope, and the next observation condition. Never infer a missing contribution.
 
 ### Transaction judgment
 
