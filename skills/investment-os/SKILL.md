@@ -68,15 +68,27 @@ Resolve this installed distribution from this `SKILL.md`, never from the user's 
 
 | Task | Also read |
 |---|---|
-| `Daily` | `01-daily.md`, `05-state.md` |
-| Monthly funding | `02-monthly.md`, `05-state.md`, `06-data-contract.md` |
+| `Daily` | `01-daily.md`, `05-state.md`, `06-data-contract.md`, `07-runtime-checks.md` |
+| Monthly funding | `02-monthly.md`, `05-state.md`, `06-data-contract.md`, `07-runtime-checks.md` |
 | Weekly, quarterly, annual review | `03-periodic.md` |
 | Transaction judgment, research, any non-routine action | `04-committee.md` |
-| Broker execution | `05-state.md`, `06-data-contract.md` |
+| Broker execution | `05-state.md`, `06-data-contract.md`, `07-runtime-checks.md` |
 
 Reading a file the task does not need is waste, not diligence.
 
 The installed files are the session authority. Do not clone, fetch, or substitute another checkout at runtime. Use the capabilities actually available in the current harness; missing required capabilities block only the affected path.
+
+## Skill-owned validation
+
+Use `references/07-runtime-checks.md` for account evidence, freshness, currency,
+reconciliation and task-specific gate checks. Do not require a named MCP tool:
+validation is part of this skill. When code execution is available, invoke the
+installed `scripts/check_runtime.py` with ephemeral connector results via stdin.
+For monthly deployment, this helper owns arithmetic and must pass before any
+candidate amount is reported. Never calculate provisional deployment amounts
+on failed gates. Without execution, complete account checks from authoritative
+evidence and close deployment arithmetic only. Loading text does not install a
+helper, grant account access or enable a missing cash-transactions capability.
 
 ## Tasks
 
@@ -137,3 +149,4 @@ Lead with the user-facing result. Do not prepend policy narration. When live acc
 When a result blocks a path or bears on execution authority, close it with one compact line naming the policy source it was decided under and every candidate path it leaves closed — buying and selling are separate paths, so a stop that names only the one asked about has not stated its boundary. That line belongs at the end, because it is what a reader checks the answer against rather than a preamble to it, and a ruling with no named source cannot be audited.
 
 A routine review that blocks nothing does not carry that line. Its own format already carries the decision, and appending policy or authority text to it is the padding the concision rule forbids.
+

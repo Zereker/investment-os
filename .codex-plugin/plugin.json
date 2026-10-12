@@ -1,6 +1,6 @@
 {
   "name": "investment-os",
-  "version": "0.20.3+codex.20260916021413",
+  "version": "0.21.0",
   "description": "A rules-first long-term investment agent distributed as one canonical skill with fresh authoritative runtime state.",
   "author": {
     "name": "Zereker",
@@ -19,7 +19,6 @@
   ],
   "skills": "./skills/",
   "apps": "./.app.json",
-  "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Investment OS",
     "shortDescription": "Rules-first portfolio reviews",
