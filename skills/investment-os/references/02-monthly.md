@@ -49,7 +49,7 @@ Account Summary；Balances；Positions；Open Orders；当前市场输入与回�
 
 ### 5. Account Reconciliation
 
-统一调用 MCP 的 `validate_broker_runtime`，验证 `NAV ≈ Cash + Σ Position Market Values`。对账失败必须在任何资金公式之前停止。调用者自报 `reconciliation.status = PASS` 不能覆盖真实数字冲突。
+按 `07-runtime-checks.md` 执行 skill 校验，并在可执行环境调用随 skill 发布的 `scripts/check_runtime.py`，验证 `NAV ≈ Cash + Σ Position Market Values`。对账失败必须在任何资金公式之前停止。调用者自报 `reconciliation.status = PASS` 不能覆盖真实数字冲突。
 
 ### 6. Deterministic Calculation Order
 
@@ -62,7 +62,7 @@ Account Summary；Balances；Positions；Open Orders；当前市场输入与回�
 5. 生成结构化结果、阻塞项和下一观察条件；
 6. 仅在需要实际 Broker 操作时进入 Execution Runtime。
 
-具体公式与阈值由 `00-constitution.md`、本文件第二部分和 MCP 的 `calculate_monthly_deployment` 当前实现共同约束。
+具体公式与阈值由 `00-constitution.md`、本文件第二部分和 随 skill 发布的 `scripts/check_runtime.py` 当前实现共同约束。
 
 ### 7. Routine Path Checks
 
@@ -80,15 +80,17 @@ Account Summary；Balances；Positions；Open Orders；当前市场输入与回�
 
 真实账户数据只在当前私有会话展示，不落盘、不提交公开仓库。
 
-### 10. Canonical Tool
+### 10. Canonical Helper
 
-统一调用 MCP 的 `calculate_monthly_deployment`，输入已校验的 NAV、现金、三项 Production 持仓、Legacy 合计、权威入金、订单状态，以及逐标的回撤和已执行档位。
+在可执行环境统一调用随 skill 发布的 `scripts/check_runtime.py`（`task=monthly`），通过 `07-runtime-checks.md` 定义的 capabilities envelope 输入权威账户、分币种现金、全部持仓、入金、订单及逐标的回撤与已执行档位，并传入已核验的 schedule。
 
 输入缺失、单位错误、账户不对账、订单状态未知或冲突时，CLI 必须非零退出并输出 `DATA INCOMPLETE`。
 
-`legacy` 是 Legacy / Out-of-Universe 持仓的市值合计。它**必须**传（有就传，没有留 0）——Legacy 也是持仓，漏掉它对账等式就不成立，账户会被永久卡住。它只进对账与披露，不产生目标、缺口或任何通道资金。
+Legacy / Out-of-Universe 必须保留在完整 Positions 输入中，helper 单独汇总。
+它只进对账与披露，不产生目标、缺口或任何通道资金；不得过滤后再做对账。
 
-`drawdowns` 由会话从 IBKR 收盘序列取得后传入，MCP 自身不联网；必须同时传 `drawdown_as_of`，否则无法确认新鲜度，本月不评估分档。
+逐标的回撤由会话从 IBKR 收盘序列取得，放入 market_inputs；必须包含各自的
+close_as_of 与经成交重建的 tiers_executed。本地 helper 不联网，也不补造状态。
 
 ### 11. Completion Conditions
 
@@ -177,3 +179,4 @@ B=\min\left(\frac{S}{R},G\right)
 另需披露：SPYM 历史最高收盘回撤 `DD` 与各档状态、\(F,V,C_0,G_0,D,C,R,S,G,B\)、回撤部署记录、现金比例与是否位于带宽内、融资借款、未完成订单，以及 Legacy / Out-of-Universe 持仓状态。
 
 账户数字只在聊天输出，永不落盘；仓库中不保存填好数值的副本。
+

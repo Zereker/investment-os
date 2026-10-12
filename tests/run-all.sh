@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
-
-npm test
-
-echo "All tests passed."
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -v

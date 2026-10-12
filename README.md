@@ -1,47 +1,16 @@
 # Investment OS
 
-## What
-
-Karpathy-rules for long-term investing: one [Agent skill](skills/investment-os/SKILL.md), a constitution plus per-task procedure references, and deterministic fact, math, and execution controls.
+A skill for disciplined long-term investing: canonical behavior, Chinese policy
+references, and a dependency-free deterministic helper bundled with the skill.
 
 ```text
-Facts → Rules → LLM Judgment → Owner-Authorized Execution
+Authoritative facts → Skill checks → Deterministic arithmetic → Judgment → Owner-authorized execution
 ```
 
-This repository is the installable product. It stores rules, never personal portfolio data. This project supports personal discipline; it is not investment advice.
-
-## ChatGPT
-
-Investment OS is packaged as an OpenAI plugin with:
-
-- `.codex-plugin/plugin.json` as the plugin manifest;
-- `skills/investment-os/SKILL.md` as the canonical behavior layer;
-- `.app.json` declaring the ChatGPT Interactive Brokers app dependency used for authoritative live account state.
-
-The Skill remains usable without a broker connection for policy questions, hypotheticals, research, and audits. Any path that depends on real account state must fail closed with `DATA INCOMPLETE` when an authoritative account capability is unavailable.
-
-The Interactive Brokers app is a runtime dependency only. No IBKR account id, credential, token, portfolio snapshot, order, fill, or authorization record belongs in this repository.
-
-Support, privacy, and usage terms are published in [SUPPORT.md](SUPPORT.md),
-[PRIVACY.md](PRIVACY.md), and [TERMS.md](TERMS.md).
-
-### ChatGPT distribution
-
-The repository is structurally compatible with the OpenAI plugin manifest format and can be installed from its marketplace for local or workspace use. That distribution packages the Investment OS skill with a mapping to the existing Interactive Brokers integration.
-
-This repository is not, by itself, a public Plugins Directory release. A Git tag or GitHub Release does not substitute for OpenAI review. For private ChatGPT use, this repository also includes a stateless remote MCP server; see [CHATGPT.md](CHATGPT.md). Do not describe the repository build as publicly published until the corresponding OpenAI release exists.
-
-Once installed in ChatGPT, start with prompts such as:
-
-- `Daily`
-- `Review my monthly funding under Investment OS.`
-- `Evaluate this transaction under the current policy.`
-
-If the connected Interactive Brokers app is not authorized, Investment OS still answers non-account-dependent requests and closes only the paths requiring live broker state.
+The repository stores rules and synthetic tests, never personal portfolio data.
+Investment OS supports personal discipline; it is not investment advice.
 
 ## Install
-
-ChatGPT (Developer mode): deploy the remote MCP server and connect its HTTPS `/mcp` endpoint by following [CHATGPT.md](CHATGPT.md). The GitHub repository URL itself is not an MCP endpoint.
 
 Codex:
 
@@ -57,25 +26,41 @@ Claude Code:
 /plugin install investment-os@investment-os
 ```
 
-## Broker runtime
-
-Installing the plugin does not by itself give the agent account access. The rules require every account fact to come from an authoritative capability, and pasted figures are context rather than truth, so **without a broker connector every real-money path correctly returns `DATA INCOMPLETE`**. The connector is configured in the host product, never in this repository: no account id, credential, or token belongs here.
-
-For ChatGPT, the plugin manifest declares the Interactive Brokers app dependency. Interactive Brokers exposes account and market capabilities to ChatGPT after the user connects and authorizes the app. The app may expose order-drafting capabilities, but the Investment OS Skill preserves the stricter execution boundary: a recommendation or candidate is never authorization, and final authority remains with the account owner.
-
-The TypeScript MCP validates whatever an adapter supplies before any domain rule consumes it. Its required sections map to broker data as follows; `identity`, `snapshot`, `capabilities`, `observations` and `reconciliation` are computed by the adapter rather than fetched.
-
-| Runtime section | Broker source | What it blocks when unavailable |
-|---|---|---|
-| `account_summary`, `balances`, `positions` | positions, cash balances, margin, multi-currency balances | everything: reconciliation cannot run, so all funding formulas stop |
-| `cash_transactions` | historical transactions | the authoritative monthly contribution `F`, which must never be inferred, so Routine DCA stays `DATA INCOMPLETE` |
-| `open_orders` | broker open-order capability | all new transaction candidates; the Open Orders gate defaults to `unknown` and only an explicit `clear` proceeds |
-| `market_inputs` | prices; the all-time-high close series may need a separate source | drawdown tier evaluation for the day |
-| `alert_inventory` | broker-side drawdown alerts, if exposed by the connected capability | the alert pointer consistency check, which forces `Account Health = WARN` and freezes drawdown deployment candidates |
-| `standing_automations` | broker-resident automation, if exposed by the connected capability | the daily check for automation that could bypass the Production universe |
-
-Verify each capability against the connected runtime before trusting a formal result: a gap does not degrade the system quietly, it closes the affected path by design.
+The plugin registers one skill and the Interactive Brokers app dependency. No
+MCP server is required or registered. See [CHATGPT.md](CHATGPT.md) for host
+capability limits. The archived MCP snapshot is in [archive/mcp](archive/mcp).
+This repository is not itself a reviewed public ChatGPT Plugins Directory release.
 
 ## Use
 
-Start a new session and say `Daily`, ask for a monthly funding review, evaluate a transaction, research a policy change, or explicitly authorize one broker operation. The Skill loads only the policy files needed for that task.
+Ask `Daily`, request a monthly funding review, evaluate a transaction, or research
+a policy question. The agent reads only the references needed by the task.
+Account checks follow `references/07-runtime-checks.md`; hosts with Python 3.11+
+can run `skills/investment-os/scripts/check_runtime.py` using ephemeral JSON on
+stdin. No package install, network service or broker credentials are needed by
+the helper. Its JSON output is a review result, never execution authorization.
+
+Installing a skill does not grant brokerage access. IBKR remains the authoritative
+source of account, order, fill and contribution facts. Available capabilities are
+checked per task. Missing monthly cash transactions cannot be recovered by
+installing a calculator: `F` remains unknown and monthly deployment closes, while
+account disclosure and other independent checks continue. Pasted figures and
+screenshots are context, not production inputs.
+
+Without code execution, the skill still performs evidence-based account checks
+and policy explanation. Monthly deployment arithmetic requires the bundled
+helper; its absence closes that path only, not every review.
+
+## Verification
+
+```bash
+bash tests/run-all.sh
+```
+
+Checks use Python's standard library and synthetic data only. Tests verify the
+policy mirrors, reconciliation tolerance, unavailable/stale capabilities,
+monthly execution date, contribution gate, per-ticker tiers and candidate-only
+outputs. Static checks do not prove behavior in a live agent or broker session.
+
+Support, privacy and usage terms: [SUPPORT.md](SUPPORT.md),
+[PRIVACY.md](PRIVACY.md), [TERMS.md](TERMS.md).
