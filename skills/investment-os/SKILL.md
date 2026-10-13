@@ -119,7 +119,7 @@ settled USD or treat policy approval as authorization for conversion or purchase
 
 ### Monthly funding
 
-Use fresh available USD cash, position, order, and lifecycle facts. Contributions are optional disclosure, never inferred and never a funding gate. Apply the current policy and deterministic arithmetic. Report available channels, blockers, the authorized scope, and the next observation condition. Never infer a missing contribution.
+Use confirmed contribution, fresh settled USD cash, position, order, and lifecycle facts. Restore separate contribution-first Routine DCA and subsequent strategic cash migration. Never infer missing contributions or substitute zero. Apply the current policy and deterministic arithmetic. Report available channels, blockers, the authorized scope, and the next observation condition. Never infer a missing contribution.
 
 ### Transaction judgment
 

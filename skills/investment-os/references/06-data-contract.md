@@ -32,7 +32,7 @@
 | Open Orders | IBKR Orders | 无 | 每次巡检 | Green | 读取失败则所有交易路径关闭 |
 | External Contribution \(F\) | IBKR Activity / Cash Transactions | 无 | 每月 | Green | 只使用已到账外部净入金；提款与内部卖出所得排除 |
 | 各标的实际权重与正缺口 | IBKR 市值 / Net Liquidation + 宪法目标权重 | 无 | 每次巡检 | Green（Derived） | 失败则配置计算关闭 |
-| 月度正缺口与部署 G,B | 实时 IBKR 数据 + 月度流程 | 无 | 每月 | Green（Derived） | B=min(max(C−15%×V,0)/3,G) |
+| 定投与战略迁移 G0,D,G,B | 实时 IBKR 数据 + 月度流程 | 无 | 每月 | Green（Derived） | 先 D=min(F,G0)，再 B=min(max(C−15%×V,0)/3,G) |
 | SPYM 与 QQQM 各自的历史最高收盘与回撤 `DD` | IBKR 历史收盘 | 发行人官方净值序列 | 每次巡检 | Green | 两只**分别**取数、分别定档。由会话读取后传入脚本，脚本不自行联网取数；必须带收盘日期，超过 7 天或无日期则当日不评估分档；一只不可得只阻断它自己的阶梯，不影响另一只与其他路径 |
 | Legacy / Out-of-Universe 持仓市值 | IBKR Positions | 无 | 每次巡检 | Green | 进入 NAV 对账；不产生目标、缺口或任何通道资金。遗漏会使对账失败并卡住全部交易路径 |
 | VIX 日收盘 | IBKR 历史收盘 | CBOE 官网 | 每次巡检 | Green | 定义波动日（≥20）供限价单偏好；不进入任何资金闸门 |
@@ -133,7 +133,7 @@ Red 数据不得进入依赖该字段的计算。**影响必须按字段局部�
 - `position_gap_usd`：\(\max(\text{目标权重}\times V-\text{市值},0)\)。负值取 0，不产生卖出信号。
 - `within_band`：该标的实际权重是否落在宪法带宽内（现金 10–20%、SPYM 45–55%、QQQM 25–35%）。SOXX 无对称带宽，记 `N/A`。
 - `soxx_above_ceiling`：SOXX 实际权重是否超过宪法的 7.5% 披露上沿。只作披露，不阻断任何路径。
-- `cash_absolute_floor_weight`：0%，任何情形下的硬下限。现金可以归零，不得为负。例行路径够不到它（`B ≤ S`），只有回撤部署能把现金推到那里。
+- `cash_absolute_floor_weight`：0%，任何情形下的硬下限。现金可以归零，不得为负。例行路径够不到它（`B ≤ S`、`D ≤ F`），只有回撤部署能把现金推到那里。
 
 ### 账户与月度执行字段
 
@@ -154,12 +154,15 @@ IBKR Positions 返回的单项市值。持仓真相以 Positions 为准。
 IBKR 的 `GrossPositionValue` 只可与逐项持仓合计交叉核对，不得与逐项持仓重复相加。`AccruedCash`、`AccruedDividend`、外汇折算及其他权益项只作差额诊断；除非其字段定义、币种与同一快照时点均可验证并经本数据契约登记，不得自动加入对账公式。超过容差时保持 `DATA INCOMPLETE`，不得通过临时放宽容差或猜测差额来源解锁交易。
 
 #### external_contribution_usd
-可选披露项：仅券商权威流水确认。缺失保持未知，不推断、不阻断部署。
+月度 F，必须由已到账外部净入金的券商记录确认；缺失不按零处理。
+CNH 换汇成交不是外部入金记录。只有已核验该笔 CNH 来自对应期间外部入金，
+并确认换汇实际净 USD 所得与费用后，才可规范化为 F；不使用预计汇率折算。
 
-#### available_cash_usd / monthly_gap_usd / monthly_deployment_usd
-C=min(USD cash_balance, USD settled_cash)，G 为三个生产标的正缺口合计，
-S=max(C−15%×V,0)，R=3，B=min(S/R,G)。BASE 只做对账；其他币种不部署。
-D 与 Dmax 的入金优先通道已取消，不再是输入或输出。
+#### available_cash_usd / routine_dca / strategic_baseline
+C0=min(USD cash_balance, USD settled_cash)。G0 为三个标的初始正缺口合计。
+Dmax=min(F,G0)，D 不超过 Dmax 和可用现金，先按缺口分配。
+C=C0−D，G 为 D 分配后的剩余正缺口，S=max(C−15%×V,0)，R=3，B=min(S/R,G)。
+缺少 F 时 D、B 均不计算。BASE 只用于对账，外币不直接作为部署资金。
 
 #### open_order_status
 IBKR Orders 返回的订单状态。存在 `NEW`、`SUBMITTED` 或 `PARTIALLY_FILLED` 时，Trade Gate 必须检查重复交易。
