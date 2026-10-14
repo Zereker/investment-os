@@ -181,6 +181,38 @@ class RuntimeTests(unittest.TestCase):
         del rows[2:]
         self.assertEqual(self.run_check(p)['funding_preparation']['status'], 'NOT_APPLICABLE')
 
+    def fx_fixture(self):
+        p = fixture()
+        del p['capabilities']['cash_transactions']
+        p['funding_confirmation'] = dict(source_currency='CNH', confirmed_new_funding=True,
+            allocation_period='2026-10', trade_ids=['synthetic-fx'],
+            previously_counted_trade_ids=[], reuse_check_complete=True)
+        p['capabilities']['fx_funding'] = dict(status='available', source='IBKR',
+            observed_at=NOW.isoformat(), data=dict(trades=[dict(trade_id='synthetic-fx',
+                sec_type='CASH', symbol='USD', currency='CNH', side='BUY', size=2000,
+                trade_time='2026-09-30T15:00:00Z')], usd_fees_total=2,
+                fee_currency_verified=True, usd_settlement_verified=True))
+        return p
+
+    def test_confirmed_cnh_funding_keeps_contribution_first(self):
+        out = self.run_check(self.fx_fixture())
+        self.assertEqual(out['status'], 'PASS')
+        self.assertEqual(out['deployment']['F'], 1998)
+        self.assertEqual(out['deployment']['D'], 1998)
+        self.assertFalse(out['execution_authorized'])
+
+    def test_confirmed_fx_rejects_missing_source_reuse_and_fees(self):
+        for key,value in [('confirmed_new_funding',False),('allocation_period','2026-09'),
+                          ('previously_counted_trade_ids',['synthetic-fx']),
+                          ('reuse_check_complete',False),('trade_ids',['synthetic-fx','synthetic-fx'])]:
+            p=self.fx_fixture();p['funding_confirmation'][key]=value
+            self.assertIsNone(self.run_check(p)['deployment'])
+        for key in ('fee_currency_verified','usd_settlement_verified'):
+            p=self.fx_fixture();p['capabilities']['fx_funding']['data'][key]=False
+            self.assertIsNone(self.run_check(p)['deployment'])
+        p=self.fx_fixture();p['capabilities']['fx_funding']['data']['trades'][0]['currency']='EUR'
+        self.assertIsNone(self.run_check(p)['deployment'])
+
     def test_cli_bad_input_fails_without_traceback_or_execution(self):
         result = subprocess.run([sys.executable, str(SCRIPT)], input='{"task":"monthly"}',
                                 text=True, capture_output=True)

@@ -70,3 +70,13 @@ conversion and its fees in IBKR, verify refreshed balances, then use settled USD
 at the fixed monthly review. The helper discloses CNH separately without inferring
 contributions, converting balances or authorizing orders. No FX execution tool
 is assumed; unsupported broker conversions use the owner-confirmed IBKR route.
+
+## Confirmed CNH contributions
+
+For the explicitly approved CNH-only funding convention, source and allocation
+period may be confirmed by the user. Follow section 7 of `08-funding-fx.md`:
+IBKR must still evidence selected FX fills, fee currency and USD settlement;
+complete private reuse history must prevent counting the same fill again. This
+is a mixed evidence path, not independent broker proof of an external deposit.
+It preserves contribution-first DCA, subsequent migration and separate order
+authorization. Simulations never consume funding records.

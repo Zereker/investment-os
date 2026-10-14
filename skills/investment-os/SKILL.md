@@ -119,7 +119,7 @@ settled USD or treat policy approval as authorization for conversion or purchase
 
 ### Monthly funding
 
-Use confirmed contribution, fresh settled USD cash, position, order, and lifecycle facts. Restore separate contribution-first Routine DCA and subsequent strategic cash migration. Never infer missing contributions or substitute zero. Apply the current policy and deterministic arithmetic. Report available channels, blockers, the authorized scope, and the next observation condition. Never infer a missing contribution.
+Use confirmed contribution, fresh settled USD cash, position, order, and lifecycle facts. The narrowly authorized CNH funding path in `08-funding-fx.md` accepts user confirmation of source and allocation period only; IBKR still supplies amounts, fills, fees and settlement. This is an explicit exception to Rule 4 for source classification, never live amounts or execution authority. Restore separate contribution-first Routine DCA and subsequent strategic cash migration. Never infer missing contributions or substitute zero. Apply the current policy and deterministic arithmetic. Report available channels, blockers, the authorized scope, and the next observation condition. Never infer a missing contribution.
 
 ### Transaction judgment
 
