@@ -47,6 +47,51 @@ def funding_preparation(rows):
     return result
 
 
+def confirmed_fx_contribution(payload, data, now, issues):
+    confirmation = payload.get("funding_confirmation", {})
+    if confirmation.get("source_currency") != "CNH" or confirmation.get("confirmed_new_funding") is not True:
+        issues.append("explicit CNH new-funding source confirmation required")
+    if confirmation.get("allocation_period") != now.strftime("%Y-%m"):
+        issues.append("funding allocation period must match monthly review period")
+    selected = confirmation.get("trade_ids")
+    used = confirmation.get("previously_counted_trade_ids")
+    if confirmation.get("reuse_check_complete") is not True or not isinstance(used, list):
+        issues.append("private funding reuse history must be verified")
+        used = []
+    if not isinstance(selected, list) or not selected or any(not isinstance(x, str) for x in selected):
+        issues.append("specific FX fill identifiers required")
+        return None
+    if len(set(selected)) != len(selected) or set(selected).intersection(used):
+        issues.append("FX fills duplicate or already counted")
+    evidence = data.get("fx_funding", {})
+    trades = evidence.get("trades", [])
+    fees = evidence.get("usd_fees_total")
+    if not numeric(fees) or fees < 0 or evidence.get("fee_currency_verified") is not True:
+        issues.append("verified USD-denominated FX fees required; zero must be explicit")
+        return None
+    amount = 0
+    for trade_id in selected:
+        matches = [x for x in trades if x.get("trade_id") == trade_id]
+        if len(matches) != 1:
+            issues.append("selected FX fill missing or repeated in broker evidence")
+            continue
+        t = matches[0]
+        try:
+            at = timestamp(t["trade_time"])
+            valid_time = at <= now
+        except (KeyError, TypeError, ValueError):
+            valid_time = False
+        if t.get("sec_type") != "CASH" or t.get("symbol") != "USD" or t.get("currency") != "CNH" or t.get("side") != "BUY" or not numeric(t.get("size")) or t["size"] <= 0 or not valid_time:
+            issues.append("selected fill is not a verified completed CNH-to-USD conversion")
+            continue
+        amount += t["size"]
+    if evidence.get("usd_settlement_verified") is not True:
+        issues.append("converted USD settlement must be verified from broker evidence")
+    if fees > amount:
+        issues.append("FX USD fees exceed proceeds")
+    return max(amount - fees, 0)
+
+
 def check(payload, now=None):
     now = now or dt.datetime.now(dt.timezone.utc)
     task = payload.get("task", "account")
@@ -54,6 +99,9 @@ def check(payload, now=None):
         raise ValueError("task must be account or monthly")
     observations = payload.get("capabilities", {})
     required = MONTHLY if task == "monthly" else ACCOUNT
+    confirmed_path = task == "monthly" and "funding_confirmation" in payload
+    if confirmed_path:
+        required = ACCOUNT + ("fx_funding", "market_inputs")
     issues, data, observed = [], {}, []
     for name in required:
         item = observations.get(name, {})
@@ -149,7 +197,8 @@ def check(payload, now=None):
         return report
 
     # Monthly gates must finish before any funding formula is evaluated.
-    contribution = data.get("cash_transactions", {}).get("external_contribution_usd")
+    contribution = confirmed_fx_contribution(payload, data, now, issues) if confirmed_path else data.get("cash_transactions", {}).get("external_contribution_usd")
+    report["funding_evidence_mode"] = "user_source_confirmation_plus_ibkr_fx" if confirmed_path else "ibkr_cash_transactions"
     if not numeric(contribution) or contribution < 0:
         issues.append("authoritative external net contribution F unavailable or invalid")
     schedule = payload.get("schedule", {})

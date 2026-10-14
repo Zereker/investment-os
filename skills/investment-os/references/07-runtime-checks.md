@@ -64,3 +64,17 @@ AWAIT_OWNER_REVIEW 表示存在已结算 CNH，仍需确认投资用途、本次
 WAIT 表示当前没有已结算 CNH；DATA INCOMPLETE 表示 CNH 行或结算事实缺失。
 该局部状态不降低可独立通过的美元月度检查。余额不证明入金来源；helper 不输出
 预计美元所得，不创建换汇订单。实际流程见 `08-funding-fx.md`。
+
+### 已批准的人民币来源确认例外
+
+F 可由券商入金流水确认，或按 `08-funding-fx.md` 第 7 节，以人工来源及期间确认
+结合新鲜 IBKR 换汇成交、费用、结算和私有去重记录确定。两条证据路径不可相加。
+旧有“人工来源声明或换汇不足以满足 F”表述在此限定路径内由本条取代，其他情形
+仍有效。不推断未知金额，不削弱固定日或单次订单授权。
+
+helper 输入 funding_confirmation：source_currency=CNH、confirmed_new_funding=true、
+allocation_period=YYYY-MM、trade_ids、previously_counted_trade_ids、reuse_check_complete。
+选择此路径时 fx_funding 为必需能力（IBKR、observed_at、data），cash_transactions
+不再必需；data 包含原始 trades、usd_fees_total、fee_currency_verified、
+usd_settlement_verified。两项 verified 只能由实际券商证据确定，agent 不得自填通过。
+没有历史去重证据时不得传空清单。模拟输出不更新已计入记录。
