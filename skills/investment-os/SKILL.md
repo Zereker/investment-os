@@ -15,7 +15,7 @@ Investment OS is one rule skill for long-term investing. Read the rules, obtain 
 - **Long term first.** Separate durable changes from daily noise.
 - **Decision first.** State the conclusion before supporting analysis; `Daily` keeps its required five-field order.
 - **Evidence over activity.** Do not manufacture a task because nothing changed.
-- **Simple by default.** Use the shortest answer that preserves the decision, blocker, and next trigger.
+- **Decision-useful detail.** This user prefers a substantive investment review, not only terse status labels. Explain the evidence, price position, recent drivers, portfolio implications and independent judgment needed to assess the decision. Use compact tables and connected prose; omit repeated rules, irrelevant headlines and unsupported narratives. A request for a quick answer still takes precedence.
 
 `HOLD` is a complete successful decision.
 
@@ -72,7 +72,7 @@ Resolve this installed distribution from this `SKILL.md`, never from the user's 
 | Monthly funding | `02-monthly.md`, `05-state.md`, `06-data-contract.md`, `07-runtime-checks.md`, `08-funding-fx.md` |
 | Funding preparation / account FX | `05-state.md`, `06-data-contract.md`, `07-runtime-checks.md`, `08-funding-fx.md` |
 | Weekly, quarterly, annual review | `03-periodic.md` |
-| Transaction judgment, research, any non-routine action | `04-committee.md` |
+| Transaction judgment, research, any non-routine action | `04-committee.md`; add `09-market-position.md` for price position, moving averages or technical context |
 | Broker execution | `05-state.md`, `06-data-contract.md`, `07-runtime-checks.md` |
 
 Reading a file the task does not need is waste, not diligence.
@@ -95,7 +95,7 @@ helper, grant account access or enable a missing cash-transactions capability.
 
 ### Daily
 
-Treat `Daily` as a complete request. Read fresh account state and only the market inputs the current policy requires. Return exactly:
+Treat `Daily` as a complete request. Read fresh account state plus the verified descriptive market context requested in `09-market-position.md`. These Research inputs never become funding or execution gates. Use the fuller reporting structure in `01-daily.md` while retaining exactly these five top-level fields:
 
 Resolve account and market capabilities independently; absence of one does not establish absence of the other.
 
@@ -105,7 +105,7 @@ Resolve account and market capabilities independently; absence of one does not e
 4. `Reason`
 5. `Next Trigger`
 
-Mention news only when it changes the thesis, risk, decision, or trigger. Do not add a market recap or repeat unchanged policy.
+The user's standing preference includes a concise explanation of recent moves inside Reason, following `09-market-position.md`. Research and verify material macro, sector and constituent developments; distinguish confirmed events from plausible mechanisms and unverified attribution. A price move or moving-average break alone is not a causal explanation. If no fresh material driver is verified, say so instead of repeating a generic narrative. This explanatory context does not change Production Decision or triggers.
 
 ### Funding preparation / account FX
 
@@ -129,7 +129,26 @@ Separate the recommendation under current policy from any proposal to change pol
 
 ### Research
 
-Research may challenge the policy, but it cannot enter production by implication. The investment universe is permanently closed: a new asset is not available through any process, however strong the case. A new indicator, exception, or rule requires a separate proposal, owner approval, policy change, executable checks when needed, and a released distribution.
+Provide independent investment judgment when the user asks for advice, alternatives,
+or views beyond the strategy. Do not answer only by quoting policy or refuse
+research merely because an idea is outside current execution rules.
+
+Use two clearly labeled parts for substantive advice: **Current-policy view**
+and **Research view**. The first states what the released rules permit now and
+why. The second gives a reasoned preference, alternatives, tradeoffs, strongest
+counterargument, assumptions, and evidence or conditions that would change the
+view. Distinguish facts from hypotheses; date market evidence and verify unstable
+claims. Missing account facts close account-specific sizing or execution, not a
+clearly stated hypothetical or general comparison. Do not demand a full IC packet
+merely to discuss an idea.
+
+This preference persists in this distribution for advice and research requests.
+An unqualified Daily retains its five-field operational format. This user's standing preference is a concise price-position data panel inside Reason, using `09-market-position.md` for the three Production ETFs; do not append a sixth Daily field. When the user
+also asks for research with Daily, keep it inside Reason as a separately labeled
+Research Note; it cannot change Decision or Next Trigger production criteria.
+
+Research may challenge timing, indicators, allocations and alternative approaches,
+but it cannot enter production by implication. The Production investment universe remains permanently closed: other assets may be compared as Research, but receive no Production candidate label, allocation or order through that discussion. Moving averages are descriptive Research data only, never automatic support/resistance forecasts or Production trade triggers. A new indicator used as a Production rule, exception, or rule requires a separate proposal, owner approval, policy change, executable checks when needed, and a released distribution.
 
 ### Periodic review
 
