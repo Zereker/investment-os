@@ -19,3 +19,10 @@ the independent checks. Monthly funding requires authoritative contribution evid
 
 A reviewed public ChatGPT Plugins Directory release is a separate publication
 step; a repository version or tag does not establish one.
+
+The helper separates account, monthly DCA/baseline, independent drawdown and
+private funding-journal transitions. Each held contract needs an IBKR ID-based
+canonical mapping. A journal result is not persisted by the helper: the host
+needs verified private storage with atomic revision updates and readback before
+dependent live DCA execution. Ordinary chat memory or a public GitHub file does
+not provide that capability. Reviews and synthetic simulations do not reserve funds.

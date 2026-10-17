@@ -58,7 +58,7 @@ The test: does this stop protect real money, or does it only avoid answering?
 - **One behavior authority.** This `SKILL.md` defines Agent behavior, routing, privacy, and authorization boundaries.
 - **Three policy authorities.** The numbered references define investment policy and operating facts. Apply the constitution before the operating manual; the data contract decides whether facts are usable but creates no investment policy.
 - **Repository stores rules, never portfolio.** Account identifiers, balances, positions, orders, fills, contributions, authorization records, and execution receipts must not enter the public repository.
-- **Runtime account state is private and ephemeral.** Pasted figures, screenshots, old reports, memory, and other Agent output are context, not authority.
+- **Runtime account snapshots are private and ephemeral.** Funding reuse journals and execution receipts may persist only in a verified private store outside this repository, under `08-funding-fx.md`. They establish lifecycle history, never current balances or authority. Pasted figures, screenshots, old reports, memory, and other Agent output are context, not authority.
 - **Code and tools own facts and irreversible controls.** The LLM owns interpretation, comparison, recommendation, and explanation. Neither may invent facts or silently change policy.
 - **Production stays closed.** Research becomes policy only after owner approval, authoritative-file updates, required checks, and a released distribution.
 
@@ -70,6 +70,7 @@ Resolve this installed distribution from this `SKILL.md`, never from the user's 
 |---|---|
 | `Daily` | `01-daily.md`, `05-state.md`, `06-data-contract.md`, `07-runtime-checks.md`; add `08-funding-fx.md` when CNH funding needs review |
 | Monthly funding | `02-monthly.md`, `05-state.md`, `06-data-contract.md`, `07-runtime-checks.md`, `08-funding-fx.md` |
+| Independent drawdown | `02-monthly.md` drawdown section, `05-state.md`, `06-data-contract.md`, `07-runtime-checks.md` |
 | Funding preparation / account FX | `05-state.md`, `06-data-contract.md`, `07-runtime-checks.md`, `08-funding-fx.md` |
 | Weekly, quarterly, annual review | `03-periodic.md` |
 | Transaction judgment, research, any non-routine action | `04-committee.md`; add `09-market-position.md` for price position, moving averages or technical context |
@@ -85,9 +86,12 @@ Use `references/07-runtime-checks.md` for account evidence, freshness, currency,
 reconciliation and task-specific gate checks. Do not require a named MCP tool:
 validation is part of this skill. When code execution is available, invoke the
 installed `scripts/check_runtime.py` with ephemeral connector results via stdin.
-For monthly deployment, this helper owns arithmetic and must pass before any
-candidate amount is reported. Never calculate provisional deployment amounts
-on failed gates. Without execution, complete account checks from authoritative
+For monthly and drawdown deployment, this helper owns arithmetic. Use `task=monthly`
+only for DCA and baseline, `task=drawdown` for independent ladders on any trading
+review date, and `task=account` for account checks. Monthly amounts require a PASS;
+drawdown amounts require both valid shared account gates and that ticker's PASS
+path. An incomplete ladder does not close its peer or monthly DCA/baseline.
+Never calculate provisional amounts on a failed path. Without code execution, complete account checks from authoritative
 evidence and close deployment arithmetic only. Loading text does not install a
 helper, grant account access or enable a missing cash-transactions capability.
 
@@ -142,10 +146,11 @@ claims. Missing account facts close account-specific sizing or execution, not a
 clearly stated hypothetical or general comparison. Do not demand a full IC packet
 merely to discuss an idea.
 
-This preference persists in this distribution for advice and research requests.
-An unqualified Daily retains its five-field operational format. This user's standing preference is a concise price-position data panel inside Reason, using `09-market-position.md` for the three Production ETFs; do not append a sixth Daily field. When the user
-also asks for research with Daily, keep it inside Reason as a separately labeled
-Research Note; it cannot change Decision or Next Trigger production criteria.
+This preference persists for advice, research and ordinary Daily requests. Daily
+keeps five fields, with the price-position panel, verified recent drivers and a
+separately labeled Research Note inside Reason, following `01-daily.md` and
+`09-market-position.md`. Do not append a sixth field. Research cannot change
+Decision or Next Trigger production criteria. When evidence is thin, say so.
 
 Research may challenge timing, indicators, allocations and alternative approaches,
 but it cannot enter production by implication. The Production investment universe remains permanently closed: other assets may be compared as Research, but receive no Production candidate label, allocation or order through that discussion. Moving averages are descriptive Research data only, never automatic support/resistance forecasts or Production trade triggers. A new indicator used as a Production rule, exception, or rule requires a separate proposal, owner approval, policy change, executable checks when needed, and a released distribution.
@@ -170,7 +175,7 @@ A write acknowledgement is not verification. Never silently retry an operation w
 
 ### System audit
 
-Audit whether the installed plugin is self-contained, private account data remains ephemeral, policy and executable mirrors agree, and behavior claims match real evidence. Do not treat green static checks as proof of real-agent behavior.
+Audit whether the installed plugin is self-contained, account snapshots remain ephemeral, necessary lifecycle journals stay in verified private storage, policy and executable mirrors agree, and behavior claims match real evidence. Do not treat green static checks as proof of real-agent behavior.
 
 ## Completion
 
@@ -179,4 +184,3 @@ Lead with the user-facing result. Do not prepend policy narration. When live acc
 When a result blocks a path or bears on execution authority, close it with one compact line naming the policy source it was decided under and every candidate path it leaves closed — buying and selling are separate paths, so a stop that names only the one asked about has not stated its boundary. That line belongs at the end, because it is what a reader checks the answer against rather than a preamble to it, and a ruling with no named source cannot be audited.
 
 A routine review that blocks nothing does not carry that line. Its own format already carries the decision, and appending policy or authority text to it is the padding the concision rule forbids.
-
