@@ -72,7 +72,7 @@ Resolve this installed distribution from this `SKILL.md`, never from the user's 
 | Monthly funding | `02-monthly.md`, `05-state.md`, `06-data-contract.md`, `07-runtime-checks.md`, `08-funding-fx.md` |
 | Funding preparation / account FX | `05-state.md`, `06-data-contract.md`, `07-runtime-checks.md`, `08-funding-fx.md` |
 | Weekly, quarterly, annual review | `03-periodic.md` |
-| Transaction judgment, research, any non-routine action | `04-committee.md` |
+| Transaction judgment, research, any non-routine action | `04-committee.md`; add `09-market-position.md` for price position, moving averages or technical context |
 | Broker execution | `05-state.md`, `06-data-contract.md`, `07-runtime-checks.md` |
 
 Reading a file the task does not need is waste, not diligence.
@@ -143,12 +143,12 @@ clearly stated hypothetical or general comparison. Do not demand a full IC packe
 merely to discuss an idea.
 
 This preference persists in this distribution for advice and research requests.
-An unqualified Daily retains its five-field operational format. When the user
+An unqualified Daily retains its five-field operational format. This user's standing preference is a concise price-position data panel inside Reason, using `09-market-position.md` for the three Production ETFs; do not append a sixth Daily field. When the user
 also asks for research with Daily, keep it inside Reason as a separately labeled
 Research Note; it cannot change Decision or Next Trigger production criteria.
 
 Research may challenge timing, indicators, allocations and alternative approaches,
-but it cannot enter production by implication. The Production investment universe remains permanently closed: other assets may be compared as Research, but receive no Production candidate label, allocation or order through that discussion. A new indicator, exception, or rule requires a separate proposal, owner approval, policy change, executable checks when needed, and a released distribution.
+but it cannot enter production by implication. The Production investment universe remains permanently closed: other assets may be compared as Research, but receive no Production candidate label, allocation or order through that discussion. Moving averages are descriptive Research data only, never automatic support/resistance forecasts or Production trade triggers. A new indicator used as a Production rule, exception, or rule requires a separate proposal, owner approval, policy change, executable checks when needed, and a released distribution.
 
 ### Periodic review
 
