@@ -46,7 +46,10 @@ checked per task. Monthly funding first invests confirmed external contributions
 
 Without code execution, the skill still performs evidence-based account checks
 and policy explanation. Monthly deployment arithmetic requires the bundled
-helper; its absence closes that path only, not every review.
+helper; its absence closes that path only, not every review. Use task=monthly for
+DCA/baseline and task=drawdown for independent SPYM/QQQM ladders. Drawdown needs
+neither contribution evidence nor the monthly execution date. A missing ladder
+blocks that ticker only. Holdings use fresh IBKR contract-ID mappings, not display names.
 
 ## Verification
 
@@ -79,4 +82,8 @@ IBKR must still evidence selected FX fills, fee currency and USD settlement;
 complete private reuse history must prevent counting the same fill again. This
 is a mixed evidence path, not independent broker proof of an external deposit.
 It preserves contribution-first DCA, subsequent migration and separate order
-authorization. Simulations never consume funding records.
+authorization. Simulations never consume funding records. Section 8 specifies a
+versioned private journal and the helper's task=funding_ledger reserve/settle
+transitions. The host must atomically save and read back revisions outside the
+repository; no database or durable storage is bundled. Without verified private
+storage, review remains available but dependent live DCA execution stays closed.

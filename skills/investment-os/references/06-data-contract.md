@@ -6,7 +6,7 @@
 
 ## 第一部分：数据操作总则
 
-运行时数据由已登记的专业来源分别提供，仓库不维护重复的中央证券数据库，也不保存任何数据快照。事实只在受信任的私有运行时或当前私有会话中使用；后续无法取得可信证据时必须重新读取，不得回退到仓库副本。
+运行时数据由已登记的专业来源分别提供，仓库不维护中央证券数据库或账户快照。当前事实仅在私有运行时使用，失效后重新读取；资金用途与执行生命周期可按 08-funding-fx.md 保存到可信私有存储，只用于去重与历史核对，不替代新鲜账户数据，不回退到公开仓库副本。
 
 ### Production 边界
 
@@ -29,8 +29,9 @@
 | Net Liquidation | IBKR Account Summary | 无 | 每次巡检 | Green | 读取失败则日报不输出金额，不给 BUY/SELL |
 | Cash / Settled Cash | IBKR Balances | 无 | 每次巡检 | Green | 同上 |
 | Positions / Average Cost | IBKR Positions | 无 | 每次巡检 | Green | Positions 高于订单和历史成交记录 |
+| 持仓规范标的映射 | IBKR 按 contract_id 查询的合约信息 | 无 | 每次巡检 | Green | 唯一 ID 对应 symbol、sec_type、currency；不按显示名称猜测。缺失或冲突关闭账户部署 |
 | Open Orders | IBKR Orders | 无 | 每次巡检 | Green | 读取失败则所有交易路径关闭 |
-| External Contribution \(F\) | IBKR Activity / Cash Transactions | 无 | 每月 | Green | 只使用已到账外部净入金；提款与内部卖出所得排除 |
+| External Contribution \(F\) | IBKR Activity / Cash Transactions；或 08-funding-fx.md 第 7–8 节的人民币确认路径 | 无 | 每月 | Green | 两条只选其一，不相加；人工仅确认来源及期间，金额/费用/结算仍由 IBKR 验证；提款与内部卖出排除 |
 | 各标的实际权重与正缺口 | IBKR 市值 / Net Liquidation + 宪法目标权重 | 无 | 每次巡检 | Green（Derived） | 失败则配置计算关闭 |
 | 定投与战略迁移 G0,D,G,B | 实时 IBKR 数据 + 月度流程 | 无 | 每月 | Green（Derived） | 先 D=min(F,G0)，再 B=min(max(C−15%×V,0)/3,G) |
 | SPYM 与 QQQM 各自的历史最高收盘与回撤 `DD` | IBKR 历史收盘 | 发行人官方净值序列 | 每次巡检 | Green | 两只**分别**取数、分别定档。由会话读取后传入脚本，脚本不自行联网取数；必须带收盘日期，超过 7 天或无日期则当日不评估分档；一只不可得只阻断它自己的阶梯，不影响另一只与其他路径 |
@@ -133,7 +134,7 @@ Red 数据不得进入依赖该字段的计算。**影响必须按字段局部�
 - `position_gap_usd`：\(\max(\text{目标权重}\times V-\text{市值},0)\)。负值取 0，不产生卖出信号。
 - `within_band`：该标的实际权重是否落在宪法带宽内（现金 10–20%、SPYM 45–55%、QQQM 25–35%）。SOXX 无对称带宽，记 `N/A`。
 - `soxx_above_ceiling`：SOXX 实际权重是否超过宪法的 7.5% 披露上沿。只作披露，不阻断任何路径。
-- `cash_absolute_floor_weight`：0%，任何情形下的硬下限。现金可以归零，不得为负。例行路径够不到它（`B ≤ S`、`D ≤ F`），只有回撤部署能把现金推到那里。
+- `cash_absolute_floor_weight`：0%，任何情形下的硬下限。现金可归零，不得为负。例行路径不主动动用结构性储备，但入金前水位本就低时不强制恢复 15%；现金边界按宪法「现金的两条线」，不新增门槛。
 
 ### 账户与月度执行字段
 
@@ -154,9 +155,10 @@ IBKR Positions 返回的单项市值。持仓真相以 Positions 为准。
 IBKR 的 `GrossPositionValue` 只可与逐项持仓合计交叉核对，不得与逐项持仓重复相加。`AccruedCash`、`AccruedDividend`、外汇折算及其他权益项只作差额诊断；除非其字段定义、币种与同一快照时点均可验证并经本数据契约登记，不得自动加入对账公式。超过容差时保持 `DATA INCOMPLETE`，不得通过临时放宽容差或猜测差额来源解锁交易。
 
 #### external_contribution_usd
-月度 F，必须由已到账外部净入金的券商记录确认；缺失不按零处理。
-CNH 换汇成交不是外部入金记录。只有已核验该笔 CNH 来自对应期间外部入金，
-并确认换汇实际净 USD 所得与费用后，才可规范化为 F；不使用预计汇率折算。
+月度 F 由已到账外部净入金券商记录，或 08-funding-fx.md 第 7–8 节路径确认，缺失不按零。
+CNH 换汇本身不是入金证明；限定例外允许人工确认新增人民币来源、用途和归属期间，
+结合新鲜 IBKR 换汇实际净 USD 所得、费用、结算及完整私有去重台账确定 F。
+不使用预计汇率折算，不允许人工替代金额，两条路径不重复相加。
 
 #### available_cash_usd / routine_dca / strategic_baseline
 C0=min(USD cash_balance, USD settled_cash)。G0 为三个标的初始正缺口合计。
@@ -197,14 +199,6 @@ IBKR 返回的最新可用市场价格。必须同时记录读取时间和市场
 - `not_requested`：本次任务范围未要求，不能描述为连接器故障；
 - `not_applicable`：该能力对当前账户或任务不适用。
 
-组装状态必须按任务声明的 `required_capabilities` 计算。必需能力全部可用时，未请求的可选能力不得把结果降为 `WARN`。Runtime 使用显式 `schema_version`，组装器与校验器必须接受同一版本。
+组装状态按 07-runtime-checks.md 的任务能力集合计算；未请求的可选能力不把结果降为 WARN。回撤 paths 按标的分别判定，总 DATA INCOMPLETE 不抹去独立通过的路径。资金台账使用显式 schema_version，组装器与校验器须接受同一版本；普通快照 envelope 不声称存在未实现的版本门。
 
 多币种余额必须保留 IBKR 原始分币种行，并输出账户基础货币、被选择的余额标签与选择理由。`BASE` 是 IBKR 汇总标签，不得冒充 ISO 货币代码。容差内 NAV 差额可列出应计股息、外汇折算或读取时点等可能来源，但必须明确为诊断假设，不得表述为已确认事实。
-
-
-### 已批准的人民币来源确认例外
-
-F 可由券商入金流水确认，或按 `08-funding-fx.md` 第 7 节，以人工来源及期间确认
-结合新鲜 IBKR 换汇成交、费用、结算和私有去重记录确定。两条证据路径不可相加。
-旧有“人工来源声明或换汇不足以满足 F”表述在此限定路径内由本条取代，其他情形
-仍有效。不推断未知金额，不削弱固定日或单次订单授权。

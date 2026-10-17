@@ -2,7 +2,7 @@
 
 本文件是月度流程与三条资金通道的唯一权威。投资参数与阈值以 `00-constitution.md` 为准；冲突时以宪法为准。冷启动与回撤周期状态的重建见 `05-state.md`。
 
-三条通道都只买正缺口，三个可购买标的同等对待。
+三条通道都只买正缺口。例行 D、B 可填三个标的；回撤部署只适用于 SPYM、QQQM 各自独立的阶梯，SOXX 无阶梯。
 
 ---
 
@@ -12,7 +12,7 @@
 
 固定月度执行日是**每个自然月的第一个美国股票市场交易日**，以该年度 NYSE 官方交易日历为准。月度计算每月只运行一次，不因入金日期、现金水位、市场涨跌或错过当日而临时改期；本规则只适用于发布后的后续自然月，不追溯指定发布前或当月的任意日期。
 
-固定日之后到账的外部资金留到下一个自然月处理，不增加当月执行次数。固定日没有外部净入金时，仍须由 IBKR Activity / Cash Transactions 权威确认 \(F=0\)；确认后 Routine DCA 为 0，但战略现金迁移基线照常计算。无法权威确认 \(F\) 时，该月保持 `DATA INCOMPLETE / HOLD`，不得用余额变化或人工说明替代，也不得因此跳过下个月的例行计算。
+固定日之后到账的外部资金留到下一个自然月处理，不增加当月执行次数。固定日没有外部净入金时，仍须由 IBKR Activity / Cash Transactions 权威确认 \(F=0\)；确认后 Routine DCA 为 0，但战略现金迁移基线照常计算。F 的另一合法证据路径是 `08-funding-fx.md` 第 7–8 节的人民币来源确认结合券商换汇及完整私有去重证据。无法确认 F 时，只关闭该月 D、B，标记 `DATA INCOMPLETE`，不以余额变化代替，不影响独立回撤或下个月的例行计算。
 
 ### 入金到部署的衔接
 
@@ -23,23 +23,23 @@
 
 ### 1. Required Runtime Inputs
 
-Account Summary；Balances；Positions；Open Orders；当前市场输入与回撤状态；本月已到账外部净入金 `F` 的权威来源。
+月度 D、B：Account Summary、Balances、Positions、Open Orders、经合约 ID 核验的 Contract Details、本期 F 及月度日期/生命周期。独立回撤另取逐标的市场输入与周期状态，不要求 F 或月度执行日。
 
 所有输入必须来自同一受信任运行时窗口，并通过 Broker Runtime 的来源、能力、新鲜度、币种和一致性检查。
 
 ### 2. Mandatory Pre-Calculation Gates
 
-任何部署公式运行前必须依次通过：
+月度 D、B 公式运行前必须依次通过：
 
 1. **Capability Gate**：任务所需能力必须可用；
-2. **Freshness Gate**：快照和市场输入在允许时间窗口内；
+2. **Freshness Gate**：该路径所需快照在允许时间窗口内；
 3. **Account Reconciliation**：NAV 与现金加持仓市值在允许容差内；
 4. **Open Orders Gate**：权威订单状态必须明确为 `clear`；
 5. **Contribution Gate**：本月实际外部净入金 `F` 已由权威来源确认；
-6. **Drawdown State Gate**：回撤值使用小数、档位状态和已执行集合可验证；
+6. **Monthly Lifecycle Gate**：已核验固定执行日和本月未计算状态；
 7. **Policy Gate**：现行宪法可读取且无冲突。
 
-任一项失败：`DATA INCOMPLETE / HOLD`，并停止新的月度候选。
+任一项失败：`DATA INCOMPLETE`，停止月度 D、B 候选。独立回撤仅依赖账户公共门及对应标的的回撤/档位证据；一只缺失不阻断另一只，市场数据缺失不阻断 D、B。
 
 ### 3. Contribution `F`
 
@@ -47,12 +47,12 @@ Account Summary；Balances；Positions；Open Orders；当前市场输入与回�
 
 - 缺失 `F` 不得静默按零处理；
 - 无入金月份也必须由权威来源明确确认 `0`；
-- 当前 Adapter 若不支持 `cash_transactions`，必须声明 capability unavailable，Routine DCA 通道保持 `DATA INCOMPLETE`；
-- 不允许用人工数字、截图或旧报告替代。
+- cash_transactions 不可用时可使用人民币确认路径，两条均不完整才关闭 D、B；
+- 不允许人工金额、截图或旧报告替代；人工只可确认例外中的来源、用途和期间。
 
 ### 4. Open Orders
 
-必须读取权威 Open Orders，判断重复、方向冲突、现金占用和未完成状态。确定性 CLI 使用 `--open-orders-status clear|conflicting|unknown`，默认 `unknown`。只有显式且权威确认 `clear` 才能继续；`unknown` 或 `conflicting` 均失败关闭。
+必须读取权威 Open Orders，判断重复、方向冲突、现金占用和未完成状态。helper 接收 orders 数组；只有本次读取确认空数组才为 clear，缺失为 unknown，非空为 conflicting，后两者关闭部署。
 
 ### 5. Account Reconciliation
 
@@ -60,16 +60,16 @@ Account Summary；Balances；Positions；Open Orders；当前市场输入与回�
 
 ### 6. Deterministic Calculation Order
 
-通过所有前置闸门后：
+月度 D、B 通过自身前置门后计算；独立回撤按自身前置门另行处理：
 
 1. 计算三个标的的当前权重、目标与正缺口；
 2. 以权威 `F` 计算 Routine DCA；
 3. 在 Routine DCA 后计算战略现金迁移；
-4. 根据 SPYM 回撤与本周期已执行档位判断回撤部署；
+4. 独立回撤使用 task=drawdown，分别检查 SPYM、QQQM 自身回撤及周期档位；若同日执行月度订单，先回读并刷新账户再计算回撤，不把两份快照的现金预算相加；
 5. 生成结构化结果、阻塞项和下一观察条件；
 6. 仅在需要实际 Broker 操作时进入 Execution Runtime。
 
-具体公式与阈值由 `00-constitution.md`、本文件第二部分和 随 skill 发布的 `scripts/check_runtime.py` 当前实现共同约束。
+投资参数与阈值由宪法决定，本文件落实流程，helper 是实现镜像；实现冲突时停止受影响路径并修复，代码不创建政策。
 
 ### 7. Routine Path Checks
 
@@ -85,11 +85,11 @@ Account Summary；Balances；Positions；Open Orders；当前市场输入与回�
 
 至少包含：Rule Source 与 Runtime Source；capability 与数据门状态；Account Reconciliation；Open Orders；三个标的的当前权重、目标与正缺口；各资金通道结果；Blocking Issues；Production Decision；Execution Authority；Next Observation Conditions。
 
-真实账户数据只在当前私有会话展示，不落盘、不提交公开仓库。
+真实账户快照只在私有会话展示，不落盘、不提交公开仓库；必要的去重台账与执行回执仅按 08-funding-fx.md 第 8 节保存在可信私有存储。
 
 ### 10. Canonical Helper
 
-在可执行环境统一调用随 skill 发布的 `scripts/check_runtime.py`（`task=monthly`），通过 `07-runtime-checks.md` 定义的 capabilities envelope 输入权威账户、分币种现金、全部持仓、入金、订单及逐标的回撤与已执行档位，并传入已核验的 schedule。
+调用 scripts/check_runtime.py：task=monthly 计算 D、B，输入账户、分币种现金、全部持仓、合约映射、入金及已核验 schedule；task=drawdown 独立计算逐标的阶梯，不受固定日或 F 限制。契约见 `07-runtime-checks.md`。
 
 输入缺失、单位错误、账户不对账、订单状态未知或冲突时，CLI 必须非零退出并输出 `DATA INCOMPLETE`。
 
@@ -127,7 +127,7 @@ close_as_of 与经成交重建的 tiers_executed。本地 helper 不联网，也
 B=\min\left(\frac{S}{R},G\right)
 \]
 
-每月用最新数据重算，不沿用旧金额。基线必须同时满足：交易后物理现金不为负（不使用融资）；资金只进入正缺口；Data Gate、订单冲突和执行检查通过。现金水位本身不需要额外闸门——`B ≤ S` 与 `D ≤ F` 已在结构上保证例行路径不会把现金推到 15% 目标之下（见 `00-constitution.md`「现金的两条线」）。
+每月用最新数据重算，不沿用旧金额。基线必须同时满足：交易后物理现金不为负（不使用融资）；资金只进入正缺口；Data Gate、订单冲突和执行检查通过。现金水位本身不需要额外闸门——公式保证例行路径交易后现金不低于「15% 目标」与「本月入金前水位」中的较低者，不能简写为始终不低于 15%（见 `00-constitution.md`「现金的两条线」）。
 
 `B` 由上式完全决定，没有任何可以暂停它的判断性闸门。
 
@@ -151,7 +151,7 @@ B=\min\left(\frac{S}{R},G\right)
 
 **首次真实触发时**，除按上述步骤执行外，还必须在当前私有会话核验 `05-state.md` 的档位重建过程本身是否给出了正确档位——该步骤依赖 IBKR 成交与现金，无法离线验证。
 
-**与再平衡的分工**：某只标的单独回撤而 SPYM 未达档时，正确结论是「由再平衡吸收」，不得因单一标的跌幅另行创造部署理由——那属于规则例外，须走完整 IC。
+**与例行缺口填补的分工**：QQQM 自身到档时，即使 SPYM 未到档，也独立取得其阶梯候选；反之亦然。未到自身档位的标的只由现有 D、B 缺口机制处理；SOXX 始终无阶梯。不得创造档外部署理由。
 
 ### 3. 价格的职责
 
@@ -159,7 +159,7 @@ B=\min\left(\frac{S}{R},G\right)
 
 ### 4. 资金方向
 
-按宪法目标权重分别计算 SPYM / QQQM / SOXX 的正缺口。\(D\)、\(B\) 与回撤部署优先流向正缺口更大的标的；可按缺口比例分配或只买缺口最大的 1–2 项。三个标的同等对待。
+按宪法目标权重分别计算 SPYM / QQQM / SOXX 的正缺口。D、B 可按缺口比例或优先较大缺口分配；helper 使用最大缺口优先的确定性顺序。回撤资金只流向触发它的 SPYM 或 QQQM，回撤更深者优先，再按浅到深档位，不向其他标的溢出。
 
 ### 5. 执行约束
 
@@ -183,13 +183,6 @@ B=\min\left(\frac{S}{R},G\right)
 
 月度输出同样附 `01-daily.md` 的市场背景块（同一脚本、同一围栏：只作披露，不进入任何闸门）。
 
-另需披露：SPYM 历史最高收盘回撤 `DD` 与各档状态、\(F,V,C_0,G_0,D,C,R,S,G,B\)、回撤部署记录、现金比例与是否位于带宽内、融资借款、未完成订单，以及 Legacy / Out-of-Universe 持仓状态。
+另需披露：SPYM、QQQM 各自的历史最高收盘回撤 `DD` 与各档状态、\(F,V,C_0,G_0,D,C,R,S,G,B\)、回撤部署记录、现金比例与是否位于带宽内、融资借款、未完成订单，以及 Legacy / Out-of-Universe 持仓状态。
 
-账户数字只在聊天输出，永不落盘；仓库中不保存填好数值的副本。
-
-### 已批准的人民币来源确认例外
-
-F 可由券商入金流水确认，或按 `08-funding-fx.md` 第 7 节，以人工来源及期间确认
-结合新鲜 IBKR 换汇成交、费用、结算和私有去重记录确定。两条证据路径不可相加。
-旧有“人工来源声明或换汇不足以满足 F”表述在此限定路径内由本条取代，其他情形
-仍有效。不推断未知金额，不削弱固定日或单次订单授权。
+月度报告不落盘，仓库不保存填好数值的副本。仅必要的资金生命周期台账与执行回执可按第 8 节流程持久化到可信私有存储。
