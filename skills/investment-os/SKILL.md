@@ -15,7 +15,7 @@ Investment OS is one rule skill for long-term investing. Read the rules, obtain 
 - **Long term first.** Separate durable changes from daily noise.
 - **Decision first.** State the conclusion before supporting analysis; `Daily` keeps its required five-field order.
 - **Evidence over activity.** Do not manufacture a task because nothing changed.
-- **Simple by default.** Use the shortest answer that preserves the decision, blocker, and next trigger.
+- **Decision-useful detail.** This user prefers a substantive investment review, not only terse status labels. Explain the evidence, price position, recent drivers, portfolio implications and independent judgment needed to assess the decision. Use compact tables and connected prose; omit repeated rules, irrelevant headlines and unsupported narratives. A request for a quick answer still takes precedence.
 
 `HOLD` is a complete successful decision.
 
@@ -95,7 +95,7 @@ helper, grant account access or enable a missing cash-transactions capability.
 
 ### Daily
 
-Treat `Daily` as a complete request. Read fresh account state and only the market inputs the current policy requires. Return exactly:
+Treat `Daily` as a complete request. Read fresh account state plus the verified descriptive market context requested in `09-market-position.md`. These Research inputs never become funding or execution gates. Use the fuller reporting structure in `01-daily.md` while retaining exactly these five top-level fields:
 
 Resolve account and market capabilities independently; absence of one does not establish absence of the other.
 
