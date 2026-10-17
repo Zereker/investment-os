@@ -105,7 +105,7 @@ Resolve account and market capabilities independently; absence of one does not e
 4. `Reason`
 5. `Next Trigger`
 
-Mention news only when it changes the thesis, risk, decision, or trigger. Do not add a market recap or repeat unchanged policy.
+The user's standing preference includes a concise explanation of recent moves inside Reason, following `09-market-position.md`. Research and verify material macro, sector and constituent developments; distinguish confirmed events from plausible mechanisms and unverified attribution. A price move or moving-average break alone is not a causal explanation. If no fresh material driver is verified, say so instead of repeating a generic narrative. This explanatory context does not change Production Decision or triggers.
 
 ### Funding preparation / account FX
 
