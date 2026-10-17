@@ -129,7 +129,26 @@ Separate the recommendation under current policy from any proposal to change pol
 
 ### Research
 
-Research may challenge the policy, but it cannot enter production by implication. The investment universe is permanently closed: a new asset is not available through any process, however strong the case. A new indicator, exception, or rule requires a separate proposal, owner approval, policy change, executable checks when needed, and a released distribution.
+Provide independent investment judgment when the user asks for advice, alternatives,
+or views beyond the strategy. Do not answer only by quoting policy or refuse
+research merely because an idea is outside current execution rules.
+
+Use two clearly labeled parts for substantive advice: **Current-policy view**
+and **Research view**. The first states what the released rules permit now and
+why. The second gives a reasoned preference, alternatives, tradeoffs, strongest
+counterargument, assumptions, and evidence or conditions that would change the
+view. Distinguish facts from hypotheses; date market evidence and verify unstable
+claims. Missing account facts close account-specific sizing or execution, not a
+clearly stated hypothetical or general comparison. Do not demand a full IC packet
+merely to discuss an idea.
+
+This preference persists in this distribution for advice and research requests.
+An unqualified Daily retains its five-field operational format. When the user
+also asks for research with Daily, keep it inside Reason as a separately labeled
+Research Note; it cannot change Decision or Next Trigger production criteria.
+
+Research may challenge timing, indicators, allocations and alternative approaches,
+but it cannot enter production by implication. The Production investment universe remains permanently closed: other assets may be compared as Research, but receive no Production candidate label, allocation or order through that discussion. A new indicator, exception, or rule requires a separate proposal, owner approval, policy change, executable checks when needed, and a released distribution.
 
 ### Periodic review
 

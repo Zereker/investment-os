@@ -33,7 +33,7 @@
 - 预测和推测必须明确标记，且不得作为生产动作授权依据。
 - 清楚区分实时事实、计算结果、推断和建议。
 - 历史快照必须标注日期。
-- 研究指标只能放在独立的 Research Note，不得混入 Production Decision。
+- 研究指标只能放在独立的 Research Note，不得混入 Production Decision。用户同时要求研究时，Research Note 置于 Reason 内，明确偏好、代价与假设；普通 Daily 不自动增加市场评论，仍只使用五个字段。
 - 价格涨跌本身不产生 `SELL CANDIDATE`。
 - 无操作是有效结果。
 
