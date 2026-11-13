@@ -8,6 +8,14 @@ Authoritative facts → Skill checks → Deterministic arithmetic → Judgment �
 ```
 
 The repository stores rules and synthetic tests, never personal portfolio data.
+
+Production holds two ETFs: SPYM targets 55% of account NAV, QQQM 30%, and
+USD cash 15% (approximately 65/35 within the 85% equity allocation). SPYM's
+disclosure band is 50–60%; QQQM and cash retain 25–35% and 10–20%. SOXX is
+Legacy / Out-of-Universe if observed, with no purchase target or allocation.
+The 10/15/20/25% closing-drawdown ladders, fixed monthly DCA-first formulas,
+and 9pp SPYM / 6pp QQQM ladder budgets are unchanged. A target change does
+not reset cycle history or authorize orders. See the Chinese constitution.
 Investment OS supports personal discipline; it is not investment advice.
 
 ## Install

@@ -1,5 +1,10 @@
 # ChatGPT usage
 
+Production targets are SPYM 55%, QQQM 30%, and USD cash 15% of account NAV.
+SOXX is no longer a purchase candidate; residual holdings remain Legacy and
+are reconciled from IBKR. A chat statement that a position was closed is not a
+live account snapshot or authority to change open orders.
+
 Investment OS is skill-first. The MCP implementation is archived and no longer
 registered by the plugin. A GitHub URL is neither an installed skill nor a tool
 connection. Reading its text in a conversation does not install persistent tools.

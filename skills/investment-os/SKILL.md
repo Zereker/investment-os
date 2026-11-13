@@ -55,6 +55,7 @@ The test: does this stop protect real money, or does it only avoid answering?
 
 ## Product boundary
 
+- **Two Production ETFs.** SPYM targets 55% and QQQM 30% of account NAV; USD cash targets 15%. These are account weights, not a 55:30 split of equity alone. SOXX and every other security are Legacy / Out-of-Universe: include any residual positions in reconciliation and disclosure, never in purchase gaps, funding allocations or Production candidate labels. A policy release does not establish that any holding was sold or authorize a sale, order cancellation or immediate target catch-up.
 - **One behavior authority.** This `SKILL.md` defines Agent behavior, routing, privacy, and authorization boundaries.
 - **Three policy authorities.** The numbered references define investment policy and operating facts. Apply the constitution before the operating manual; the data contract decides whether facts are usable but creates no investment policy.
 - **Repository stores rules, never portfolio.** Account identifiers, balances, positions, orders, fills, contributions, authorization records, and execution receipts must not enter the public repository.

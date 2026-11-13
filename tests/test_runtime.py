@@ -53,7 +53,9 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(d['C0'], 25000)
         self.assertEqual(d['D'], 2000)
         self.assertAlmostEqual(d['B'], 8000 / 3)
-        self.assertEqual(d['gaps'], {'SPYM': 10000, 'QQQM': 5000, 'SOXX': 1000})
+        self.assertEqual(set(d['gaps']), {'SPYM', 'QQQM'})
+        self.assertAlmostEqual(d['gaps']['SPYM'], 15000)
+        self.assertAlmostEqual(d['gaps']['QQQM'], 5000)
         self.assertFalse(r['execution_authorized'])
 
     def test_missing_contribution_blocks_amounts(self):
@@ -110,7 +112,7 @@ class RuntimeTests(unittest.TestCase):
         p['capabilities']['market_inputs']['data']['QQQM']['tiers_executed'] = ['T1']
         d = self.run_check(p)['deployment']
         self.assertEqual(d['drawdown_allocation']['SPYM'], 0)
-        self.assertEqual(d['drawdown_allocation']['SOXX'], 0)
+        self.assertNotIn('SOXX', d['drawdown_allocation'])
         self.assertEqual(d['candidate_tiers']['QQQM'], ['T2', 'T3'])
         self.assertAlmostEqual(d['drawdown_allocation']['QQQM'], 3000)
 
@@ -259,7 +261,7 @@ class RuntimeTests(unittest.TestCase):
     def test_contract_identity_survives_description_and_blocks_unknown_mapping(self):
         p = fixture()
         p['capabilities']['positions']['data']['positions'][0]['contract_description'] = 'Human readable fund name'
-        self.assertEqual(self.run_check(p)['deployment']['gaps']['SPYM'], 10000)
+        self.assertAlmostEqual(self.run_check(p)['deployment']['gaps']['SPYM'], 15000)
         for key, value in [('sec_type', 'OPT'), ('currency', 'CNH')]:
             p = fixture()
             p['capabilities']['contract_details']['data']['contracts'][0][key] = value
@@ -332,7 +334,7 @@ class RuntimeTests(unittest.TestCase):
         d = self.run_check(p)['deployment']
         self.assertEqual(d['final_cash'], 0)
         self.assertEqual(sum(d['drawdown_allocation'].values()), 1000)
-        self.assertEqual(d['drawdown_allocation']['SOXX'], 0)
+        self.assertNotIn('SOXX', d['drawdown_allocation'])
         p['capabilities']['open_orders']['data']['orders'] = [{}]
         self.assertIsNone(self.run_check(p)['deployment'])
 
@@ -380,6 +382,88 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(d['B'], 0)
         self.assertEqual(d['final_cash'], 12000)
 
+    def test_residual_soxx_is_legacy_in_every_funding_channel(self):
+        p = fixture()
+        monthly = self.run_check(p)
+        self.assertEqual(monthly['status'], 'PASS')
+        self.assertEqual(monthly['legacy']['market_value'], 5000)
+        self.assertEqual(monthly['reconciliation']['component_total'], 100000)
+        self.assertNotIn('SOXX', monthly['weights'])
+        for field in ('gaps', 'routine_allocation', 'baseline_allocation'):
+            self.assertEqual(set(monthly['deployment'][field]), {'SPYM', 'QQQM'})
+        p['task'] = 'drawdown'
+        p['capabilities']['market_inputs']['data']['SOXX'] = dict(
+            drawdown=.50, close_as_of='2026-09-30', tiers_executed=[])
+        out = self.run_check(p)
+        self.assertEqual(set(out['paths']), {'SPYM', 'QQQM'})
+        self.assertNotIn('SOXX', out['deployment']['drawdown_allocation'])
+        self.assertNotIn('SOXX', out['deployment']['candidate_tiers'])
+
+    def test_no_soxx_holding_or_market_data_required(self):
+        p = fixture()
+        positions = p['capabilities']['positions']['data']['positions']
+        positions[0]['market_value'] += positions[2]['market_value']
+        del positions[2]
+        p['capabilities']['contract_details']['data']['contracts'].pop(2)
+        out = self.run_check(p)
+        self.assertEqual(out['status'], 'PASS')
+        self.assertAlmostEqual(out['deployment']['gaps']['SPYM'], 11000)
+        self.assertEqual(out['legacy']['market_value'], 1000)
+        p['task'] = 'drawdown'
+        self.assertEqual(self.run_check(p)['status'], 'PASS')
+
+    def test_legacy_sale_proceeds_are_cash_not_new_contribution(self):
+        p = fixture()
+        positions = p['capabilities']['positions']['data']['positions']
+        proceeds = positions[2]['market_value']
+        del positions[2]
+        for row in p['capabilities']['balances']['data']['balances'][:2]:
+            row['cash_balance'] += proceeds
+            if 'settled_cash' in row:
+                row['settled_cash'] += proceeds
+        d = self.run_check(p)['deployment']
+        self.assertEqual(d['F'], 2000)
+        self.assertEqual(d['D'], 2000)
+        self.assertEqual(d['C0'], 29000)
+        self.assertEqual(d['B'], 4000)
+        self.assertEqual(set(d['baseline_allocation']), {'SPYM', 'QQQM'})
+
+    def test_empty_account_rebuilds_only_the_two_etf_targets(self):
+        p = fixture()
+        p['capabilities']['positions']['data']['positions'] = []
+        p['capabilities']['contract_details']['data']['contracts'] = []
+        p['capabilities']['balances']['data']['balances'] = [
+            dict(currency='BASE', cash_balance=100000),
+            dict(currency='USD', cash_balance=100000, settled_cash=100000)]
+        out = self.run_check(p)
+        self.assertEqual(out['status'], 'PASS')
+        self.assertEqual(out['legacy']['market_value'], 0)
+        self.assertAlmostEqual(out['deployment']['gaps']['SPYM'], 55000)
+        self.assertAlmostEqual(out['deployment']['gaps']['QQQM'], 30000)
+        self.assertEqual(set(out['deployment']['routine_allocation']), {'SPYM', 'QQQM'})
+        self.assertEqual(out['deployment']['F'], 2000)
+
+    def test_target_change_preserves_ladder_budgets_and_consumed_tiers(self):
+        p = fixture()
+        p['task'] = 'drawdown'
+        p['capabilities']['positions']['data']['positions'][1]['market_value'] = 20000
+        for row in p['capabilities']['balances']['data']['balances'][:2]:
+            row['cash_balance'] += 5000
+            if 'settled_cash' in row:
+                row['settled_cash'] += 5000
+        for market in p['capabilities']['market_inputs']['data'].values():
+            market['drawdown'] = .25
+        out = self.run_check(p)
+        self.assertEqual(out['status'], 'PASS')
+        d = out['deployment']
+        self.assertAlmostEqual(d['drawdown_allocation']['SPYM'], 9000)
+        self.assertAlmostEqual(d['drawdown_allocation']['QQQM'], 6000)
+        for market in p['capabilities']['market_inputs']['data'].values():
+            market['tiers_executed'] = ['T1', 'T2', 'T3', 'T4']
+        d = self.run_check(p)['deployment']
+        self.assertEqual(d['drawdown_allocation'], {'SPYM': 0, 'QQQM': 0})
+        self.assertEqual(d['candidate_tiers'], {'SPYM': [], 'QQQM': []})
+
     def test_cli_bad_input_fails_without_traceback_or_execution(self):
         result = subprocess.run([sys.executable, str(SCRIPT)], input='{"task":"monthly"}',
                                 text=True, capture_output=True)
@@ -389,12 +473,14 @@ class RuntimeTests(unittest.TestCase):
 
     def test_policy_and_packaging_mirrors(self):
         text = (ROOT / 'skills/investment-os/references/00-constitution.md').read_text()
-        for fragment in ('15%', '50%', '30%', '5%', '9.00pp', '6.00pp'):
+        for fragment in ('15%', '55%', '30%', '9.00pp', '6.00pp'):
             self.assertIn(fragment, text)
-        self.assertEqual(helper.TARGETS, {'SPYM': .50, 'QQQM': .30, 'SOXX': .05})
+        self.assertEqual(helper.TARGETS, {'SPYM': .55, 'QQQM': .30})
         table = dict((ticker, int(weight) / 100) for ticker, weight in
                      re.findall(r'\| (SPYM|QQQM|SOXX) \| (\d+)% \|', text))
         self.assertEqual(helper.TARGETS, table)
+        self.assertAlmostEqual(sum(table.values()) + .15, 1)
+        self.assertIn('| SPYM | 55% | 50% – 60% |', text)
         version = (ROOT / '.plugin-version').read_text().strip()
         for path in ('.codex-plugin/plugin.json', '.claude-plugin/plugin.json'):
             self.assertEqual(json.loads((ROOT / path).read_text())['version'], version)

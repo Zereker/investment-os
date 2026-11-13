@@ -2,7 +2,7 @@
 
 本文件是月度流程与三条资金通道的唯一权威。投资参数与阈值以 `00-constitution.md` 为准；冲突时以宪法为准。冷启动与回撤周期状态的重建见 `05-state.md`。
 
-三条通道都只买正缺口。例行 D、B 可填三个标的；回撤部署只适用于 SPYM、QQQM 各自独立的阶梯，SOXX 无阶梯。
+三条通道都只买正缺口。例行 D、B 只填 SPYM、QQQM 两个标的；回撤部署只适用于 SPYM、QQQM 各自独立的阶梯，SOXX 无阶梯。
 
 ---
 
@@ -62,7 +62,7 @@
 
 月度 D、B 通过自身前置门后计算；独立回撤按自身前置门另行处理：
 
-1. 计算三个标的的当前权重、目标与正缺口；
+1. 计算两个标的的当前权重、目标与正缺口；
 2. 以权威 `F` 计算 Routine DCA；
 3. 在 Routine DCA 后计算战略现金迁移；
 4. 独立回撤使用 task=drawdown，分别检查 SPYM、QQQM 自身回撤及周期档位；若同日执行月度订单，先回读并刷新账户再计算回撤，不把两份快照的现金预算相加；
@@ -83,7 +83,7 @@
 
 ### 9. Output
 
-至少包含：Rule Source 与 Runtime Source；capability 与数据门状态；Account Reconciliation；Open Orders；三个标的的当前权重、目标与正缺口；各资金通道结果；Blocking Issues；Production Decision；Execution Authority；Next Observation Conditions。
+至少包含：Rule Source 与 Runtime Source；capability 与数据门状态；Account Reconciliation；Open Orders；两个标的的当前权重、目标与正缺口；各资金通道结果；Blocking Issues；Production Decision；Execution Authority；Next Observation Conditions。
 
 真实账户快照只在私有会话展示，不落盘、不提交公开仓库；必要的去重台账与执行回执仅按 08-funding-fx.md 第 8 节保存在可信私有存储。
 
@@ -114,7 +114,7 @@ close_as_of 与经成交重建的 tiers_executed。本地 helper 不联网，也
 - \(F\)：本月已到账的实际外部净入金，且 \(F\ge0\)；提款或未到账计划额不得计入（计划数额不入库）；
 - \(V\)：\(F\) 到账后、交易前的账户净值；
 - \(C_0\)：包含 \(F\)、全部例行订单前的投资组合现金（USD cash_balance 与 USD settled_cash 的较小值）；
-- \(G_0\)：按宪法目标权重计算的三个可购买标的 Routine DCA 前正缺口合计；
+- \(G_0\)：按宪法目标权重计算的两个可购买标的 Routine DCA 前正缺口合计；
 - \(D_{max}=\min(F,G_0)\)：Routine DCA 上限；\(D\le D_{max}\) 是实际买入额，只受正缺口、现金下限与执行检查约束；
 - \(C=C_0-D\)：执行 Routine DCA 后的预计现金；
 - \(G\)：分配 \(D\) 后的剩余正缺口合计；
@@ -159,7 +159,7 @@ B=\min\left(\frac{S}{R},G\right)
 
 ### 4. 资金方向
 
-按宪法目标权重分别计算 SPYM / QQQM / SOXX 的正缺口。D、B 可按缺口比例或优先较大缺口分配；helper 使用最大缺口优先的确定性顺序。回撤资金只流向触发它的 SPYM 或 QQQM，回撤更深者优先，再按浅到深档位，不向其他标的溢出。
+按宪法目标权重分别计算 SPYM / QQQM 的正缺口。D、B 可按缺口比例或优先较大缺口分配；helper 使用最大缺口优先的确定性顺序。回撤资金只流向触发它的 SPYM 或 QQQM，回撤更深者优先，再按浅到深档位，不向其他标的溢出。
 
 ### 5. 执行约束
 
@@ -173,15 +173,15 @@ B=\min\left(\frac{S}{R},G\right)
 
 ### 6. 月度输出格式（聊天输出，不写回仓库）
 
-| 指标 | SPYM | QQQM | SOXX |
-|---|---:|---:|---:|
-| 当前价格 | 待读取 | 待读取 | 待读取 |
-| 当前权重 / 目标 | 待计算 | 待计算 | 待计算 |
-| 是否位于带宽内 | 待计算 | 待计算 | 不适用 |
-| 正缺口 | 待计算 | 待计算 | 待计算 |
-| 基线分配 | 待计算 | 待计算 | 待计算 |
+| 指标 | SPYM | QQQM |
+|---|---:|---:|
+| 当前价格 | 待读取 | 待读取 |
+| 当前权重 / 目标 | 待计算 | 待计算 |
+| 是否位于带宽内 | 待计算 | 待计算 |
+| 正缺口 | 待计算 | 待计算 |
+| 基线分配 | 待计算 | 待计算 |
 
-月度输出同样附 `01-daily.md` 的市场背景块（同一脚本、同一围栏：只作披露，不进入任何闸门）。
+月度输出同样附 `01-daily.md` 的市场背景块（同一数据口径、同一披露边界：只作披露，不进入任何闸门）。
 
 另需披露：SPYM、QQQM 各自的历史最高收盘回撤 `DD` 与各档状态、\(F,V,C_0,G_0,D,C,R,S,G,B\)、回撤部署记录、现金比例与是否位于带宽内、融资借款、未完成订单，以及 Legacy / Out-of-Universe 持仓状态。
 

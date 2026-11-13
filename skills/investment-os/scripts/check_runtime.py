@@ -9,7 +9,7 @@ import json
 import math
 import sys
 
-TARGETS = {"SPYM": .50, "QQQM": .30, "SOXX": .05}
+TARGETS = {"SPYM": .55, "QQQM": .30}
 ACCOUNT = ("account_summary", "balances", "positions", "open_orders", "contract_details")
 MONTHLY = ACCOUNT + ("cash_transactions",)
 
