@@ -11,8 +11,11 @@ The repository stores rules and synthetic tests, never personal portfolio data.
 
 Production holds two ETFs: SPYM targets 55% of account NAV, QQQM 30%, and
 USD cash 15% (approximately 65/35 within the 85% equity allocation). SPYM's
-disclosure band is 50–60%; QQQM and cash retain 25–35% and 10–20%. SOXX is
-Legacy / Out-of-Universe if observed, with no purchase target or allocation.
+disclosure band is 50–60%; QQQM and cash retain 25–35% and 10–20%. The
+security-operation allowlist is permanently SPYM and QQQM shares, for BUY and
+SELL alike. Other instruments are read-only anomalies, never disposal exceptions.
+The mandatory task=trade_scope gate checks fresh canonical IBKR identity before
+security-related broker writes, including order drafts; a PASS is not authority.
 The 10/15/20/25% closing-drawdown ladders, fixed monthly DCA-first formulas,
 and 9pp SPYM / 6pp QQQM ladder budgets are unchanged. A target change does
 not reset cycle history or authorize orders. See the Chinese constitution.

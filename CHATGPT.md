@@ -1,8 +1,9 @@
 # ChatGPT usage
 
 Production targets are SPYM 55%, QQQM 30%, and USD cash 15% of account NAV.
-SOXX is no longer a purchase candidate; residual holdings remain Legacy and
-are reconciled from IBKR. A chat statement that a position was closed is not a
+Only SPYM and QQQM shares may receive security-related broker writes, for
+both BUY and SELL. Other holdings/orders are read-only anomalies reconciled
+from IBKR; Legacy and IC review never create a trading exception. A chat statement that a position was closed is not a
 live account snapshot or authority to change open orders.
 
 Investment OS is skill-first. The MCP implementation is archived and no longer
@@ -26,7 +27,7 @@ A reviewed public ChatGPT Plugins Directory release is a separate publication
 step; a repository version or tag does not establish one.
 
 The helper separates account, monthly DCA/baseline, independent drawdown and
-private funding-journal transitions. Each held contract needs an IBKR ID-based
+private funding-journal transitions, plus the mandatory trade_scope instrument gate. Each held contract needs an IBKR ID-based
 canonical mapping. A journal result is not persisted by the helper: the host
 needs verified private storage with atomic revision updates and readback before
 dependent live DCA execution. Ordinary chat memory or a public GitHub file does

@@ -41,7 +41,7 @@
 | CNN 恐慌贪婪 | CNN dataviz 接口 | 无 | 每次巡检 | Green | **只作披露**；直接用接口的 `rating`，不自行按数字套档 |
 | SPYM Price | IBKR | State Street SPYM 官方页 | 每次巡检 | Green | 标记价格时间戳 |
 | QQQM Price | IBKR | Invesco QQQM 官方页 | 每次巡检 | Green | 标记价格时间戳 |
-| Legacy / Research 证券价格（可含 SOXX） | IBKR | 对应发行人官方页 | 按需 | 仅披露 / Research | 不产生 Production 目标、缺口、分配或买入候选 |
+| 只读 Legacy / 市场背景证券价格 | IBKR | 对应发行人官方页 | 按需 | 仅披露 / Research | 不产生目标、缺口、分配、买卖指令或券商写入 |
 
 ### 变更治理
 
@@ -132,8 +132,8 @@ Red 数据不得进入依赖该字段的计算。**影响必须按字段局部�
 - `position_weight`：标的市值 ÷ `net_liquidation_usd`。
 - `position_target_weight`：宪法第一部分战略结构表中该标的的目标权重（现金 15%、SPYM 55%、QQQM 30%）。
 - `position_gap_usd`：\(\max(\text{目标权重}\times V-\text{市值},0)\)。负值取 0，不产生卖出信号。
-- `within_band`：该标的实际权重是否落在宪法带宽内（现金 10–20%、SPYM 50–60%、QQQM 25–35%）。SOXX 等 Legacy 无目标或带宽，不参与 Production 缺口计算。
-- SOXX 不再有专用目标、缺口或披露上沿字段；若仍持有，计入完整持仓对账与 Legacy 汇总，不能静默丢弃。
+- `within_band`：该标的实际权重是否落在宪法带宽内（现金 10–20%、SPYM 50–60%、QQQM 25–35%）。Legacy 无目标、带宽或买卖额度，不参与 Production 缺口计算。
+- 范围外证券没有专用目标、缺口或披露上沿字段；若仍持有，计入完整持仓对账与只读 Legacy 汇总，不能静默丢弃或生成处置操作。
 - `cash_absolute_floor_weight`：0%，任何情形下的硬下限。现金可归零，不得为负。例行路径不主动动用结构性储备，但入金前水位本就低时不强制恢复 15%；现金边界按宪法「现金的两条线」，不新增门槛。
 
 ### 账户与月度执行字段
@@ -184,7 +184,7 @@ IBKR Orders 返回的订单状态。存在 `NEW`、`SUBMITTED` 或 `PARTIALLY_FI
 IBKR 返回的最新可用市场价格。必须同时记录读取时间和市场是否开盘。
 
 #### drawdown_from_ath / drawdown_tier_state
-`drawdown_from_ath` **按标的分别记录**（SPYM、QQQM 各一），是该标的收盘价相对**其自身**历史最高收盘价的回撤，以小数记录并注明收盘序列来源。`drawdown_tier_state` 同样按标的分别记录该标的当前回撤周期内四档的 `AVAILABLE / EXECUTED` 状态；该标的创历史新高收盘后**只把它自己的**四档重置为 `AVAILABLE`；最深档之后没有更深档位，该字段不新增取值。达档但部署额为 0 的档位保持 `AVAILABLE`。SOXX 无阶梯，这两个字段对它不适用，记 `N/A`。各标的的触发线、梯度定额与绝对下限以 `00-constitution.md` 回撤部署节的分档表为唯一权威。
+`drawdown_from_ath` **按标的分别记录**（SPYM、QQQM 各一），是该标的收盘价相对**其自身**历史最高收盘价的回撤，以小数记录并注明收盘序列来源。`drawdown_tier_state` 同样按标的分别记录该标的当前回撤周期内四档的 `AVAILABLE / EXECUTED` 状态；该标的创历史新高收盘后**只把它自己的**四档重置为 `AVAILABLE`；最深档之后没有更深档位，该字段不新增取值。达档但部署额为 0 的档位保持 `AVAILABLE`。其他证券无阶梯，这两个字段不适用，不为其创建档位。各标的的触发线、梯度定额与绝对下限以 `00-constitution.md` 回撤部署节的分档表为唯一权威。
 
 ### 缺失值规则
 

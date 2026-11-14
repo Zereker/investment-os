@@ -24,7 +24,7 @@ Daily 另检查提醒与常驻自动化。未请求的可选字段不制造故�
 从安装目录解析 scripts/check_runtime.py，Python 3.11+，无依赖、不联网、不存输入。
 通过宿主内存 stdin 传 JSON；不得写账户 JSON 到仓库、临时文件、命令行或日志。
 没有内存 stdin 能力时不强行落盘。stdout 为 JSON；PASS 退出 0，
-DATA INCOMPLETE 退出 2。输出候选不构成下单授权。
+DATA INCOMPLETE 或 REJECT 退出 2。输出候选不构成下单授权。
 
 capabilities 按能力名索引，每项有 status、source=IBKR、observed_at、data。
 共享能力：account_summary.data 含 currency、net_liquidation；
@@ -37,6 +37,17 @@ open_orders.data.orders；contract_details.data.contracts 为本次按 ID 核验
 - task=monthly：共享门 + F + 固定日期/生命周期，仅计算 D、B，不要求 market_inputs。
 - task=drawdown：共享门 + market_inputs，独立计算 SPYM、QQQM，不要求 F 或 schedule。
 - task=funding_ledger：纯私有台账转换，见 08-funding-fx.md；不读写磁盘或执行订单。
+- task=trade_scope：证券相关券商写入前的固定范围检查，仅允许 SPYM、QQQM 的 USD 普通份额，BUY 和 SELL 均受限；不提供交易授权。
+
+trade_scope 输入 operation，含准确的 contract_id、symbol、sec_type、currency、side。
+capabilities.contract_details 使用同一新鲜 IBKR envelope，data.contracts 中必须有
+唯一匹配合约；显示名、底层证券名或手填 ticker 不能替代合约身份。
+衍生品、替代 ETF、个股及其他证券返回 REJECT；证据缺失、陈旧或重复返回
+DATA INCOMPLETE。PASS 只绑定该合约、类别、币种和方向，输出 normalized_instrument；
+后续写入不得换成另一个合约。它不代替账户检查、政策触发、金额计算或单笔授权。
+新建指令、下单、撤改证券订单及相关自动化均须先通过本门；撤改时先读取原单，
+将原单的准确证券身份和方向传入。范围外持仓或订单仅只读披露，不因退出需要例外。
+没有代码执行时只关闭证券相关写入，继续只读检查。CNH→USD 资金准备沿独立流程。
 
 月度 F 使用 cash_transactions.data.external_contribution_usd；
 缺失关闭 D、B，明确为 0 才按 0 处理。人民币路径改用 funding_confirmation、

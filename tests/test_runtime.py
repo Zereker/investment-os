@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import sys
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / 'skills/investment-os/scripts/check_runtime.py'
@@ -26,11 +27,11 @@ def fixture():
         'positions': {'positions': [
             {'contract_description': t, 'contract_id': i, 'market_value': v,
              'position': 10, 'currency': 'USD'}
-            for i, (t, v) in enumerate([('SPYM', 40000), ('QQQM', 25000), ('SOXX', 4000), ('LEGACY', 1000)])]},
+            for i, (t, v) in enumerate([('SPYM', 40000), ('QQQM', 25000), ('SYNTH_ETF', 4000), ('LEGACY', 1000)])]},
         'open_orders': {'orders': []},
         'contract_details': {'contracts': [
             {'contract_id': i, 'symbol': t, 'sec_type': 'STK', 'currency': 'USD'}
-            for i, t in enumerate(('SPYM', 'QQQM', 'SOXX', 'LEGACY'))]},
+            for i, t in enumerate(('SPYM', 'QQQM', 'SYNTH_ETF', 'LEGACY'))]},
         'cash_transactions': {'external_contribution_usd': 2000},
         'market_inputs': {t: {'drawdown': .01, 'close_as_of': '2026-09-30',
                               'tiers_executed': []} for t in ('SPYM', 'QQQM')},
@@ -45,6 +46,81 @@ def fixture():
 class RuntimeTests(unittest.TestCase):
     def run_check(self, p):
         return helper.check(p, NOW)
+
+    def scope_fixture(self, symbol='SPYM', side='BUY', sec_type='STK'):
+        instrument = dict(contract_id=101, symbol=symbol, sec_type=sec_type, currency='USD')
+        return dict(task='trade_scope', operation=dict(instrument, side=side),
+            capabilities=dict(contract_details=dict(status='available', source='IBKR',
+                observed_at=NOW.isoformat(), data=dict(contracts=[instrument]))))
+
+    def test_trade_scope_allows_only_canonical_etf_shares_without_authorizing(self):
+        for symbol in ('SPYM', 'QQQM'):
+            for side in ('BUY', 'SELL'):
+                p = self.scope_fixture(symbol, side)
+                p['execution_authorized'] = True
+                out = self.run_check(p)
+                self.assertEqual(out['status'], 'PASS')
+                self.assertTrue(out['scope_only'])
+                self.assertFalse(out['execution_authorized'])
+                self.assertEqual(out['normalized_instrument'], p['operation'])
+
+    def test_trade_scope_rejects_other_instruments_for_buy_and_sell(self):
+        for symbol in ('SYNTH_ETF', 'LEGACY', 'SPYM2', 'QQQM_OPT', 'SPYM '):
+            for side in ('BUY', 'SELL'):
+                out = self.run_check(self.scope_fixture(symbol, side))
+                self.assertEqual(out['status'], 'REJECT')
+                self.assertIsNone(out['normalized_instrument'])
+
+    def test_trade_scope_rejects_derivatives_of_allowed_underlyings(self):
+        for symbol in ('SPYM', 'QQQM'):
+            for sec_type in ('OPT', 'FUT', 'CFD', 'BOND', 'FUND'):
+                for side in ('BUY', 'SELL'):
+                    self.assertEqual(self.run_check(self.scope_fixture(symbol, side, sec_type))['status'], 'REJECT')
+
+    def test_trade_scope_checks_broker_identity_not_display_name(self):
+        p = self.scope_fixture()
+        row = p['capabilities']['contract_details']['data']['contracts'][0]
+        row['symbol'] = 'SYNTH_ETF'
+        self.assertEqual(self.run_check(p)['status'], 'REJECT')
+        row['symbol'] = 'SPYM'
+        row['sec_type'] = 'OPT'
+        self.assertEqual(self.run_check(p)['status'], 'REJECT')
+        row['sec_type'] = 'STK'
+        row['contract_id'] = 102
+        self.assertEqual(self.run_check(p)['status'], 'DATA INCOMPLETE')
+
+    def test_trade_scope_closes_on_missing_stale_or_duplicate_evidence(self):
+        cases = []
+        p = self.scope_fixture(); del p['capabilities']; cases.append(p)
+        p = self.scope_fixture(); p['capabilities']['contract_details']['source'] = 'manual'; cases.append(p)
+        p = self.scope_fixture(); p['capabilities']['contract_details']['observed_at'] = '2026-10-01T14:00:00Z'; cases.append(p)
+        p = self.scope_fixture(); rows = p['capabilities']['contract_details']['data']['contracts']; rows.append(dict(rows[0])); cases.append(p)
+        p = self.scope_fixture(); del p['operation']['contract_id']; cases.append(p)
+        for p in cases:
+            out = self.run_check(p)
+            self.assertEqual(out['status'], 'DATA INCOMPLETE')
+            self.assertFalse(out['execution_authorized'])
+
+    def test_trade_scope_rejects_foreign_currency_and_invalid_side(self):
+        for key, value in (('currency', 'CNH'), ('side', 'OTHER')):
+            p = self.scope_fixture()
+            p['operation'][key] = value
+            self.assertEqual(self.run_check(p)['status'], 'REJECT')
+
+    def test_universe_cannot_expand_through_target_configuration(self):
+        with patch.dict(helper.TARGETS, {'SYNTH_ETF': .01}):
+            with self.assertRaisesRegex(ValueError, 'exactly SPYM and QQQM'):
+                self.run_check(self.scope_fixture('SYNTH_ETF'))
+
+    def test_cli_rejected_scope_is_nonzero_and_never_authorizes(self):
+        out = subprocess.run([sys.executable, str(SCRIPT)],
+            input=json.dumps(self.scope_fixture('SYNTH_ETF', 'SELL')),
+            text=True, capture_output=True)
+        self.assertEqual(out.returncode, 2)
+        self.assertEqual(out.stderr, '')
+        report = json.loads(out.stdout)
+        self.assertEqual(report['status'], 'REJECT')
+        self.assertFalse(report['execution_authorized'])
 
     def test_valid_monthly_uses_only_usd_for_deployment(self):
         r = self.run_check(fixture())
@@ -105,14 +181,14 @@ class RuntimeTests(unittest.TestCase):
             p = fixture(); p['schedule'][key] = value
             self.assertIsNone(self.run_check(p)['deployment'])
 
-    def test_independent_tiers_and_no_soxx_ladder(self):
+    def test_independent_tiers_and_no_outside_etf_ladder(self):
         p = fixture()
         p['task'] = 'drawdown'
         p['capabilities']['market_inputs']['data']['QQQM']['drawdown'] = .20
         p['capabilities']['market_inputs']['data']['QQQM']['tiers_executed'] = ['T1']
         d = self.run_check(p)['deployment']
         self.assertEqual(d['drawdown_allocation']['SPYM'], 0)
-        self.assertNotIn('SOXX', d['drawdown_allocation'])
+        self.assertNotIn('SYNTH_ETF', d['drawdown_allocation'])
         self.assertEqual(d['candidate_tiers']['QQQM'], ['T2', 'T3'])
         self.assertAlmostEqual(d['drawdown_allocation']['QQQM'], 3000)
 
@@ -334,7 +410,7 @@ class RuntimeTests(unittest.TestCase):
         d = self.run_check(p)['deployment']
         self.assertEqual(d['final_cash'], 0)
         self.assertEqual(sum(d['drawdown_allocation'].values()), 1000)
-        self.assertNotIn('SOXX', d['drawdown_allocation'])
+        self.assertNotIn('SYNTH_ETF', d['drawdown_allocation'])
         p['capabilities']['open_orders']['data']['orders'] = [{}]
         self.assertIsNone(self.run_check(p)['deployment'])
 
@@ -382,24 +458,24 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(d['B'], 0)
         self.assertEqual(d['final_cash'], 12000)
 
-    def test_residual_soxx_is_legacy_in_every_funding_channel(self):
+    def test_residual_outside_etf_is_legacy_in_every_funding_channel(self):
         p = fixture()
         monthly = self.run_check(p)
         self.assertEqual(monthly['status'], 'PASS')
         self.assertEqual(monthly['legacy']['market_value'], 5000)
         self.assertEqual(monthly['reconciliation']['component_total'], 100000)
-        self.assertNotIn('SOXX', monthly['weights'])
+        self.assertNotIn('SYNTH_ETF', monthly['weights'])
         for field in ('gaps', 'routine_allocation', 'baseline_allocation'):
             self.assertEqual(set(monthly['deployment'][field]), {'SPYM', 'QQQM'})
         p['task'] = 'drawdown'
-        p['capabilities']['market_inputs']['data']['SOXX'] = dict(
+        p['capabilities']['market_inputs']['data']['SYNTH_ETF'] = dict(
             drawdown=.50, close_as_of='2026-09-30', tiers_executed=[])
         out = self.run_check(p)
         self.assertEqual(set(out['paths']), {'SPYM', 'QQQM'})
-        self.assertNotIn('SOXX', out['deployment']['drawdown_allocation'])
-        self.assertNotIn('SOXX', out['deployment']['candidate_tiers'])
+        self.assertNotIn('SYNTH_ETF', out['deployment']['drawdown_allocation'])
+        self.assertNotIn('SYNTH_ETF', out['deployment']['candidate_tiers'])
 
-    def test_no_soxx_holding_or_market_data_required(self):
+    def test_no_outside_etf_holding_or_market_data_required(self):
         p = fixture()
         positions = p['capabilities']['positions']['data']['positions']
         positions[0]['market_value'] += positions[2]['market_value']
@@ -477,7 +553,7 @@ class RuntimeTests(unittest.TestCase):
             self.assertIn(fragment, text)
         self.assertEqual(helper.TARGETS, {'SPYM': .55, 'QQQM': .30})
         table = dict((ticker, int(weight) / 100) for ticker, weight in
-                     re.findall(r'\| (SPYM|QQQM|SOXX) \| (\d+)% \|', text))
+                     re.findall(r'\| ([A-Z][A-Z0-9_]*) \| (\d+)% \|', text))
         self.assertEqual(helper.TARGETS, table)
         self.assertAlmostEqual(sum(table.values()) + .15, 1)
         self.assertIn('| SPYM | 55% | 50% – 60% |', text)
