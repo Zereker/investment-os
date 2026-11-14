@@ -9,7 +9,8 @@ import json
 import math
 import sys
 
-TARGETS = {"SPYM": .50, "QQQM": .30, "SOXX": .05}
+ALLOWED_ETFS = frozenset(("SPYM", "QQQM"))
+TARGETS = {"SPYM": .55, "QQQM": .30}
 ACCOUNT = ("account_summary", "balances", "positions", "open_orders", "contract_details")
 MONTHLY = ACCOUNT + ("cash_transactions",)
 
@@ -98,11 +99,15 @@ def confirmed_fx_contribution(payload, data, now, issues):
 
 def check(payload, now=None):
     now = now or dt.datetime.now(dt.timezone.utc)
+    if set(TARGETS) != ALLOWED_ETFS:
+        raise ValueError("Production universe must remain exactly SPYM and QQQM")
     task = payload.get("task", "account")
+    if task == "trade_scope":
+        return check_trade_scope(payload, now)
     if task == "funding_ledger":
         return update_funding_ledger(payload)
     if task not in ("account", "monthly", "drawdown"):
-        raise ValueError("task must be account, monthly or drawdown")
+        raise ValueError("task must be account, monthly, drawdown, trade_scope or funding_ledger")
     observations = payload.get("capabilities", {})
     required = MONTHLY if task == "monthly" else ACCOUNT
     confirmed_path = task == "monthly" and "funding_confirmation" in payload
@@ -254,6 +259,48 @@ def check(payload, now=None):
                                  routine_allocation=routine, baseline_allocation=baseline,
                                  final_cash=cash_left, note="Candidates only; tiers consumed only after verified fills. Whole shares and commissions require execution checks.")
     return report
+
+
+def check_trade_scope(payload, now):
+    """Read-only instrument gate; never account clearance or order authority."""
+    result = dict(status="DATA INCOMPLETE", blocking_issues=[],
+                  normalized_instrument=None, scope_only=True,
+                  execution_authorized=False, runtime_data_persisted=False)
+    operation = payload.get("operation", {})
+    expected = {k: operation.get(k) for k in ("contract_id", "symbol", "sec_type", "currency", "side")}
+    if any(expected[k] is None for k in expected):
+        result["blocking_issues"].append("exact instrument identity and side required")
+        return result
+    if expected["symbol"] not in ALLOWED_ETFS or expected["sec_type"] != "STK" or expected["currency"] != "USD" or expected["side"] not in ("BUY", "SELL"):
+        result.update(status="REJECT", blocking_issues=["only USD SPYM/QQQM ETF shares may be acted on"])
+        return result
+    if type(expected["contract_id"]) is not int or expected["contract_id"] <= 0:
+        result["blocking_issues"].append("positive canonical contract ID required")
+        return result
+    evidence = payload.get("capabilities", {}).get("contract_details", {})
+    if evidence.get("status") != "available" or evidence.get("source") != "IBKR":
+        result["blocking_issues"].append("authoritative IBKR contract evidence required")
+        return result
+    try:
+        age = (now - timestamp(evidence["observed_at"])).total_seconds()
+        if not -5 <= age <= 300:
+            raise ValueError("stale contract evidence")
+    except (KeyError, TypeError, ValueError):
+        result["blocking_issues"].append("fresh contract observation required")
+        return result
+    contracts = evidence.get("data", {}).get("contracts")
+    if not isinstance(contracts, list) or any(not isinstance(c, dict) for c in contracts):
+        result["blocking_issues"].append("canonical contract list required")
+        return result
+    matches = [c for c in contracts if c.get("contract_id") == expected["contract_id"]]
+    if len(matches) != 1:
+        result["blocking_issues"].append("one matching canonical contract required")
+        return result
+    if any(matches[0].get(k) != expected[k] for k in ("symbol", "sec_type", "currency")):
+        result.update(status="REJECT", blocking_issues=["operation conflicts with canonical broker instrument"])
+        return result
+    result.update(status="PASS", normalized_instrument=expected)
+    return result
 
 
 def funding_ledger(value):

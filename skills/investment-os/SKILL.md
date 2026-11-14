@@ -7,6 +7,29 @@ description: Use when an agent must review a portfolio, judge an investment acti
 
 Investment OS is one rule skill for long-term investing. Read the rules, obtain fresh facts, make the judgment, and keep irreversible actions under explicit owner control.
 
+## Permanent instrument boundary
+
+**Within this account sleeve, the only permitted securities are SPYM and QQQM.**
+The restriction applies to BUY and SELL, order drafts, submissions, modifications,
+cancellations, and security-related broker automations. No other stock, ETF, bond,
+option, future, CFD, leveraged/inverse product or substitute receives an actionable
+recommendation or broker write. An allowed ETF as the underlying does not permit
+its derivatives. Legacy classification, IC approval, annual review, Research or a
+tool's technical capability never creates an exception or a third-security path.
+
+Read other observed holdings/orders only to reconcile the account and disclose
+anomalies; do not buy, sell, liquidate or change them through this skill. Read-only
+market context may explain risks, but must not promote other instruments as
+investment alternatives or produce their allocations or actionable instructions.
+Cash remains a funding state; the existing explicitly authorized CNH-to-USD
+funding-preparation procedure is separate and does not permit FX speculation.
+
+Before any security-related broker write, including an order draft, run the
+bundled helper with `task=trade_scope` against the exact normalized operation
+and fresh IBKR contract evidence. It must PASS for that same contract and side;
+unknown identity or unavailable code execution closes that write only. Passing
+scope does not authorize a trade or waive account, policy or execution checks.
+
 **Tradeoff:** These rules bias toward stopping over answering, which is right when real money is at stake and wrong when none is. They govern real account state and irreversible actions. A stipulated example, a hypothetical, or a question about the rules themselves is answered normally, naming the premise once.
 
 ## Decision posture
@@ -55,6 +78,7 @@ The test: does this stop protect real money, or does it only avoid answering?
 
 ## Product boundary
 
+- **Two Production ETFs.** SPYM targets 55% and QQQM 30% of account NAV; USD cash targets 15%. These are account weights, not a 55:30 split of equity alone. Other observed securities are read-only account anomalies, included in reconciliation and disclosure but never in allocations or broker writes. A policy release does not establish that any holding was sold or authorize immediate target catch-up.
 - **One behavior authority.** This `SKILL.md` defines Agent behavior, routing, privacy, and authorization boundaries.
 - **Three policy authorities.** The numbered references define investment policy and operating facts. Apply the constitution before the operating manual; the data contract decides whether facts are usable but creates no investment policy.
 - **Repository stores rules, never portfolio.** Account identifiers, balances, positions, orders, fills, contributions, authorization records, and execution receipts must not enter the public repository.
@@ -153,7 +177,13 @@ separately labeled Research Note inside Reason, following `01-daily.md` and
 Decision or Next Trigger production criteria. When evidence is thin, say so.
 
 Research may challenge timing, indicators, allocations and alternative approaches,
-but it cannot enter production by implication. The Production investment universe remains permanently closed: other assets may be compared as Research, but receive no Production candidate label, allocation or order through that discussion. Moving averages are descriptive Research data only, never automatic support/resistance forecasts or Production trade triggers. A new indicator used as a Production rule, exception, or rule requires a separate proposal, owner approval, policy change, executable checks when needed, and a released distribution.
+but it cannot enter production by implication. The permanent instrument boundary
+also binds Research: read-only context does not permit another instrument as an
+investment alternative, actionable recommendation or order. Moving averages are
+descriptive Research data only, never automatic support/resistance forecasts or
+Production trade triggers. Changes to indicators or timing rules require a separate
+proposal, owner approval, authoritative-file changes, checks and a released
+distribution; that process cannot expand the two-ETF universe.
 
 ### Periodic review
 
@@ -162,6 +192,10 @@ Weekly, quarterly and annual reviews follow `03-periodic.md`. The weekly checkpo
 ### Broker execution
 
 A recommendation is not authorization. Before any broker write:
+
+For securities, apply the permanent instrument boundary and obtain a fresh
+`trade_scope` PASS first. Read-only Legacy is never a disposal exception.
+CNH-to-USD funding preparation follows its separate existing procedure.
 
 1. verify fresh before-state, positions, and open orders;
 2. normalize one operation and bind every material parameter;
