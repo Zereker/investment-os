@@ -159,6 +159,12 @@ settled USD or treat policy approval as authorization for conversion or purchase
 
 Use confirmed contribution, fresh settled USD cash, position, order, and lifecycle facts. The narrowly authorized CNH funding path in `08-funding-fx.md` accepts user confirmation of source and allocation period only; IBKR still supplies amounts, fills, fees and settlement. This is an explicit exception to Rule 4 for source classification, never live amounts or execution authority. Restore separate contribution-first Routine DCA and subsequent strategic cash migration. Never infer missing contributions or substitute zero. Apply the current policy and deterministic arithmetic. Report available channels, blockers, the authorized scope, and the next observation condition. Never infer a missing contribution.
 
+For live monthly deployment, use the single private plan for the account's New
+York month described in `08-funding-fx.md`. Save and read back its reservation
+before the first broker write, then use that plan for all orders in the month.
+Follow the same lifecycle for both contribution sources. Without a verified
+private journal, complete reviews and simulations and close monthly writes.
+
 ### Transaction judgment
 
 Code and tools own facts, arithmetic, limits, and execution state. The LLM owns the investment judgment. It may compare evidence, reject a mechanically valid idea, or recommend `HOLD`, `WAIT`, further research, or an action under current policy. Do not reduce every decision to one universal score.
