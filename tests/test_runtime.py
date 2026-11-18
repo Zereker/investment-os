@@ -291,6 +291,32 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(out['deployment']['D'], 1998)
         self.assertFalse(out['execution_authorized'])
 
+    def test_monthly_date_follows_new_york_across_utc_midnight_and_dst(self):
+        cases = (
+            ('2026-10-01T00:30:00+00:00', '2026-10-01', 'DATA INCOMPLETE'),
+            ('2026-10-02T03:30:00+00:00', '2026-10-01', 'PASS'),
+            ('2026-10-02T04:30:00+00:00', '2026-10-01', 'DATA INCOMPLETE'),
+            ('2026-01-03T04:30:00+00:00', '2026-01-02', 'PASS'),
+        )
+        for observed_at, scheduled_date, status in cases:
+            with self.subTest(observed_at=observed_at):
+                payload = fixture()
+                payload['schedule']['monthly_execution_date'] = scheduled_date
+                for capability in payload['capabilities'].values():
+                    capability['observed_at'] = observed_at
+                result = helper.check(payload, dt.datetime.fromisoformat(observed_at))
+                self.assertEqual(result['status'], status)
+                self.assertEqual(result['deployment'] is not None, status == 'PASS')
+
+    def test_fx_period_uses_new_york_month_at_utc_month_boundary(self):
+        payload = self.fx_fixture()
+        observed_at = '2026-10-01T00:30:00+00:00'
+        for capability in payload['capabilities'].values():
+            capability['observed_at'] = observed_at
+        result = helper.check(payload, dt.datetime.fromisoformat(observed_at))
+        self.assertIn('funding allocation period must match monthly review period', result['blocking_issues'])
+        self.assertIsNone(result['deployment'])
+
     def test_confirmed_fx_rejects_missing_source_reuse_and_fees(self):
         for key,value in [('confirmed_new_funding',False),('allocation_period','2026-09'),
                           ('trade_ids',['synthetic-fx','synthetic-fx'])]:

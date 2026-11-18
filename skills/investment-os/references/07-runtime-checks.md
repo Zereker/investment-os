@@ -39,14 +39,16 @@ open_orders.data.orders；contract_details.data.contracts 为本次按 ID 核验
   返回 read_only=true、has_open_orders、order_constraints、observed_at、validated_at
   及原始 source_as_of；deployment 始终 null，execution_authorized 始终 false。
   source_as_of 未返回仍为 null，不用读取时间补造券商估值时点；对账失败时不输出权重。
+  余额行的非有限数值或非标量记为 null，字段位置列于 disclosure_issues，可靠字段
+  继续披露。必需金额或账户证据无效仍关闭相关路径；仅 CNH 结算值未知单独披露。
 - task=account：保留严格账户前置门及披露，无部署金额；挂单未清时不放行。
 - task=monthly：共享门 + F + 固定日期/生命周期，仅计算 D、B，不要求 market_inputs。
 - task=drawdown：共享门 + market_inputs，独立计算 SPYM、QQQM，不要求 F 或 schedule。
 - task=funding_ledger：纯私有台账转换，见 08-funding-fx.md；不读写磁盘或执行订单。
 - task=trade_scope：证券相关券商写入前的固定范围检查，仅允许 SPYM、QQQM 的 USD 普通份额，BUY 和 SELL 均受限；不提供交易授权。
 
-订单列表仅在本次成功读取为空时为 clear；有效未完成订单为 pending；未知状态、
-畸形数量或重复订单 ID 为 unknown。pending 仅可通过 task=daily 的数据完整性检查，
+订单列表仅在本次成功读取为空时为 clear；有效未完成订单为 pending；缺少券商
+证券描述、未知状态、畸形数量或重复订单 ID 为 unknown。pending 仅可通过 task=daily 的数据完整性检查，
 不表明订单身份、重复交易风险或交易资金已获批准；account、monthly、drawdown
 仍要求 clear。未知订单在所有任务中阻断对应检查，不能伪装为空。
 单轮读取、局部重试和网页预算只有 01-daily.md 一个权威，不在其他流程重新定义。
@@ -70,7 +72,8 @@ fee_currency_verified、usd_settlement_verified；verified 只能来自实际券
 
 月度 schedule 含 source=NYSE、monthly_execution_date、calculation_already_run。
 日期须由当年度 NYSE 官方日历确认，生命周期须有可验证私有证据。
-未知不填 false；helper 只检查传入日期一致，不自行证明官方日历或历史。
+helper 以 `America/New_York` 判断月度执行日与资金归属月份，需宿主 IANA 时区数据；
+不可用时关闭月度计算。未知生命周期不填 false；helper 不自行证明官方日历或历史。
 
 ## 3. 回撤局部状态
 

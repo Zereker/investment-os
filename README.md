@@ -50,6 +50,8 @@ Account checks follow `references/07-runtime-checks.md`; hosts with Python 3.11+
 can run `skills/investment-os/scripts/check_runtime.py` using ephemeral JSON on
 stdin. No package install, network service or broker credentials are needed by
 the helper. Its JSON output is a review result, never execution authorization.
+Monthly checks use the host's IANA `America/New_York` timezone data to evaluate
+the NYSE execution date and contribution month.
 
 Installing a skill does not grant brokerage access. IBKR remains the authoritative
 source of account, order, fill and contribution facts. Available capabilities are
@@ -66,7 +68,7 @@ blocks that ticker only. Holdings use fresh IBKR contract-ID mappings, not displ
 
 Ordinary Daily uses `task=daily` and the single-collection procedure in
 `skills/investment-os/references/01-daily.md`: connection probe, concurrent independent reads, bounded
-local retries, one validation, then a timestamped read-only report. Research and
+local retries that prioritize core account facts, one validation, then a timestamped read-only report. Research and
 writing do not restart account collection. Known working orders are reported as
 `pending`; they do not by themselves make Daily facts incomplete. Unknown orders,
 stale facts and failed reconciliation remain blockers. The helper does not fetch

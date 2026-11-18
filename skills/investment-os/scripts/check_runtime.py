@@ -8,6 +8,7 @@ import copy
 import json
 import math
 import sys
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 ALLOWED_ETFS = frozenset(("SPYM", "QQQM"))
 TARGETS = {"SPYM": .55, "QQQM": .30}
@@ -20,6 +21,8 @@ def numeric(value):
 
 
 def timestamp(value):
+    if not isinstance(value, str):
+        raise ValueError("timestamp requires an ISO 8601 string")
     parsed = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
     if parsed.tzinfo is None:
         raise ValueError("timestamp requires timezone")
@@ -37,6 +40,9 @@ def working_order_status(orders):
                "PRE_SUBMITTED", "PENDING_SUBMIT", "PENDING_CANCEL"}
     for order in orders:
         if not isinstance(order, dict):
+            return "unknown"
+        description = order.get("primary_description")
+        if not isinstance(description, str) or not description.strip():
             return "unknown"
         oid = order.get("order_id")
         if type(oid) is not int or oid <= 0 or oid in seen:
@@ -63,6 +69,26 @@ def working_order_status(orders):
         except (KeyError, TypeError, ValueError, OverflowError):
             return "unknown"
     return "pending"
+
+
+def balance_disclosure(rows):
+    """Keep valid fields even when a broker row contains an invalid value."""
+    if not isinstance(rows, list):
+        return None, []
+    output, issues = [], []
+    for index, row in enumerate(rows):
+        if not isinstance(row, dict):
+            output.append(None)
+            issues.append(f"balances[{index}]: object required")
+            continue
+        normalized = {}
+        for field, value in row.items():
+            if isinstance(value, (dict, list)) or (isinstance(value, float) and not math.isfinite(value)):
+                issues.append(f"balances[{index}].{field}: invalid scalar")
+                value = None
+            normalized[field] = value
+        output.append(normalized)
+    return output, issues
 
 
 def funding_preparation(rows):
@@ -148,17 +174,27 @@ def check(payload, now=None):
     if task not in ("daily", "account", "monthly", "drawdown"):
         raise ValueError("task must be daily, account, monthly, drawdown, trade_scope or funding_ledger")
     observations = payload.get("capabilities", {})
+    if not isinstance(observations, dict):
+        raise ValueError("capabilities must be an object")
     required = MONTHLY if task == "monthly" else ACCOUNT
     confirmed_path = task == "monthly" and "funding_confirmation" in payload
     if confirmed_path:
         required = ACCOUNT + ("fx_funding",)
-    issues, data, observed = [], {}, []
+    issues, data, observed, source_times = [], {}, [], {}
     for name in required:
         item = observations.get(name, {})
-        if item.get("status") != "available":
-            issues.append(f"{name}: {item.get('status', 'unavailable')}")
+        if not isinstance(item, dict):
+            issues.append(f"{name}: invalid capability envelope")
             continue
-        if item.get("source") != "IBKR" or item.get("data") is None:
+        source_time = item.get("source_as_of")
+        if isinstance(source_time, str):
+            source_times[name] = source_time
+        status = item.get("status", "unavailable")
+        if status != "available":
+            label = status if status in ("unavailable", "stale", "conflicting", "not_requested", "not_applicable") else "invalid status"
+            issues.append(f"{name}: {label}")
+            continue
+        if item.get("source") != "IBKR" or not isinstance(item.get("data"), dict):
             issues.append(f"{name}: authoritative IBKR data required")
             continue
         try:
@@ -176,34 +212,49 @@ def check(payload, now=None):
     summary = data.get("account_summary", {})
     nav = summary.get("net_liquidation")
     currency = summary.get("currency")
+    if not isinstance(currency, str):
+        currency = None
     if currency != "USD" or not numeric(nav) or nav <= 0:
         issues.append("positive USD account NAV required")
         nav = None
-    rows = data.get("balances", {}).get("balances")
+    rows, disclosure_issues = balance_disclosure(data.get("balances", {}).get("balances"))
     cash = usd_cash = None
     if isinstance(rows, list):
-        base = [r for r in rows if r.get("currency") == "BASE"]
-        usd = [r for r in rows if r.get("currency") == "USD"]
+        valid_rows = [r for r in rows if isinstance(r, dict)]
+        if len(valid_rows) != len(rows) or any(
+            not isinstance(r.get("currency"), str) or not r["currency"].strip() or not numeric(r.get("cash_balance"))
+            for r in valid_rows
+        ):
+            issues.append("each balance row requires a currency and finite cash balance")
+        base = [r for r in valid_rows if r.get("currency") == "BASE"]
+        usd = [r for r in valid_rows if r.get("currency") == "USD"]
         if len(base) == 1 and numeric(base[0].get("cash_balance")):
             cash = base[0]["cash_balance"]
         if len(usd) == 1 and numeric(usd[0].get("cash_balance")):
             settled = usd[0].get("settled_cash")
             if numeric(settled) and settled >= 0:
                 usd_cash = min(usd[0]["cash_balance"], settled)
+        if any(numeric(r.get("cash_balance")) and r["cash_balance"] < 0 for r in valid_rows):
+            issues.append("negative currency cash balance: borrowing prohibited")
     if cash is None or usd_cash is None:
         issues.append("unique BASE aggregate and USD cash rows required")
-    if isinstance(rows, list) and any(numeric(r.get("cash_balance")) and r["cash_balance"] < 0 for r in rows):
-        issues.append("negative currency cash balance: borrowing prohibited")
 
     positions = data.get("positions", {}).get("positions")
     details = data.get("contract_details", {}).get("contracts", [])
     values, holdings, legacy, contracts = [], {}, 0, set()
     mapping_complete = True
+    if not isinstance(details, list) or any(not isinstance(c, dict) for c in details):
+        issues.append("invalid canonical contract list")
+        details = []
+        mapping_complete = False
     if not isinstance(positions, list):
         issues.append("positions envelope required")
         positions = None
     else:
         for p in positions:
+            if not isinstance(p, dict):
+                issues.append("invalid position row")
+                continue
             value, quantity = p.get("market_value"), p.get("position")
             cid = p.get("contract_id")
             matches = [c for c in details if c.get("contract_id") == cid]
@@ -216,10 +267,11 @@ def check(payload, now=None):
             if not numeric(value) or value < 0 or p.get("currency") != "USD" or not numeric(quantity) or quantity <= 0:
                 issues.append("invalid, short, zero or non-USD position")
                 continue
-            if cid is None or cid in contracts:
+            if type(cid) is not int or cid in contracts:
                 issues.append("missing or duplicate position contract")
                 mapping_complete = False
-            contracts.add(cid)
+            else:
+                contracts.add(cid)
             values.append(value)
             if symbol in TARGETS:
                 holdings[symbol] = holdings.get(symbol, 0) + value
@@ -245,6 +297,7 @@ def check(payload, now=None):
     report = dict(status="DATA INCOMPLETE" if issues else "PASS", blocking_issues=issues,
                   reconciliation=reconciliation, open_orders_status=order_status,
                   balances_by_currency=rows, base_currency=currency,
+                  disclosure_issues=disclosure_issues,
                   selected_balance_label="BASE" if cash is not None else None,
                   selection_reason="BASE for reconciliation; USD only for deployment",
                   deployment=None, funding_preparation=funding_preparation(rows),
@@ -253,7 +306,7 @@ def check(payload, now=None):
         report.update(read_only=True, execution_check_required=True,
                       observed_at=max(observed).isoformat() if observed else None,
                       validated_at=now.isoformat(),
-                      source_as_of={name: observations.get(name, {}).get("source_as_of") for name in required},
+                      source_as_of={name: source_times.get(name) for name in required},
                       has_open_orders=None if order_status == "unknown" else order_status == "pending",
                       order_constraints=["working orders require review before deployment"] if order_status == "pending" else [])
     coherent = task != "daily" or (reconciliation is not None and reconciliation["status"] == "PASS")
@@ -267,12 +320,18 @@ def check(payload, now=None):
         return check_drawdown(payload, now, report, nav, usd_cash, holdings)
 
     # Monthly gates must finish before any funding formula is evaluated.
-    contribution = confirmed_fx_contribution(payload, data, now, issues) if confirmed_path else data.get("cash_transactions", {}).get("external_contribution_usd")
+    try:
+        market_now = now.astimezone(ZoneInfo("America/New_York"))
+    except ZoneInfoNotFoundError:
+        issues.append("America/New_York timezone data required for monthly checks")
+        report["status"] = "DATA INCOMPLETE"
+        return report
+    contribution = confirmed_fx_contribution(payload, data, market_now, issues) if confirmed_path else data.get("cash_transactions", {}).get("external_contribution_usd")
     report["funding_evidence_mode"] = "user_source_confirmation_plus_ibkr_fx" if confirmed_path else "ibkr_cash_transactions"
     if not numeric(contribution) or contribution < 0:
         issues.append("authoritative external net contribution F unavailable or invalid")
     schedule = payload.get("schedule", {})
-    if schedule.get("source") != "NYSE" or schedule.get("monthly_execution_date") != now.date().isoformat():
+    if schedule.get("source") != "NYSE" or schedule.get("monthly_execution_date") != market_now.date().isoformat():
         issues.append("not a verified fixed monthly execution date; no catch-up")
     if schedule.get("calculation_already_run") is not False:
         issues.append("monthly calculation lifecycle is unknown or already run")
@@ -478,10 +537,12 @@ def check_drawdown(payload, now, report, nav, usd_cash, holdings):
 def main():
     try:
         result = check(json.load(sys.stdin))
+        output = json.dumps(result, allow_nan=False)
     except (ValueError, TypeError, KeyError, AttributeError, OverflowError) as exc:
         result = dict(status="DATA INCOMPLETE", blocking_issues=[f"invalid input: {exc}"],
                       deployment=None, execution_authorized=False, runtime_data_persisted=False)
-    print(json.dumps(result, allow_nan=False))
+        output = json.dumps(result, allow_nan=False)
+    print(output)
     return 0 if result["status"] == "PASS" else 2
 
 
