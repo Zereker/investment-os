@@ -5,7 +5,7 @@
 ## 启动顺序
 
 1. **读规则**：canonical `SKILL.md` → `00-constitution.md`。规则即代码，状态是规则作用于实时数据的函数。
-2. **读账户**（IBKR，固定顺序）：Account Summary → Balances → Positions → Open Orders。任一失败 → 账户侧 `DATA INCOMPLETE`，停止交易建议。
+2. **读账户**：Daily 按 01-daily.md 的单轮编排执行，先 Account Summary 验证连接，随后在同一账户上下文并行读取 Balances、Positions、Open Orders；月度和真实交易继续使用严格账户前置检查。任一必要事实不可用 → 相关路径 `DATA INCOMPLETE`，报告未知，不重启整轮。
 3. **计算派生状态**（无需任何存储）：
    - 各标的实际权重 = 市值 ÷ NetLiq
    - 各标的正缺口 = 目标权重 × NetLiq − 市值，负值取 0

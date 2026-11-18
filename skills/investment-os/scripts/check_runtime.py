@@ -26,6 +26,45 @@ def timestamp(value):
     return parsed
 
 
+def working_order_status(orders):
+    """A valid working order is a constraint, not a missing account fact."""
+    if not isinstance(orders, list):
+        return "unknown"
+    if not orders:
+        return "clear"
+    seen = set()
+    working = {"NEW", "SUBMITTED", "PARTIALLY_FILLED", "PRESUBMITTED",
+               "PRE_SUBMITTED", "PENDING_SUBMIT", "PENDING_CANCEL"}
+    for order in orders:
+        if not isinstance(order, dict):
+            return "unknown"
+        oid = order.get("order_id")
+        if type(oid) is not int or oid <= 0 or oid in seen:
+            return "unknown"
+        seen.add(oid)
+        status = order.get("order_status")
+        if order.get("side") not in ("BUY", "SELL") or not isinstance(status, str) or status not in working:
+            return "unknown"
+        try:
+            raw = [order[k] for k in ("total_shares_qty", "cum_shares_qty", "remaining_shares_qty")]
+            if any(isinstance(x, bool) for x in raw):
+                return "unknown"
+            total, filled, remaining = map(float, raw)
+            if not all(math.isfinite(x) for x in (total, filled, remaining)):
+                return "unknown"
+            if total <= 0 or filled < 0 or remaining <= 0 or not math.isclose(total, filled + remaining, rel_tol=0, abs_tol=1e-8):
+                return "unknown"
+            if order.get("order_type") == "LIMIT":
+                price = order["limit_price"]
+                if isinstance(price, bool) or not math.isfinite(float(price)) or float(price) <= 0:
+                    return "unknown"
+            elif order.get("order_type") != "MARKET":
+                return "unknown"
+        except (KeyError, TypeError, ValueError, OverflowError):
+            return "unknown"
+    return "pending"
+
+
 def funding_preparation(rows):
     """Disclosure only: source-currency balances never become deployable USD."""
     result = dict(source_currency="CNH", destination_currency="USD",
@@ -106,8 +145,8 @@ def check(payload, now=None):
         return check_trade_scope(payload, now)
     if task == "funding_ledger":
         return update_funding_ledger(payload)
-    if task not in ("account", "monthly", "drawdown"):
-        raise ValueError("task must be account, monthly, drawdown, trade_scope or funding_ledger")
+    if task not in ("daily", "account", "monthly", "drawdown"):
+        raise ValueError("task must be daily, account, monthly, drawdown, trade_scope or funding_ledger")
     observations = payload.get("capabilities", {})
     required = MONTHLY if task == "monthly" else ACCOUNT
     confirmed_path = task == "monthly" and "funding_confirmation" in payload
@@ -199,8 +238,8 @@ def check(payload, now=None):
             issues.append("NAV reconciliation exceeds 0.5% tolerance")
 
     orders = data.get("open_orders", {}).get("orders")
-    order_status = "clear" if orders == [] else "conflicting" if isinstance(orders, list) else "unknown"
-    if order_status != "clear":
+    order_status = working_order_status(orders)
+    if order_status == "unknown" or (order_status == "pending" and task != "daily"):
         issues.append(f"open orders: {order_status}")
 
     report = dict(status="DATA INCOMPLETE" if issues else "PASS", blocking_issues=issues,
@@ -210,11 +249,19 @@ def check(payload, now=None):
                   selection_reason="BASE for reconciliation; USD only for deployment",
                   deployment=None, funding_preparation=funding_preparation(rows),
                   execution_authorized=False, runtime_data_persisted=False)
-    if nav and positions is not None and len(values) == len(positions) and mapping_complete:
+    if task == "daily":
+        report.update(read_only=True, execution_check_required=True,
+                      observed_at=max(observed).isoformat() if observed else None,
+                      validated_at=now.isoformat(),
+                      source_as_of={name: observations.get(name, {}).get("source_as_of") for name in required},
+                      has_open_orders=None if order_status == "unknown" else order_status == "pending",
+                      order_constraints=["working orders require review before deployment"] if order_status == "pending" else [])
+    coherent = task != "daily" or (reconciliation is not None and reconciliation["status"] == "PASS")
+    if nav and positions is not None and len(values) == len(positions) and mapping_complete and coherent:
         report["weights"] = {t: holdings.get(t, 0) / nav for t in TARGETS}
         report["legacy"] = {"market_value": legacy, "weight": legacy / nav}
         report["usd_cash_weight"] = usd_cash / nav if usd_cash is not None else None
-    if task == "account":
+    if task in ("daily", "account"):
         return report
     if task == "drawdown":
         return check_drawdown(payload, now, report, nav, usd_cash, holdings)

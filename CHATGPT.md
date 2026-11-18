@@ -26,7 +26,14 @@ the independent checks. Monthly funding requires authoritative contribution evid
 A reviewed public ChatGPT Plugins Directory release is a separate publication
 step; a repository version or tag does not establish one.
 
-The helper separates account, monthly DCA/baseline, independent drawdown and
+Ordinary Daily uses task=daily: collect once, validate once, then retain the
+timestamped read-only result while researching and writing. The bounded collection
+and retry procedure is owned by references/01-daily.md. Known working orders are
+pending constraints, not missing Daily facts. Unknown orders or failed reconciliation
+still produce DATA INCOMPLETE. A Daily PASS never authorizes deployment; strict
+account, monthly, drawdown and broker-write checks still need fresh evidence.
+
+The helper separates read-only Daily, strict account preflight, monthly DCA/baseline, independent drawdown and
 private funding-journal transitions, plus the mandatory trade_scope instrument gate. Each held contract needs an IBKR ID-based
 canonical mapping. A journal result is not persisted by the helper: the host
 needs verified private storage with atomic revision updates and readback before

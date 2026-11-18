@@ -52,7 +52,7 @@
 
 ### 4. Open Orders
 
-必须读取权威 Open Orders，判断重复、方向冲突、现金占用和未完成状态。helper 接收 orders 数组；只有本次读取确认空数组才为 clear，缺失为 unknown，非空为 conflicting，后两者关闭部署。
+必须读取权威 Open Orders，判断重复、方向冲突、现金占用和未完成状态。helper 接收 orders 数组；只有本次读取确认空数组才为 clear，完整未完成订单为 pending，缺失或畸形记录为 unknown，后两者仍关闭月度与回撤部署。Daily 的只读 pending 披露不提供部署例外。
 
 ### 5. Account Reconciliation
 

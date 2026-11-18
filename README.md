@@ -64,6 +64,15 @@ blocks that ticker only. Holdings use fresh IBKR contract-ID mappings, not displ
 
 ## Verification
 
+Ordinary Daily uses `task=daily` and the single-collection procedure in
+`skills/investment-os/references/01-daily.md`: connection probe, concurrent independent reads, bounded
+local retries, one validation, then a timestamped read-only report. Research and
+writing do not restart account collection. Known working orders are reported as
+`pending`; they do not by themselves make Daily facts incomplete. Unknown orders,
+stale facts and failed reconciliation remain blockers. The helper does not fetch
+data or enforce the host's tool-call budget. Deployment and broker writes retain
+fresh evidence, clear-order and instrument-scope requirements.
+
 ```bash
 bash tests/run-all.sh
 ```
