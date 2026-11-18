@@ -101,6 +101,9 @@ Resolve this installed distribution from this `SKILL.md`, never from the user's 
 | Broker execution | `05-state.md`, `06-data-contract.md`, `07-runtime-checks.md` |
 
 Reading a file the task does not need is waste, not diligence.
+Reuse rules already read from the same installed version in this session. Inspect
+only changed or newly required files; do not repeatedly print tool schemas or
+complete policy files. A version change invalidates that reuse, never live facts.
 
 The installed files are the session authority. Do not clone, fetch, or substitute another checkout at runtime. Use the capabilities actually available in the current harness; missing required capabilities block only the affected path.
 
@@ -112,7 +115,8 @@ validation is part of this skill. When code execution is available, invoke the
 installed `scripts/check_runtime.py` with ephemeral connector results via stdin.
 For monthly and drawdown deployment, this helper owns arithmetic. Use `task=monthly`
 only for DCA and baseline, `task=drawdown` for independent ladders on any trading
-review date, and `task=account` for account checks. Monthly amounts require a PASS;
+review date, `task=daily` for read-only Daily snapshots, and `task=account` for
+the existing strict account preflight. Monthly amounts require a PASS;
 drawdown amounts require both valid shared account gates and that ticker's PASS
 path. An incomplete ladder does not close its peer or monthly DCA/baseline.
 Never calculate provisional amounts on a failed path. Without code execution, complete account checks from authoritative
@@ -126,6 +130,12 @@ helper, grant account access or enable a missing cash-transactions capability.
 Treat `Daily` as a complete request. Read fresh account state plus the verified descriptive market context requested in `09-market-position.md`. These Research inputs never become funding or execution gates. Use the fuller reporting structure in `01-daily.md` while retaining exactly these five top-level fields:
 
 Resolve account and market capabilities independently; absence of one does not establish absence of the other.
+Follow the bounded collection procedure in `01-daily.md`: one account collection,
+local retries only, one helper validation, then freeze the read-only result before
+finishing research and writing. Do not refresh successful account reads to repair
+an anomaly, extend report freshness, or chase price changes. Report the blocker.
+Known working orders constrain deployment; they are not missing Daily data.
+Only a separate explicit transaction task opens execution checks and fresh quotes.
 
 1. `Portfolio`
 2. `Change`

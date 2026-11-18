@@ -5,7 +5,7 @@
 
 ## 1. 共享账户门
 
-按 05-state.md 顺序读取 Account Summary、Balances、Positions、Open Orders，
+按 05-state.md 与 01-daily.md 的任务编排读取 Account Summary、Balances、Positions、Open Orders，
 再由 IBKR 合约查询按持仓 contract_id 取得规范 symbol、sec_type、currency。
 所有快照记录 status、source、observed_at、source_as_of（券商未提供则 null）。
 不得用观察时间替代券商时间，不把缺失当空集合。原始账户快照只在私有内存。
@@ -13,6 +13,8 @@
 账户对账用 BASE 折算现金加全部证券市值（含 Legacy），容差为 NAV 的 0.5%。
 可部署现金只取 min(USD cash_balance, USD settled_cash)，不含 CNH 或 BASE。
 检查来源、五分钟内观察时间、一致窗口、币种、借款、订单、重复合约。
+Daily 在采集结束时校验一次，之后冻结为带时间的只读结果；写作时间不触发重采集。
+真实部署、范围门与券商写入仍以真正当前时间检查新鲜证据，不接受旧 Daily PASS。
 持仓分类以 contract_id 关联唯一规范合约，显示名称不参与分类；缺失、重复、
 非 STK 或币种不一致关闭账户相关路径。已识别的非目标股票才归 Legacy。
 
@@ -33,11 +35,21 @@ open_orders.data.orders；contract_details.data.contracts 为本次按 ID 核验
 各项含 contract_id、symbol、sec_type=STK、currency=USD。不得凭显示名称自填映射。
 合约数据可由 IBKR 连接器规范化，但必须保留可审计的原始来源关联。
 
-- task=account：只完成共享账户门及披露，无部署金额。
+- task=daily：只读账户披露，已知完整挂单为 pending；它本身不使数据状态失败。
+  返回 read_only=true、has_open_orders、order_constraints、observed_at、validated_at
+  及原始 source_as_of；deployment 始终 null，execution_authorized 始终 false。
+  source_as_of 未返回仍为 null，不用读取时间补造券商估值时点；对账失败时不输出权重。
+- task=account：保留严格账户前置门及披露，无部署金额；挂单未清时不放行。
 - task=monthly：共享门 + F + 固定日期/生命周期，仅计算 D、B，不要求 market_inputs。
 - task=drawdown：共享门 + market_inputs，独立计算 SPYM、QQQM，不要求 F 或 schedule。
 - task=funding_ledger：纯私有台账转换，见 08-funding-fx.md；不读写磁盘或执行订单。
 - task=trade_scope：证券相关券商写入前的固定范围检查，仅允许 SPYM、QQQM 的 USD 普通份额，BUY 和 SELL 均受限；不提供交易授权。
+
+订单列表仅在本次成功读取为空时为 clear；有效未完成订单为 pending；未知状态、
+畸形数量或重复订单 ID 为 unknown。pending 仅可通过 task=daily 的数据完整性检查，
+不表明订单身份、重复交易风险或交易资金已获批准；account、monthly、drawdown
+仍要求 clear。未知订单在所有任务中阻断对应检查，不能伪装为空。
+单轮读取、局部重试和网页预算只有 01-daily.md 一个权威，不在其他流程重新定义。
 
 trade_scope 输入 operation，含准确的 contract_id、symbol、sec_type、currency、side。
 capabilities.contract_details 使用同一新鲜 IBKR envelope，data.contracts 中必须有
