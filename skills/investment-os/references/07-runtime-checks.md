@@ -39,14 +39,16 @@ open_orders.data.orders；contract_details.data.contracts 为本次按 ID 核验
   返回 read_only=true、has_open_orders、order_constraints、observed_at、validated_at
   及原始 source_as_of；deployment 始终 null，execution_authorized 始终 false。
   source_as_of 未返回仍为 null，不用读取时间补造券商估值时点；对账失败时不输出权重。
+  余额行的非有限数值或非标量记为 null，字段位置列于 disclosure_issues，可靠字段
+  继续披露。必需金额或账户证据无效仍关闭相关路径；仅 CNH 结算值未知单独披露。
 - task=account：保留严格账户前置门及披露，无部署金额；挂单未清时不放行。
 - task=monthly：共享门 + F + 固定日期/生命周期，仅计算 D、B，不要求 market_inputs。
 - task=drawdown：共享门 + market_inputs，独立计算 SPYM、QQQM，不要求 F 或 schedule。
 - task=funding_ledger：纯私有台账转换，见 08-funding-fx.md；不读写磁盘或执行订单。
 - task=trade_scope：证券相关券商写入前的固定范围检查，仅允许 SPYM、QQQM 的 USD 普通份额，BUY 和 SELL 均受限；不提供交易授权。
 
-订单列表仅在本次成功读取为空时为 clear；有效未完成订单为 pending；未知状态、
-畸形数量或重复订单 ID 为 unknown。pending 仅可通过 task=daily 的数据完整性检查，
+订单列表仅在本次成功读取为空时为 clear；有效未完成订单为 pending；缺少券商
+证券描述、未知状态、畸形数量或重复订单 ID 为 unknown。pending 仅可通过 task=daily 的数据完整性检查，
 不表明订单身份、重复交易风险或交易资金已获批准；account、monthly、drawdown
 仍要求 clear。未知订单在所有任务中阻断对应检查，不能伪装为空。
 单轮读取、局部重试和网页预算只有 01-daily.md 一个权威，不在其他流程重新定义。
@@ -70,7 +72,11 @@ fee_currency_verified、usd_settlement_verified；verified 只能来自实际券
 
 月度 schedule 含 source=NYSE、monthly_execution_date、calculation_already_run。
 日期须由当年度 NYSE 官方日历确认，生命周期须有可验证私有证据。
-未知不填 false；helper 只检查传入日期一致，不自行证明官方日历或历史。
+helper 以 `America/New_York` 判断月度执行日与资金归属月份，需宿主 IANA 时区数据；
+不可用时关闭月度计算。未知生命周期不填 false；helper 不自行证明官方日历或历史。
+两种资金来源均可传入 `funding_ledger`，账内本月已有计划时关闭新的计算候选，
+`calculation_already_run=false` 不能覆盖账内状态。仅 `monthly_plan_reservable=true`
+可进入 schema 2 的正式月计划预占，后续按 `08-funding-fx.md` 保存和回读。
 
 ## 3. 回撤局部状态
 
@@ -79,6 +85,10 @@ close_as_of、tiers_executed（经可验证用途关联重建的 T1–T4）。
 确认为未执行才传空列表；收盘日期不得未来或超过 7 天。
 另一只缺失不阻断可验证阶梯；两只都缺失时 deployment=null。
 输入的是已完成收盘相对自身历史最高收盘的回撤，不用盘中价或有限窗口最高冒充 ATH。
+可随已核验的档位提供 `cycle_peak_date` 和 `tier_receipts`。后者以已执行档位为键，
+每档含相同周期日、原核定 `allocation_usd`、实际 `filled_usd` 和 `broker_fill_ids`。
+回执与已执行档位必须一致、成交 ID 不得跨档重复；helper 检查形状和数值，宿主
+仍须核验真实券商回读和用途关联。旧数据可传经核验的档位列表，未知不可冒充空。
 
 共享账户门失败时 deployment=null。单只阶梯失败时 paths 逐只报告，
 总状态可为 DATA INCOMPLETE，但 deployment 只包含 PASS 路径的候选；
@@ -88,6 +98,9 @@ close_as_of、tiers_executed（经可验证用途关联重建的 T1–T4）。
 月度与回撤共享同一现金。若同日先执行月度，须先回读、刷新账户再算回撤；
 不能把两个独立快照的预算相加。所有金额仍须核验整股、报价、佣金和操作授权。
 candidate_tiers 不是已执行状态，只有实际成交及回读才消耗档位。
+`tier_allocations` 按标的逐档输出未裁剪预算、受现金及缺口限制后的金额、状态
+及可核验的历史回执。`above_maximum` 表示本次超过 25% 无新候选，未写入执行历史；
+`no_capacity` 表示达档但金额为零。资料不足的标的对应明细为 null。
 
 ## 4. 无代码或缺失能力
 
@@ -106,5 +119,5 @@ DATA INCOMPLETE 表示该局部事实未知。它不生成换汇金额或预计 
 
 helper 不提供私有数据库或持久化保证。资金台账转换输出 persistence_required=true、
 runtime_data_persisted=false；宿主必须在可信私有存储中按修订号原子保存并回读。
-未配置或无法验证该存储，只能审核/模拟，关闭依赖该台账的真实定投执行。
+未配置或无法验证该存储，月度路径只审核/模拟。
 不得以公开 GitHub、普通临时文件或模型记忆充当私有存储。

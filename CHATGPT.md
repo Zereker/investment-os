@@ -33,9 +33,10 @@ pending constraints, not missing Daily facts. Unknown orders or failed reconcili
 still produce DATA INCOMPLETE. A Daily PASS never authorizes deployment; strict
 account, monthly, drawdown and broker-write checks still need fresh evidence.
 
-The helper separates read-only Daily, strict account preflight, monthly DCA/baseline, independent drawdown and
-private funding-journal transitions, plus the mandatory trade_scope instrument gate. Each held contract needs an IBKR ID-based
-canonical mapping. A journal result is not persisted by the helper: the host
-needs verified private storage with atomic revision updates and readback before
-dependent live DCA execution. Ordinary chat memory or a public GitHub file does
-not provide that capability. Reviews and synthetic simulations do not reserve funds.
+The helper separates read-only Daily, strict account preflight, monthly DCA/baseline,
+independent drawdown and private journal transitions, plus the mandatory
+trade_scope instrument gate. Each held contract needs an IBKR ID-based canonical
+mapping. The host must save and verify a single schema 2 plan per account and New
+York month before live monthly deployment. The plan covers either contribution
+source. Use verified private storage with atomic revision updates and readback.
+Reviews and simulations leave the journal untouched.

@@ -21,7 +21,7 @@ def daily_fixture():
 def pending_order():
     return dict(order_id=7, side='BUY', order_status='NEW', order_type='LIMIT',
                 limit_price='25.00', total_shares_qty='12', cum_shares_qty='0',
-                remaining_shares_qty='12')
+                remaining_shares_qty='12', primary_description='QQQM')
 
 
 class DailyTests(unittest.TestCase):
@@ -70,7 +70,8 @@ class DailyTests(unittest.TestCase):
 
     def test_unknown_or_malformed_orders_never_become_clear_daily_data(self):
         bad = [None, {}, [None], [{}], [pending_order(), pending_order()]]
-        for key, value in (('side', 'OTHER'), ('order_status', 'UNRECOGNIZED'), ('order_status', []),
+        for key, value in (('primary_description', None), ('primary_description', ' '),
+                           ('side', 'OTHER'), ('order_status', 'UNRECOGNIZED'), ('order_status', []),
                            ('remaining_shares_qty', 'NaN'), ('cum_shares_qty', True),
                            ('total_shares_qty', '13'), ('limit_price', '-1'),
                            ('order_id', True), ('order_type', 'UNRECOGNIZED')):
@@ -94,6 +95,49 @@ class DailyTests(unittest.TestCase):
         self.assertEqual(result['status'], 'DATA INCOMPLETE')
         self.assertEqual(result['open_orders_status'], 'unknown')
         self.assertIsNone(result['has_open_orders'])
+
+    def test_invalid_order_timestamp_does_not_discard_verified_balances(self):
+        payload = daily_fixture()
+        payload['capabilities']['open_orders']['observed_at'] = 123
+        result = helper.check(payload, NOW)
+        self.assertEqual(result['status'], 'DATA INCOMPLETE')
+        self.assertIn('open_orders: missing, invalid or stale observed_at', result['blocking_issues'])
+        self.assertEqual(result['open_orders_status'], 'unknown')
+        self.assertEqual(result['reconciliation']['status'], 'PASS')
+        self.assertIn('weights', result)
+
+    def test_cli_nonfinite_cnh_settlement_preserves_account_disclosure(self):
+        payload = daily_fixture()
+        observed = dt.datetime.now(dt.timezone.utc).isoformat()
+        for capability in payload['capabilities'].values():
+            capability['observed_at'] = observed
+        rows = payload['capabilities']['balances']['data']['balances']
+        rows[2]['settled_cash'] = float('nan')
+        proc = subprocess.run([sys.executable, str(SCRIPT)], input=json.dumps(payload),
+                              text=True, capture_output=True)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        result = json.loads(proc.stdout)
+        self.assertEqual(result['balances_by_currency'][:2], rows[:2])
+        self.assertIsNone(result['balances_by_currency'][2]['settled_cash'])
+        self.assertEqual(result['funding_preparation']['status'], 'DATA INCOMPLETE')
+        self.assertEqual(result['disclosure_issues'], ['balances[2].settled_cash: invalid scalar'])
+        self.assertIn('weights', result)
+
+    def test_invalid_required_balance_blocks_deployment_without_losing_valid_rows(self):
+        for invalid in (float('inf'), None):
+            with self.subTest(invalid=invalid):
+                payload = fixture()
+                rows = payload['capabilities']['balances']['data']['balances']
+                if invalid is None:
+                    rows[2] = None
+                else:
+                    rows[2]['cash_balance'] = invalid
+                result = helper.check(payload, NOW)
+                self.assertEqual(result['status'], 'DATA INCOMPLETE')
+                self.assertIsNone(result['deployment'])
+                self.assertEqual(result['balances_by_currency'][:2], rows[:2])
+                self.assertTrue(result['disclosure_issues'])
+                json.dumps(result, allow_nan=False)
 
     def test_reconciliation_failure_preserves_raw_facts_without_weights(self):
         payload = daily_fixture()

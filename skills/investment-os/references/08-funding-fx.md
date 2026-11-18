@@ -70,35 +70,36 @@ EXECUTION UNKNOWN 或 DATA INCOMPLETE，不重试、不重复换汇。
 
 ## 8. 跨会话资金台账
 
-台账不存公开仓库。每个账户使用单一可信台账，宿主验证台账与账户的关联及完整性，
-不得换一个 ledger_id 清空历史。宿主必须有私有持久化存储，使用 ledger_id + revision
-做原子 compare-and-swap 并回读，防止两个会话同时覆盖。没有此能力时明确只可
-审核/模拟，关闭人民币路径真实定投执行，不声称已建立防重复保证。
+每个账户使用仓库之外的单一可信台账。宿主核验账本与账户的关联及历史覆盖，
+使用 `ledger_id + revision` 原子 compare-and-swap 保存并回读。不能用新的标识
+跳过旧记录；未验证私有存储时只做审核和模拟。
 
-funding_ledger 格式：schema_version=1、非空 ledger_id、整数 revision、
-history_scope=verified_full_history、entries 列表。首次建立前须核验相关历史的
-完整覆盖和既有使用情况；无法恢复时关闭路径，不因新建文件而默认空历史。
-历史已使用的成交须导入条目；真实标识和金额不作公开示例。
+`funding_ledger` 基础字段为 `schema_version`、`ledger_id`、整数 `revision`、
+`history_scope=verified_full_history` 和 `entries`。schema 2 另有 `historical_months`，
+覆盖旧条目之外已经计算或保存正式计划的纽约月份，两种资金来源均计入。
+schema 1 的既有换汇条目保留原样，仍可核验或结算；正式月度计划使用 schema 2。
+首次建账或升级前须核实历史；空列表只用于已核验从无此类记录的情况。
 
-每条含唯一 reservation_id、allocation_period、trade_ids、status：
-reserved（已预占）、consumed（已使用）、partial（部分成交待核对）、released
-（券商确认未执行且无未完成订单后释放）。前三种均阻止同一换汇成交再次作为 F。
-已结算条目另含实际 dca_usd、broker_fill_ids；必须与券商用途关联证据核对，
-台账不是当前余额、来源金额或授权的替代。部分成交须保留实际金额及成交关联，
-剩余金额重新按券商和原用途核对，不把整笔换汇重新计入，也不自动跨期滚动。
+`task=funding_ledger` 接受 `funding_ledger`、`expected_revision` 和 `change`，只做内存转换。
 
-helper 的 task=funding_ledger 只做内存转换，输入 funding_ledger、expected_revision、
-change。预占 change：action=reserve、reservation_id、allocation_period、trade_ids。
-结算 change：action=settle、reservation_id、receipt；receipt 含 status、dca_usd、
-broker_fill_ids、broker_readback_verified、broker_orders_clear。两项布尔值只能由
-真实券商成交及订单回读证据核验；计划仍有未完成订单时保持预占。
-released 必须金额为 0、成交列表为空且相关订单已明确结束；未知结果仍保持 reserved。
-helper 不验证券商接口来源，不代替 agent 的证据职责，不自动保存或重试。
+- `upgrade_monthly_history`：为旧台账提供已核验的 `historical_months` 和
+  `monthly_history_verified=true`。保留旧条目和账本标识，修订号递增；按原子保存流程生效。
+- `reserve_monthly`：提供新 `reservation_id` 和 `monthly_review`（新鲜的 `task=monthly`
+  完整输入）。helper 用当前台账复核一次，记录纽约月份、资金来源、D/B 及逐 ETF
+  分配。人民币路径保存换汇成交 ID；券商流水路径的换汇 ID 列表为空。对每个账户，
+  每月只能有一个正式计划，即使换了入金证据。同一月已释放的正式计划仍占该月份。
+  旧 `reserve` 只兼容 schema 1 转换，不能作为正式月计划。
+- `settle`：提供 `reservation_id` 及 `receipt`，包含 `status`、实际 `dca_usd`、
+  `broker_fill_ids`、`broker_readback_verified`、`broker_orders_clear`；schema 2 正式
+  计划另需 `baseline_usd`。所有金额受原预占约束，两项布尔值须由券商事实核验。
 
-执行顺序：新鲜月度计算通过 → 取得该笔操作授权 → 生成预占 → 原子保存并回读
-新修订 → 再核验新鲜账户/订单和该次操作范围 → 提交一次 → 券商回读 → 生成结算
-→ 原子保存并回读。多笔订单共享同一资金计划的预占，但每笔仍需独立授权；
-计划未结束或有不确定订单时不结算为 released。结算前遇到部分成交可保留预占，
-计划结束时记 partial 并保留全部成交关联；不得使用该预占再次计算一个新资金计划。
-候选、测试、helper PASS 或保存成功均不是交易授权；存储失败或结果未知时停下
-受影响执行，恢复后先查券商和台账，不重发订单。
+计划状态为 `reserved`、`consumed`、`partial` 或 `released`。有真实成交才可记
+`consumed` 或 `partial`，保留两条通道的实际金额与成交关联。未知结果或仍有订单
+保持 `reserved`。`released` 需确认零成交、零金额及订单已结束；它只释放换汇证据
+的占用，不恢复本月计算次数，也不自动跨期结转。重复换汇 ID 仍在账户全历史查重。
+
+执行顺序：新鲜审核通过且 `monthly_plan_reservable=true`，取得该笔操作授权，
+生成预占并原子保存与回读。随后每笔按已保存计划和最新账户、订单、范围、报价
+重新核验，单笔授权后提交一次并回读。多笔订单共享同一计划；后续步骤读取该计划，
+核对剩余的各标的额度和既有成交。计划结束后生成结算，再原子保存并回读。
+存储失败或提交结果未知时先查券商和台账，关闭受影响路径。

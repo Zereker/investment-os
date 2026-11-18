@@ -46,10 +46,12 @@ This repository is not itself a reviewed public ChatGPT Plugins Directory releas
 
 Ask `Daily`, request a monthly funding review, evaluate a transaction, or research
 a policy question. The agent reads only the references needed by the task.
-Account checks follow `references/07-runtime-checks.md`; hosts with Python 3.11+
+Account checks follow [the runtime checks](skills/investment-os/references/07-runtime-checks.md); hosts with Python 3.11+
 can run `skills/investment-os/scripts/check_runtime.py` using ephemeral JSON on
 stdin. No package install, network service or broker credentials are needed by
 the helper. Its JSON output is a review result, never execution authorization.
+Monthly checks use the host's IANA `America/New_York` timezone data to evaluate
+the NYSE execution date and contribution month.
 
 Installing a skill does not grant brokerage access. IBKR remains the authoritative
 source of account, order, fill and contribution facts. Available capabilities are
@@ -61,12 +63,15 @@ helper; its absence closes that path only, not every review. Use task=monthly fo
 DCA/baseline and task=drawdown for independent SPYM/QQQM ladders. Drawdown needs
 neither contribution evidence nor the monthly execution date. A missing ladder
 blocks that ticker only. Holdings use fresh IBKR contract-ID mappings, not display names.
+Drawdown results show each tier's cap and allocation. Above 25% the affected
+ladder generates no new candidates. Verified private fill associations can be
+linked to the ticker, cycle and tier.
 
 ## Verification
 
 Ordinary Daily uses `task=daily` and the single-collection procedure in
 `skills/investment-os/references/01-daily.md`: connection probe, concurrent independent reads, bounded
-local retries, one validation, then a timestamped read-only report. Research and
+local retries that prioritize core account facts, one validation, then a timestamped read-only report. Research and
 writing do not restart account collection. Known working orders are reported as
 `pending`; they do not by themselves make Daily facts incomplete. Unknown orders,
 stale facts and failed reconciliation remain blockers. The helper does not fetch
@@ -88,7 +93,7 @@ Support, privacy and usage terms: [SUPPORT.md](SUPPORT.md),
 ## CNH funding preparation
 
 For CNH already inside IBKR and explicitly designated for the investment sleeve,
-follow `references/08-funding-fx.md`: inspect settlement, review a specific
+follow [the funding procedure](skills/investment-os/references/08-funding-fx.md): inspect settlement, review a specific
 conversion and its fees in IBKR, verify refreshed balances, then use settled USD
 at the fixed monthly review. The helper discloses CNH separately without inferring
 contributions, converting balances or authorizing orders. No FX execution tool
@@ -102,8 +107,9 @@ IBKR must still evidence selected FX fills, fee currency and USD settlement;
 complete private reuse history must prevent counting the same fill again. This
 is a mixed evidence path, not independent broker proof of an external deposit.
 It preserves contribution-first DCA, subsequent migration and separate order
-authorization. Simulations never consume funding records. Section 8 specifies a
-versioned private journal and the helper's task=funding_ledger reserve/settle
-transitions. The host must atomically save and read back revisions outside the
-repository; no database or durable storage is bundled. Without verified private
-storage, review remains available but dependent live DCA execution stays closed.
+authorization. Reviews and simulations leave the journal untouched. The schema 2
+journal in section 8 tracks one saved formal plan per account and New York month
+across both contribution paths. It preserves existing FX history and records each
+ETF's DCA and baseline allocation. The host must atomically save and read back
+revisions in verified private storage outside the repository. Until that storage
+is available, monthly deployment is limited to reviews and simulations.
